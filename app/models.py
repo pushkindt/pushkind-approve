@@ -26,3 +26,7 @@ class User(UserMixin, db.Model):
 	def GetAvatar(self, size):
 		digest = md5(self.email.lower().encode('utf-8')).hexdigest()
 		return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(digest, size)
+		
+	def to_dict(self):
+		data = {'id':self.id, 'email':self.email}
+		return data
