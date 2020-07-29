@@ -1,10 +1,53 @@
 {% extends "base.html" %}
 
-{% block navigation %}
-	<h2>Navigation<h2>
-{% endblock %}
 {% block content %}
-	<h2>Content<h2>
+{% if orders %}
+<section>
+	<div class="container border bg-light my-1">
+		<h6 class="text-secondary text-right">Заявки</h6>
+		<div class="row">
+			<div class="col">
+				<a href="" class="badge badge-primary">новые</a>
+				<a href="" class="badge badge-primary">не согласованные</a>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col">
+				<a href="" class="badge badge-primary">сегодня</a>
+				<a href="" class="badge badge-primary">вчера</a>
+				<a href="" class="badge badge-primary">неделя</a>
+				<a href="" class="badge badge-primary">месяц</a>
+				<a href="" class="badge badge-primary">все</a>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col">
+				<a href="" class="badge badge-primary">ГПЗ</a>
+				<a href="" class="badge badge-primary">Тест</a>
+			</div>
+		</div>
+	</div>
+	<div class="container border bg-light my-1">
+		<div class="row my-1 d-none d-sm-flex font-weight-bold">
+			<div class="col">
+				Номер
+			</div>
+			<div class="col">
+				Дата
+			</div>
+			<div class="col">
+				Инициатор
+			</div>
+			<div class="col">
+				Согласование
+			</div>
+		</div>
+		{% for order in orders['items'] %}
+			{% include '_order.html' %}
+		{% endfor %}
+	</div>
+</section>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

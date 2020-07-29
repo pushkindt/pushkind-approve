@@ -14,6 +14,12 @@ def NotFoundError(error):
 	if WantsJsonResponse():
 		return ErrorResponse(404)
 	return render_template('errors/404.html'), 404
+	
+@bp.app_errorhandler(403)
+def NotFoundError(error):
+	if WantsJsonResponse():
+		return ErrorResponse(403)
+	return render_template('errors/403.html'), 403
 
 
 @bp.app_errorhandler(500)

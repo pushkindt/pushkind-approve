@@ -1,0 +1,19 @@
+<div class="row mb-2 border-bottom">
+	<div class="col-sm overflow-hidden">
+		{{ product['name'] }}
+	</div>
+	<div class="col-sm overflow-hidden">
+		<span class="d-sm-none font-weight-bold">Артикул: </span>{{ product['sku'] }}
+	</div>
+	<div class="col-sm overflow-hidden">
+		{{ product['shortDescription'] }}
+	</div>
+	<div class="col-sm overflow-hidden">
+		{{ product['price'] }}
+	</div>	
+	<div class="col-auto mb-2 overflow-hidden">
+	{% if product['imageUrl'] != None %}
+		<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
+	{% endif %}
+	</div>				
+</div>

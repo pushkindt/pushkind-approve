@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if ecwid_form %}
+	<div class="container border bg-light my-2 py-2">
+		<div class = "row">
+			<div class="col">
+				{% set errorsList = ecwid_form.partners_key.errors + ecwid_form.client_id.errors + ecwid_form.client_secret.errors + ecwid_form.store_id.errors %}
+				{% if errorsList|length > 0 %}
+					<div class="alert alert-danger" role="alert">
+						{% for error in  errorsList %}
+							{{ error }}<br>
+						{% endfor %}
+					</div>
+				{% endif %}
+			</div>
+		</div>
+		<form action="" method="post">
+			{{ ecwid_form.csrf_token }}
+			<div class="form-group row">
+				{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
+				<div class="col-md-10">
+					{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '') }}
+				</div>
+			</div>
+			<div class="form-group row">
+				{{ ecwid_form.client_id.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ ecwid_form.client_id(class_ = 'form-control') }}
+				</div>
+			</div>
+			<div class="form-group row">
+				{{ ecwid_form.client_secret.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ ecwid_form.client_secret(class_ = 'form-control') }}
+				</div>
+			</div>
+			<div class="form-group row">
+				{{ ecwid_form.store_id.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{  ecwid_form.store_id(class_ = 'form-control') }}
+				</div>
+			</div>
+			<div class="form-group row">
+				<div class="col">
+					{{ ecwid_form.submit1(class_ = 'btn btn-primary mb-1') }}
+				</div>
+			</div>
+		</form>
+	</div>
+{% endif %}
+
+{% if role_form %}
+	<div class="container border bg-light my-2 py-2">
+		<div class = "row">
+			<div class="col">
+				{% set errorsList = role_form.user_id.errors + role_form.role.errors %}
+				{% if errorsList|length > 0 %}
+					<div class="alert alert-danger" role="alert">
+						{% for error in  errorsList %}
+							{{ error }}<br>
+						{% endfor %}
+					</div>
+				{% endif %}
+			</div>
+		</div>
+		<form action="" method="post">
+			{{ role_form.csrf_token }}
+			<div class="form-group row">
+				{{ role_form.user_id.label(class_ = "col-md-2 col-form-label") }}
+				<div class="col-md-10">
+					{{ role_form.user_id(class_ = 'form-control', autofocus = '') }}
+				</div>
+			</div>
+			<div class="form-group row">
+				{{ role_form.role.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ role_form.role(class_ = 'form-control') }}
+				</div>
+			</div>
+			<div class="form-group row">
+				<div class="col">
+					{{ role_form.submit2(class_ = 'btn btn-primary mb-1') }}
+				</div>
+			</div>
+		</form>
+	</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+	$(document).ready(function(){
+		//Scripts
+	});
+</script>
+{%endblock %}
