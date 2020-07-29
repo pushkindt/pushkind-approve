@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from app.main import bp
 from app.models import User, UserRoles, Ecwid
 from flask import render_template, redirect, url_for, flash, request
-from app.main.forms import EcwidSettingsForm, UserRolesForm
+from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm
 from sqlalchemy import or_
 
 @bp.route('/')
@@ -77,6 +77,14 @@ def SaveSettings():
 				flash('Данные успешно сохранены.')
 			else:
 				flash('Пользователь не найден.')
+	else:
+		user_form = UserSettingsForm()
+		if user_form.validate_on_submit() and user_form.submit3.data:
+			current_user.phone = user_form.phone.data
+			current_user.name = user_form.name.data
+			current_user.location = user_form.name.location.data
+			db.session.commit()
+			flash('Данные успешно сохранены.')
 	return redirect(url_for('main.ShowSettings'))
 	
 def ShowSettingsAdmin():
@@ -94,4 +102,5 @@ def ShowSettingsAdmin():
 	return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form)
 	
 def ShowSettingsUser():
-	return render_template('settings.html')
+	user_form = UserSettingsForm(name = current_user.name, phone = current_user.phone, location = current_user.location)
+	return render_template('settings.html', user_form = user_form)

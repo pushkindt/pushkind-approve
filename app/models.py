@@ -31,11 +31,12 @@ class User(UserMixin, db.Model):
 	role = db.Column(db.Enum(UserRoles), nullable=False, default = UserRoles.default)
 	name = db.Column(db.String(120))
 	phone = db.Column(db.String(120))
+	location = db.Column(db.String(120))
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'))
 	ecwid = db.relationship('Ecwid')
 	
 	def __repr__(self):
-		return '<User {} role: {}>'.format(self.email, self.role)
+		return '<User {} role: {} ecwid: {}>'.format(self.email, self.role, self.ecwid_id)
 	
 	def SetPassword(self, password):
 		self.password = generate_password_hash(password)

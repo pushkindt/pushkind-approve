@@ -21,3 +21,9 @@ class UserRolesForm(FlaskForm):
 							(int(UserRoles.admin), str(UserRoles.admin)),
 						])
 	submit2 = SubmitField('Сохранить')
+	
+class UserSettingsForm(FlaskForm):
+	name  = StringField('Имя', validators = [DataRequired()])
+	phone = StringField('Телефон', validators = [DataRequired()])
+	location = StringField('Расположение', validators = [DataRequired()])
+	submit3 = SubmitField('Сохранить')

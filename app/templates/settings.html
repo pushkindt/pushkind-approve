@@ -87,6 +87,50 @@
 	</div>
 {% endif %}
 
+{% if user_form %}
+	<div class="container border bg-light my-2 py-2">
+		<div class = "row">
+			<div class="col">
+				{% set errorsList = user_form.phone.errors + user_form.name.errors %}
+				{% if errorsList|length > 0 %}
+					<div class="alert alert-danger" role="alert">
+						{% for error in  errorsList %}
+							{{ error }}<br>
+						{% endfor %}
+					</div>
+				{% endif %}
+			</div>
+		</div>
+		<form action="" method="post">
+			{{ user_form.csrf_token }}
+			<div class="form-group row">
+				{{ user_form.name.label(class_ = "col-md-2 col-form-label") }}
+				<div class="col-md-10">
+					{{ user_form.name(class_ = 'form-control', autofocus = '') }}
+				</div>
+			</div>
+			<div class="form-group row">
+				{{ user_form.phone.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ user_form.phone(class_ = 'form-control') }}
+				</div>
+			</div>
+			<div class="form-group row">
+				{{ user_form.location.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ user_form.location(class_ = 'form-control') }}
+				</div>
+			</div>
+			<div class="form-group row">
+				<div class="col">
+					{{ user_form.submit3(class_ = 'btn btn-primary mb-1') }}
+				</div>
+			</div>
+		</form>
+	</div>
+{% endif %}
+
+
 {% endblock %}
 
 {% block scripts %}
