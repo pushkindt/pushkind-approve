@@ -5,38 +5,62 @@ from app.models import User, UserRoles, Ecwid
 from flask import render_template, redirect, url_for, flash, request
 from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm
 from sqlalchemy import or_
+from datetime import datetime, timedelta
 
 @bp.route('/')
 @bp.route('/index/')
 @login_required
 def ShowIndex():
+	now = datetime.now()
+	today = datetime(now.year, now.month, now.day)
+	week = today - timedelta(days = today.weekday())
+	month = datetime(now.year, now.month, 1)
+	dates = [int(today.timestamp()), int(week.timestamp()), int(month.timestamp())]
+	created_from = request.args.get('createdFrom')
+	try:
+		created_from = datetime.fromtimestamp()
+	except:
+		created_from = None
 	if current_user.role == UserRoles.default:
 		return render_template('errors/403.html'),403
 	elif current_user.role == UserRoles.initiative:
-		return ShowIndexInitiative()
+		return ShowIndexInitiative(created_from, dates)
 	else:
-		return ShowIndexAdmin()
+		return ShowIndexAdmin(created_from, dates)
 		
-def ShowIndexAdmin():
-	orders = None
+def ShowIndexAdmin(created_from, dates):
+	orders = []
 	if current_user.ecwid:
-		try:
-			orders = current_user.ecwid.EcwidGetStoreOrders(limit = 3)
-		except Exception as e:
-			flash('Ошибка API: {}'.format(e))
-			flash('Возможно неверные настройки?')
+		initiatives = User.query.filter(User.role == UserRoles.initiative, User.ecwid_id == current_user.ecwid_id).all()
+		emails = ' '.join([u.email for u in initiatives])
+		for initiative in initiatives:
+			try:
+				if created_from:
+					json = current_user.ecwid.EcwidGetStoreOrders(keywords = initiative.email, createdFrom = int(created_from.timestamp()))
+				else:
+					json = current_user.ecwid.EcwidGetStoreOrders(keywords = initiative.email)
+				if 'items' in json:
+					orders += json['items']
+			except Exception as e:
+				flash('Ошибка API: {}'.format(e))
+				flash('Возможно неверные настройки?')
 	else:
 		flash('Взаимодействие с ECWID не настроено.')
-	return render_template('index.html', orders = orders)
+	return render_template('index.html', orders = orders, dates = dates)
 	
-def ShowIndexInitiative():
+def ShowIndexInitiative(created_from, dates):
+	orders = []
 	try:
-		orders = current_user.ecwid.EcwidGetStoreOrders(limit = 3)
+		if created_from:
+			json = current_user.ecwid.EcwidGetStoreOrders(email = current_user.email, createdFrom = int(created_from.timestamp()))
+		else:
+			json = current_user.ecwid.EcwidGetStoreOrders(email = current_user.email)
+		if 'items' in json:
+			orders = json['items']
 	except Exception as e:
 		flash('Ошибка API: {}'.format(e))
 		flash('Возможно неверные настройки?')
-		orders = None
-	return render_template('index.html', orders = orders)
+	return render_template('index.html', orders = orders, dates = dates)
 
 @bp.route('/settings/', methods=['GET'])
 @login_required
@@ -82,7 +106,7 @@ def SaveSettings():
 		if user_form.validate_on_submit() and user_form.submit3.data:
 			current_user.phone = user_form.phone.data
 			current_user.name = user_form.name.data
-			current_user.location = user_form.name.location.data
+			current_user.location = user_form.location.data
 			db.session.commit()
 			flash('Данные успешно сохранены.')
 	return redirect(url_for('main.ShowSettings'))

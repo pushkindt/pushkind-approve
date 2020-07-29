@@ -12,11 +12,10 @@
 		</div>
 		<div class="row">
 			<div class="col">
-				<a href="" class="badge badge-primary">сегодня</a>
-				<a href="" class="badge badge-primary">вчера</a>
-				<a href="" class="badge badge-primary">неделя</a>
-				<a href="" class="badge badge-primary">месяц</a>
-				<a href="" class="badge badge-primary">все</a>
+				<a href="{{ url_for('main.ShowIndex', createdFrom = dates[0]) }}" class="badge badge-primary">сегодня</a>
+				<a href="{{ url_for('main.ShowIndex', createdFrom = dates[1]) }}" class="badge badge-primary">неделя</a>
+				<a href="{{ url_for('main.ShowIndex', createdFrom = dates[2]) }}" class="badge badge-primary">месяц</a>
+				<a href="{{ url_for('main.ShowIndex') }}" class="badge badge-primary">все</a>
 			</div>
 		</div>
 		<div class="row">
@@ -41,7 +40,7 @@
 				Согласование
 			</div>
 		</div>
-		{% for order in orders['items'] %}
+		{% for order in orders %}
 			{% include '_order.html' %}
 		{% endfor %}
 	</div>
