@@ -2,7 +2,7 @@
 	<div class="row mb-2">
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Номер: </span>
-			{{ order['vendorOrderNumber'] }}
+			{{ order['orderNumber'] }}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Дата: </span>
@@ -12,9 +12,22 @@
 			<span class="d-sm-none font-weight-bold">Инициатор: </span>
 			{{ order['orderComments'] }}
 		</div>
-		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Согласование: </span>
-			Нет
-		</div>
+		{% if approval_form %}
+			{% if current_user.role.name == 'approver' %}
+				<div class="col-sm overflow-hidden">
+					<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
+						{{ approval_form.csrf_token }}
+						<button type="submit" class="btn btn-success">
+							<img class="octicon" src="http://admin.pushkind.com/static/octicons/check.svg" alt="Одобрить">
+						</button>
+					</form>
+				</div>
+			{% endif %}
+		{% else %}
+			<div class="col-sm overflow-hidden">
+				<span class="d-sm-none font-weight-bold">Согласование: </span>
+				<a role="button" class="btn btn-success my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="http://admin.pushkind.com/static/octicons/check.svg" alt="Согласовать"></a>
+			</div>	
+		{% endif %}
 	</div>
 </div>

@@ -25,7 +25,7 @@ class Ecwid(db.Model, EcwidAPI):
 	id  = db.Column(db.Integer, primary_key = True)
 
 class User(UserMixin, db.Model):
-	id  = db.Column(db.Integer, primary_key = True)
+	id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	email	= db.Column(db.String(120), index = True, unique = True, nullable=False)
 	password = db.Column(db.String(128), nullable=False)
 	role = db.Column(db.Enum(UserRoles), nullable=False, default = UserRoles.default)
@@ -53,9 +53,14 @@ class User(UserMixin, db.Model):
 		return data
 	
 class OrderApproval(db.Model):
-	order_id  = db.Column(db.Integer, primary_key = True)
-	product_id  = db.Column(db.Integer, primary_key = True)
-	approved = db.Column(db.Boolean, nullable=False, default = False)
-	comment = db.Column(db.String(120))
+	id  = db.Column(db.Integer, primary_key = True, nullable=False)
+	order_id  = db.Column(db.Integer, nullable=False)
+	product_id  = db.Column(db.Integer, nullable=True)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+	user = db.relationship('User')
 	
+class OrderComment(db.Model):
+	user = db.relationship('User')
+	order_id  = db.Column(db.Integer, primary_key = True, nullable=False)
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, primary_key = True)
+	comment = db.Column(db.String(120))

@@ -12,7 +12,8 @@ def PerformLogin():
 		return redirect(url_for('main.ShowIndex'))
 	form = LoginForm()
 	if form.validate_on_submit():
-		user = User.query.filter_by(email = form.email.data).first()
+		email = form.email.data.lower()
+		user = User.query.filter_by(email = email).first()
 		if user is None or not user.CheckPassword(form.password.data):
 			flash('Некорректный логин или пароль')
 			return redirect(url_for('auth.PerformLogin'))
@@ -29,7 +30,8 @@ def PerformRegistration():
 		return redirect(url_for('main.ShowIndex'))
 	form = RegistrationForm()
 	if form.validate_on_submit():
-		user = User(email = form.email.data)
+		email = form.email.data.lower()
+		user = User(email = email)
 		user.SetPassword(form.password.data)		
 		db.session.add(user)
 		db.session.commit()

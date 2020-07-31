@@ -1,11 +1,18 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid
+from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval
 from flask import render_template, redirect, url_for, flash, request
-from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm
+from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, OrderCommentsForm, OrderApprovalForm
 from sqlalchemy import or_
 from datetime import datetime, timedelta
+
+
+'''
+################################################################################
+Index page
+################################################################################
+'''
 
 @bp.route('/')
 @bp.route('/index/')
@@ -61,6 +68,12 @@ def ShowIndexInitiative(created_from, dates):
 		flash('Ошибка API: {}'.format(e))
 		flash('Возможно неверные настройки?')
 	return render_template('index.html', orders = orders, dates = dates)
+
+'''
+################################################################################
+Settings page
+################################################################################
+'''
 
 @bp.route('/settings/', methods=['GET'])
 @login_required
@@ -128,3 +141,83 @@ def ShowSettingsAdmin():
 def ShowSettingsUser():
 	user_form = UserSettingsForm(name = current_user.name, phone = current_user.phone, location = current_user.location)
 	return render_template('settings.html', user_form = user_form)
+
+'''
+################################################################################
+Approve page
+################################################################################
+'''
+
+@bp.route('/order/<int:order_id>')
+@login_required
+def ShowOrder(order_id):
+	if current_user.role == UserRoles.default:
+		return render_template('errors/403.html'),403
+	try:
+		json = current_user.ecwid.EcwidGetStoreOrders(vendorOrderNumber = order_id)
+		if not 'items' in json or len(json['items']) == 0:
+			raise Exception('Такой заявки не существует.')
+	except Exception as e:
+		flash('Ошибка API: {}'.format(e))
+		return redirect(url_for('main.ShowIndex'))
+	order = json['items'][0]
+	if current_user.role == UserRoles.initiative:
+		if order['email'].lower() != current_user.email:
+				flash('Эта заявка не ваша.')
+				return redirect(url_for('main.ShowIndex'))
+	comments = OrderComment.query.filter(OrderComment.order_id == order_id).all()
+	comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
+	approvals = OrderApproval.query.filter(OrderApproval.order_id == order_id).all()
+	if comment:
+		comment_form = OrderCommentsForm(comment = comment.comment)
+	else:
+		comment_form = OrderCommentsForm()
+	approval_form = OrderApprovalForm()
+	return render_template('approve.html', order = order, comments = comments, approvals = approvals, comment_form = comment_form, approval_form = approval_form)
+	
+@bp.route('/comment/<int:order_id>', methods=['POST'])
+@login_required
+def SaveComment(order_id):
+	form = OrderCommentsForm()
+	if form.validate_on_submit():
+		comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
+		stripped = form.comment.data.strip() if form.comment.data else ''
+		if len(stripped) == 0:
+			if comment:
+				db.session.delete(comment)
+		else:
+			if not comment:
+				comment = OrderComment(user_id = current_user.id, order_id = order_id)
+				db.session.add(comment)
+			comment.comment = stripped
+		db.session.commit()
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
+	
+@bp.route('/approval/<int:order_id>', methods=['POST'])
+@login_required
+def SaveApproval(order_id):
+	if current_user.role in [UserRoles.default, UserRoles.initiative]:
+		return render_template('errors/403.html'),403
+	form = OrderApprovalForm()
+	if form.validate_on_submit():
+		order_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == None).first()
+		if not form.product_id.data:
+			if current_user.role == UserRoles.validator:
+				return render_template('errors/403.html'),403
+			OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).delete()
+			if not order_approval:
+				order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
+				db.session.add(order_approval)
+		else:
+			product_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == form.product_id.data).first()
+			if product_approval:
+				db.session.delete(product_approval)
+			else:
+				if order_approval:
+					db.session.delete(order_approval)
+				product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id)
+				db.session.add(product_approval)
+		db.session.commit()
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
+			
+	

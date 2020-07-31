@@ -1,14 +1,14 @@
 from flask_wtf import FlaskForm
-from wtforms import SubmitField, IntegerField, StringField, SelectField
-from wtforms.validators import DataRequired
+from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField
+from wtforms.validators import DataRequired, Length
 from app.models import UserRoles
 
 class EcwidSettingsForm(FlaskForm):
-	partners_key = StringField('Ключ partners_key', validators = [DataRequired()])
-	client_id = StringField('Ключ client_id', validators = [DataRequired()])
+	partners_key  = StringField('Ключ partners_key', validators = [DataRequired()])
+	client_id     = StringField('Ключ client_id', validators = [DataRequired()])
 	client_secret = StringField('Ключ client_secret', validators = [DataRequired()])
-	store_id = IntegerField('ID магазина', validators = [DataRequired()])
-	submit1 = SubmitField('Сохранить')
+	store_id      = IntegerField('ID магазина', validators = [DataRequired()])
+	submit1       = SubmitField('Сохранить')
 	
 class UserRolesForm(FlaskForm):
 	user_id = SelectField('Идентификатор пользователя', coerce = int)
@@ -27,3 +27,11 @@ class UserSettingsForm(FlaskForm):
 	phone = StringField('Телефон', validators = [DataRequired()])
 	location = StringField('Расположение', validators = [DataRequired()])
 	submit3 = SubmitField('Сохранить')
+	
+class OrderCommentsForm(FlaskForm):
+	comment  = TextAreaField('Комментарий', validators = [Length(max = 128)])
+	submit = SubmitField('Сохранить')
+	
+class OrderApprovalForm(FlaskForm):
+	product_id    = IntegerField('Идентификатор товара')
+	submit = SubmitField('Сохранить')

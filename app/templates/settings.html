@@ -2,7 +2,7 @@
 
 {% block content %}
 {% if ecwid_form %}
-	<div class="container border bg-light my-2 py-2">
+	<div class="container border bg-light my-1 py-2">
 		<div class = "row">
 			<div class="col">
 				{% set errorsList = ecwid_form.partners_key.errors + ecwid_form.client_id.errors + ecwid_form.client_secret.errors + ecwid_form.store_id.errors %}
@@ -51,7 +51,7 @@
 {% endif %}
 
 {% if role_form %}
-	<div class="container border bg-light my-2 py-2">
+	<div class="container border bg-light my-1 py-2">
 		<div class = "row">
 			<div class="col">
 				{% set errorsList = role_form.user_id.errors + role_form.role.errors %}
@@ -88,7 +88,7 @@
 {% endif %}
 
 {% if user_form %}
-	<div class="container border bg-light my-2 py-2">
+	<div class="container border bg-light my-1 py-2">
 		<div class = "row">
 			<div class="col">
 				{% set errorsList = user_form.phone.errors + user_form.name.errors %}

@@ -1,19 +1,30 @@
 <div class="row mb-2 border-bottom">
 	<div class="col-sm overflow-hidden">
+		<span class="d-sm-none font-weight-bold">Название:</span>
 		{{ product['name'] }}
 	</div>
 	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Артикул: </span>{{ product['sku'] }}
+		<span class="d-sm-none font-weight-bold">Артикул:</span>
+		{{ product['sku'] }}
 	</div>
 	<div class="col-sm overflow-hidden">
-		{{ product['shortDescription'] }}
-	</div>
-	<div class="col-sm overflow-hidden">
+		<span class="d-sm-none font-weight-bold">Цена:</span>
 		{{ product['price'] }}
-	</div>	
-	<div class="col-auto mb-2 overflow-hidden">
-	{% if product['imageUrl'] != None %}
-		<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
+	</div>
+	<div class="col-sm mb-2 overflow-hidden">
+		{% if product['imageUrl'] != None %}
+			<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
+		{% endif %}
+	</div>
+	{% if current_user.role.name != 'initiative' %}
+		<div class="col-sm overflow-hidden">
+			<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
+				{{ approval_form.csrf_token }}
+				{{ approval_form.product_id(class_ = 'd-none', hidden = '', value = product['productId']) }}
+				<button type="submit" class="btn btn-danger">
+					<img class="octicon" src="http://admin.pushkind.com/static/octicons/x.svg" alt="Отклонить">
+				</button>
+			</form>
+		</div>
 	{% endif %}
-	</div>				
 </div>
