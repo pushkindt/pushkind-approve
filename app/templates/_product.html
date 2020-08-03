@@ -11,6 +11,10 @@
 		<span class="d-sm-none font-weight-bold">Цена:</span>
 		{{ product['price'] }}
 	</div>
+	<div class="col-sm overflow-hidden">
+		<span class="d-sm-none font-weight-bold">Количество:</span>
+		{{ product['quantity'] }}
+	</div>
 	<div class="col-sm mb-2 overflow-hidden">
 		{% if product['imageUrl'] != None %}
 			<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
@@ -21,9 +25,16 @@
 			<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
 				{{ approval_form.csrf_token }}
 				{{ approval_form.product_id(class_ = 'd-none', hidden = '', value = product['productId']) }}
-				<button type="submit" class="btn btn-danger">
-					<img class="octicon" src="http://admin.pushkind.com/static/octicons/x.svg" alt="Отклонить">
-				</button>
+				<span class="d-sm-none font-weight-bold">Отклонить:</span>
+				{% if product['approval'] %}
+					<button type="submit" class="btn btn-secondary">
+						<img class="octicon" src="http://admin.pushkind.com/static/octicons/x.svg" alt="Отклонить">
+					</button>
+				{% else %}
+					<button type="submit" class="btn btn-danger">
+						<img class="octicon" src="http://admin.pushkind.com/static/octicons/x.svg" alt="Отклонить">
+					</button>
+				{% endif %}
 			</form>
 		</div>
 	{% endif %}

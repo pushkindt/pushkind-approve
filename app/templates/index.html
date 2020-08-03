@@ -1,50 +1,91 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% if orders %}
-	<div class="container border bg-light my-1">
-		<div class="row">
-			<div class="col">
-				<a href="" class="badge badge-primary">новые</a>
-				<a href="" class="badge badge-primary">не согласованные</a>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col">
-				<a href="{{ url_for('main.ShowIndex', createdFrom = dates[0]) }}" class="badge badge-primary">сегодня</a>
-				<a href="{{ url_for('main.ShowIndex', createdFrom = dates[1]) }}" class="badge badge-primary">неделя</a>
-				<a href="{{ url_for('main.ShowIndex', createdFrom = dates[2]) }}" class="badge badge-primary">месяц</a>
-				<a href="{{ url_for('main.ShowIndex') }}" class="badge badge-primary">все</a>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col">
-				<a href="" class="badge badge-primary">ГПЗ</a>
-				<a href="" class="badge badge-primary">Тест</a>
-			</div>
+<div class="container border bg-light my-1">
+	<div class="row">
+		<div class="col">
+		{% if order_approval == 'new' %}
+			<span class="badge badge-success">новые</span>
+		{% else %}
+			<a href="{{ url_for('main.ShowIndex', created_from = created_from, order_approval = 'new') }}" class="badge badge-primary">новые</a>
+		{% endif %}
+		{% if order_approval == 'partly_approved' %}
+			<span class="badge badge-success">в работе</span>
+		{% else %}
+			<a href="{{ url_for('main.ShowIndex', created_from = created_from, order_approval = 'partly_approved') }}" class="badge badge-primary">в работе</a>
+		{% endif %}
+		{% if order_approval == 'approved' %}
+			<span class="badge badge-success">согласованные</span>
+		{% else %}
+			<a href="{{ url_for('main.ShowIndex', created_from = created_from, order_approval = 'approved') }}" class="badge badge-primary">согласованные</a>
+		{% endif %}
+		{% if order_approval == 'not_approved' %}
+			<span class="badge badge-success">не согласованные</span>
+		{% else %}
+			<a href="{{ url_for('main.ShowIndex', created_from = created_from, order_approval = 'not_approved') }}" class="badge badge-primary">не согласованные</a>
+		{% endif %}
+		{% if order_approval == None %}
+			<span class="badge badge-success">все</span>
+		{% else %}
+			<a href="{{ url_for('main.ShowIndex', created_from = created_from) }}" class="badge badge-primary">все</a>
+		{% endif %}
 		</div>
 	</div>
-	<div class="container border bg-light my-1">
-		<h6 class="text-secondary text-right">Заявки</h6>
-		<div class="row my-1 d-none d-sm-flex font-weight-bold">
+	<div class="row">
+		<div class="col">
+			{% if created_from == dates[0] %}
+				<span class="badge badge-success">сегодня</span>
+			{% else %}
+				<a href="{{ url_for('main.ShowIndex', created_from = dates[0], order_approval = order_approval) }}" class="badge badge-primary">сегодня</a>
+			{% endif %}
+			{% if created_from == dates[1] %}
+				<span class="badge badge-success">неделя</span>
+			{% else %}
+				<a href="{{ url_for('main.ShowIndex', created_from = dates[1], order_approval = order_approval) }}" class="badge badge-primary">неделя</a>
+			{% endif %}
+			{% if created_from == dates[2] %}
+				<span class="badge badge-success">месяц</span>
+			{% else %}
+				<a href="{{ url_for('main.ShowIndex', created_from = dates[2], order_approval = order_approval) }}" class="badge badge-primary">месяц</a>
+			{% endif %}
+			{% if created_from == None %}
+				<span class="badge badge-success">все</span>
+			{% else %}
+				<a href="{{ url_for('main.ShowIndex', order_approval = order_approval) }}" class="badge badge-primary">все</a>
+			{% endif %}
+		</div>
+	</div>
+	{% if current_user.role.name != 'initiative' %}
+		<div class="row">
 			<div class="col">
-				Номер
-			</div>
-			<div class="col">
-				Дата
-			</div>
-			<div class="col">
-				Инициатор
-			</div>
-			<div class="col">
-				Согласование
+				{% for initiative in initiatives %}
+					<a href="{{ url_for('main.ShowIndex', order_approval = order_approval, created_from = created_from, location = initiative) }}" class="badge badge-primary">{{ initiatives[initiative] }}</a>
+				{% endfor %}
+					<a href="{{ url_for('main.ShowIndex', order_approval = order_approval, created_from = created_from) }}" class="badge badge-primary">все</a>
 			</div>
 		</div>
-		{% for order in orders %}
-			{% include '_order.html' %}
-		{% endfor %}
+	{% endif %}
+</div>
+<div class="container border bg-light my-1">
+	<h6 class="text-secondary text-right">Заявки</h6>
+	<div class="row my-1 d-none d-sm-flex font-weight-bold">
+		<div class="col overflow-hidden">
+			Номер
+		</div>
+		<div class="col overflow-hidden">
+			Дата
+		</div>
+		<div class="col overflow-hidden">
+			Инициатор
+		</div>
+		<div class="col overflow-hidden">
+			Согласование
+		</div>
 	</div>
-{% endif %}
+	{% for order in orders %}
+		{% include '_order.html' %}
+	{% endfor %}
+</div>
 {% endblock %}
 
 {% block scripts %}

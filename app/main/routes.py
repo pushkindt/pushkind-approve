@@ -14,60 +14,86 @@ Index page
 ################################################################################
 '''
 
-@bp.route('/')
-@bp.route('/index/')
-@login_required
-def ShowIndex():
+def GetDateTimestamps():
 	now = datetime.now()
 	today = datetime(now.year, now.month, now.day)
 	week = today - timedelta(days = today.weekday())
 	month = datetime(now.year, now.month, 1)
 	dates = [int(today.timestamp()), int(week.timestamp()), int(month.timestamp())]
-	created_from = request.args.get('createdFrom')
+	return dates
+	
+def GetOrderStatus(order_id):
+	not_approved = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.product_id != None).count() > 0
+	if not_approved:
+		return 'not_approved'
+	approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id == None, User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
+	approvers = User.query.filter(User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
+	if approved == 0:
+		return 'new'
+	elif approved == approvers:
+		return 'approved'
+	return 'partly_approved'
+	
+def GetProductStatus(order_id, product_id, user_id):
+	return OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.product_id == product_id, OrderApproval.user_id == user_id).count() == 0
+		
+
+@bp.route('/')
+@bp.route('/index/')
+@login_required
+def ShowIndex():
+	dates = GetDateTimestamps()
+	created_from = request.args.get('created_from', default = None, type = int)
+	order_approval = request.args.get('order_approval', default = None, type = str)
+	location = request.args.get('location', default = None, type = str)
+	if order_approval not in ['approved', 'partly_approved', 'not_approved', 'new']:
+		order_approval = None
 	try:
-		created_from = datetime.fromtimestamp()
+		created_from = datetime.fromtimestamp(created_from)
+		created_from = int(created_from.timestamp())
 	except:
 		created_from = None
 	if current_user.role == UserRoles.default:
 		return render_template('errors/403.html'),403
-	elif current_user.role == UserRoles.initiative:
-		return ShowIndexInitiative(created_from, dates)
-	else:
-		return ShowIndexAdmin(created_from, dates)
-		
-def ShowIndexAdmin(created_from, dates):
 	orders = []
 	if current_user.ecwid:
-		initiatives = User.query.filter(User.role == UserRoles.initiative, User.ecwid_id == current_user.ecwid_id).all()
-		emails = ' '.join([u.email for u in initiatives])
-		for initiative in initiatives:
-			try:
-				if created_from:
-					json = current_user.ecwid.EcwidGetStoreOrders(keywords = initiative.email, createdFrom = int(created_from.timestamp()))
+		try:
+			args = {}
+			if created_from:
+				args['createdFrom'] = created_from
+			if current_user.role == UserRoles.initiative:
+				args['email'] = current_user.email
+			else:
+				if location:
+					args['email'] = location
+			json = current_user.ecwid.EcwidGetStoreOrders(**args)
+			if 'items' in json:
+				orders = json['items']
+		except Exception as e:
+			flash('Ошибка API: {}'.format(e))
+			flash('Возможно неверные настройки?')
+		new_orders = []
+		initiatives = {}
+		for order in orders:
+			initiative = User.query.filter(User.email == order['email'].lower()).first()
+			if not initiative:
+				continue
+			order['approval'] = GetOrderStatus(order['orderNumber'])
+			if order_approval and order['approval'] != order_approval:
+				continue
+			if not initiative.email in initiatives:
+				if initiative.location and initiative.location != '':
+					initiatives[initiative.email] = initiative.location
 				else:
-					json = current_user.ecwid.EcwidGetStoreOrders(keywords = initiative.email)
-				if 'items' in json:
-					orders += json['items']
-			except Exception as e:
-				flash('Ошибка API: {}'.format(e))
-				flash('Возможно неверные настройки?')
+					initiatives[initiative.email] = order['orderComments']
+			new_orders.append(order)
+		orders = new_orders
 	else:
 		flash('Взаимодействие с ECWID не настроено.')
-	return render_template('index.html', orders = orders, dates = dates)
-	
-def ShowIndexInitiative(created_from, dates):
-	orders = []
-	try:
-		if created_from:
-			json = current_user.ecwid.EcwidGetStoreOrders(email = current_user.email, createdFrom = int(created_from.timestamp()))
-		else:
-			json = current_user.ecwid.EcwidGetStoreOrders(email = current_user.email)
-		if 'items' in json:
-			orders = json['items']
-	except Exception as e:
-		flash('Ошибка API: {}'.format(e))
-		flash('Возможно неверные настройки?')
-	return render_template('index.html', orders = orders, dates = dates)
+	return render_template('index.html', orders = orders, dates = dates,
+							created_from = created_from, order_approval = order_approval,
+							initiatives = initiatives,
+							location = location)
 
 '''
 ################################################################################
@@ -117,9 +143,9 @@ def SaveSettings():
 	else:
 		user_form = UserSettingsForm()
 		if user_form.validate_on_submit() and user_form.submit3.data:
-			current_user.phone = user_form.phone.data
-			current_user.name = user_form.name.data
-			current_user.location = user_form.location.data
+			current_user.phone = user_form.phone.data.strip()
+			current_user.name = user_form.name.data.strip()
+			current_user.location = user_form.location.data.strip()
 			db.session.commit()
 			flash('Данные успешно сохранены.')
 	return redirect(url_for('main.ShowSettings'))
@@ -154,7 +180,7 @@ def ShowOrder(order_id):
 	if current_user.role == UserRoles.default:
 		return render_template('errors/403.html'),403
 	try:
-		json = current_user.ecwid.EcwidGetStoreOrders(vendorOrderNumber = order_id)
+		json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
 		if not 'items' in json or len(json['items']) == 0:
 			raise Exception('Такой заявки не существует.')
 	except Exception as e:
@@ -165,15 +191,24 @@ def ShowOrder(order_id):
 		if order['email'].lower() != current_user.email:
 				flash('Эта заявка не ваша.')
 				return redirect(url_for('main.ShowIndex'))
-	comments = OrderComment.query.filter(OrderComment.order_id == order_id).all()
+	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 	comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
-	approvals = OrderApproval.query.filter(OrderApproval.order_id == order_id).all()
+	approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+	current_approvals = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).all()
 	if comment:
 		comment_form = OrderCommentsForm(comment = comment.comment)
 	else:
 		comment_form = OrderCommentsForm()
+	for product in order['items']:
+		product['approval'] = GetProductStatus(order_id, product['productId'], current_user.id)
+	order['approval'] = not GetProductStatus(order_id, None, current_user.id)
 	approval_form = OrderApprovalForm()
-	return render_template('approve.html', order = order, comments = comments, approvals = approvals, comment_form = comment_form, approval_form = approval_form)
+	return render_template('approve.html',
+							order = order,
+							comments = comments,
+							approvals = approvals,
+							comment_form = comment_form,
+							approval_form = approval_form)
 	
 @bp.route('/comment/<int:order_id>', methods=['POST'])
 @login_required
@@ -219,5 +254,25 @@ def SaveApproval(order_id):
 				db.session.add(product_approval)
 		db.session.commit()
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
-			
+	
+@bp.route('/delete/<int:order_id>')
+@login_required
+def DeleteOrder(order_id):
+	try:
+		json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
+		if not 'items' in json or len(json['items']) == 0:
+			raise Exception('Такой заявки не существует.')
+		order = json['items'][0]
+		if current_user.email != order['email']:
+			raise Exception('Вы не являетесь владельцем этой заявки.')
+		OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).delete()
+		OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).delete()
+		json = current_user.ecwid.EcwidDeleteStoreOrder(order_id = order_id)
+		if json.get('deleteCount', default = 0, type = int) == 1:
+			flash('Заявка успешно удалена')
+		else:
+			raise Exception('Не удалось удалить заявку.')
+	except Exception as e:
+		flash('Ошибка API: {}'.format(e))
+	return redirect(url_for('main.ShowIndex'))
 	

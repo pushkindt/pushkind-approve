@@ -4,18 +4,25 @@
 
 	<div class="container border bg-light my-1">
 		<h6 class="text-secondary text-right">Заявка<h6>
+		{% if current_user.role.name == 'initiative' %}
+			<div class="row">
+				<div class="col text-right">
+					<a class="btn btn-danger btn-sm" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}">Удалить</a>
+				</div>
+			</div>
+		{% endif %}
 		<div class="row my-1 d-none d-sm-flex font-weight-bold">
-			<div class="col">
+			<div class="col overflow-hidden">
 				Номер
 			</div>
-			<div class="col">
+			<div class="col overflow-hidden">
 				Дата
 			</div>
-			<div class="col">
+			<div class="col overflow-hidden">
 				Инициатор
 			</div>
 			{% if current_user.role.name == 'approver' %}
-				<div class="col">
+				<div class="col overflow-hidden">
 					Согласование
 				</div>
 			{% endif %}
@@ -26,16 +33,19 @@
 	<div class="container border bg-light my-1">
 		<h6 class="text-secondary text-right">Товары</h6>
 		<div class="row my-1 d-none d-sm-flex font-weight-bold">
-			<div class="col">
+			<div class="col overflow-hidden">
 				Название
 			</div>
-			<div class="col">
+			<div class="col overflow-hidden">
 				Артикул
 			</div>
-			<div class="col">
+			<div class="col overflow-hidden">
 				Цена
 			</div>
-			<div class="col">
+			<div class="col overflow-hidden">
+				Количество
+			</div>
+			<div class="col overflow-hidden">
 				Изображение
 			</div>
 			{% if current_user.role.name != 'initiative' %}

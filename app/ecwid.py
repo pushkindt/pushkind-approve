@@ -1,5 +1,5 @@
 from app import db
-from requests import post, get
+from requests import post, get, delete
 from urllib.parse import urljoin
 
 _REST_API_URL = 'https://app.ecwid.com/api/v3/{store_id}/{endpoint}'
@@ -64,3 +64,11 @@ class EcwidAPI():
 		elif error != 200:
 			message = 'Неизвестная ошибка API.'
 		return '{}: {}'.format(error, message)
+		
+	def EcwidDeleteStoreOrder(self, order_id):
+		'''Deletes store's product using REST API, returns JSON'''
+		params = {'token':self.token}
+		response = delete(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}'.format(order_id)), params = params)
+		if response.status_code != 200:
+			raise Exception(self._EcwidGetErrorMessage(response.status_code))
+		return response.json()	
