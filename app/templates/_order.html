@@ -20,11 +20,11 @@
 						<span class="d-sm-none font-weight-bold">Согласование: </span>
 						{% if order['approval'] %}
 							<button type="submit" class="btn btn-success">
-								<img class="octicon" src="http://admin.pushkind.com/static/octicons/check.svg" alt="Одобрить">
+								<img class="octicon" src="/static/octicons/check.svg" alt="Одобрить">
 							</button>
 						{% else %}
 							<button type="submit" class="btn btn-secondary">
-								<img class="octicon" src="http://admin.pushkind.com/static/octicons/check.svg" alt="Одобрить">
+								<img class="octicon" src="/static/octicons/check.svg" alt="Одобрить">
 							</button>
 						{% endif %}
 					</form>
@@ -35,13 +35,13 @@
 				<span class="d-sm-none font-weight-bold">Согласование: </span>
 
 				{% if order['approval'] == 'approved' %}
-					<a role="button" class="btn btn-success my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="http://admin.pushkind.com/static/octicons/check.svg" alt="Согласовать"></a>
+					<a role="button" class="btn btn-success my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></a>
 				{% elif order['approval'] == 'partly_approved' %}
-					<a role="button" class="btn btn-info my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="http://admin.pushkind.com/static/octicons/check.svg" alt="Согласовать"></a>
+					<a role="button" class="btn btn-info my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></a>
 				{% elif order['approval'] == 'not_approved' %}
-					<a role="button" class="btn btn-danger my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="http://admin.pushkind.com/static/octicons/check.svg" alt="Согласовать"></a>
+					<a role="button" class="btn btn-danger my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></a>
 				{% else %}
-					<a role="button" class="btn btn-secondary my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="http://admin.pushkind.com/static/octicons/check.svg" alt="Согласовать"></a>
+					<a role="button" class="btn btn-secondary my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></a>
 				{% endif %}
 				
 			</div>	
