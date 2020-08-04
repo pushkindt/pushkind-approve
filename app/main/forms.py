@@ -34,4 +34,5 @@ class OrderCommentsForm(FlaskForm):
 	
 class OrderApprovalForm(FlaskForm):
 	product_id    = IntegerField('Идентификатор товара')
+	product_sku   = StringField('Артикул товара', validators = [DataRequired()])
 	submit = SubmitField('Сохранить')

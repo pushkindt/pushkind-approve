@@ -250,7 +250,7 @@ def SaveApproval(order_id):
 			else:
 				if order_approval:
 					db.session.delete(order_approval)
-				product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id)
+				product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id, product_sku = form.product_sku.data.strip())
 				db.session.add(product_approval)
 		db.session.commit()
 	return redirect(url_for('main.ShowOrder', order_id = order_id))

@@ -56,6 +56,7 @@ class OrderApproval(db.Model):
 	id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	order_id  = db.Column(db.Integer, nullable=False)
 	product_id  = db.Column(db.Integer, nullable=True)
+	product_sku = db.Column(db.String(120), nullable = True)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 	user = db.relationship('User')
 	
