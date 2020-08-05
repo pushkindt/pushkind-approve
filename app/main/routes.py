@@ -101,21 +101,20 @@ Settings page
 ################################################################################
 '''
 
-@bp.route('/settings/', methods=['GET'])
+@bp.route('/settings/', methods=['GET', 'POST'])
 @login_required
 def ShowSettings():
 	if current_user.role == UserRoles.default:
 		return render_template('errors/403.html'),403
 	elif current_user.role == UserRoles.admin:
-		return ShowSettingsAdmin()
-	else:
-		return ShowSettingsUser()
-		
-@bp.route('/settings/', methods=['POST'])
-@login_required
-def SaveSettings():
-	if current_user.role == UserRoles.admin:
+		if not current_user.ecwid:
+			ecwid = Ecwid()
+			current_user.ecwid = ecwid
+			db.session.commit()
 		ecwid_form = EcwidSettingsForm()
+		role_form = UserRolesForm()
+		users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
+		role_form.user_id.choices = [(u.id, u.email) for u in users if u.id != current_user.id]
 		if ecwid_form.validate_on_submit() and ecwid_form.submit1.data:
 			current_user.ecwid.partners_key = ecwid_form.partners_key.data
 			current_user.ecwid.client_id = ecwid_form.client_id.data
@@ -127,11 +126,7 @@ def SaveSettings():
 				flash('Данные успешно сохранены.')
 			except Exception as e:
 				flash('Ошибка GetStoreToken: {}'.format(e))
-			return redirect(url_for('main.ShowSettings'))
-		role_form = UserRolesForm()
-		users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
-		role_form.user_id.choices = [(u.id, '{} ({})'.format(u.email, str(u.role))) for u in users]
-		if role_form.validate_on_submit() and role_form.submit2.data:
+		elif role_form.validate_on_submit() and role_form.submit2.data:
 			user = User.query.filter(User.id == role_form.user_id.data).first()
 			if user:
 				user.ecwid_id = current_user.ecwid_id
@@ -143,34 +138,17 @@ def SaveSettings():
 				flash('Данные успешно сохранены.')
 			else:
 				flash('Пользователь не найден.')
+		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users)
 	else:
 		user_form = UserSettingsForm()
 		if user_form.validate_on_submit() and user_form.submit3.data:
-			user.phone = role_form.about_user.phone.data.strip()
-			user.name = role_form.about_user.full_name.data.strip()
-			user.location = role_form.about_user.location.data.strip()
+			current_user.phone = user_form.about_user.phone.data.strip()
+			current_user.name = user_form.about_user.full_name.data.strip()
+			current_user.location = user_form.about_user.location.data.strip()
 			db.session.commit()
 			flash('Данные успешно сохранены.')
-	return redirect(url_for('main.ShowSettings'))
-	
-def ShowSettingsAdmin():
-	if not current_user.ecwid:
-		ecwid = Ecwid()
-		current_user.ecwid = ecwid
-		db.session.commit()
-	ecwid_form = EcwidSettingsForm(partners_key = current_user.ecwid.partners_key,
-						client_id = current_user.ecwid.client_id,
-						client_secret = current_user.ecwid.client_secret,
-						store_id = current_user.ecwid.store_id)
-	role_form = UserRolesForm()
-	users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
-	role_form.user_id.choices = [(u.id, u.email) for u in users if u.id != current_user.id]
-	return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users)
-	
-def ShowSettingsUser():
-	user_form = UserSettingsForm(name = current_user.name, phone = current_user.phone, location = current_user.location)
-	return render_template('settings.html', user_form = user_form)
-
+		return render_template('settings.html', user_form = user_form)
+		
 '''
 ################################################################################
 Approve page

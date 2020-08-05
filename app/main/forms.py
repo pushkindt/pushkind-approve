@@ -4,16 +4,16 @@ from wtforms.validators import DataRequired, Length
 from app.models import UserRoles
 
 class EcwidSettingsForm(FlaskForm):
-	partners_key  = StringField('Ключ partners_key', [DataRequired()])
-	client_id     = StringField('Ключ client_id', [DataRequired()])
-	client_secret = StringField('Ключ client_secret', [DataRequired()])
-	store_id      = IntegerField('ID магазина', [DataRequired()])
+	partners_key  = StringField('Ключ partners_key', [DataRequired(message = 'Ключ partners_key - обязательное поле')])
+	client_id     = StringField('Ключ client_id', [DataRequired(message = 'Ключ client_id - обязательное поле')])
+	client_secret = StringField('Ключ client_secret', [DataRequired(message = 'Ключ client_secret - обязательное поле')])
+	store_id      = IntegerField('ID магазина', [DataRequired(message = 'ID магазина - обязательное поле')])
 	submit1       = SubmitField('Сохранить')
 
 class UserSettings(Form):
-	full_name  = StringField('Имя', [DataRequired()])
-	phone = StringField('Телефон', [DataRequired()])
-	location = StringField('Расположение', [DataRequired()])
+	full_name  = StringField('Имя', [DataRequired(message = 'Имя - обязательное поле')])
+	phone = StringField('Телефон', [DataRequired(message = 'Телефон - обязательное поле')])
+	location = StringField('Расположение', [DataRequired(message = 'Расположение - обязательное поле')])
 
 class UserRolesForm(FlaskForm):
 	user_id = SelectField('Идентификатор пользователя', coerce = int)
@@ -38,5 +38,5 @@ class OrderCommentsForm(FlaskForm):
 	
 class OrderApprovalForm(FlaskForm):
 	product_id    = IntegerField('Идентификатор товара')
-	product_sku   = StringField('Артикул товара', [DataRequired()])
+	product_sku   = StringField('Артикул товара')
 	submit = SubmitField('Сохранить')

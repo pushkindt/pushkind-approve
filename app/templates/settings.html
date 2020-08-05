@@ -3,6 +3,7 @@
 {% block content %}
 {% if current_user.role.name == "admin" %}
 	<div class="container border bg-light my-1 py-2">
+		<h6 class="text-secondary text-right">Настройки API</h6>
 		<div class = "row">
 			<div class="col">
 				{% set errorsList = ecwid_form.partners_key.errors + ecwid_form.client_id.errors + ecwid_form.client_secret.errors + ecwid_form.store_id.errors %}
@@ -20,25 +21,25 @@
 			<div class="form-group row">
 				{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
 				<div class="col-md-10">
-					{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '') }}
+					{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '', value = current_user.ecwid.partners_key) }}
 				</div>
 			</div>
 			<div class="form-group row">
 				{{ ecwid_form.client_id.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
-					{{ ecwid_form.client_id(class_ = 'form-control') }}
+					{{ ecwid_form.client_id(class_ = 'form-control', value = current_user.ecwid.client_id) }}
 				</div>
 			</div>
 			<div class="form-group row">
 				{{ ecwid_form.client_secret.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
-					{{ ecwid_form.client_secret(class_ = 'form-control') }}
+					{{ ecwid_form.client_secret(class_ = 'form-control', value = current_user.ecwid.client_secret) }}
 				</div>
 			</div>
 			<div class="form-group row">
 				{{ ecwid_form.store_id.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
-					{{  ecwid_form.store_id(class_ = 'form-control') }}
+					{{  ecwid_form.store_id(class_ = 'form-control', value = current_user.ecwid.store_id) }}
 				</div>
 			</div>
 			<div class="form-group row">
@@ -49,9 +50,10 @@
 		</form>
 	</div>
 	<div class="container border bg-light my-1 py-2">
+		<h6 class="text-secondary text-right">Пользователи</h6>
 		<div class = "row">
 			<div class="col">
-				{% set errorsList = role_form.user_id.errors + role_form.role.errors %}
+				{% set errorsList = role_form.user_id.errors + role_form.role.errors + role_form.about_user.full_name.errors + role_form.about_user.phone.errors + role_form.about_user.location.errors %}
 				{% if errorsList|length > 0 %}
 					<div class="alert alert-danger" role="alert">
 						{% for error in  errorsList %}
@@ -106,7 +108,7 @@
 	<div class="container border bg-light my-1 py-2">
 		<div class = "row">
 			<div class="col">
-				{% set errorsList = user_form.phone.errors + user_form.name.errors %}
+				{% set errorsList = user_form.about_user.full_name.errors + user_form.about_user.phone.errors + user_form.about_user.location.errors %}
 				{% if errorsList|length > 0 %}
 					<div class="alert alert-danger" role="alert">
 						{% for error in  errorsList %}
@@ -121,19 +123,19 @@
 			<div class="form-group row">
 				{{ user_form.about_user.full_name.label(class_ = "col-md-2 col-form-label") }}
 				<div class="col-md-10">
-					{{ user_form.about_user.full_name(class_ = 'form-control', autofocus = '') }}
+					{{ user_form.about_user.full_name(class_ = 'form-control', autofocus = '', value = current_user.name) }}
 				</div>
 			</div>
 			<div class="form-group row">
 				{{ user_form.about_user.phone.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
-					{{ user_form.about_user.phone(class_ = 'form-control') }}
+					{{ user_form.about_user.phone(class_ = 'form-control', value = current_user.phone) }}
 				</div>
 			</div>
 			<div class="form-group row">
 				{{ user_form.about_user.location.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
-					{{ user_form.about_user.location(class_ = 'form-control') }}
+					{{ user_form.about_user.location(class_ = 'form-control', value = current_user.location) }}
 				</div>
 			</div>
 			<div class="form-group row">
@@ -145,24 +147,19 @@
 	</div>
 {% endif %}
 
-
 {% endblock %}
 
 {% block scripts %}
 
 <script>
-	{% if current_user.role.name == "admin" %}
-	
+	$(document).ready(function(){
+		//Scripts
+		{% if current_user.role.name == "admin" %}
 			var users = [
 						{% for user in users %}
 							{{ user|safe }},
 						{% endfor %}
 						];
-	{% endif %}
-	$(document).ready(function(){
-		//Scripts
-		{% if current_user.role.name == "admin" %}
-		
 			$("#user_id").change(function(){
 				var user_id = Number($(this).val());
 				
