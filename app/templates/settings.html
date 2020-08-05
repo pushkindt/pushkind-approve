@@ -70,21 +70,21 @@
 				</div>
 			</div>
 			<div class="form-group row">
-				{{ role_form.name.label(class_ = "col-md-2 col-form-label") }}
+				{{ role_form.about_user.full_name.label(class_ = "col-md-2 col-form-label") }}
 				<div class="col-md-10">
-					{{ role_form.name(class_ = 'form-control', autofocus = '') }}
+					{{ role_form.about_user.full_name(class_ = 'form-control', autofocus = '') }}
 				</div>
 			</div>
 			<div class="form-group row">
-				{{ role_form.phone.label(class_ = "col-md-2 col-form-label") }} 
+				{{ role_form.about_user.phone.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
-					{{ role_form.phone(class_ = 'form-control') }}
+					{{ role_form.about_user.phone(class_ = 'form-control') }}
 				</div>
 			</div>
 			<div class="form-group row">
-				{{ role_form.location.label(class_ = "col-md-2 col-form-label") }} 
+				{{ role_form.about_user.location.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
-					{{ role_form.location(class_ = 'form-control') }}
+					{{ role_form.about_user.location(class_ = 'form-control') }}
 				</div>
 			</div>
 			<div class="form-group row">
@@ -119,21 +119,21 @@
 		<form action="" method="post">
 			{{ user_form.csrf_token }}
 			<div class="form-group row">
-				{{ user_form.name.label(class_ = "col-md-2 col-form-label") }}
+				{{ user_form.about_user.full_name.label(class_ = "col-md-2 col-form-label") }}
 				<div class="col-md-10">
-					{{ user_form.name(class_ = 'form-control', autofocus = '') }}
+					{{ user_form.about_user.full_name(class_ = 'form-control', autofocus = '') }}
 				</div>
 			</div>
 			<div class="form-group row">
-				{{ user_form.phone.label(class_ = "col-md-2 col-form-label") }} 
+				{{ user_form.about_user.phone.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
-					{{ user_form.phone(class_ = 'form-control') }}
+					{{ user_form.about_user.phone(class_ = 'form-control') }}
 				</div>
 			</div>
 			<div class="form-group row">
-				{{ user_form.location.label(class_ = "col-md-2 col-form-label") }} 
+				{{ user_form.about_user.location.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
-					{{ user_form.location(class_ = 'form-control') }}
+					{{ user_form.about_user.location(class_ = 'form-control') }}
 				</div>
 			</div>
 			<div class="form-group row">
@@ -168,9 +168,9 @@
 				
 				users.forEach(function(user){
 					if (user['id'] == user_id){
-						$('#phone').val(user['phone']);
-						$('#location').val(user['location']);
-						$('#name').val(user['name']);
+						$('#about_user-phone').val(user['phone']);
+						$('#about_user-location').val(user['location']);
+						$('#about_user-full_name').val(user['name']);
 						$('#role').val(user['role_id']);
 					}
 				});

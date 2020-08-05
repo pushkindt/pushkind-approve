@@ -136,9 +136,9 @@ def SaveSettings():
 			if user:
 				user.ecwid_id = current_user.ecwid_id
 				user.role = UserRoles(role_form.role.data)
-				user.phone = role_form.phone.data.strip()
-				user.name = role_form.name.data.strip()
-				user.location = role_form.location.data.strip()
+				user.phone = role_form.about_user.phone.data.strip()
+				user.name = role_form.about_user.full_name.data.strip()
+				user.location = role_form.about_user.location.data.strip()
 				db.session.commit()
 				flash('Данные успешно сохранены.')
 			else:
@@ -146,9 +146,9 @@ def SaveSettings():
 	else:
 		user_form = UserSettingsForm()
 		if user_form.validate_on_submit() and user_form.submit3.data:
-			current_user.phone = user_form.phone.data.strip()
-			current_user.name = user_form.name.data.strip()
-			current_user.location = user_form.location.data.strip()
+			user.phone = role_form.about_user.phone.data.strip()
+			user.name = role_form.about_user.full_name.data.strip()
+			user.location = role_form.about_user.location.data.strip()
 			db.session.commit()
 			flash('Данные успешно сохранены.')
 	return redirect(url_for('main.ShowSettings'))
