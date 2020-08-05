@@ -21,6 +21,9 @@
 			<div class="col overflow-hidden">
 				Инициатор
 			</div>
+			<div class="col overflow-hidden">
+				Сумма
+			</div>
 			{% if current_user.role.name == 'approver' %}
 				<div class="col overflow-hidden">
 					Согласование
@@ -48,7 +51,7 @@
 			<div class="col overflow-hidden">
 				Изображение
 			</div>
-			{% if current_user.role.name != 'initiative' %}
+			{% if current_user.role.name in ['validator','approver'] %}
 				<div class="col">
 					Отклонить
 				</div>
@@ -107,35 +110,36 @@
 			{% endfor %}
 		</div>
 	{% endif %}
-	<div class="container border bg-light my-1 py-2">
-		<div class = "row my-1">
-			<div class="col">
-				{% set errorsList = comment_form.comment.errors %}
-				{% if errorsList|length > 0 %}
-					<div class="alert alert-danger" role="alert">
-						{% for error in  errorsList %}
-							{{ error }}<br>
-						{% endfor %}
-					</div>
-				{% endif %}
-			</div>
-		</div>
-		<form action="{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}" method="post">
-			{{ comment_form.csrf_token }}
-			<div class="form-group row">
-				{{ comment_form.comment.label(class_ = "col-md-2 col-form-label") }}
-				<div class="col-md-10">
-					{{ comment_form.comment(class_ = 'form-control', autofocus = '') }}
-				</div>
-			</div>
-			<div class="form-group row">
+	{% if current_user.role.name in ['validator','approver','initiative'] %}
+		<div class="container border bg-light my-1 py-2">
+			<div class = "row my-1">
 				<div class="col">
-					{{ comment_form.submit(class_ = 'btn btn-primary mb-1') }}
+					{% set errorsList = comment_form.comment.errors %}
+					{% if errorsList|length > 0 %}
+						<div class="alert alert-danger" role="alert">
+							{% for error in  errorsList %}
+								{{ error }}<br>
+							{% endfor %}
+						</div>
+					{% endif %}
 				</div>
 			</div>
-		</form>
-	</div>	
-
+			<form action="{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}" method="post">
+				{{ comment_form.csrf_token }}
+				<div class="form-group row">
+					{{ comment_form.comment.label(class_ = "col-md-2 col-form-label") }}
+					<div class="col-md-10">
+						{{ comment_form.comment(class_ = 'form-control', autofocus = '') }}
+					</div>
+				</div>
+				<div class="form-group row">
+					<div class="col">
+						{{ comment_form.submit(class_ = 'btn btn-primary mb-1') }}
+					</div>
+				</div>
+			</form>
+		</div>	
+	{% endif %}
 {% endblock %}
 
 {% block scripts %}

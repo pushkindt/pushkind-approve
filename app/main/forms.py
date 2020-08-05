@@ -20,6 +20,9 @@ class UserRolesForm(FlaskForm):
 							(int(UserRoles.approver), str(UserRoles.approver)),
 							(int(UserRoles.admin), str(UserRoles.admin)),
 						])
+	name  = StringField('Имя', validators = [DataRequired()])
+	phone = StringField('Телефон', validators = [DataRequired()])
+	location = StringField('Расположение', validators = [DataRequired()])
 	submit2 = SubmitField('Сохранить')
 	
 class UserSettingsForm(FlaskForm):

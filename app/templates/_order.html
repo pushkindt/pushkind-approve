@@ -1,5 +1,5 @@
-<div class = "container border bg-light  mb-2">
-	<div class="row mb-2">
+<div class = "container border bg-light  my-1 ecwidOrder" id="order{{ order['orderNumber'] }}">
+	<div class="row my-1">
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Номер: </span>
 			{{ order['orderNumber'] }}
@@ -11,6 +11,10 @@
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Инициатор: </span>
 			{{ order['orderComments'] }}
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Сумма: </span>
+			{{ order['total'] }}
 		</div>
 		{% if approval_form %}
 			{% if current_user.role.name == 'approver' %}
@@ -33,15 +37,14 @@
 		{% else %}
 			<div class="col-sm overflow-hidden">
 				<span class="d-sm-none font-weight-bold">Согласование: </span>
-
 				{% if order['approval'] == 'approved' %}
-					<a role="button" class="btn btn-success my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></a>
+					<button class="btn btn-success my-1"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></button>
 				{% elif order['approval'] == 'partly_approved' %}
-					<a role="button" class="btn btn-info my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></a>
+					<button class="btn btn-info my-1"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></button>
 				{% elif order['approval'] == 'not_approved' %}
-					<a role="button" class="btn btn-danger my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></a>
+					<button class="btn btn-danger my-1"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></button>
 				{% else %}
-					<a role="button" class="btn btn-secondary my-1" href="{{ url_for('main.ShowOrder', order_id = order['orderNumber']) }}"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></a>
+					<button class="btn btn-secondary my-1"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></button>
 				{% endif %}
 				
 			</div>	

@@ -136,6 +136,9 @@ def SaveSettings():
 			if user:
 				user.ecwid_id = current_user.ecwid_id
 				user.role = UserRoles(role_form.role.data)
+				user.phone = role_form.phone.data.strip()
+				user.name = role_form.name.data.strip()
+				user.location = role_form.location.data.strip()
 				db.session.commit()
 				flash('Данные успешно сохранены.')
 			else:
@@ -161,8 +164,8 @@ def ShowSettingsAdmin():
 						store_id = current_user.ecwid.store_id)
 	role_form = UserRolesForm()
 	users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
-	role_form.user_id.choices = [(u.id, '{} ({})'.format(u.email, str(u.role))) for u in users if u.id != current_user.id]
-	return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form)
+	role_form.user_id.choices = [(u.id, u.email) for u in users if u.id != current_user.id]
+	return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users)
 	
 def ShowSettingsUser():
 	user_form = UserSettingsForm(name = current_user.name, phone = current_user.phone, location = current_user.location)
@@ -213,6 +216,8 @@ def ShowOrder(order_id):
 @bp.route('/comment/<int:order_id>', methods=['POST'])
 @login_required
 def SaveComment(order_id):
+	if current_user.role not in [UserRoles.validator, UserRoles.approver, UserRoles.initiative]:
+		return render_template('errors/403.html'),403
 	form = OrderCommentsForm()
 	if form.validate_on_submit():
 		comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
@@ -231,7 +236,7 @@ def SaveComment(order_id):
 @bp.route('/approval/<int:order_id>', methods=['POST'])
 @login_required
 def SaveApproval(order_id):
-	if current_user.role in [UserRoles.default, UserRoles.initiative]:
+	if current_user.role not in [UserRoles.validator, UserRoles.approver]:
 		return render_template('errors/403.html'),403
 	form = OrderApprovalForm()
 	if form.validate_on_submit():

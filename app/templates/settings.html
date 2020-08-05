@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% if ecwid_form %}
+{% if current_user.role.name == "admin" %}
 	<div class="container border bg-light my-1 py-2">
 		<div class = "row">
 			<div class="col">
@@ -48,9 +48,6 @@
 			</div>
 		</form>
 	</div>
-{% endif %}
-
-{% if role_form %}
 	<div class="container border bg-light my-1 py-2">
 		<div class = "row">
 			<div class="col">
@@ -73,6 +70,24 @@
 				</div>
 			</div>
 			<div class="form-group row">
+				{{ role_form.name.label(class_ = "col-md-2 col-form-label") }}
+				<div class="col-md-10">
+					{{ role_form.name(class_ = 'form-control', autofocus = '') }}
+				</div>
+			</div>
+			<div class="form-group row">
+				{{ role_form.phone.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ role_form.phone(class_ = 'form-control') }}
+				</div>
+			</div>
+			<div class="form-group row">
+				{{ role_form.location.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ role_form.location(class_ = 'form-control') }}
+				</div>
+			</div>
+			<div class="form-group row">
 				{{ role_form.role.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
 					{{ role_form.role(class_ = 'form-control') }}
@@ -87,7 +102,7 @@
 	</div>
 {% endif %}
 
-{% if user_form %}
+{% if current_user.role.name in ['initiative', 'validator', 'approver'] %}
 	<div class="container border bg-light my-1 py-2">
 		<div class = "row">
 			<div class="col">
@@ -136,8 +151,33 @@
 {% block scripts %}
 
 <script>
+	{% if current_user.role.name == "admin" %}
+	
+			var users = [
+						{% for user in users %}
+							{{ user|safe }},
+						{% endfor %}
+						];
+	{% endif %}
 	$(document).ready(function(){
 		//Scripts
+		{% if current_user.role.name == "admin" %}
+		
+			$("#user_id").change(function(){
+				var user_id = Number($(this).val());
+				
+				users.forEach(function(user){
+					if (user['id'] == user_id){
+						$('#phone').val(user['phone']);
+						$('#location').val(user['location']);
+						$('#name').val(user['name']);
+						$('#role').val(user['role_id']);
+					}
+				});
+				
+			});
+			$("#user_id").change();
+		{% endif %}
 	});
 </script>
 {%endblock %}

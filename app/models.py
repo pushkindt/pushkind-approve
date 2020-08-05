@@ -5,6 +5,7 @@ from app import login
 from hashlib import md5
 from app.ecwid import EcwidAPI
 import enum
+import json
 
 class UserRoles(enum.IntEnum):
 	default = 0
@@ -36,7 +37,7 @@ class User(UserMixin, db.Model):
 	ecwid = db.relationship('Ecwid')
 	
 	def __repr__(self):
-		return '<User {} role: {} ecwid: {}>'.format(self.email, self.role, self.ecwid_id)
+		return json.dumps(self.to_dict())
 	
 	def SetPassword(self, password):
 		self.password = generate_password_hash(password)
@@ -49,7 +50,7 @@ class User(UserMixin, db.Model):
 		return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(digest, size)
 		
 	def to_dict(self):
-		data = {'id':self.id, 'email':self.email}
+		data = {'id':self.id, 'email':self.email, 'phone':self.phone, 'location':self.location, 'role_id':int(self.role), 'name':self.name}
 		return data
 	
 class OrderApproval(db.Model):

@@ -1,4 +1,4 @@
-<div class="row mb-2 border-bottom">
+<div class="row my-1 border-bottom">
 	<div class="col-sm overflow-hidden">
 		<span class="d-sm-none font-weight-bold">Название:</span>
 		{{ product['name'] }}
@@ -15,12 +15,12 @@
 		<span class="d-sm-none font-weight-bold">Количество:</span>
 		{{ product['quantity'] }}
 	</div>
-	<div class="col-sm mb-2 overflow-hidden">
+	<div class="col-sm my-1 overflow-hidden">
 		{% if product['imageUrl'] != None %}
 			<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
 		{% endif %}
 	</div>
-	{% if current_user.role.name != 'initiative' %}
+	{% if current_user.role.name in ['validator','approver'] %}
 		<div class="col-sm overflow-hidden">
 			<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
 				{{ approval_form.csrf_token }}
