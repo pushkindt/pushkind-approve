@@ -136,7 +136,6 @@ def ShowSettings():
 		users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
 		role_form.user_id.choices = [(u.id, u.email) for u in users if u.id != current_user.id]
 		if ecwid_form.validate_on_submit() and ecwid_form.submit1.data:
-			role_form = UserRolesForm()
 			current_user.ecwid.partners_key = ecwid_form.partners_key.data
 			current_user.ecwid.client_id = ecwid_form.client_id.data
 			current_user.ecwid.client_secret = ecwid_form.client_secret.data
@@ -193,15 +192,19 @@ def ShowOrder(order_id):
 		if order['email'].lower() != current_user.email:
 				flash('Эта заявка не ваша.')
 				return redirect(url_for('main.ShowIndex'))
+		order['approval'] = GetOrderStatus(order['orderNumber'])
+	elif current_user.role in [UserRoles.validator, UserRoles.approver]:
+		for product in order['items']:
+			product['approval'] = GetProductStatus(order_id, product['productId'], current_user.id)
+		if current_user.role == UserRoles.approver:
+			order['approval'] = not GetProductStatus(order_id, None, current_user.id)
+		
+	order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
 	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 	approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-	comment_form = OrderCommentsForm()
-	for product in order['items']:
-		product['approval'] = GetProductStatus(order_id, product['productId'], current_user.id)
-	order['approval'] = not GetProductStatus(order_id, None, current_user.id)
-	order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
 	approval_form = OrderApprovalForm()
 	quantity_form = ChangeQuantityForm()
+	comment_form = OrderCommentsForm()
 	return render_template('approve.html',
 							order = order,
 							comments = comments,
