@@ -136,6 +136,7 @@ def ShowSettings():
 		users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
 		role_form.user_id.choices = [(u.id, u.email) for u in users if u.id != current_user.id]
 		if ecwid_form.validate_on_submit() and ecwid_form.submit1.data:
+			role_form = UserRolesForm()
 			current_user.ecwid.partners_key = ecwid_form.partners_key.data
 			current_user.ecwid.client_id = ecwid_form.client_id.data
 			current_user.ecwid.client_secret = ecwid_form.client_secret.data
@@ -147,6 +148,7 @@ def ShowSettings():
 			except Exception as e:
 				flash('Ошибка GetStoreToken: {}'.format(e))
 		elif role_form.validate_on_submit() and role_form.submit2.data:
+			ecwid_form = EcwidSettingsForm()
 			user = User.query.filter(User.id == role_form.user_id.data).first()
 			if user:
 				user.ecwid_id = current_user.ecwid_id
