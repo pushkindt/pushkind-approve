@@ -6,16 +6,23 @@
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Дата: </span>
-			{{ order['createDate'] }}
+			{{ order['createDate'].strftime('%Y-%m-%d %H:%M:%S') }}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Инициатор: </span>
 			{{ order['orderComments'] }}
 		</div>
-		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Сумма: </span>
-			{{ order['total'] }}
-		</div>
+		{% if approval_form %}
+			<div class="col-sm overflow-hidden">
+				<span class="d-sm-none font-weight-bold">Сумма: </span>
+				<span id="orderTotal">{{ '{:,.2f}'.format(order['total']) }}</span>
+			</div>
+		{% else %}
+			<div class="col-sm overflow-hidden">
+				<span class="d-sm-none font-weight-bold">Сумма: </span>
+				{{ '{:,.2f}'.format(order['total']) }}
+			</div>
+		{% endif %}
 		{% if approval_form %}
 			{% if current_user.role.name == 'approver' %}
 				<div class="col-sm overflow-hidden">

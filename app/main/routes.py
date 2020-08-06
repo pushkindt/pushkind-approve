@@ -2,17 +2,39 @@ from app import db
 from flask_login import current_user, login_required
 from app.main import bp
 from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval
-from flask import render_template, redirect, url_for, flash, request
-from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, OrderCommentsForm, OrderApprovalForm
+from flask import render_template, redirect, url_for, flash, request, jsonify
+from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm
 from sqlalchemy import or_
 from datetime import datetime, timedelta
-
+from functools import wraps
 
 '''
 ################################################################################
 Index page
 ################################################################################
 '''
+
+def role_required(roles_list):
+	def decorator(function):
+		@wraps(function)
+		def wrapper(*args, **kwargs):
+			if current_user.role not in roles_list:
+				return render_template('errors/403.html'),403
+			else:
+				return function(*args, **kwargs)
+		return wrapper
+	return decorator
+	
+def role_required_ajax(roles_list):
+	def decorator(function):
+		@wraps(function)
+		def wrapper(*args, **kwargs):
+			if current_user.role not in roles_list:
+				return jsonify({'status':False, 'flash':['У вас нет соответствующих полномочий.']})
+			else:
+				return function(*args, **kwargs)
+		return wrapper
+	return decorator
 
 def GetDateTimestamps():
 	now = datetime.now()
@@ -23,7 +45,7 @@ def GetDateTimestamps():
 	return dates
 	
 def GetOrderStatus(order_id):
-	not_approved = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.product_id != None).count() > 0
+	not_approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id != None, User.ecwid_id == current_user.ecwid_id).count() > 0
 	if not_approved:
 		return 'not_approved'
 	approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id == None, User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
@@ -36,11 +58,11 @@ def GetOrderStatus(order_id):
 	
 def GetProductStatus(order_id, product_id, user_id):
 	return OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.product_id == product_id, OrderApproval.user_id == user_id).count() == 0
-		
 
 @bp.route('/')
 @bp.route('/index/')
 @login_required
+@role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
 def ShowIndex():
 	dates = GetDateTimestamps()
 	created_from = request.args.get('created_from', default = None, type = int)
@@ -53,8 +75,6 @@ def ShowIndex():
 		created_from = int(created_from.timestamp())
 	except:
 		created_from = None
-	if current_user.role == UserRoles.default:
-		return render_template('errors/403.html'),403
 	orders = []
 	if current_user.ecwid:
 		try:
@@ -78,6 +98,7 @@ def ShowIndex():
 			initiative = User.query.filter(User.email == order['email'].lower()).first()
 			if not initiative:
 				continue
+			order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
 			order['approval'] = GetOrderStatus(order['orderNumber'])
 			if order_approval and order['approval'] != order_approval:
 				continue
@@ -103,10 +124,9 @@ Settings page
 
 @bp.route('/settings/', methods=['GET', 'POST'])
 @login_required
+@role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
 def ShowSettings():
-	if current_user.role == UserRoles.default:
-		return render_template('errors/403.html'),403
-	elif current_user.role == UserRoles.admin:
+	if current_user.role == UserRoles.admin:
 		if not current_user.ecwid:
 			ecwid = Ecwid()
 			current_user.ecwid = ecwid
@@ -157,9 +177,8 @@ Approve page
 
 @bp.route('/order/<int:order_id>')
 @login_required
+@role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
 def ShowOrder(order_id):
-	if current_user.role == UserRoles.default:
-		return render_template('errors/403.html'),403
 	try:
 		json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
 		if not 'items' in json or len(json['items']) == 0:
@@ -173,29 +192,26 @@ def ShowOrder(order_id):
 				flash('Эта заявка не ваша.')
 				return redirect(url_for('main.ShowIndex'))
 	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-	comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
 	approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-	current_approvals = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).all()
-	if comment:
-		comment_form = OrderCommentsForm(comment = comment.comment)
-	else:
-		comment_form = OrderCommentsForm()
+	comment_form = OrderCommentsForm()
 	for product in order['items']:
 		product['approval'] = GetProductStatus(order_id, product['productId'], current_user.id)
 	order['approval'] = not GetProductStatus(order_id, None, current_user.id)
+	order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
 	approval_form = OrderApprovalForm()
+	quantity_form = ChangeQuantityForm()
 	return render_template('approve.html',
 							order = order,
 							comments = comments,
 							approvals = approvals,
 							comment_form = comment_form,
-							approval_form = approval_form)
+							approval_form = approval_form,
+							quantity_form = quantity_form)
 	
 @bp.route('/comment/<int:order_id>', methods=['POST'])
 @login_required
+@role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver])
 def SaveComment(order_id):
-	if current_user.role not in [UserRoles.validator, UserRoles.approver, UserRoles.initiative]:
-		return render_template('errors/403.html'),403
 	form = OrderCommentsForm()
 	if form.validate_on_submit():
 		comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
@@ -213,9 +229,8 @@ def SaveComment(order_id):
 	
 @bp.route('/approval/<int:order_id>', methods=['POST'])
 @login_required
+@role_required([UserRoles.validator, UserRoles.approver])
 def SaveApproval(order_id):
-	if current_user.role not in [UserRoles.validator, UserRoles.approver]:
-		return render_template('errors/403.html'),403
 	form = OrderApprovalForm()
 	if form.validate_on_submit():
 		order_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == None).first()
@@ -240,6 +255,7 @@ def SaveApproval(order_id):
 	
 @bp.route('/delete/<int:order_id>')
 @login_required
+@role_required([UserRoles.initiative])
 def DeleteOrder(order_id):
 	try:
 		json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
@@ -248,10 +264,10 @@ def DeleteOrder(order_id):
 		order = json['items'][0]
 		if current_user.email != order['email']:
 			raise Exception('Вы не являетесь владельцем этой заявки.')
-		OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).delete()
-		OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).delete()
 		json = current_user.ecwid.EcwidDeleteStoreOrder(order_id = order_id)
-		if json.get('deleteCount', default = 0, type = int) == 1:
+		if json.get('deleteCount', 0) == 1:
+			OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).delete()
+			OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).delete()
 			flash('Заявка успешно удалена')
 		else:
 			raise Exception('Не удалось удалить заявку.')
@@ -259,3 +275,38 @@ def DeleteOrder(order_id):
 		flash('Ошибка API: {}'.format(e))
 	return redirect(url_for('main.ShowIndex'))
 	
+@bp.route('/quantity/<int:order_id>', methods=['POST'])
+@login_required
+@role_required_ajax([UserRoles.initiative])
+def SaveQuantity(order_id):
+	flash_messages = list()
+	status = False
+	new_total = ''
+	form = ChangeQuantityForm()
+	if form.validate_on_submit():
+		try:
+			json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
+			if not 'items' in json or len(json['items']) == 0:
+				raise Exception('Такой заявки не существует.')
+			order = json['items'][0]
+			for product in order['items']:
+				if form.product_id.data == product['productId']:
+					order['total'] += (form.product_quantity.data - product['quantity'])*product['price']
+					if order['total'] < 0:
+						order['total'] = 0
+					new_total = '{:,.2f}'.format(order['total'])
+					product['quantity'] = form.product_quantity.data
+					break
+			json = current_user.ecwid.EcwidUpdateStoreOrder(order_id, order)
+			if json.get('updateCount', 0) == 1:
+				flash_messages.append('Количество {} было изменено в заявке {}'.format(product['sku'], order_id))
+				status = True
+			else:
+				raise Exception('Не удалось изменить заявку.')
+		except Exception as e:
+			flash_messages.append('Ошибка API: {}'.format(e))
+			flash_messages.append('Не удалось изменить количество.')
+	else:
+		for error in form.product_id.errors + form.product_quantity.errors:
+			flash_messages.append(error)
+	return jsonify({'status':status, 'flash':flash_messages, 'total':new_total})

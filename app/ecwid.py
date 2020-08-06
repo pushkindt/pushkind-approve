@@ -1,5 +1,5 @@
 from app import db
-from requests import post, get, delete
+from requests import post, get, delete, put
 from urllib.parse import urljoin
 
 _REST_API_URL = 'https://app.ecwid.com/api/v3/{store_id}/{endpoint}'
@@ -12,7 +12,7 @@ class EcwidAPI():
 	client_secret = db.Column(db.String(128))
 	store_id = db.Column(db.Integer, unique = True)
 	token = db.Column(db.String(128))
-		
+
 	def EcwidGetStoreToken(self):
 		'''Gets store token using REST API, returns JSON'''
 		payload = {'client_id':self.client_id, 'client_secret':self.client_secret, 'grant_type':'authorization_code'}
@@ -24,7 +24,7 @@ class EcwidAPI():
 			raise Exception('Не удалось получить доступ к магазину.')
 		self.token = json['access_token']
 		return json
-			
+
 	def EcwidGetStoreEndpoint(self, endpoint, **kwargs):
 		'''Gets store's endpoint using REST API, returns JSON'''
 		params = {'token':self.token, **kwargs}
@@ -45,11 +45,11 @@ class EcwidAPI():
 			result['total'] = received
 			result['count'] = received
 		return result
-		
+
 	def EcwidGetStoreOrders(self, **kwargs):
 		'''Gets store's orders using REST API, returns JSON'''
 		return self.EcwidGetStoreEndpoint('orders', **kwargs)
-		
+
 	def _EcwidGetErrorMessage(self, error):
 		if error == 400:
 			message = 'Неверные параметры запроса.'
@@ -64,11 +64,19 @@ class EcwidAPI():
 		elif error != 200:
 			message = 'Неизвестная ошибка API.'
 		return '{}: {}'.format(error, message)
-		
+
 	def EcwidDeleteStoreOrder(self, order_id):
 		'''Deletes store's product using REST API, returns JSON'''
 		params = {'token':self.token}
 		response = delete(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}'.format(order_id)), params = params)
+		if response.status_code != 200:
+			raise Exception(self._EcwidGetErrorMessage(response.status_code))
+		return response.json()
+
+	def EcwidUpdateStoreOrder(self, order_id, order):
+		'''Deletes store's product using REST API, returns JSON'''
+		params = {'token':self.token}
+		response = put(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}'.format(order_id)), params = params, json = order)
 		if response.status_code != 200:
 			raise Exception(self._EcwidGetErrorMessage(response.status_code))
 		return response.json()	

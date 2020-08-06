@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FormField, Form
-from wtforms.validators import DataRequired, Length
+from wtforms.validators import DataRequired, Length, ValidationError
 from app.models import UserRoles
 
 class EcwidSettingsForm(FlaskForm):
@@ -33,10 +33,18 @@ class UserSettingsForm(FlaskForm):
 	submit3 = SubmitField('Сохранить')
 	
 class OrderCommentsForm(FlaskForm):
-	comment  = TextAreaField('Комментарий', [Length(max = 128)])
+	comment  = TextAreaField('Комментарий', [Length(max = 120, message = 'Слишком длинный комментарий')])
 	submit = SubmitField('Сохранить')
 	
 class OrderApprovalForm(FlaskForm):
-	product_id    = IntegerField('Идентификатор товара')
-	product_sku   = StringField('Артикул товара')
+	product_id    = IntegerField('Идентификатор товара', render_kw={'hidden': ''})
+	product_sku   = StringField('Артикул товара', render_kw={'hidden': ''})
 	submit = SubmitField('Сохранить')
+	
+class ChangeQuantityForm(FlaskForm):
+	product_id    = IntegerField('Идентификатор товара', [DataRequired(message = 'ID товара - обязательное поле')], render_kw={'hidden': ''})
+	product_quantity   = IntegerField('Количество товара', [DataRequired(message = 'Невозможное значение количества')], render_kw={'type': 'number', 'step' : 1, 'min' : 0})
+	
+	def validate_product_quantity(self, product_quantity):
+		if product_quantity.data < 0:
+			raise ValidationError('Количество не может быть меньше нуля.')
