@@ -86,7 +86,7 @@
 				var flaskFlashes = $('#flaskFlashes');
 				flaskFlashes.empty();
 				flaskFlashes.addClass('d-none');
-				var ajaxAlert = $('#ajaxAlert').clone();
+				var ajaxAlert = $('#ajaxAlertTemplate').clone();
 				ajaxAlert.removeAttr('id');
 				if (data.status == true)
 				{
@@ -104,9 +104,10 @@
 		</script>
 		{% block scripts %}{% endblock %}
 		<div class="d-none" id="templates">
-			<div class="alert alert-fixed" role="alert" id = "ajaxAlert">
+			<div class="alert alert-fixed" role="alert" id="ajaxAlertTemplate">
 				<button type="button" class="close" data-dismiss="alert">&times;</button>
 			</div>
+			{% block templates %}{% endblock %}
 		</div>
 	</body>
 </html>

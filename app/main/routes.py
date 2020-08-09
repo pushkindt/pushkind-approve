@@ -215,9 +215,12 @@ def ShowOrder(order_id):
 	
 @bp.route('/comment/<int:order_id>', methods=['POST'])
 @login_required
-@role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver])
+@role_required_ajax([UserRoles.initiative, UserRoles.validator, UserRoles.approver])
 def SaveComment(order_id):
+	flash_messages = ['Не удалось изменить комментарий.']
+	status = False
 	form = OrderCommentsForm()
+	stripped = ''
 	if form.validate_on_submit():
 		comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
 		stripped = form.comment.data.strip() if form.comment.data else ''
@@ -229,8 +232,10 @@ def SaveComment(order_id):
 				comment = OrderComment(user_id = current_user.id, order_id = order_id)
 				db.session.add(comment)
 			comment.comment = stripped
+		status = True
+		flash_messages = []
 		db.session.commit()
-	return redirect(url_for('main.ShowOrder', order_id = order_id))
+	return jsonify({'status':status, 'flash':flash_messages, 'comment':stripped})
 	
 @bp.route('/approval/<int:order_id>', methods=['POST'])
 @login_required

@@ -52,6 +52,9 @@
 				Количество
 			</div>
 			<div class="col overflow-hidden">
+				Единицы
+			</div>
+			<div class="col overflow-hidden">
 				Изображение
 			</div>
 			{% if current_user.role.name in ['validator','approver'] %}
@@ -93,10 +96,10 @@
 		</div>
 	{% endif %}
 	{% if comments|length > 0 %}
-		<div class="container border bg-light my-1">
+		<div class="container border bg-light my-1" id="commentSection">
 			<h6 class="text-secondary text-right">Комментарии</h6>
 			{% for comment in comments %}
-				<div class="row border-bottom my-1">
+				<div class="row border-bottom my-1" id="{{'comment{}'.format(comment.user.id)}}">
 					<div class="col-sm font-weight-bold">
 						{% if comment.user.name %}
 							{{ comment.user.name }}
@@ -111,6 +114,10 @@
 					</div>
 				</div>
 			{% endfor %}
+		</div>
+	{% else %}
+		<div class="container border bg-light my-1 d-none" id="commentSection">
+			<h6 class="text-secondary text-right">Комментарии</h6>
 		</div>
 	{% endif %}
 	{% if current_user.role.name in ['validator','approver','initiative'] %}
@@ -127,7 +134,7 @@
 					</div>
 				</div>
 			{% endif %}
-			<form action="{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}" method="post">
+			<form action="{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}" method="post" id="changeCommentForm">
 				{{ comment_form.csrf_token }}
 				<div class="form-group row">
 					{{ comment_form.comment.label(class_ = "col-md-2 col-form-label") }}
@@ -145,6 +152,17 @@
 	{% endif %}
 {% endblock %}
 
+{% block templates %}
+	<div class="row border-bottom my-1" id="commentTemplate">
+		<div class="col-sm font-weight-bold commentAuthor">
+		</div>
+		<div class="col-sm">
+			<div class="alert alert-primary" role="alert">
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
 {% block scripts %}
 
 <script>
@@ -154,6 +172,33 @@
 		}
 		ShowAjaxFlashes(data);
 	}
+	function UpdateOrderComment(data){
+		if (data.status == true){
+			var authorComment = $("#{{'comment{}'.format(current_user.id)}}");
+			var commentSection = $("#commentSection");
+			if (data.comment.length > 0){
+				commentSection.removeClass('d-none');
+				if (authorComment.length == 0){
+					authorComment = $("#commentTemplate").clone();
+					authorComment.attr("id", "{{'comment{}'.format(current_user.id)}}");
+					var author = authorComment.find('.commentAuthor');
+					{% if current_user.name %}
+						author.text("{{ current_user.name }}");
+					{% else %}
+						author.text("{{ current_user.email }}");
+					{% endif %}
+					commentSection.append(authorComment);
+				}
+				var comment = authorComment.find(".alert");
+				comment.text(data.comment);
+			}else{
+				authorComment.remove();
+				if (commentSection.find(".alert").length == 0)
+					commentSection.addClass("d-none");
+			}
+		}else
+			ShowAjaxFlashes(data);
+	}	
 	$(document).ready(function(){
 		//Scripts
 		var options = {
@@ -172,6 +217,17 @@
 			$(this).parent().submit();
 			$(this).removeClass('form-control');
 			$(this).addClass ('form-control-plaintext')
+		});
+		var options = {
+			success:	UpdateOrderComment,
+			url: "{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}",
+			dataType:	'json',
+			method: 'POST',
+			clearForm: true
+		};
+		$('#changeCommentForm').ajaxForm(options);
+		$('#comment').focusout(function() {
+			$(this).parent().submit();
 		});
 	});
 </script>
