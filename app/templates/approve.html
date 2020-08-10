@@ -9,7 +9,7 @@
 				<div class="col text-right">
 					<a class="btn btn-danger btn-sm" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">Удалить</a>
 					{% if order['approval'] == 'approved' %}
-						<button class="btn btn-success btn-sm">Отправить</button>
+						<a href="{{ url_for('main.SendInvoice', order_id = order['orderNumber']) }}" class="btn btn-success btn-sm">Отправить</a>
 					{% endif %}
 				</div>
 			</div>

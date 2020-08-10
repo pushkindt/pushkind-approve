@@ -343,3 +343,24 @@ def SaveQuantity(order_id):
 		for error in form.product_id.errors + form.product_quantity.errors:
 			flash_messages.append(error)
 	return jsonify({'status':status, 'flash':flash_messages, 'total':new_total})
+
+	
+@bp.route('/invoice/<int:order_id>')
+@login_required
+@role_required([UserRoles.initiative])
+def SendInvoice(order_id):
+	try:
+		json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
+		if not 'items' in json or len(json['items']) == 0:
+			raise EcwidAPIException('Такой заявки не существует.')
+		order = json['items'][0]
+		if current_user.email != order['email']:
+			raise EcwidAPIException('Вы не являетесь владельцем этой заявки.')
+		approval = GetOrderStatus(order_id)
+		if approval != 'approved':
+			raise('Отправка возможна только для одобренных заявок.')
+		html = current_user.ecwid.EcwidOrderInvoice(order_id)
+		return html
+	except EcwidAPIException as e:
+		flash('Ошибка API: {}'.format(e))
+		return redirect(url_for('main.ShowOrder', order_id = order_id))

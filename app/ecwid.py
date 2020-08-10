@@ -84,4 +84,12 @@ class EcwidAPI():
 		response = put(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}'.format(order_id)), params = params, json = order)
 		if response.status_code != 200:
 			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
-		return response.json()	
+		return response.json()
+		
+	def EcwidOrderInvoice(self, order_id):
+		'''Deletes store's product using REST API, returns JSON'''
+		params = {'token':self.token}
+		response = get(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}/invoice'.format(order_id)), params = params)
+		if response.status_code != 200:
+			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
+		return response.text	
