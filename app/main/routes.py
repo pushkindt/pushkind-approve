@@ -224,10 +224,13 @@ def ShowOrder(order_id):
 			order['approval'] = not GetProductStatus(order_id, None, current_user.id)		
 	order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
 	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+	user_comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
 	approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 	approval_form = OrderApprovalForm()
 	quantity_form = ChangeQuantityForm()
-	comment_form = OrderCommentsForm()
+
+	comment_form = OrderCommentsForm(comment = user_comment.comment if user_comment else None)
+		
 	return render_template('approve.html',
 							order = order,
 							comments = comments,
