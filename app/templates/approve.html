@@ -96,7 +96,7 @@
 		</div>
 	{% endif %}
 	{% if comments|length > 0 %}
-		<div class="container border bg-light my-1" id="commentSection">
+		<div class="container border bg-light my-1" id="commentsSection">
 			<h6 class="text-secondary text-right">Комментарии</h6>
 			{% for comment in comments %}
 				<div class="row border-bottom my-1" id="{{'comment{}'.format(comment.user.id)}}">
@@ -116,7 +116,7 @@
 			{% endfor %}
 		</div>
 	{% else %}
-		<div class="container border bg-light my-1 d-none" id="commentSection">
+		<div class="container border bg-light my-1 d-none" id="commentsSection">
 			<h6 class="text-secondary text-right">Комментарии</h6>
 		</div>
 	{% endif %}
@@ -175,9 +175,9 @@
 	function UpdateOrderComment(data){
 		if (data.status == true){
 			var authorComment = $("#{{'comment{}'.format(current_user.id)}}");
-			var commentSection = $("#commentSection");
+			var commentsSection = $("#commentsSection");
 			if (data.comment.length > 0){
-				commentSection.removeClass('d-none');
+				commentsSection.removeClass('d-none');
 				if (authorComment.length == 0){
 					authorComment = $("#commentTemplate").clone();
 					authorComment.attr("id", "{{'comment{}'.format(current_user.id)}}");
@@ -187,14 +187,14 @@
 					{% else %}
 						author.text("{{ current_user.email }}");
 					{% endif %}
-					commentSection.append(authorComment);
+					commentsSection.append(authorComment);
 				}
 				var comment = authorComment.find(".alert");
 				comment.text(data.comment);
 			}else{
 				authorComment.remove();
-				if (commentSection.find(".alert").length == 0)
-					commentSection.addClass("d-none");
+				if (commentsSection.find(".alert").length == 0)
+					commentsSection.addClass("d-none");
 			}
 		}else
 			ShowAjaxFlashes(data);
@@ -223,7 +223,7 @@
 			url: "{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}",
 			dataType:	'json',
 			method: 'POST',
-			clearForm: true
+			clearForm: false
 		};
 		$('#changeCommentForm').ajaxForm(options);
 		$('#comment').focusout(function() {

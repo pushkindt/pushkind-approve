@@ -7,10 +7,11 @@ from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, O
 from sqlalchemy import or_
 from datetime import datetime, timedelta
 from functools import wraps
+from app.ecwid import EcwidAPIException
 
 '''
 ################################################################################
-Index page
+Utilities
 ################################################################################
 '''
 
@@ -59,6 +60,12 @@ def GetOrderStatus(order_id):
 def GetProductStatus(order_id, product_id, user_id):
 	return OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.product_id == product_id, OrderApproval.user_id == user_id).count() == 0
 
+'''
+################################################################################
+Index page
+################################################################################
+'''
+
 @bp.route('/')
 @bp.route('/index/')
 @login_required
@@ -89,24 +96,25 @@ def ShowIndex():
 			json = current_user.ecwid.EcwidGetStoreOrders(**args)
 			if 'items' in json:
 				orders = json['items']
-		except Exception as e:
+		except EcwidAPIException as e:
 			flash('Ошибка API: {}'.format(e))
 			flash('Возможно неверные настройки?')
 		new_orders = []
 		initiatives = {}
 		for order in orders:
-			initiative = User.query.filter(User.email == order['email'].lower()).first()
-			if not initiative:
-				continue
+			order_email = order['email'].lower()
+			if not order_email in initiatives:
+				initiative = User.query.filter(User.email == order_email).first()
+				if not initiative:
+					continue
+				if initiative.location and initiative.location != '':
+					initiatives[order_email] = initiative.location
+				else:
+					initiatives[order_email] = order['orderComments']
 			order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
 			order['approval'] = GetOrderStatus(order['orderNumber'])
 			if order_approval and order['approval'] != order_approval:
 				continue
-			if not initiative.email in initiatives:
-				if initiative.location and initiative.location != '':
-					initiatives[initiative.email] = initiative.location
-				else:
-					initiatives[initiative.email] = order['orderComments']
 			new_orders.append(order)
 		orders = new_orders
 	else:
@@ -144,8 +152,9 @@ def ShowSettings():
 				current_user.ecwid.EcwidGetStoreToken()
 				db.session.commit()
 				flash('Данные успешно сохранены.')
-			except Exception as e:
-				flash('Ошибка GetStoreToken: {}'.format(e))
+			except EcwidAPIException as e:
+				flash('Ошибка API: {}'.format(e))
+				flash('Возможно неверные настройки?')
 		elif role_form.validate_on_submit() and role_form.submit2.data:
 			ecwid_form = EcwidSettingsForm()
 			user = User.query.filter(User.id == role_form.user_id.data).first()
@@ -183,8 +192,8 @@ def ShowOrder(order_id):
 	try:
 		json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
 		if not 'items' in json or len(json['items']) == 0:
-			raise Exception('Такой заявки не существует.')
-	except Exception as e:
+			raise EcwidAPIException('Такой заявки не существует.')
+	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
 		return redirect(url_for('main.ShowIndex'))
 	order = json['items'][0]
@@ -197,8 +206,7 @@ def ShowOrder(order_id):
 		for product in order['items']:
 			product['approval'] = GetProductStatus(order_id, product['productId'], current_user.id)
 		if current_user.role == UserRoles.approver:
-			order['approval'] = not GetProductStatus(order_id, None, current_user.id)
-		
+			order['approval'] = not GetProductStatus(order_id, None, current_user.id)		
 	order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
 	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 	approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
@@ -270,18 +278,18 @@ def DeleteOrder(order_id):
 	try:
 		json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
 		if not 'items' in json or len(json['items']) == 0:
-			raise Exception('Такой заявки не существует.')
+			raise EcwidAPIException('Такой заявки не существует.')
 		order = json['items'][0]
 		if current_user.email != order['email']:
-			raise Exception('Вы не являетесь владельцем этой заявки.')
+			raise EcwidAPIException('Вы не являетесь владельцем этой заявки.')
 		json = current_user.ecwid.EcwidDeleteStoreOrder(order_id = order_id)
 		if json.get('deleteCount', 0) == 1:
 			OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).delete()
 			OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).delete()
 			flash('Заявка успешно удалена')
 		else:
-			raise Exception('Не удалось удалить заявку.')
-	except Exception as e:
+			raise EcwidAPIException('Не удалось удалить заявку.')
+	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
 	return redirect(url_for('main.ShowIndex'))
 	
@@ -297,7 +305,7 @@ def SaveQuantity(order_id):
 		try:
 			json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
 			if not 'items' in json or len(json['items']) == 0:
-				raise Exception('Такой заявки не существует.')
+				raise EcwidAPIException('Такой заявки не существует.')
 			order = json['items'][0]
 			for product in order['items']:
 				if form.product_id.data == product['productId']:
@@ -312,8 +320,8 @@ def SaveQuantity(order_id):
 				flash_messages.append('Количество {} было изменено в заявке {}'.format(product['sku'], order_id))
 				status = True
 			else:
-				raise Exception('Не удалось изменить заявку.')
-		except Exception as e:
+				raise EcwidAPIException('Не удалось изменить заявку.')
+		except EcwidAPIException as e:
 			flash_messages.append('Ошибка API: {}'.format(e))
 			flash_messages.append('Не удалось изменить количество.')
 	else:
