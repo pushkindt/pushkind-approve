@@ -183,7 +183,7 @@ def ShowSettings():
 @login_required
 @role_required([UserRoles.admin])
 def RemoveUser(user_id):
-	user = User.query.filter(User.id == user_id, User.ecwid_id == current_user.ecwid_id).first()
+	user = User.query.filter(User.id == user_id, or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).first()
 	if not user:
 		flash('Пользователь не найден.')
 		return redirect(url_for('main.ShowSettings'))

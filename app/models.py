@@ -6,6 +6,9 @@ from hashlib import md5
 from app.ecwid import EcwidAPI
 import enum
 import json
+import jwt
+from time import time
+from flask import current_app
 
 class UserRoles(enum.IntEnum):
 	default = 0
@@ -52,6 +55,21 @@ class User(UserMixin, db.Model):
 	def to_dict(self):
 		data = {'id':self.id, 'email':self.email, 'phone':self.phone, 'location':self.location, 'role_id':int(self.role), 'name':self.name}
 		return data
+		
+	def GetPasswordResetToken(self, expires_in=600):
+		return jwt.encode(
+			{'reset_password': self.id, 'exp': time() + expires_in},
+			current_app.config['SECRET_KEY'],
+			algorithm='HS256').decode('utf-8')
+
+	@staticmethod
+	def VerifyPasswordResetToken(token):
+		try:
+			id = jwt.decode(token, current_app.config['SECRET_KEY'],
+							algorithms=['HS256'])['reset_password']
+		except:
+			return
+		return User.query.get(id)
 	
 class OrderApproval(db.Model):
 	id  = db.Column(db.Integer, primary_key = True, nullable=False)

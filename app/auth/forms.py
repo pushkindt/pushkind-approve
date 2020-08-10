@@ -8,7 +8,7 @@ class LoginForm(FlaskForm):
 	email = EmailField('Электронная почта', validators = [DataRequired(), Email()])
 	password = PasswordField('Пароль', validators = [DataRequired()])
 	remember_me = BooleanField('Запомнить меня')
-	submit = SubmitField('Войти')
+	submit = SubmitField('Авторизация')
 	
 class RegistrationForm(FlaskForm):
 	email = EmailField('Электронная почта', validators = [DataRequired(), Email()])
@@ -20,3 +20,12 @@ class RegistrationForm(FlaskForm):
 		user = User.query.filter_by(email=self.email.data).first()
 		if user is not None:
 			raise ValidationError('Этот адрес электронной почты уже занят.')
+			
+class ResetPasswordRequestForm(FlaskForm):
+	email = StringField('Электронная почта', validators=[DataRequired(), Email()])
+	submit = SubmitField('Сбросить')
+	
+class ResetPasswordForm(FlaskForm):
+	password = PasswordField('Пароль', validators = [DataRequired()])
+	password2 = PasswordField('Повторите пароль', validators = [DataRequired(), EqualTo('password', message = 'Пароли не совпадают.')])
+	submit = SubmitField('Сменить')
