@@ -178,7 +178,22 @@ def ShowSettings():
 			db.session.commit()
 			flash('Данные успешно сохранены.')
 		return render_template('settings.html', user_form = user_form)
-		
+
+@bp.route('/remove/<int:user_id>')
+@login_required
+@role_required([UserRoles.admin])
+def RemoveUser(user_id):
+	user = User.query.filter(User.id == user_id, User.ecwid_id == current_user.ecwid_id).first()
+	if not user:
+		flash('Пользователь не найден.')
+		return redirect(url_for('main.ShowSettings'))
+	OrderApproval.query.filter(OrderApproval.user_id == user_id).delete()
+	OrderComment.query.filter(OrderComment.user_id == user_id).delete()
+	db.session.delete(user)
+	db.session.commit()
+	flash('Пользователь успешно удалён.')
+	return redirect(url_for('main.ShowSettings'))
+
 '''
 ################################################################################
 Approve page
