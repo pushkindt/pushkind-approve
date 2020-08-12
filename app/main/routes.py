@@ -112,6 +112,8 @@ def ShowIndex():
 				else:
 					initiatives[order_email] = order_email
 			order['initiative'] = initiatives[order_email]
+			if len(order['orderComments']) > 50:
+				order['orderComments'] = order['orderComments'][:50] + '...'
 			order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
 			order['approval'] = GetOrderStatus(order['orderNumber'])
 			if order_approval and order['approval'] != order_approval:
@@ -209,12 +211,16 @@ def ShowOrder(order_id):
 		json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
 		if not 'items' in json or len(json['items']) == 0:
 			raise EcwidAPIException('Такой заявки не существует.')
+		order = json['items'][0]
+		order_email = order['email'].lower()
+		owner = User.query.filter(User.email == order_email).first()
+		if not owner:
+			raise EcwidAPIException('Заявка не принадлежит ни одному из инициаторов.')
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
-		return redirect(url_for('main.ShowIndex'))
-	order = json['items'][0]
+		return redirect(url_for('main.ShowIndex'))	
 	if current_user.role == UserRoles.initiative:
-		if order['email'].lower() != current_user.email:
+		if order_email != current_user.email:
 				flash('Эта заявка не ваша.')
 				return redirect(url_for('main.ShowIndex'))
 		order['approval'] = GetOrderStatus(order['orderNumber'])
@@ -224,14 +230,15 @@ def ShowOrder(order_id):
 		if current_user.role == UserRoles.approver:
 			order['approval'] = not GetProductStatus(order_id, None, current_user.id)		
 	order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
+	order['initiative'] = owner.location if owner.location and owner.location != '' else order_email
+	if len(order['orderComments']) > 50:
+		order['orderComments'] = order['orderComments'][:50] + '...'
 	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 	user_comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
 	approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 	approval_form = OrderApprovalForm()
 	quantity_form = ChangeQuantityForm()
-
 	comment_form = OrderCommentsForm(comment = user_comment.comment if user_comment else None)
-		
 	return render_template('approve.html',
 							order = order,
 							comments = comments,
