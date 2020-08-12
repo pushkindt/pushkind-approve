@@ -110,7 +110,8 @@ def ShowIndex():
 				if initiative.location and initiative.location != '':
 					initiatives[order_email] = initiative.location
 				else:
-					initiatives[order_email] = order['orderComments']
+					initiatives[order_email] = order_email
+			order['initiative'] = initiatives[order_email]
 			order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
 			order['approval'] = GetOrderStatus(order['orderNumber'])
 			if order_approval and order['approval'] != order_approval:
