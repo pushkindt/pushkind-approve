@@ -10,8 +10,7 @@ class AddStoreForm(FlaskForm):
 	email = EmailField('Электронная почта', validators = [DataRequired(), Email()])
 	password = PasswordField('Пароль', validators = [DataRequired()])
 	plan = StringField('Платежный план', default = 'J_PUSHKIND_FREEDEMO', validators = [DataRequired(message='План - обязательное поле.')])
-	submit4 = SubmitField('Создать')
-
+	submit = SubmitField('Создать')
 
 class EcwidSettingsForm(FlaskForm):
 	partners_key  = StringField('Ключ partners_key', [DataRequired(message = 'Ключ partners_key - обязательное поле')])

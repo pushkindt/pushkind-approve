@@ -89,5 +89,3 @@ class Store(db.Model, EcwidAPI):
 	id = db.Column(db.Integer, primary_key = True, nullable=False)
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
 	hub = db.relationship('Ecwid')
-	email = db.Column(db.String(120), nullable = False)
-	name = db.Column(db.String(120), nullable = False)

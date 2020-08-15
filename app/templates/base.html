@@ -55,13 +55,16 @@
 								</button>
 								<div class="collapse navbar-collapse" id="navbarSupportedContent">
 									<ul class="navbar-nav mr-auto">
-										<li class="nav-item {% if menuItem == 0 %} active {% endif %}">
+										<li class="nav-item {% if request.endpoint == 'main.ShowIndex' %} active {% endif %}">
 											<a class="nav-link" href="{{ url_for('main.ShowIndex') }}">Главная</a>
+										</li>										
+										<li class="nav-item {% if request.endpoint == 'main.ShowStores' %} active {% endif %}">
+											<a class="nav-link" href="{{ url_for('main.ShowStores') }}">Поставщики</a>
 										</li>
-										<li class="nav-item {% if menuItem == 1 %} active {% endif %}">
+										<li class="nav-item {% if request.endpoint == 'main.ShowSettings' %} active {% endif %}">
 											<a class="nav-link" href="{{ url_for('main.ShowSettings') }}">Настройки</a>
 										</li>
-										<li class="nav-item {% if menuItem == 1 %} active {% endif %}">
+										<li class="nav-item">
 											<a class="nav-link" href="{{ url_for('auth.PerformLogout') }}">Выйти</a>
 										</li>
 									</ul>

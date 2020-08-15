@@ -2,18 +2,18 @@
 	<div class="row my-1">
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Номер: </span>
-			<a href="https://store{{ store['store_id'] }}.shopsettings.com/" target="blank">{{ store['store_id'] }}</a>
+			<a href="{{ store['generalInfo']['storeUrl'] }}" target="blank">{{ store['generalInfo']['storeId'] }}</a>
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Название: </span>
-			{{ store['name'] }}
+			{{ store['account']['accountName'] }}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Электронная почта: </span>
-			{{ store['email'] }}
+			{{ store['account']['accountEmail'] }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<a href="{{ url_for('main.WithdrawStore', store_id = store['store_id']) }}" class="btn btn-danger" onclick="return confirm('Удалить магазин?')">Удалить</a>
+			<a href="{{ url_for('main.WithdrawStore', store_id = store['generalInfo']['storeId']) }}" class="btn btn-danger" onclick="return confirm('Удалить поставщика?')">Удалить</a>
 		</div>
 	</div>
 </div>

@@ -144,7 +144,6 @@ def ShowSettings():
 			db.session.commit()
 		ecwid_form = EcwidSettingsForm()
 		role_form = UserRolesForm()
-		store_form = AddStoreForm()
 		users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
 		role_form.user_id.choices = [(u.id, u.email) for u in users if u.id != current_user.id]
 		if ecwid_form.validate_on_submit() and ecwid_form.submit1.data:
@@ -172,24 +171,7 @@ def ShowSettings():
 				flash('Данные успешно сохранены.')
 			else:
 				flash('Пользователь не найден.')
-		elif store_form.validate_on_submit() and store_form.submit4.data:
-			ecwid_form = EcwidSettingsForm()
-			role_form = UserRolesForm()
-			try:
-				store_name = store_form.name.data.strip()
-				store_email = store_form.email.data.strip().lower()
-				store_id = current_user.ecwid.EcwidCreateStore(name = store_name, email = store_email, password = store_form.password.data, plan = store_form.plan.data,
-																defaultlanguage='ru')
-				store = Store(store_id = store_id, name = store_name, email = store_email, ecwid_id = current_user.ecwid_id, partners_key = current_user.ecwid.partners_key,
-								client_id = current_user.ecwid.client_id, client_secret = current_user.ecwid.client_secret)
-				store.EcwidGetStoreToken()
-				db.session.add(store)
-				db.session.commit()
-				flash('Магазин успешно добавлен.')
-			except EcwidAPIException as e:
-				flash('Ошибка API: {}'.format(e))
-		stores = Store.query.filter(Store.ecwid_id == current_user.ecwid_id).all()
-		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users, store_form = store_form, stores = stores)
+		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users)
 	else:
 		user_form = UserSettingsForm()
 		if user_form.validate_on_submit() and user_form.submit3.data:
@@ -215,6 +197,47 @@ def RemoveUser(user_id):
 	flash('Пользователь успешно удалён.')
 	return redirect(url_for('main.ShowSettings'))
 	
+'''
+################################################################################
+Stores page
+################################################################################
+'''
+
+@bp.route('/stores/', methods=['GET', 'POST'])
+@login_required
+@role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
+def ShowStores():
+	store_form = AddStoreForm()
+	if store_form.validate_on_submit():
+		try:
+			store_name = store_form.name.data.strip()
+			store_email = store_form.email.data.strip().lower()
+			store_id = current_user.ecwid.EcwidCreateStore(name = store_name, email = store_email, password = store_form.password.data, plan = store_form.plan.data,
+															defaultlanguage='ru')
+		except EcwidAPIException as e:
+			flash('Ошибка API: {}'.format(e))
+		store = Store(store_id = store_id, ecwid_id = current_user.ecwid_id, partners_key = current_user.ecwid.partners_key,
+						client_id = current_user.ecwid.client_id, client_secret = current_user.ecwid.client_secret)
+		db.session.add(store)
+		db.session.commit()
+		flash('Магазин успешно добавлен.')
+		try:
+			store.EcwidGetStoreToken()
+			store.EcwidUpdateStoreProfile()
+		except EcwidAPIException as e:
+			flash('Ошибка API: {}'.format(e))
+	vendors = Store.query.filter(Store.ecwid_id == current_user.ecwid_id).all()
+	stores = list()
+	for vendor in vendors:
+		try:
+			stores.append(vendor.EcwidGetStoreProfile())
+		except EcwidAPIException as e:
+			flash('Ошибка API: {}'.format(e))
+	if len(stores) == 0:
+		flash('Ни один поставщик не зарегистрован в системе.')
+	return render_template('stores.html', store_form = store_form, stores = stores)
+	
+	
 @bp.route('/withdraw/<int:store_id>')
 @login_required
 @role_required([UserRoles.admin])
@@ -222,16 +245,15 @@ def WithdrawStore(store_id):
 	store = Store.query.filter(Store.store_id == store_id, Store.ecwid_id == current_user.ecwid_id).first()
 	if store:
 		try:
-			store.EcwidDeleteStore(store_id)
+			store.EcwidDeleteStore()
 		except EcwidAPIException as e:
 			flash('Ошибка API: {}'.format(e))
 		db.session.delete(store)
 		db.session.commit()
-		flash('Магазин успешно удалён.')
+		flash('Поставщик успешно удалён.')
 	else:	
-		flash('Этот магазин не зарегистрован в системе.')
-	return redirect(url_for('main.ShowSettings'))
-
+		flash('Этот поставщик не зарегистрован в системе.')
+	return redirect(url_for('main.ShowStores'))
 '''
 ################################################################################
 Approve page
@@ -344,12 +366,9 @@ def DeleteOrder(order_id):
 		if current_user.email != order['email']:
 			raise EcwidAPIException('Вы не являетесь владельцем этой заявки.')
 		json = current_user.ecwid.EcwidDeleteStoreOrder(order_id = order_id)
-		if json.get('deleteCount', 0) == 1:
-			OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).delete()
-			OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).delete()
-			flash('Заявка успешно удалена')
-		else:
-			raise EcwidAPIException('Не удалось удалить заявку.')
+		OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).delete()
+		OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).delete()
+		flash('Заявка успешно удалена')
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
 	return redirect(url_for('main.ShowIndex'))
@@ -377,11 +396,8 @@ def SaveQuantity(order_id):
 					product['quantity'] = form.product_quantity.data
 					break
 			json = current_user.ecwid.EcwidUpdateStoreOrder(order_id, order)
-			if json.get('updateCount', 0) == 1:
-				flash_messages.append('Количество {} было изменено в заявке {}'.format(product['sku'], order_id))
-				status = True
-			else:
-				raise EcwidAPIException('Не удалось изменить заявку.')
+			flash_messages.append('Количество {} было изменено в заявке {}'.format(product['sku'], order_id))
+			status = True
 		except EcwidAPIException as e:
 			flash_messages.append('Ошибка API: {}'.format(e))
 			flash_messages.append('Не удалось изменить количество.')

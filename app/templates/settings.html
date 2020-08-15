@@ -3,196 +3,107 @@
 {% block content %}
 {% if current_user.role.name == "admin" %}
 	<div class="container border bg-light my-1">
-		<div class="row">
-			<div class="col text-right">
-				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#ecwidFormCollapse" aria-expanded="false" aria-controls="ecwidFormCollapse">
-					Настройки API
-				</button>
+		<h6 class="text-secondary text-right">Настройки API</h6>
+		{% set errorsList = ecwid_form.partners_key.errors + ecwid_form.client_id.errors + ecwid_form.client_secret.errors + ecwid_form.store_id.errors %}
+		{% if errorsList|length > 0 %}
+			<div class = "row">
+				<div class="col">
+					<div class="alert alert-danger" role="alert">
+						{% for error in  errorsList %}
+							{{ error }}<br>
+						{% endfor %}
+					</div>
+				</div>
 			</div>
-		</div>
-		<div class="collapse" id="ecwidFormCollapse">
-			{% set errorsList = ecwid_form.partners_key.errors + ecwid_form.client_id.errors + ecwid_form.client_secret.errors + ecwid_form.store_id.errors %}
-			{% if errorsList|length > 0 %}
-				<div class = "row">
-					<div class="col">
-						<div class="alert alert-danger" role="alert">
-							{% for error in  errorsList %}
-								{{ error }}<br>
-							{% endfor %}
-						</div>
-					</div>
+		{% endif %}
+		<form method="post">
+			{{ ecwid_form.csrf_token }}
+			<div class="form-group row">
+				{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
+				<div class="col-md-10">
+					{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '', value = current_user.ecwid.partners_key) }}
 				</div>
-			{% endif %}
-			<form method="post">
-				{{ ecwid_form.csrf_token }}
-				<div class="form-group row">
-					{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
-					<div class="col-md-10">
-						{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '', value = current_user.ecwid.partners_key) }}
-					</div>
+			</div>
+			<div class="form-group row">
+				{{ ecwid_form.client_id.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ ecwid_form.client_id(class_ = 'form-control', value = current_user.ecwid.client_id) }}
 				</div>
-				<div class="form-group row">
-					{{ ecwid_form.client_id.label(class_ = "col-md-2 col-form-label") }} 
-					<div class="col-md-10">
-						{{ ecwid_form.client_id(class_ = 'form-control', value = current_user.ecwid.client_id) }}
-					</div>
+			</div>
+			<div class="form-group row">
+				{{ ecwid_form.client_secret.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ ecwid_form.client_secret(class_ = 'form-control', value = current_user.ecwid.client_secret) }}
 				</div>
-				<div class="form-group row">
-					{{ ecwid_form.client_secret.label(class_ = "col-md-2 col-form-label") }} 
-					<div class="col-md-10">
-						{{ ecwid_form.client_secret(class_ = 'form-control', value = current_user.ecwid.client_secret) }}
-					</div>
+			</div>
+			<div class="form-group row">
+				{{ ecwid_form.store_id.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{  ecwid_form.store_id(class_ = 'form-control', value = current_user.ecwid.store_id) }}
 				</div>
-				<div class="form-group row">
-					{{ ecwid_form.store_id.label(class_ = "col-md-2 col-form-label") }} 
-					<div class="col-md-10">
-						{{  ecwid_form.store_id(class_ = 'form-control', value = current_user.ecwid.store_id) }}
-					</div>
+			</div>
+			<div class="form-group row">
+				<div class="col">
+					{{ ecwid_form.submit1(class_ = 'btn btn-primary') }}
 				</div>
-				<div class="form-group row">
-					<div class="col">
-						{{ ecwid_form.submit1(class_ = 'btn btn-primary') }}
-					</div>
-				</div>
-			</form>
-		</div>
+			</div>
+		</form>
 	</div>
 	<div class="container border bg-light my-1">
-		<div class="row">
-			<div class="col text-right">
-				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#roleFormCollapse" aria-expanded="false" aria-controls="roleFormCollapse">
-					Пользователи
-				</button>
+		<h6 class="text-secondary text-right">Пользователи</h6>
+		{% set errorsList = role_form.user_id.errors + role_form.role.errors + role_form.about_user.full_name.errors + role_form.about_user.phone.errors + role_form.about_user.location.errors %}
+		{% if errorsList|length > 0 %}
+			<div class = "row">
+				<div class="col">
+					<div class="alert alert-danger" role="alert">
+						{% for error in  errorsList %}
+							{{ error }}<br>
+						{% endfor %}
+					</div>
+				</div>
 			</div>
-		</div>
-		<div class="collapse" id="roleFormCollapse">
-			{% set errorsList = role_form.user_id.errors + role_form.role.errors + role_form.about_user.full_name.errors + role_form.about_user.phone.errors + role_form.about_user.location.errors %}
-			{% if errorsList|length > 0 %}
-				<div class = "row">
-					<div class="col">
-						<div class="alert alert-danger" role="alert">
-							{% for error in  errorsList %}
-								{{ error }}<br>
-							{% endfor %}
-						</div>
-					</div>
+		{% endif %}
+		<form method="post">
+			{{ role_form.csrf_token }}
+			<div class="form-group row">
+				{{ role_form.user_id.label(class_ = "col-md-2 col-form-label") }}
+				<div class="col-md-10">
+					{{ role_form.user_id(class_ = 'form-control') }}
 				</div>
-			{% endif %}
-			<form method="post">
-				{{ role_form.csrf_token }}
-				<div class="form-group row">
-					{{ role_form.user_id.label(class_ = "col-md-2 col-form-label") }}
-					<div class="col-md-10">
-						{{ role_form.user_id(class_ = 'form-control') }}
-					</div>
-				</div>
-				<div class="form-group row">
-					{{ role_form.about_user.full_name.label(class_ = "col-md-2 col-form-label") }}
-					<div class="col-md-10">
-						{{ role_form.about_user.full_name(class_ = 'form-control') }}
-					</div>
-				</div>
-				<div class="form-group row">
-					{{ role_form.about_user.phone.label(class_ = "col-md-2 col-form-label") }} 
-					<div class="col-md-10">
-						{{ role_form.about_user.phone(class_ = 'form-control') }}
-					</div>
-				</div>
-				<div class="form-group row">
-					{{ role_form.about_user.location.label(class_ = "col-md-2 col-form-label") }} 
-					<div class="col-md-10">
-						{{ role_form.about_user.location(class_ = 'form-control') }}
-					</div>
-				</div>
-				<div class="form-group row">
-					{{ role_form.role.label(class_ = "col-md-2 col-form-label") }} 
-					<div class="col-md-10">
-						{{ role_form.role(class_ = 'form-control') }}
-					</div>
-				</div>
-				<div class="form-group row">
-					<div class="col">
-						{{ role_form.submit2(class_ = 'btn btn-primary') }}
-						<a href="" id="removeUserButton" class="btn btn-danger" onclick="return confirm('Удалить пользователя?')">Удалить</a>
-					</div>
-				</div>
-			</form>
-		</div>
-	</div>
-	<div class="container border bg-light my-1">
-		<div class="row">
-			<div class="col text-right">
-				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#storeFormCollapse" aria-expanded="false" aria-controls="storeFormCollapse">
-					Магазины
-				</button>
 			</div>
-		</div>
-		<div class="collapse" id="storeFormCollapse">
-			{% set errorsList = store_form.email.errors + store_form.password.errors + store_form.plan.errors + store_form.name.errors %}
-			{% if errorsList|length > 0 %}
-				<div class = "row">
-					<div class="col">
-						<div class="alert alert-danger" role="alert">
-							{% for error in  errorsList %}
-								{{ error }}<br>
-							{% endfor %}
-						</div>
-					</div>
+			<div class="form-group row">
+				{{ role_form.about_user.full_name.label(class_ = "col-md-2 col-form-label") }}
+				<div class="col-md-10">
+					{{ role_form.about_user.full_name(class_ = 'form-control') }}
 				</div>
-			{% endif %}
-			<form method="post">
-				{{ store_form.csrf_token }}
-				<div class="form-group row">
-					{{ store_form.name.label(class_ = "col-md-2 col-form-label") }}
-					<div class="col-md-10">
-						{{ store_form.name(class_ = 'form-control') }}
-					</div>
+			</div>
+			<div class="form-group row">
+				{{ role_form.about_user.phone.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ role_form.about_user.phone(class_ = 'form-control') }}
 				</div>
-				<div class="form-group row">
-					{{ store_form.email.label(class_ = "col-md-2 col-form-label") }}
-					<div class="col-md-10">
-						{{ store_form.email(class_ = 'form-control') }}
-					</div>
+			</div>
+			<div class="form-group row">
+				{{ role_form.about_user.location.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ role_form.about_user.location(class_ = 'form-control') }}
 				</div>
-				<div class="form-group row">
-					{{ store_form.password.label(class_ = "col-md-2 col-form-label") }}
-					<div class="col-md-10">
-						{{ store_form.password(class_ = 'form-control') }}
-					</div>
+			</div>
+			<div class="form-group row">
+				{{ role_form.role.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ role_form.role(class_ = 'form-control') }}
 				</div>
-				<div class="form-group row">
-					{{ store_form.plan.label(class_ = "col-md-2 col-form-label") }}
-					<div class="col-md-10">
-						{{ store_form.plan(class_ = 'form-control') }}
-					</div>
+			</div>
+			<div class="form-group row">
+				<div class="col">
+					{{ role_form.submit2(class_ = 'btn btn-primary') }}
+					<a href="" id="removeUserButton" class="btn btn-danger" onclick="return confirm('Удалить пользователя?')">Удалить</a>
 				</div>
-				<div class="form-group row">
-					<div class="col">
-						{{ store_form.submit4(class_ = 'btn btn-primary') }}
-					</div>
-				</div>
-			</form>
-			{% if stores|length > 0 %}
-				<div class="row my-1 d-none d-sm-flex font-weight-bold">
-					<div class="col overflow-hidden">
-						Номер
-					</div>
-					<div class="col overflow-hidden">
-						Название
-					</div>
-					<div class="col overflow-hidden">
-						Электронная почта
-					</div>
-					<div class="col overflow-hidden">
-						Удаление
-					</div>
-				</div>
-				{% for store in stores %}
-					{% include '_store.html' %}
-				{% endfor %}
-			{% endif %}
-		</div>
+			</div>
+		</form>
 	</div>
+
 	
 {% endif %}
 

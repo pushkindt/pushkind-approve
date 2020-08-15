@@ -6,6 +6,11 @@ from xml.etree import ElementTree
 _REST_API_URL = 'https://app.ecwid.com/api/v3/{store_id}/{endpoint}'
 _PARTNERS_API_URL = 'https://my.ecwid.com/resellerapi/v1/'
 _OAUTH_URL = 'https://my.ecwid.com/api/oauth/token/'
+_DEFAULT_STORE_PROFILE = {'languages':{'enabledLanguages': ['ru'], 'defaultLanguage': 'ru'},
+						  'company':{'city':'Москва', 'countryCode':'RU'},
+						  'formatsAndUnits':{'currency':'RUB', 'currencyPrefix':'', 'currencySuffix':'₽',
+						  'weightUnit':'KILOGRAM', 'dateFormat':'dd-MM-yyyy', 'timezone':'Europe/Moscow',
+						  'timeFormat': 'HH:mm:ss', 'dimensionsUnit':'CM'}}
 
 class EcwidAPIException(Exception):
 	pass
@@ -25,7 +30,7 @@ class EcwidAPI():
 			raise EcwidAPIException('Неизвестная ошибка API.')
 		json = response.json()
 		if 'access_token' not in json:
-			raise EcwidAPIException('Не удалось получить доступ к магазину.')
+			raise EcwidAPIException('Не удалось получить токен доступа к магазину {}.'.format(self.store_id))
 		self.token = json['access_token']
 		return json
 
@@ -77,7 +82,10 @@ class EcwidAPI():
 		response = delete(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}'.format(order_id)), params = params)
 		if response.status_code != 200:
 			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
-		return response.json()
+		json = response.json()
+		if json.get('deleteCount', 0) != 1:
+			raise EcwidAPIException('Не удалось удалить заявку {}.'.format(order_id))
+		return json
 
 	def EcwidUpdateStoreOrder(self, order_id, order):
 		'''Deletes store's product using REST API, returns JSON'''
@@ -85,7 +93,10 @@ class EcwidAPI():
 		response = put(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}'.format(order_id)), params = params, json = order)
 		if response.status_code != 200:
 			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
-		return response.json()
+		json = response.json()
+		if json.get('updateCount', 0) != 1:
+			raise EcwidAPIException('Не удалось обновить заявку {}.'.format(order_id))
+		return json
 		
 	def EcwidOrderInvoice(self, order_id):
 		'''Deletes store's product using REST API, returns JSON'''
@@ -113,11 +124,28 @@ class EcwidAPI():
 		xml = ElementTree.fromstring(response.text)
 		return int(xml.text)
 		
-	def EcwidDeleteStore(self, store_id):
+	def EcwidDeleteStore(self):
 		'''Removes store using Partners API, returns Boolean'''
-		payload = {'ownerid':store_id, 'key':self.partners_key}
+		payload = {'ownerid':self.store_id, 'key':self.partners_key}
 		response = post(urljoin(_PARTNERS_API_URL, 'delete'), data = payload)
 		if response.status_code == 403:
-			raise EcwidAPIException('Недостаточно прав на удаление этого магазина.')
+			raise EcwidAPIException('Недостаточно прав на удаление поставщика {}.'.format(self.store_id))
 		elif response.status_code != 200:
 			raise EcwidAPIException('Неизвестная ошибка API.')
+			
+	def EcwidGetStoreProfile(self, **kwargs):
+		'''Gets store profile using REST API, returns JSON'''
+		return self.EcwidGetStoreEndpoint('profile', **kwargs)
+		
+	def EcwidUpdateStoreProfile(self, template = None):
+		'''Updates store profile using REST API, returns JSON'''
+		params = {'token':self.token}
+		if not template:
+			template = _DEFAULT_STORE_PROFILE
+		response = put(_REST_API_URL.format(store_id=self.store_id, endpoint='profile'), json=template, params=params)
+		if response.status_code != 200:
+			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
+		json = response.json()
+		if json.get('updateCount', 0) != 1:
+			raise EcwidAPIException('Не удалось обновить профиль поставщика {}.'.format(self.store_id))
+		return json
