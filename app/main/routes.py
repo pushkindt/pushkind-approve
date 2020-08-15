@@ -1,9 +1,9 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval
+from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval, Store
 from flask import render_template, redirect, url_for, flash, request, jsonify
-from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm
+from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm, AddStoreForm
 from sqlalchemy import or_
 from datetime import datetime, timedelta
 from functools import wraps
@@ -144,6 +144,7 @@ def ShowSettings():
 			db.session.commit()
 		ecwid_form = EcwidSettingsForm()
 		role_form = UserRolesForm()
+		store_form = AddStoreForm()
 		users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
 		role_form.user_id.choices = [(u.id, u.email) for u in users if u.id != current_user.id]
 		if ecwid_form.validate_on_submit() and ecwid_form.submit1.data:
@@ -171,7 +172,24 @@ def ShowSettings():
 				flash('Данные успешно сохранены.')
 			else:
 				flash('Пользователь не найден.')
-		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users)
+		elif store_form.validate_on_submit() and store_form.submit4.data:
+			ecwid_form = EcwidSettingsForm()
+			role_form = UserRolesForm()
+			try:
+				store_name = store_form.name.data.strip()
+				store_email = store_form.email.data.strip().lower()
+				store_id = current_user.ecwid.EcwidCreateStore(name = store_name, email = store_email, password = store_form.password.data, plan = store_form.plan.data,
+																defaultlanguage='ru')
+				store = Store(store_id = store_id, name = store_name, email = store_email, ecwid_id = current_user.ecwid_id, partners_key = current_user.ecwid.partners_key,
+								client_id = current_user.ecwid.client_id, client_secret = current_user.ecwid.client_secret)
+				store.EcwidGetStoreToken()
+				db.session.add(store)
+				db.session.commit()
+				flash('Магазин успешно добавлен.')
+			except EcwidAPIException as e:
+				flash('Ошибка API: {}'.format(e))
+		stores = Store.query.filter(Store.ecwid_id == current_user.ecwid_id).all()
+		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users, store_form = store_form, stores = stores)
 	else:
 		user_form = UserSettingsForm()
 		if user_form.validate_on_submit() and user_form.submit3.data:
@@ -195,6 +213,23 @@ def RemoveUser(user_id):
 	db.session.delete(user)
 	db.session.commit()
 	flash('Пользователь успешно удалён.')
+	return redirect(url_for('main.ShowSettings'))
+	
+@bp.route('/withdraw/<int:store_id>')
+@login_required
+@role_required([UserRoles.admin])
+def WithdrawStore(store_id):
+	store = Store.query.filter(Store.store_id == store_id, Store.ecwid_id == current_user.ecwid_id).first()
+	if store:
+		try:
+			store.EcwidDeleteStore(store_id)
+		except EcwidAPIException as e:
+			flash('Ошибка API: {}'.format(e))
+		db.session.delete(store)
+		db.session.commit()
+		flash('Магазин успешно удалён.')
+	else:	
+		flash('Этот магазин не зарегистрован в системе.')
 	return redirect(url_for('main.ShowSettings'))
 
 '''

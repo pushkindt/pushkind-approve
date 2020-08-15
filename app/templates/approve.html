@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-	<div class="container border bg-white my-1">
+	<div class="container border bg-light my-1">
 		<h6 class="text-secondary text-right">Заявка</h6>
 		{% if current_user.role.name == 'initiative' %}
 			<div class="row">
@@ -35,7 +35,7 @@
 		{% include '_order.html' %}
 	</div>
 
-	<div class="container border bg-white my-1">
+	<div class="container border bg-light my-1">
 		<h6 class="text-secondary text-right">Товары</h6>
 		<div class="row my-1 d-none d-sm-flex font-weight-bold">
 			<div class="col overflow-hidden">
@@ -120,7 +120,7 @@
 		</div>
 	{% endif %}
 	{% if current_user.role.name in ['validator','approver','initiative'] %}
-		<div class="container border bg-light my-1 py-2">
+		<div class="container border bg-light my-1">
 			{% set errorsList = comment_form.comment.errors %}
 			{% if errorsList|length > 0 %}
 				<div class = "row my-1">

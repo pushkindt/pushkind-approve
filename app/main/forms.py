@@ -1,7 +1,17 @@
 from flask_wtf import FlaskForm
-from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FormField, Form
-from wtforms.validators import DataRequired, Length, ValidationError
+from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FormField, Form, PasswordField
+from wtforms.fields.html5 import EmailField
+from wtforms.validators import DataRequired, Length, ValidationError, Email
 from app.models import UserRoles
+
+
+class AddStoreForm(FlaskForm):
+	name = StringField('Поставщик', validators = [DataRequired(message='Название поставщика - обязательное поле.')])
+	email = EmailField('Электронная почта', validators = [DataRequired(), Email()])
+	password = PasswordField('Пароль', validators = [DataRequired()])
+	plan = StringField('Платежный план', default = 'J_PUSHKIND_FREEDEMO', validators = [DataRequired(message='План - обязательное поле.')])
+	submit4 = SubmitField('Создать')
+
 
 class EcwidSettingsForm(FlaskForm):
 	partners_key  = StringField('Ключ partners_key', [DataRequired(message = 'Ключ partners_key - обязательное поле')])

@@ -1,56 +1,58 @@
-<div class="row my-1 border-bottom">
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Название:</span>
-		{{ product['name'] }}
-	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Артикул:</span>
-		{{ product['sku'] }}
-	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Цена:</span>
-		{{ product['price'] }}
-	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Количество:</span>
-		{% if current_user.role.name == 'initiative' %}
-			<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order['orderNumber']) }}" method="POST">
-				{{ quantity_form.csrf_token }}
-				{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['productId']) }}
-				{{ quantity_form.product_quantity(class_ = 'productQuantity text-primary form-control-plaintext', value = product['quantity']) }}
-			</form>
-		{% else %}
-			{{ product['quantity'] }}
-		{% endif %}
-	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Единицы:</span>
-		{% if 'selectedOptions' in product %}
-			{{ product['selectedOptions'][0]['value'] }}
-		{% endif %}
-	</div>
-	<div class="col-sm my-1 overflow-hidden">
-		{% if product['imageUrl'] != None %}
-			<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
-		{% endif %}
-	</div>
-	{% if current_user.role.name in ['validator','approver'] %}
+<div class = "container border bg-white my-1">
+	<div class="row my-1">
 		<div class="col-sm overflow-hidden">
-			<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
-				{{ approval_form.csrf_token }}
-				{{ approval_form.product_id(class_ = 'd-none', hidden = '', value = product['productId']) }}
-				{{ approval_form.product_sku(class_ = 'd-none', hidden = '', value = product['sku']) }}
-				<span class="d-sm-none font-weight-bold">Отклонить:</span>
-				{% if product['approval'] %}
-					<button type="submit" class="btn btn-secondary">
-						<img class="octicon" src="/static/octicons/x.svg" alt="Отклонить">
-					</button>
-				{% else %}
-					<button type="submit" class="btn btn-danger">
-						<img class="octicon" src="/static/octicons/x.svg" alt="Отклонить">
-					</button>
-				{% endif %}
-			</form>
+			<span class="d-sm-none font-weight-bold">Название:</span>
+			{{ product['name'] }}
 		</div>
-	{% endif %}
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Артикул:</span>
+			{{ product['sku'] }}
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Цена:</span>
+			{{ product['price'] }}
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Количество:</span>
+			{% if current_user.role.name == 'initiative' %}
+				<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order['orderNumber']) }}" method="POST">
+					{{ quantity_form.csrf_token }}
+					{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['productId']) }}
+					{{ quantity_form.product_quantity(class_ = 'productQuantity text-primary form-control-plaintext', value = product['quantity']) }}
+				</form>
+			{% else %}
+				{{ product['quantity'] }}
+			{% endif %}
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Единицы:</span>
+			{% if 'selectedOptions' in product %}
+				{{ product['selectedOptions'][0]['value'] }}
+			{% endif %}
+		</div>
+		<div class="col-sm overflow-hidden">
+			{% if product['imageUrl'] != None %}
+				<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
+			{% endif %}
+		</div>
+		{% if current_user.role.name in ['validator','approver'] %}
+			<div class="col-sm overflow-hidden">
+				<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
+					{{ approval_form.csrf_token }}
+					{{ approval_form.product_id(class_ = 'd-none', hidden = '', value = product['productId']) }}
+					{{ approval_form.product_sku(class_ = 'd-none', hidden = '', value = product['sku']) }}
+					<span class="d-sm-none font-weight-bold">Отклонить:</span>
+					{% if product['approval'] %}
+						<button type="submit" class="btn btn-secondary">
+							<img class="octicon" src="/static/octicons/x.svg" alt="Отклонить">
+						</button>
+					{% else %}
+						<button type="submit" class="btn btn-danger">
+							<img class="octicon" src="/static/octicons/x.svg" alt="Отклонить">
+						</button>
+					{% endif %}
+				</form>
+			</div>
+		{% endif %}
+	</div>
 </div>

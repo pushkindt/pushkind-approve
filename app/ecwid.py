@@ -1,6 +1,7 @@
 from app import db
 from requests import post, get, delete, put
 from urllib.parse import urljoin
+from xml.etree import ElementTree
 
 _REST_API_URL = 'https://app.ecwid.com/api/v3/{store_id}/{endpoint}'
 _PARTNERS_API_URL = 'https://my.ecwid.com/resellerapi/v1/'
@@ -92,4 +93,31 @@ class EcwidAPI():
 		response = get(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}/invoice'.format(order_id)), params = params)
 		if response.status_code != 200:
 			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
-		return response.text	
+		return response.text
+		
+	def EcwidCreateStore(self, name, email, password, plan, **kwargs):
+		'''Create store using Partners API, returns store_id'''
+		payload = {'name':name, 'email':email, 'password':password, 'plan':plan, 'key':self.partners_key, **kwargs}
+		params = {'register':'y'}
+		response = post(urljoin(_PARTNERS_API_URL, 'register'), data = payload, params = params)
+		if response.status_code == 409:
+			raise EcwidAPIException('Электронный адрес уже используется.')
+		elif response.status_code == 400:
+			raise EcwidAPIException('Некорретный электронный адрес.')
+		elif response.status_code == 403:
+			raise EcwidAPIException('Некорретный ключ partners_key.')
+		elif response.status_code == 405:
+			raise EcwidAPIException('Некорректный HTTP метод.')
+		elif response.status_code != 200:
+			raise EcwidAPIException('Неизвестная ошибка API.')
+		xml = ElementTree.fromstring(response.text)
+		return int(xml.text)
+		
+	def EcwidDeleteStore(self, store_id):
+		'''Removes store using Partners API, returns Boolean'''
+		payload = {'ownerid':store_id, 'key':self.partners_key}
+		response = post(urljoin(_PARTNERS_API_URL, 'delete'), data = payload)
+		if response.status_code == 403:
+			raise EcwidAPIException('Недостаточно прав на удаление этого магазина.')
+		elif response.status_code != 200:
+			raise EcwidAPIException('Неизвестная ошибка API.')

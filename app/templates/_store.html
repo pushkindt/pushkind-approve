@@ -1,0 +1,19 @@
+<div class="container border bg-white my-1">
+	<div class="row my-1">
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Номер: </span>
+			<a href="https://store{{ store['store_id'] }}.shopsettings.com/" target="blank">{{ store['store_id'] }}</a>
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Название: </span>
+			{{ store['name'] }}
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Электронная почта: </span>
+			{{ store['email'] }}
+		</div>
+		<div class="col-sm overflow-hidden">
+			<a href="{{ url_for('main.WithdrawStore', store_id = store['store_id']) }}" class="btn btn-danger" onclick="return confirm('Удалить магазин?')">Удалить</a>
+		</div>
+	</div>
+</div>
