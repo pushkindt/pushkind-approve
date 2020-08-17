@@ -25,8 +25,8 @@ class UserSettings(Form):
 	location = StringField('Расположение', [DataRequired(message = 'Расположение - обязательное поле')])
 
 class UserRolesForm(FlaskForm):
-	user_id = SelectField('Идентификатор пользователя', coerce = int)
-	role = SelectField('Роль', coerce = int,
+	user_id = SelectField('Идентификатор пользователя',[DataRequired(message = 'Некорректный идентификатор пользователя')], coerce = int)
+	role = SelectField('Роль',[DataRequired(message = 'Некорректная роль пользователя')], coerce = int,
 						choices = [
 							(int(UserRoles.default), str(UserRoles.default)),
 							(int(UserRoles.initiative), str(UserRoles.initiative)),

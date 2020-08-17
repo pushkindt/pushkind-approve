@@ -1,7 +1,7 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval, Store
+from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm, AddStoreForm
 from sqlalchemy import or_
@@ -83,7 +83,7 @@ def ShowIndex():
 	except:
 		created_from = None
 	orders = []
-	if current_user.ecwid:
+	if current_user.hub:
 		try:
 			args = {}
 			if created_from:
@@ -93,7 +93,7 @@ def ShowIndex():
 			else:
 				if location:
 					args['email'] = location
-			json = current_user.ecwid.EcwidGetStoreOrders(**args)
+			json = current_user.hub.EcwidGetStoreOrders(**args)
 			if 'items' in json:
 				orders = json['items']
 		except EcwidAPIException as e:
@@ -104,7 +104,7 @@ def ShowIndex():
 		for order in orders:
 			order_email = order['email'].lower()
 			if not order_email in initiatives:
-				initiative = User.query.filter(User.email == order_email).first()
+				initiative = User.query.filter(User.email == order_email, User.role == UserRoles.initiative).first()
 				if not initiative:
 					continue
 				if initiative.location and initiative.location != '':
@@ -138,28 +138,28 @@ Settings page
 @role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
 def ShowSettings():
 	if current_user.role == UserRoles.admin:
-		if not current_user.ecwid:
+		if not current_user.hub:
 			ecwid = Ecwid()
-			current_user.ecwid = ecwid
+			current_user.hub = ecwid
 			db.session.commit()
 		ecwid_form = EcwidSettingsForm()
 		role_form = UserRolesForm()
 		users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
 		role_form.user_id.choices = [(u.id, u.email) for u in users if u.id != current_user.id]
-		if ecwid_form.validate_on_submit() and ecwid_form.submit1.data:
-			current_user.ecwid.partners_key = ecwid_form.partners_key.data
-			current_user.ecwid.client_id = ecwid_form.client_id.data
-			current_user.ecwid.client_secret = ecwid_form.client_secret.data
-			current_user.ecwid.store_id = ecwid_form.store_id.data
+		if ecwid_form.submit1.data and ecwid_form.validate_on_submit():
+			current_user.hub.partners_key = ecwid_form.partners_key.data
+			current_user.hub.client_id = ecwid_form.client_id.data
+			current_user.hub.client_secret = ecwid_form.client_secret.data
+			current_user.hub.store_id = ecwid_form.store_id.data
+			current_user.hub.ecwid_id = None
 			try:
-				current_user.ecwid.EcwidGetStoreToken()
+				current_user.hub.EcwidGetStoreToken()
 				db.session.commit()
 				flash('Данные успешно сохранены.')
 			except EcwidAPIException as e:
 				flash('Ошибка API: {}'.format(e))
 				flash('Возможно неверные настройки?')
-		elif role_form.validate_on_submit() and role_form.submit2.data:
-			ecwid_form = EcwidSettingsForm()
+		elif role_form.submit2.data and role_form.validate_on_submit():
 			user = User.query.filter(User.id == role_form.user_id.data).first()
 			if user:
 				user.ecwid_id = current_user.ecwid_id
@@ -212,21 +212,18 @@ def ShowStores():
 		try:
 			store_name = store_form.name.data.strip()
 			store_email = store_form.email.data.strip().lower()
-			store_id = current_user.ecwid.EcwidCreateStore(name = store_name, email = store_email, password = store_form.password.data, plan = store_form.plan.data,
+			store_id = current_user.hub.EcwidCreateStore(name = store_name, email = store_email, password = store_form.password.data, plan = store_form.plan.data,
 															defaultlanguage='ru')
-		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
-		store = Store(store_id = store_id, ecwid_id = current_user.ecwid_id, partners_key = current_user.ecwid.partners_key,
-						client_id = current_user.ecwid.client_id, client_secret = current_user.ecwid.client_secret)
-		db.session.add(store)
-		db.session.commit()
-		flash('Магазин успешно добавлен.')
-		try:
+			store = Ecwid(store_id = store_id, ecwid_id = current_user.ecwid_id, partners_key = current_user.hub.partners_key,
+							client_id = current_user.hub.client_id, client_secret = current_user.hub.client_secret)
+			db.session.add(store)
 			store.EcwidGetStoreToken()
 			store.EcwidUpdateStoreProfile()
+			db.session.commit()
+			flash('Магазин успешно добавлен.')
 		except EcwidAPIException as e:
 			flash('Ошибка API: {}'.format(e))
-	vendors = Store.query.filter(Store.ecwid_id == current_user.ecwid_id).all()
+	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
 	stores = list()
 	for vendor in vendors:
 		try:
@@ -242,7 +239,7 @@ def ShowStores():
 @login_required
 @role_required([UserRoles.admin])
 def WithdrawStore(store_id):
-	store = Store.query.filter(Store.store_id == store_id, Store.ecwid_id == current_user.ecwid_id).first()
+	store = Ecwid.query.filter(Ecwid.store_id == store_id, Ecwid.ecwid_id == current_user.ecwid_id).first()
 	if store:
 		try:
 			store.EcwidDeleteStore()
@@ -265,7 +262,7 @@ Approve page
 @role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
 def ShowOrder(order_id):
 	try:
-		json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
+		json = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
 		if not 'items' in json or len(json['items']) == 0:
 			raise EcwidAPIException('Такой заявки не существует.')
 		order = json['items'][0]
@@ -359,13 +356,13 @@ def SaveApproval(order_id):
 @role_required([UserRoles.initiative])
 def DeleteOrder(order_id):
 	try:
-		json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
+		json = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
 		if not 'items' in json or len(json['items']) == 0:
 			raise EcwidAPIException('Такой заявки не существует.')
 		order = json['items'][0]
 		if current_user.email != order['email']:
 			raise EcwidAPIException('Вы не являетесь владельцем этой заявки.')
-		json = current_user.ecwid.EcwidDeleteStoreOrder(order_id = order_id)
+		json = current_user.hub.EcwidDeleteStoreOrder(order_id = order_id)
 		OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).delete()
 		OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).delete()
 		flash('Заявка успешно удалена')
@@ -383,7 +380,7 @@ def SaveQuantity(order_id):
 	form = ChangeQuantityForm()
 	if form.validate_on_submit():
 		try:
-			json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
+			json = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
 			if not 'items' in json or len(json['items']) == 0:
 				raise EcwidAPIException('Такой заявки не существует.')
 			order = json['items'][0]
@@ -395,7 +392,7 @@ def SaveQuantity(order_id):
 					new_total = '{:,.2f}'.format(order['total'])
 					product['quantity'] = form.product_quantity.data
 					break
-			json = current_user.ecwid.EcwidUpdateStoreOrder(order_id, order)
+			json = current_user.hub.EcwidUpdateStoreOrder(order_id, order)
 			flash_messages.append('Количество {} было изменено в заявке {}'.format(product['sku'], order_id))
 			status = True
 		except EcwidAPIException as e:
@@ -412,7 +409,7 @@ def SaveQuantity(order_id):
 @role_required([UserRoles.initiative])
 def SendInvoice(order_id):
 	try:
-		json = current_user.ecwid.EcwidGetStoreOrders(orderNumber = order_id)
+		json = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
 		if not 'items' in json or len(json['items']) == 0:
 			raise EcwidAPIException('Такой заявки не существует.')
 		order = json['items'][0]
@@ -421,7 +418,7 @@ def SendInvoice(order_id):
 		approval = GetOrderStatus(order_id)
 		if approval != 'approved':
 			raise('Отправка возможна только для одобренных заявок.')
-		html = current_user.ecwid.EcwidOrderInvoice(order_id)
+		html = current_user.hub.EcwidOrderInvoice(order_id)
 		return html
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))

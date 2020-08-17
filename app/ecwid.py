@@ -11,6 +11,8 @@ _DEFAULT_STORE_PROFILE = {'languages':{'enabledLanguages': ['ru'], 'defaultLangu
 						  'formatsAndUnits':{'currency':'RUB', 'currencyPrefix':'', 'currencySuffix':'₽',
 						  'weightUnit':'KILOGRAM', 'dateFormat':'dd-MM-yyyy', 'timezone':'Europe/Moscow',
 						  'timeFormat': 'HH:mm:ss', 'dimensionsUnit':'CM'}}
+						  
+_DISALLOWED_CATEGORIES_FIELDS = ['id', 'url', 'productCount', 'productIds']
 
 class EcwidAPIException(Exception):
 	pass
@@ -149,3 +151,21 @@ class EcwidAPI():
 		if json.get('updateCount', 0) != 1:
 			raise EcwidAPIException('Не удалось обновить профиль поставщика {}.'.format(self.store_id))
 		return json
+		
+	def EcwidGetStoreProducts(self, **kwargs):
+		'''Gets store's products using REST API, returns JSON'''
+		return self.EcwidGetStoreEndpoint('products', **kwargs)
+		
+	def EcwidGetStoreCategories(self, **kwargs):
+		'''Gets store's categories using REST API, returns JSON'''
+		return self.EcwidGetStoreEndpoint('categories', **kwargs)
+		
+	def EcwidSetStoreCategory(self, category):
+		'''Adds or updates store's category using REST API, returns JSON'''
+		params = {'token':self.token}
+		for key in _DISALLOWED_CATEGORIES_FIELDS:
+			category.pop(key, None)
+		response = post(_REST_API_URL.format(store_id = self.store_id, endpoint = 'categories'), json = category, params=params)
+		if response.status_code != 200:
+			raise Exception(self._EcwidGetErrorMessage(response.status_code))
+		return response.json()

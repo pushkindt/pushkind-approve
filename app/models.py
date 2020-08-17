@@ -27,6 +27,8 @@ def load_user(id):
 
 class Ecwid(db.Model, EcwidAPI):
 	id  = db.Column(db.Integer, primary_key = True)
+	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'))
+	hub = db.relationship('Ecwid')
 
 class User(UserMixin, db.Model):
 	id  = db.Column(db.Integer, primary_key = True, nullable=False)
@@ -37,7 +39,7 @@ class User(UserMixin, db.Model):
 	phone = db.Column(db.String(120))
 	location = db.Column(db.String(120))
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'))
-	ecwid = db.relationship('Ecwid')
+	hub = db.relationship('Ecwid')
 	
 	def __repr__(self):
 		return json.dumps(self.to_dict())
@@ -84,8 +86,3 @@ class OrderComment(db.Model):
 	order_id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, primary_key = True)
 	comment = db.Column(db.String(120))
-	
-class Store(db.Model, EcwidAPI):
-	id = db.Column(db.Integer, primary_key = True, nullable=False)
-	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
-	hub = db.relationship('Ecwid')

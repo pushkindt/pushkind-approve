@@ -13,7 +13,9 @@
 			{{ store['account']['accountEmail'] }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<a href="{{ url_for('main.WithdrawStore', store_id = store['generalInfo']['storeId']) }}" class="btn btn-danger" onclick="return confirm('Удалить поставщика?')">Удалить</a>
+			{% if current_user.role.name == 'admin' %}
+				<a href="{{ url_for('main.WithdrawStore', store_id = store['generalInfo']['storeId']) }}" class="btn btn-danger" onclick="return confirm('Удалить поставщика?')">Удалить</a>
+			{% endif %}
 		</div>
 	</div>
 </div>

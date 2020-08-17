@@ -121,32 +121,41 @@
 	{% endif %}
 	{% if current_user.role.name in ['validator','approver','initiative'] %}
 		<div class="container border bg-light my-1">
-			{% set errorsList = comment_form.comment.errors %}
-			{% if errorsList|length > 0 %}
-				<div class = "row my-1">
-					<div class="col">
-						<div class="alert alert-danger" role="alert">
-							{% for error in  errorsList %}
-								{{ error }}<br>
-							{% endfor %}
+			<div class="row">
+				<div class="col text-right">
+					<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#commentFormCollapse" aria-expanded="false" aria-controls="commentFormCollapse">
+						Изменить комментарий
+					</button>
+				</div>
+			</div>
+			<div class="collapse" id="commentFormCollapse">
+				{% set errorsList = comment_form.comment.errors %}
+				{% if errorsList|length > 0 %}
+					<div class = "row">
+						<div class="col">
+							<div class="alert alert-danger" role="alert">
+								{% for error in  errorsList %}
+									{{ error }}<br>
+								{% endfor %}
+							</div>
 						</div>
 					</div>
-				</div>
-			{% endif %}
-			<form action="{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}" method="post" id="changeCommentForm">
-				{{ comment_form.csrf_token }}
-				<div class="form-group row">
-					{{ comment_form.comment.label(class_ = "col-md-2 col-form-label") }}
-					<div class="col-md-10">
-						{{ comment_form.comment(class_ = 'form-control') }}
+				{% endif %}
+				<form action="{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}" method="post" id="changeCommentForm">
+					{{ comment_form.csrf_token }}
+					<div class="form-group row">
+						{{ comment_form.comment.label(class_ = "col-md-2 col-form-label") }}
+						<div class="col-md-10">
+							{{ comment_form.comment(class_ = 'form-control') }}
+						</div>
 					</div>
-				</div>
-				<div class="form-group row">
-					<div class="col">
-						{{ comment_form.submit(class_ = 'btn btn-primary') }}
+					<div class="form-group row">
+						<div class="col">
+							{{ comment_form.submit(class_ = 'btn btn-primary') }}
+						</div>
 					</div>
-				</div>
-			</form>
+				</form>
+			</div>
 		</div>
 	{% endif %}
 {% endblock %}
