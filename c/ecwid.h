@@ -1,0 +1,1 @@
+extern bool ProcessHub(uint64_t user_id);

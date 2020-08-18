@@ -156,8 +156,9 @@ def ShowSettings():
 				current_user.hub.EcwidGetStoreToken()
 				db.session.commit()
 				flash('Данные успешно сохранены.')
-			except EcwidAPIException as e:
-				flash('Ошибка API: {}'.format(e))
+			except:
+				db.session.rollback()
+				flash('Ошибка API или магазин уже используется.')
 				flash('Возможно неверные настройки?')
 		elif role_form.submit2.data and role_form.validate_on_submit():
 			user = User.query.filter(User.id == role_form.user_id.data).first()
@@ -196,6 +197,7 @@ def RemoveUser(user_id):
 	db.session.commit()
 	flash('Пользователь успешно удалён.')
 	return redirect(url_for('main.ShowSettings'))
+	
 	
 '''
 ################################################################################

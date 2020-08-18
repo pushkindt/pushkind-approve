@@ -1,5 +1,8 @@
 # C extensions
 *.so
+*.o
+*.pid
+ecwid-api
 
 # Python
 venv/
