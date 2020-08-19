@@ -149,3 +149,11 @@ class EcwidAPI():
 		if json.get('updateCount', 0) != 1:
 			raise EcwidAPIException('Не удалось обновить профиль поставщика {}.'.format(self.store_id))
 		return json
+		
+	def EcwidSetStoreOrder(self, order):
+		'''Sets store's order using REST API, returns JSON'''
+		params = {'token':self.token}
+		response = post(_REST_API_URL.format(store_id = self.store_id, endpoint = 'orders'), json = order, params=params)
+		if response.status_code != 200:
+			raise Exception(self._EcwidGetErrorMessage(response.status_code))
+		return response.json()

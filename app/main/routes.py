@@ -224,7 +224,9 @@ def ShowStores():
 			db.session.commit()
 			flash('Магазин успешно добавлен.')
 		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
+			db.session.rollback()
+			flash('Ошибка API или магазин уже используется.')
+			flash('Возможно неверные настройки?')
 	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
 	stores = list()
 	for vendor in vendors:
@@ -425,3 +427,60 @@ def SendInvoice(order_id):
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
 		return redirect(url_for('main.ShowOrder', order_id = order_id))
+		
+
+@bp.route('/process/<int:order_id>')
+@login_required
+@role_required([UserRoles.initiative])	
+def ProcessHubOrder(order_id):
+
+	_DISALLOWED_ORDERS_ITEM_FIELDS = ['productId', 'id', 'categoryId']
+	_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId']
+	try:
+		json = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
+		if not 'items' in json or len(json['items']) == 0:
+			raise EcwidAPIException('Такой заявки не существует.')
+	except EcwidAPIException as e:
+		flash('Ошибка API: {}'.format(e))
+		return redirect(url_for('main.ShowOrder', order_id = order_id))
+		
+	order = json['items'][0]
+	for key in _DISALLOWED_ORDERS_FIELDS:
+		order.pop(key, None)
+	for product in order['items']:
+		for key in _DISALLOWED_ORDERS_ITEM_FIELDS:
+			product.pop(key, None)
+			
+	stores = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
+	got_orders = list()
+	for store in stores:
+		products = list()
+		total = 0
+		for product in order['items']:
+			sku = product['sku'].split('-')
+			if len(sku) > 1 and sku[0] == str(store.store_id):
+				product_new = product.copy()
+				product_new['sku'] = '-'.join(sku[1:])
+				products.append(product_new)
+				total += product_new['price'] * product_new['quantity']
+		if len(products) == 0:
+			continue
+		items = order['items']
+		order['items'] = products
+		order['subtotal'] = total
+		order['total'] = total		
+		result = store.EcwidSetStoreOrder(order)
+		if 'id' not in result:
+			flash('Не удалось отправить заявку поставщику {}.'.format(store.store_id))
+		else:
+			try:
+				profile = store.EcwidGetStoreProfile()
+				got_orders.append(profile['account']['accountName'])
+			except:
+				got_orders.append(store.store_id)
+		order['items'] = items
+	if len(got_orders) > 0:
+		flash('Заявка была отправлена поставщикам: {}.'.format(', '.join(str(id) for id in got_orders)))
+	else:
+		flash('Поставщики товаров в заявке не зарегистрированы в системе.')
+	return redirect(url_for('main.ShowOrder', order_id = order_id))

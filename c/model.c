@@ -36,12 +36,20 @@ TEcwid *GetHub(sqlite3 *pDB, uint64_t ecwid_id){
 	sqlite3_stmt *stmt = NULL;
 	TEcwid *hub = NULL;
 	check(pDB != NULL, "Invalid function inputs.");
+	
+	/*****************************************************************************/
+	//	Prepare SQL query
+	/*****************************************************************************/	
 	result = sqlite3_prepare_v2(pDB, "select partners_key,client_id,client_secret,token,store_id from ecwid where id = ? limit 1", -1, &stmt, NULL);
 	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
 	result = sqlite3_bind_int64(stmt, 1, ecwid_id);
 	check(result == SQLITE_OK, "Error while binding SQLite statement.");	
 	result = sqlite3_step(stmt);
 	check(result == SQLITE_ROW, "No data available.");
+	
+	/*****************************************************************************/
+	//	Get SQL query result
+	/*****************************************************************************/	
 	hub = calloc(sizeof(TEcwid), 1);
 	hub->partners_key = strdup((const char *)sqlite3_column_text(stmt, 0));
 	hub->client_id = strdup((const char *)sqlite3_column_text(stmt, 1));
@@ -50,7 +58,11 @@ TEcwid *GetHub(sqlite3 *pDB, uint64_t ecwid_id){
 	hub->id = sqlite3_column_int64(stmt, 4);
 	check_mem(hub);
 	result = 0;
+	
 error:
+	/*****************************************************************************/
+	//	Clean everything up
+	/*****************************************************************************/
 	sqlite3_finalize(stmt);
 	if (result != 0){
 		if (hub != NULL){
@@ -67,10 +79,18 @@ TEcwid *GetStores(sqlite3 *pDB, uint64_t ecwid_id, size_t *stores_count){
 	sqlite3_stmt *stmt = NULL;
 	TEcwid *stores = NULL;
 	check(pDB != NULL && stores_count != NULL, "Invalid function inputs.");
+	
+	/*****************************************************************************/
+	//	Prepare SQL query
+	/*****************************************************************************/	
 	result = sqlite3_prepare_v2(pDB, "select partners_key,client_id,client_secret,token,store_id from ecwid where ecwid_id = ?", -1, &stmt, NULL);
 	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
 	result = sqlite3_bind_int64(stmt, 1, ecwid_id);
 	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	
+	/*****************************************************************************/
+	//	Get SQL query result
+	/*****************************************************************************/	
 	while (sqlite3_step(stmt) == SQLITE_ROW){
 		if (stores == NULL){
 			stores = calloc(sizeof(TEcwid), 1);
@@ -88,7 +108,11 @@ TEcwid *GetStores(sqlite3 *pDB, uint64_t ecwid_id, size_t *stores_count){
 		stores[*stores_count - 1].id = sqlite3_column_int64(stmt, 4);
 	}
 	result = 0;
+	
 error:
+	/*****************************************************************************/
+	//	Clean everything up
+	/*****************************************************************************/
 	sqlite3_finalize(stmt);
 	if (result != 0){
 		if (stores != NULL){

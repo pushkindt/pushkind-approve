@@ -74,11 +74,9 @@ int64_t CreateCategory(TEcwid store, uint64_t parent_id, char *name){
 	int64_t result = -1;
 	
 	check(name != NULL && strlen(name) > 0, "Invalid function inputs.");
-	payload = json_object_new_object();
-	check_mem(payload);
+
 	params = json_object_new_object();
 	check_mem(params);
-
 	json_object_object_add(params, "parent", json_object_new_int64(parent_id));
 	json_object_object_add(params, "token", json_object_new_string(store.token));
 	
@@ -98,6 +96,9 @@ int64_t CreateCategory(TEcwid store, uint64_t parent_id, char *name){
 		}
 	}
 	if (result == -1){
+		
+		payload = json_object_new_object();
+		check_mem(payload);
 		json_object_object_add(payload, "parentId", json_object_new_int64(parent_id));
 		json_object_object_add(payload, "name", json_object_new_string(name));
 		const char *buffer = json_object_to_json_string(payload);
@@ -306,16 +307,20 @@ bool ProcessStore(TEcwid hub, TEcwid store, struct json_object *hub_products){
 	check_mem(params);
 	json_object_object_add(params, "token", json_object_new_string(store.token));
 	json = RESTcall(store.id, GET_PROFILE, params, NULL, 0);
-	check(json != NULL, "Cannot retrieve store's profile.");
+	check(json != NULL, "Cannot retrieve store profile.");
 	json_object *tmp = NULL;
 	json_object_object_get_ex(json,"account", &tmp);
-	check(tmp != NULL, "Cannot retrieve store's proile");
+	check(tmp != NULL, "Cannot retrieve store profile");
 	json_object_object_get_ex(tmp,"accountName", &tmp);
-	check(tmp != NULL, "Cannot retrieve store's proile");
+	check(tmp != NULL, "Cannot retrieve store profile");
 	int64_t category_id = CreateCategory(hub, 0, TrimWhiteSpaces((char *)json_object_get_string(tmp)));
 	check(category_id > 0, "Cannot create root category.");
 	json_object_put(json);
 	json = NULL;
+	
+	/*****************************************************************************/
+	//	Process store category products
+	/*****************************************************************************/	
 	ProcessCategoryProducts(hub, store, category_id, 0, hub_products);
 	result = true;
 error:
@@ -347,7 +352,7 @@ bool ProcessHub(uint64_t ecwid_id){
 	check(stores != NULL && stores_count > 0, "There are no registered stores.");
 
 	/*****************************************************************************/
-	//	Get hub products for given category
+	//	Get hub products
 	/*****************************************************************************/
 
 	params = json_object_new_object();

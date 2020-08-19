@@ -1,5 +1,9 @@
 #include "http.h"
 
+
+/*****************************************************************************/
+//	Writes data to a buffer upon receiving
+/*****************************************************************************/
 static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp){
 	char *tempBuffer = NULL;
 	size_t realSize = size * nmemb;

@@ -31,9 +31,9 @@ int main(int argc, char* argv[]){
 	/*****************************************************************************/
 	
 	pid_file = open("ecwid-api-products.pid", O_RDWR | O_CREAT, 0666);
-	check(pid_file > 0, "You are not allowed to run multiple instance of the program.");
+	check(pid_file > 0, "You are not allowed to run multiple instances of the program.");
 	int rc = flock(pid_file, LOCK_EX | LOCK_NB);
-	check(rc != -1, "You are not allowed to run multiple instance of the program.");
+	check(rc != -1, "You are not allowed to run multiple instances of the program.");
 	
 	/*****************************************************************************/
 	//	Synchronize stores with the hub store
