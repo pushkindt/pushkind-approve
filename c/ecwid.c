@@ -397,7 +397,7 @@ bool ProcessHub(uint64_t ecwid_id){
 	//	Open database, get hub and stores
 	/*****************************************************************************/
 
-	check(sqlite3_open_v2("../app.db", &pDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_WAL, NULL) == SQLITE_OK, "Error while opening DB.");
+	check(sqlite3_open_v2("app.db", &pDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_WAL, NULL) == SQLITE_OK, "Error while opening DB.");
 	hub = GetHub(pDB, ecwid_id);
 	check(hub != NULL, "There is no such ecwid settings.");
 	stores = GetStores(pDB, ecwid_id, &stores_count);

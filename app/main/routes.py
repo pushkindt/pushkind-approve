@@ -290,12 +290,13 @@ def WithdrawStore(store_id):
 @role_required([UserRoles.admin])
 @ecwid_required
 def SyncStores():
-	args = ("c/ecwid-api", current_user.ecwid_id)
-	popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+	args = ("c/ecwid-api", str(current_user.ecwid_id))
+	popen = subprocess.Popen(args, stderr=subprocess.PIPE)
 	popen.wait()
-	output = popen.stdout.read()
+	output = popen.stderr.read()
 	if output and len(output) > 0:
-		flash(output.decode('utf-8'))
+		for s in output.decode('utf-8').strip().split('\n'):
+			flash(s)
 	else:
 		flash('Синхронизация успешно завершена.')
 	return redirect(url_for('main.ShowStores'))
