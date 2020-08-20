@@ -12,54 +12,54 @@
 <div class="container border bg-light my-1">
 	<div class="row">
 		<div class="col">
-		{% if order_approval == 'new' %}
+		{% if filter_approval == 'new' %}
 			<span class="badge badge-success">новые</span>
 		{% else %}
-			<a href="{{ url_for('main.ShowIndex', created_from = created_from, order_approval = 'new') }}" class="badge badge-primary">новые</a>
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = 'new', location = filter_location) }}" class="badge badge-primary">новые</a>
 		{% endif %}
-		{% if order_approval == 'partly_approved' %}
+		{% if filter_approval == 'partly_approved' %}
 			<span class="badge badge-success">в работе</span>
 		{% else %}
-			<a href="{{ url_for('main.ShowIndex', created_from = created_from, order_approval = 'partly_approved') }}" class="badge badge-primary">в работе</a>
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = 'partly_approved', location = filter_location) }}" class="badge badge-primary">в работе</a>
 		{% endif %}
-		{% if order_approval == 'approved' %}
+		{% if filter_approval == 'approved' %}
 			<span class="badge badge-success">согласованные</span>
 		{% else %}
-			<a href="{{ url_for('main.ShowIndex', created_from = created_from, order_approval = 'approved') }}" class="badge badge-primary">согласованные</a>
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = 'approved', location = filter_location) }}" class="badge badge-primary">согласованные</a>
 		{% endif %}
-		{% if order_approval == 'not_approved' %}
+		{% if filter_approval == 'not_approved' %}
 			<span class="badge badge-success">не согласованные</span>
 		{% else %}
-			<a href="{{ url_for('main.ShowIndex', created_from = created_from, order_approval = 'not_approved') }}" class="badge badge-primary">не согласованные</a>
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = 'not_approved', location = filter_location) }}" class="badge badge-primary">не согласованные</a>
 		{% endif %}
-		{% if order_approval == None %}
+		{% if filter_approval == None %}
 			<span class="badge badge-success">все</span>
 		{% else %}
-			<a href="{{ url_for('main.ShowIndex', created_from = created_from) }}" class="badge badge-primary">все</a>
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, location = filter_location) }}" class="badge badge-primary">все</a>
 		{% endif %}
 		</div>
 	</div>
 	<div class="row">
 		<div class="col">
-			{% if created_from == dates[0] %}
+			{% if filter_from == dates[0] %}
 				<span class="badge badge-success">сегодня</span>
 			{% else %}
-				<a href="{{ url_for('main.ShowIndex', created_from = dates[0], order_approval = order_approval) }}" class="badge badge-primary">сегодня</a>
+				<a href="{{ url_for('main.ShowIndex', from = dates[0], approval = filter_approval, location = filter_location) }}" class="badge badge-primary">сегодня</a>
 			{% endif %}
-			{% if created_from == dates[1] %}
+			{% if filter_from == dates[1] %}
 				<span class="badge badge-success">неделя</span>
 			{% else %}
-				<a href="{{ url_for('main.ShowIndex', created_from = dates[1], order_approval = order_approval) }}" class="badge badge-primary">неделя</a>
+				<a href="{{ url_for('main.ShowIndex', from = dates[1], approval = filter_approval, location = filter_location) }}" class="badge badge-primary">неделя</a>
 			{% endif %}
-			{% if created_from == dates[2] %}
+			{% if filter_from == dates[2] %}
 				<span class="badge badge-success">месяц</span>
 			{% else %}
-				<a href="{{ url_for('main.ShowIndex', created_from = dates[2], order_approval = order_approval) }}" class="badge badge-primary">месяц</a>
+				<a href="{{ url_for('main.ShowIndex', from = dates[2], approval = filter_approval, location = filter_location) }}" class="badge badge-primary">месяц</a>
 			{% endif %}
-			{% if created_from == None %}
+			{% if filter_from == None %}
 				<span class="badge badge-success">все</span>
 			{% else %}
-				<a href="{{ url_for('main.ShowIndex', order_approval = order_approval) }}" class="badge badge-primary">все</a>
+				<a href="{{ url_for('main.ShowIndex', approval = filter_approval, location = filter_location) }}" class="badge badge-primary">все</a>
 			{% endif %}
 		</div>
 	</div>
@@ -67,9 +67,9 @@
 		<div class="row">
 			<div class="col">
 				{% for initiative in initiatives %}
-					<a href="{{ url_for('main.ShowIndex', order_approval = order_approval, created_from = created_from, location = initiative) }}" class="badge badge-primary">{{ initiatives[initiative] }}</a>
+					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = initiative) }}" class="badge badge-primary">{{ initiatives[initiative] }}</a>
 				{% endfor %}
-					<a href="{{ url_for('main.ShowIndex', order_approval = order_approval, created_from = created_from) }}" class="badge badge-primary">все</a>
+					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}" class="badge badge-primary">все</a>
 			</div>
 		</div>
 	{% endif %}

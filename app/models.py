@@ -55,7 +55,7 @@ class User(UserMixin, db.Model):
 		return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(digest, size)
 		
 	def to_dict(self):
-		data = {'id':self.id, 'email':self.email, 'phone':self.phone, 'location':self.location, 'role_id':int(self.role), 'name':self.name}
+		data = {'id':self.id, 'email':self.email, 'phone':self.phone, 'location':self.location, 'role_id':int(self.role), 'name':self.name, 'ecwid_id':self.ecwid_id}
 		return data
 		
 	def GetPasswordResetToken(self, expires_in=600):

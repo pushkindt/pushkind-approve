@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FormField, Form, PasswordField
 from wtforms.fields.html5 import EmailField
-from wtforms.validators import DataRequired, Length, ValidationError, Email
+from wtforms.validators import DataRequired, Length, ValidationError, Email, InputRequired
 from app.models import UserRoles
 
 
@@ -26,7 +26,7 @@ class UserSettings(Form):
 
 class UserRolesForm(FlaskForm):
 	user_id = SelectField('Идентификатор пользователя',[DataRequired(message = 'Некорректный идентификатор пользователя')], coerce = int)
-	role = SelectField('Роль',[DataRequired(message = 'Некорректная роль пользователя')], coerce = int,
+	role = SelectField('Роль',[InputRequired(message = 'Некорректная роль пользователя')], coerce = int,
 						choices = [
 							(int(UserRoles.default), str(UserRoles.default)),
 							(int(UserRoles.initiative), str(UserRoles.initiative)),
