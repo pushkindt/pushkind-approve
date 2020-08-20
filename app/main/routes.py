@@ -8,6 +8,7 @@ from sqlalchemy import or_
 from datetime import datetime, timedelta
 from functools import wraps
 from app.ecwid import EcwidAPIException
+import subprocess
 
 '''
 ################################################################################
@@ -282,6 +283,21 @@ def WithdrawStore(store_id):
 		flash('Поставщик успешно удалён.')
 	else:	
 		flash('Этот поставщик не зарегистрован в системе.')
+	return redirect(url_for('main.ShowStores'))
+	
+@bp.route('/sync/')
+@login_required
+@role_required([UserRoles.admin])
+@ecwid_required
+def SyncStores():
+	args = ("c/ecwid-api", current_user.ecwid_id)
+	popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+	popen.wait()
+	output = popen.stdout.read()
+	if output and len(output) > 0:
+		flash(output.decode('utf-8'))
+	else:
+		flash('Синхронизация успешно завершена.')
 	return redirect(url_for('main.ShowStores'))
 	
 	

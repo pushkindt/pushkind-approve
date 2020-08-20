@@ -241,14 +241,14 @@ void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, ui
 				const char *buffer = json_object_to_json_string(store_product);
 				json = RESTcall(hub.id, PUT_PRODUCT, params, (uint8_t *)buffer, strlen(buffer));
 				if (json == NULL){
-					log_err("Setting product %ld failed", (int64_t)json_object_get_int64(hub_product_id));
-					exit(1);
+					log_err("Setting product %s failed", hub_sku);
 				} else {
 					json_object_put(json);
 					json = NULL;
 				}
 				found = true;
 				json_object_object_del(params, "productId");
+				json_object_object_add(hub_product, "processed", json_object_new_boolean(true));
 				break;
 			}
 		}
@@ -296,10 +296,12 @@ error:
 }
 
 
-bool ProcessStore(TEcwid hub, TEcwid store, struct json_object *hub_products){
+bool ProcessStore(TEcwid hub, TEcwid store){
 	bool result = false;
 	struct json_object *json = NULL, *params = NULL;
-	
+	struct json_object *hub_products = NULL;
+	char *search_sku = NULL;
+
 	/*****************************************************************************/
 	//	Get vendor account name and create corresponding hub root category
 	/*****************************************************************************/
@@ -317,17 +319,68 @@ bool ProcessStore(TEcwid hub, TEcwid store, struct json_object *hub_products){
 	check(category_id > 0, "Cannot create root category.");
 	json_object_put(json);
 	json = NULL;
+	json_object_put(params);
+	params = NULL;
+	tmp = NULL;
+	/*****************************************************************************/
+	//	Get hub products
+	/*****************************************************************************/
+
+
+	search_sku = calloc(ceil(log10(store.id > 0 ? store.id : 1)) + 3, 1);
+	check_mem(search_sku);			
+	sprintf(search_sku, "%ld-", store.id);
+
+
+	params = json_object_new_object();
+	check_mem(params);
+	json_object_object_add(params, "token", json_object_new_string(hub.token));
+	json_object_object_add(params, "keyword", json_object_new_string(search_sku));
+	json = RESTcall(hub.id, GET_PRODUCTS, params, NULL, 0);
+	check(json != NULL, "JSON is invalid.");
+	json_object_object_get_ex(json, "items", &hub_products);
+	check(hub_products != NULL && json_object_get_type(hub_products) == json_type_array, "JSON is invalid.");
 	
 	/*****************************************************************************/
 	//	Process store category products
 	/*****************************************************************************/	
 	ProcessCategoryProducts(hub, store, category_id, 0, hub_products);
+	
+	/*****************************************************************************/
+	//	Remove excess hub products
+	/*****************************************************************************/	
+	
+	for (size_t j = 0; j < json_object_array_length(hub_products); j++) {
+
+		json_object *hub_product_processed = NULL, *hub_product = json_object_array_get_idx(hub_products, j);
+		json_object *hub_product_id = NULL;
+		json_object_object_get_ex(hub_product,"processed", &hub_product_processed);
+		json_object_object_get_ex(hub_product,"id", &hub_product_id);
+		if (hub_product_id == NULL)
+			continue;
+		if (hub_product_processed == NULL){
+			json_object_object_add(params, "productId", json_object_get(hub_product_id));
+			tmp = RESTcall(hub.id, DELETE_PRODUCT, params, NULL, 0);
+			if (tmp != NULL)
+			{
+				json_object_put(tmp);
+				tmp = NULL;
+			}
+			else{
+				log_err("Removing product %ld failed", (int64_t)json_object_get_int64(hub_product_id));
+			}
+			json_object_object_del(params, "productId");
+		}
+	}
+	
 	result = true;
 error:
 	if (json != NULL)
 		json_object_put(json);
 	if (params != NULL)
-		json_object_put(params);	
+		json_object_put(params);
+	if (search_sku != NULL)
+		free(search_sku);	
 	return result;
 }
 
@@ -339,36 +392,22 @@ bool ProcessHub(uint64_t ecwid_id){
 	TEcwid *hub = NULL;
 	TEcwid *stores = NULL;
 	size_t stores_count = 0;
-	struct json_object *json = NULL, *params = NULL, *hub_products = NULL;
 
 	/*****************************************************************************/
 	//	Open database, get hub and stores
 	/*****************************************************************************/
 
-	check(sqlite3_open_v2("/home/matrizaev/pushkind-approve/app.db", &pDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_WAL, NULL) == SQLITE_OK, "Error while opening DB.");
+	check(sqlite3_open_v2("../app.db", &pDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_WAL, NULL) == SQLITE_OK, "Error while opening DB.");
 	hub = GetHub(pDB, ecwid_id);
 	check(hub != NULL, "There is no such ecwid settings.");
 	stores = GetStores(pDB, ecwid_id, &stores_count);
 	check(stores != NULL && stores_count > 0, "There are no registered stores.");
 
 	/*****************************************************************************/
-	//	Get hub products
-	/*****************************************************************************/
-
-	params = json_object_new_object();
-	check_mem(params);
-	json_object_object_add(params, "token", json_object_new_string(hub->token));
-	json = RESTcall(hub->id, GET_PRODUCTS, params, NULL, 0);
-	check(json != NULL, "JSON is invalid.");
-	json_object_object_get_ex(json, "items", &hub_products);
-	check(hub_products != NULL && json_object_get_type(hub_products) == json_type_array, "JSON is invalid.");
-
-
-	/*****************************************************************************/
 	//	Process stores' products
 	/*****************************************************************************/
 	for (size_t i = 0; i < stores_count; i++){
-		if (ProcessStore(*hub, stores[i], hub_products) != true){
+		if (ProcessStore(*hub, stores[i]) != true){
 			log_err("Failed to process store %lu", stores[i].id);
 		}
 	}
@@ -377,10 +416,6 @@ error:
 	/*****************************************************************************/
 	//	Clean everything up
 	/*****************************************************************************/
-	if (json != NULL)
-		json_object_put(json);
-	if (params != NULL)
-		json_object_put(params);	
 	if (stores != NULL)
 		FreeStores(stores, stores_count);
 	if (hub != NULL)

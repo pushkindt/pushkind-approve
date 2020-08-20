@@ -132,10 +132,13 @@ class EcwidAPI():
 			raise EcwidAPIException('Недостаточно прав на удаление поставщика {}.'.format(self.store_id))
 		elif response.status_code != 200:
 			raise EcwidAPIException('Неизвестная ошибка API.')
-			
+
 	def EcwidGetStoreProfile(self, **kwargs):
 		'''Gets store profile using REST API, returns JSON'''
-		return self.EcwidGetStoreEndpoint('profile', **kwargs)
+		return self.EcwidGetStoreEndpoint('profile', **kwargs)			
+	def EcwidGetStoreProducts(self, **kwargs):
+		'''Gets store profile using REST API, returns JSON'''
+		return self.EcwidGetStoreEndpoint('products', **kwargs)
 		
 	def EcwidUpdateStoreProfile(self, template = None):
 		'''Updates store profile using REST API, returns JSON'''
