@@ -28,8 +28,8 @@
 			</div>
 		{% endif %}
 		{% if approval_form %}
-			{% if current_user.role.name == 'approver' %}
-				<div class="col-sm overflow-hidden">
+			<div class="col-sm overflow-hidden">
+				{% if current_user.role.name == 'approver' %}
 					<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
 						{{ approval_form.csrf_token }}
 						<span class="d-sm-none font-weight-bold">Согласование: </span>
@@ -43,8 +43,21 @@
 							</button>
 						{% endif %}
 					</form>
-				</div>
-			{% endif %}
+				{% else %}
+					<span class="d-sm-none font-weight-bold">Статус: </span>
+					{% if order['status'] == 'approved' %}
+						<span class="badge badge-success">Согласована</span>
+					{% elif order['status'] == 'partly_approved' %}
+						<span class="badge badge-warning">В работе</span>
+					{% elif order['status'] == 'not_approved' %}
+						<span class="badge badge-danger">Не согласована</span>
+					{% elif order['status'] == 'sent' %}
+						<span class="badge badge-info">Отправлена</span>
+					{% else %}
+						<span class="badge badge-secondary">Новая</span>
+					{% endif %}
+				{% endif %}
+			</div>
 		{% else %}
 			<div class="col-sm overflow-hidden">
 				<span class="d-sm-none font-weight-bold">Согласование: </span>
