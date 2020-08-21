@@ -531,7 +531,7 @@ def ProcessHubOrder(order_id):
 	if len(got_orders) > 0:
 		vendor_str = ', '.join(f'{vendor}: №{order}' for vendor,order in got_orders.items())
 		try:
-			current_user.hub.EcwidUpdateStoreOrder(order_id, {'privateAdminNotes':vendor_str})
+			current_user.hub.EcwidUpdateStoreOrder(order_id, {'privateAdminNotes':vendor_str, 'externalFulfillment':True})
 		except EcwidAPIException as e:
 			flash('Ошибка API: {}'.format(e))
 			flash('Не удалось сохранить информацию о передаче поставщикам.')
