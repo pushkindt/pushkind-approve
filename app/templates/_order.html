@@ -2,7 +2,11 @@
 	<div class="row my-1">
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Номер: </span>
-			{{ order['orderNumber'] }}
+			{% if approval_form %}
+				{{ order['vendorOrderNumber'] }}
+			{% else %}
+				<a href="{{ url_for('main.ShowOrder', order_id=order['orderNumber']) }}">{{ order['vendorOrderNumber'] }}</a>
+			{% endif %}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Дата: </span>
@@ -31,11 +35,11 @@
 						<span class="d-sm-none font-weight-bold">Согласование: </span>
 						{% if order['approval'] %}
 							<button type="submit" class="btn btn-success">
-								<img class="octicon" src="/static/octicons/check.svg" alt="Одобрить">
+								<img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Одобрить">
 							</button>
 						{% else %}
 							<button type="submit" class="btn btn-secondary">
-								<img class="octicon" src="/static/octicons/check.svg" alt="Одобрить">
+								<img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Одобрить">
 							</button>
 						{% endif %}
 					</form>
@@ -44,16 +48,17 @@
 		{% else %}
 			<div class="col-sm overflow-hidden">
 				<span class="d-sm-none font-weight-bold">Согласование: </span>
-				{% if order['approval'] == 'approved' %}
-					<button class="btn btn-success"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></button>
-				{% elif order['approval'] == 'partly_approved' %}
-					<button class="btn btn-info"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></button>
-				{% elif order['approval'] == 'not_approved' %}
-					<button class="btn btn-danger"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></button>
+				{% if order['status'] == 'approved' %}
+					<button class="btn btn-success"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Согласовать"></button>
+				{% elif order['status'] == 'partly_approved' %}
+					<button class="btn btn-warning"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Согласовать"></button>
+				{% elif order['status'] == 'not_approved' %}
+					<button class="btn btn-danger"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Согласовать"></button>
+				{% elif order['status'] == 'sent' %}
+					<button class="btn btn-info"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Согласовать"></button>
 				{% else %}
-					<button class="btn btn-secondary"><img class="octicon" src="/static/octicons/check.svg" alt="Согласовать"></button>
+					<button class="btn btn-secondary"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Согласовать"></button>
 				{% endif %}
-				
 			</div>	
 		{% endif %}
 	</div>
@@ -63,4 +68,12 @@
 			{{ order['orderComments'] }}
 		</div>
 	</div>
+	{% if order['status'] == 'sent' %}
+		<div class="row">
+			<div class="col">
+				<span class="font-weight-bold">Заявка отправлена поставщикам: </span>
+				{{ order['privateAdminNotes'] }}
+			</div>
+		</div>
+	{% endif %}
 </div>

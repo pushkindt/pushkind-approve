@@ -3,7 +3,7 @@
 {% block content %}
 {% if current_user.role.name == "admin" %}
 	<div class="container border bg-light my-1">
-		<h6 class="text-secondary text-right">Настройки API</h6>
+		<h6 class="text-secondary">Настройки API</h6>
 		{% set errorsList = ecwid_form.partners_key.errors + ecwid_form.client_id.errors + ecwid_form.client_secret.errors + ecwid_form.store_id.errors %}
 		{% if errorsList|length > 0 %}
 			<div class = "row">
@@ -50,7 +50,7 @@
 		</form>
 	</div>
 	<div class="container border bg-light my-1">
-		<h6 class="text-secondary text-right">Пользователи</h6>
+		<h6 class="text-secondary">Пользователи</h6>
 		{% set errorsList = role_form.user_id.errors + role_form.role.errors + role_form.about_user.full_name.errors + role_form.about_user.phone.errors + role_form.about_user.location.errors %}
 		{% if errorsList|length > 0 %}
 			<div class = "row">
@@ -108,7 +108,7 @@
 
 {% if current_user.role.name in ['initiative', 'validator', 'approver'] %}
 	<div class="container border bg-light my-1">
-		<h6 class="text-secondary text-right">Настройки пользователя</h6>
+		<h6 class="text-secondary">Настройки пользователя</h6>
 		{% set errorsList = user_form.about_user.full_name.errors + user_form.about_user.phone.errors + user_form.about_user.location.errors %}
 		{% if errorsList|length > 0 %}
 			<div class = "row">

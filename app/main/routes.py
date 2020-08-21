@@ -1,7 +1,7 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval
+from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval, OrderStatus
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm, AddStoreForm
 from sqlalchemy import or_
@@ -66,17 +66,21 @@ def GetDateTimestamps():
 	dates = [int(today.timestamp()), int(week.timestamp()), int(month.timestamp())]
 	return dates
 	
-def GetOrderStatus(order_id):
+def GetOrderStatus(order):
+	if order['externalFulfillment']:
+		return OrderStatus.sent
+	order_id = order['orderNumber']
 	not_approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id != None, User.ecwid_id == current_user.ecwid_id).count() > 0
 	if not_approved:
-		return 'not_approved'
+		return OrderStatus.not_approved
 	approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id == None, User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
 	approvers = User.query.filter(User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
-	if approved == 0:
-		return 'new'
+	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).count()
+	if approved == 0 and comments == 0:
+		return OrderStatus.new
 	elif approved == approvers:
-		return 'approved'
-	return 'partly_approved'
+		return OrderStatus.approved
+	return OrderStatus.partly_approved
 	
 def GetProductStatus(order_id, product_id, user_id):
 	'''
@@ -100,7 +104,7 @@ def ShowIndex():
 	filter_from = request.args.get('from', default = None, type = int)
 	filter_approval = request.args.get('approval', default = None, type = str)
 	filter_location = request.args.get('location', default = None, type = str)
-	if filter_approval not in ['approved', 'partly_approved', 'not_approved', 'new']:
+	if filter_approval not in [str(status) for status in OrderStatus]:
 		filter_approval = None
 	try:
 		filter_from = datetime.fromtimestamp(filter_from)
@@ -142,8 +146,8 @@ def ShowIndex():
 		if len(order['orderComments']) > 50:
 			order['orderComments'] = order['orderComments'][:50] + '...'
 		order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
-		order['approval'] = GetOrderStatus(order['orderNumber'])
-		if filter_approval and order['approval'] != filter_approval:
+		order['status'] = str(GetOrderStatus(order))
+		if filter_approval and order['status'] != filter_approval:
 			continue
 		new_orders.append(order)
 	orders = new_orders
@@ -329,9 +333,8 @@ def ShowOrder(order_id):
 		flash('Ошибка API: {}'.format(e))
 		return redirect(url_for('main.ShowIndex'))
 		
-	if current_user.role == UserRoles.initiative:
-		order['approval'] = GetOrderStatus(order['orderNumber'])
-	elif current_user.role in [UserRoles.validator, UserRoles.approver]:
+	order['status'] = str(GetOrderStatus(order))
+	if current_user.role in [UserRoles.validator, UserRoles.approver]:
 		for product in order['items']:
 			product['approval'] = GetProductStatus(order_id, product['productId'], current_user.id)
 		if current_user.role == UserRoles.approver:
@@ -458,7 +461,7 @@ def SaveQuantity(order_id):
 					product['quantity'] = form.product_quantity.data
 					break
 			json = current_user.hub.EcwidUpdateStoreOrder(order_id, order)
-			flash_messages.append('Количество {} было изменено в заявке {}'.format(product['sku'], order_id))
+			flash_messages.append('Количество {} было изменено в заявке.'.format(product['sku']))
 			status = True
 		except EcwidAPIException as e:
 			flash_messages.append('Ошибка API: {}'.format(e))
@@ -471,7 +474,7 @@ def SaveQuantity(order_id):
 	
 @bp.route('/process/<int:order_id>')
 @login_required
-@role_required([UserRoles.initiative])
+@role_required([UserRoles.approver])
 @ecwid_required
 def ProcessHubOrder(order_id):
 
@@ -487,9 +490,6 @@ def ProcessHubOrder(order_id):
 
 	order = json['items'][0]
 	
-	if current_user.email != order['email'].lower():
-		return render_template('errors/403.html'),403
-
 	for key in _DISALLOWED_ORDERS_FIELDS:
 		order.pop(key, None)
 	for product in order['items']:
@@ -497,7 +497,7 @@ def ProcessHubOrder(order_id):
 			product.pop(key, None)
 			
 	stores = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
-	got_orders = list()
+	got_orders = {}
 	for store in stores:
 		products = list()
 		total = 0
@@ -523,14 +523,20 @@ def ProcessHubOrder(order_id):
 		else:
 			try:
 				profile = store.EcwidGetStoreProfile()
-				got_orders.append(profile['account']['accountName'])
+				got_orders[profile['account']['accountName']] = result['id']
 			except:
-				got_orders.append(store.store_id)
+				got_orders[store.store_id] = result['id']
 		order['items'] = items
 
 	if len(got_orders) > 0:
-		flash('Заявка была отправлена поставщикам: {}.'.format(', '.join(str(id) for id in got_orders)))
+		vendor_str = ', '.join(f'{vendor}: №{order}' for vendor,order in got_orders.items())
+		try:
+			current_user.hub.EcwidUpdateStoreOrder(order_id, {'privateAdminNotes':vendor_str})
+		except EcwidAPIException as e:
+			flash('Ошибка API: {}'.format(e))
+			flash('Не удалось сохранить информацию о передаче поставщикам.')
+		flash('Заявка была отправлена поставщикам: {}.'.format(vendor_str))
 	else:
-		flash('Поставщики товаров в заявке не зарегистрированы в системе.')
+		flash('Не удалось перезаказать данные товары у зарегистрованных поставщиков.')
 
 	return redirect(url_for('main.ShowOrder', order_id = order_id))

@@ -20,6 +20,17 @@ class UserRoles(enum.IntEnum):
 	def __str__(self):
 		pretty = ['Без роли', 'Инициатор', 'Валидатор', 'Согласующий', 'Администратор']
 		return pretty[self.value]
+		
+class OrderStatus(enum.IntEnum):
+	new = 0
+	not_approved = 1
+	partly_approved = 2
+	approved = 3
+	sent = 4
+	
+	def __str__(self):
+		pretty = ['new', 'not_approved', 'partly_approved', 'approved', 'sent']
+		return pretty[self.value]
 
 @login.user_loader
 def load_user(id):
@@ -86,3 +97,5 @@ class OrderComment(db.Model):
 	order_id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, primary_key = True)
 	comment = db.Column(db.String(120))
+	
+	

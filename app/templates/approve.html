@@ -2,14 +2,17 @@
 
 {% block content %}
 	<div class="container border bg-light my-1">
-		<h6 class="text-secondary text-right">Заявка</h6>
+		<h6 class="text-secondary">Заявка</h6>
 		{% if current_user.role.name == 'initiative' %}
 			<div class="row">
 				<div class="col text-right">
 					<a class="btn btn-danger btn-sm" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">Удалить</a>
-					{% if order['approval'] == 'approved' %}
-						<a href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" class="btn btn-success btn-sm">Отправить</a>
-					{% endif %}
+				</div>
+			</div>
+		{% elif current_user.role.name == 'approver' %}
+			<div class="row">
+				<div class="col text-right">
+					<a href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" class="btn btn-success btn-sm">Отправить</a>
 				</div>
 			</div>
 		{% endif %}
@@ -36,7 +39,7 @@
 	</div>
 
 	<div class="container border bg-light my-1">
-		<h6 class="text-secondary text-right">Товары</h6>
+		<h6 class="text-secondary">Товары</h6>
 		<div class="row my-1 d-none d-sm-flex font-weight-bold">
 			<div class="col overflow-hidden">
 				Название
@@ -66,65 +69,13 @@
 			{% include '_product.html' %}
 		{% endfor %}
 	</div>
-	{% if approvals|length > 0 %}
-		<div class="container border bg-light my-1">
-			<h6 class="text-secondary text-right">Согласования</h6>
-			{% for approval in approvals %}
-				<div class="row border-bottom my-1">
-					<div class="col-sm font-weight-bold">
-						{% if approval.user.name %}
-							{{ approval.user.name }}
-						{% else %}
-							{{ approval.user.email }}
-						{% endif %}
-					</div>
-					<div class="col-sm">
-						{% if approval.product_id %}
-							<div class="alert alert-danger" role="alert">
-								отклонил товар
-								{{ approval.product_sku }}
-							</div>
-						{% else %}
-							<div class="alert alert-success" role="alert">
-								одобрил заявку
-							</div>
-						{% endif %}
-					</div>
-				</div>
-			{% endfor %}
-		</div>
-	{% endif %}
-	{% if comments|length > 0 %}
-		<div class="container border bg-light my-1" id="commentsSection">
-			<h6 class="text-secondary text-right">Комментарии</h6>
-			{% for comment in comments %}
-				<div class="row border-bottom my-1" id="{{'comment{}'.format(comment.user.id)}}">
-					<div class="col-sm font-weight-bold">
-						{% if comment.user.name %}
-							{{ comment.user.name }}
-						{% else %}
-							{{ comment.user.email }}
-						{% endif %}
-					</div>
-					<div class="col-sm">
-						<div class="alert alert-primary" role="alert">
-							{{ comment.comment }}
-						</div>
-					</div>
-				</div>
-			{% endfor %}
-		</div>
-	{% else %}
-		<div class="container border bg-light my-1 d-none" id="commentsSection">
-			<h6 class="text-secondary text-right">Комментарии</h6>
-		</div>
-	{% endif %}
+	
 	{% if current_user.role.name in ['validator','approver','initiative'] %}
 		<div class="container border bg-light my-1">
 			<div class="row">
 				<div class="col text-right">
 					<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#commentFormCollapse" aria-expanded="false" aria-controls="commentFormCollapse">
-						Изменить комментарий
+						Редактировать комментарий
 					</button>
 				</div>
 			</div>
@@ -158,15 +109,65 @@
 			</div>
 		</div>
 	{% endif %}
+	
+	{% if approvals|length > 0 or comments|length > 0 %}
+		<div class="container my-1">
+			<div class="card-columns" id="commentsSection">
+				{% for approval in approvals %}
+					<div class="card text-white {% if approval.product_id %}bg-danger{% else %}bg-success{% endif %}">
+						<div class="card-body">
+							<p>
+							{% if approval.product_id %}
+								Товар {{ approval.product_sku }} отклонён.
+							{% else %}
+								Заявка одобрена.
+							{% endif %}
+							</p>
+						</div>
+						<div class="card-footer font-weight-bold">
+							{% if approval.user.name %}
+								{{ approval.user.name }}
+							{% else %}
+								{{ approval.user.email }}
+							{% endif %}
+						</div>
+					</div>
+				{% endfor %}
+				{% for comment in comments %}
+					<div class="card text-white bg-warning" id="{{'comment{}'.format(comment.user.id)}}">
+						<div class="card-body">
+							<p>
+								{{ comment.comment }}
+							</p>
+						</div>
+						<div class="card-footer font-weight-bold">
+							{% if comment.user.name %}
+								{{ comment.user.name }}
+							{% else %}
+								{{ comment.user.email }}
+							{% endif %}
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		</div>
+		
+	{% else %}
+		<div class="container my-1 d-none">
+			<div class="card-columns" id="commentsSection">
+			</div>
+		</div>
+	{% endif %}
+
 {% endblock %}
 
 {% block templates %}
-	<div class="row border-bottom my-1" id="commentTemplate">
-		<div class="col-sm font-weight-bold commentAuthor">
+	<div class="card text-white bg-warning" id="commentTemplate">
+		<div class="card-body">
+			<p>
+			</p>
 		</div>
-		<div class="col-sm">
-			<div class="alert alert-primary" role="alert">
-			</div>
+		<div class="card-footer font-weight-bold">
 		</div>
 	</div>
 {% endblock %}
@@ -185,11 +186,11 @@
 			var authorComment = $("{{ '#comment{}'.format(current_user.id) }}");
 			var commentsSection = $("#commentsSection");
 			if (data.comment.length > 0){
-				commentsSection.removeClass('d-none');
+				commentsSection.parent().removeClass('d-none');
 				if (authorComment.length == 0){
 					authorComment = $("#commentTemplate").clone();
 					authorComment.attr("id", "{{'comment{}'.format(current_user.id)}}");
-					var author = authorComment.find('.commentAuthor');
+					var author = authorComment.find('.card-footer');
 					{% if current_user.name %}
 						author.text("{{ current_user.name }}");
 					{% else %}
@@ -197,12 +198,12 @@
 					{% endif %}
 					commentsSection.append(authorComment);
 				}
-				var comment = authorComment.find(".alert");
+				var comment = authorComment.find(".card-body p");
 				comment.text(data.comment);
 			}else{
 				authorComment.remove();
-				if (commentsSection.find(".alert").length == 0)
-					commentsSection.addClass("d-none");
+				if (commentsSection.find(".card").length == 0)
+					commentsSection.parent().addClass("d-none");
 			}
 		}else
 			ShowAjaxFlashes(data);
