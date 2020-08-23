@@ -11,8 +11,8 @@ static const char *_DISALLOWED_PRODUCTS_FIELDS[] = {"id", "categories", "default
 #define ARRAY_SIZE(arr)     (sizeof(arr) / sizeof((arr)[0]))
 
 
-void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products);
-void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products);
+void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products, char *vendor);
+void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products, char *vendor);
 
 char *TrimWhiteSpaces (char *str)
 {
@@ -119,9 +119,12 @@ error:
 	return result;
 }
 
-void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products){
+void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products, char *vendor){
 	struct json_object *store_json= NULL, *params = NULL;
 	struct json_object *store_categories = NULL;
+	
+	check(vendor != NULL && strlen(vendor) > 0, "Invalid function inputs.");
+	check(hub_products != NULL, "Invalid function inputs.");
 	
 	/*****************************************************************************/
 	//	Get nested store categories for given parent category
@@ -150,7 +153,7 @@ void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t
 			log_err("Cannot create hub category.");
 			continue;
 		}
-		ProcessCategoryProducts(hub, store, next_hub_category, next_store_category, hub_products);
+		ProcessCategoryProducts(hub, store, next_hub_category, next_store_category, hub_products, vendor);
 	}
 	
 error:
@@ -160,11 +163,15 @@ error:
 		json_object_put(store_json);
 }
 
-void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products){
+void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products, char *vendor){
 	
 	struct json_object *store_json= NULL, *params = NULL, *json = NULL;
 	struct json_object *store_products = NULL;
 	char *hub_sku = NULL;
+	uint64_t hub_vendor_category = 0;
+	
+	check(vendor != NULL && strlen(vendor) > 0, "Invalid function inputs.");
+	check(hub_products != NULL, "Invalid function inputs.");
 	
 	/*****************************************************************************/
 	//	Get store products for given category
@@ -182,6 +189,15 @@ void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, ui
 	
 	params = json_object_new_object();
 	json_object_object_add(params, "token", json_object_new_string(hub.token));	
+	
+	/*****************************************************************************/
+	//	Create a vendor name category
+	/*****************************************************************************/
+	
+	if (json_object_array_length(store_products) > 0){
+		hub_vendor_category = CreateCategory(hub, hub_category, vendor);
+		check(hub_vendor_category > 0, "Cannot create vendor category.");
+	}
 	
 	/*****************************************************************************/
 	//	Compare hub and store products
@@ -210,9 +226,9 @@ void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, ui
 		FilterProductFields(store_product);
 		
 		json_object *tmp = json_object_new_array();
-		json_object_array_add(tmp, json_object_new_int64(hub_category));
+		json_object_array_add(tmp, json_object_new_int64(hub_vendor_category));
 		json_object_object_add(store_product, "categoryIds", tmp);
-		json_object_object_add(store_product, "defaultCategoryId", json_object_new_int64(hub_category));
+		json_object_object_add(store_product, "defaultCategoryId", json_object_new_int64(hub_vendor_category));
 		json_object_object_add(store_product, "sku", json_object_new_string(hub_sku));
 		
 		
@@ -281,7 +297,7 @@ void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, ui
 	//	Process nested categories
 	/*****************************************************************************/
 	
-	ProcessCategories(hub, store, hub_category, store_category, hub_products);	
+	ProcessCategories(hub, store, hub_category, store_category, hub_products, vendor);	
 
 error:
 	if (json != NULL)
@@ -301,6 +317,7 @@ bool ProcessStore(TEcwid hub, TEcwid store){
 	struct json_object *json = NULL, *params = NULL;
 	struct json_object *hub_products = NULL;
 	char *search_sku = NULL;
+	char *vendor = NULL;
 
 	/*****************************************************************************/
 	//	Get vendor account name and create corresponding hub root category
@@ -315,22 +332,20 @@ bool ProcessStore(TEcwid hub, TEcwid store){
 	check(tmp != NULL, "Cannot retrieve store profile");
 	json_object_object_get_ex(tmp,"accountName", &tmp);
 	check(tmp != NULL, "Cannot retrieve store profile");
-	int64_t category_id = CreateCategory(hub, 0, TrimWhiteSpaces((char *)json_object_get_string(tmp)));
-	check(category_id > 0, "Cannot create root category.");
+	vendor = strdup(TrimWhiteSpaces((char *)json_object_get_string(tmp)));
+	check(vendor != NULL, "Cannot retrieve store profile");
 	json_object_put(json);
 	json = NULL;
 	json_object_put(params);
 	params = NULL;
 	tmp = NULL;
+	
 	/*****************************************************************************/
 	//	Get hub products
 	/*****************************************************************************/
-
-
 	search_sku = calloc(ceil(log10(store.id > 0 ? store.id : 1)) + 3, 1);
 	check_mem(search_sku);			
 	sprintf(search_sku, "%ld-", store.id);
-
 
 	params = json_object_new_object();
 	check_mem(params);
@@ -343,13 +358,12 @@ bool ProcessStore(TEcwid hub, TEcwid store){
 	
 	/*****************************************************************************/
 	//	Process store category products
-	/*****************************************************************************/	
-	ProcessCategoryProducts(hub, store, category_id, 0, hub_products);
+	/*****************************************************************************/
+	ProcessCategoryProducts(hub, store, 0, 0, hub_products, vendor);
 	
 	/*****************************************************************************/
 	//	Remove excess hub products
-	/*****************************************************************************/	
-	
+	/*****************************************************************************/
 	for (size_t j = 0; j < json_object_array_length(hub_products); j++) {
 
 		json_object *hub_product_processed = NULL, *hub_product = json_object_array_get_idx(hub_products, j);
@@ -381,6 +395,8 @@ error:
 		json_object_put(params);
 	if (search_sku != NULL)
 		free(search_sku);	
+	if (vendor != NULL)
+		free(vendor);	
 	return result;
 }
 
