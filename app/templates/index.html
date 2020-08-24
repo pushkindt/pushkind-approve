@@ -38,33 +38,33 @@
 			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = 'sent', location = filter_location) }}" class="badge badge-info">отправленные</a>
 		{% endif %}
 		{% if filter_approval == None %}
-			<span class="badge badge-primary font-weight-bold">ВСЕ</span>
+			<span class="badge badge-dark text-white font-weight-bold">ВСЕ</span>
 		{% else %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, location = filter_location) }}" class="badge badge-primary">все</a>
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, location = filter_location) }}" class="badge badge-dark text-white">все</a>
 		{% endif %}
 		</div>
 	</div>
 	<div class="row border-bottom">
 		<div class="col">
 			{% if filter_from == dates[0] %}
-				<span class="badge badge-primary font-weight-bold">СЕГОДНЯ</span>
+				<span class="badge badge-dark text-white font-weight-bold">СЕГОДНЯ</span>
 			{% else %}
-				<a href="{{ url_for('main.ShowIndex', from = dates[0], approval = filter_approval, location = filter_location) }}" class="badge badge-primary">сегодня</a>
+				<a href="{{ url_for('main.ShowIndex', from = dates[0], approval = filter_approval, location = filter_location) }}" class="badge badge-dark text-white">сегодня</a>
 			{% endif %}
 			{% if filter_from == dates[1] %}
-				<span class="badge badge-primary font-weight-bold">НЕДЕЛЯ</span>
+				<span class="badge badge-dark text-white font-weight-bold">НЕДЕЛЯ</span>
 			{% else %}
-				<a href="{{ url_for('main.ShowIndex', from = dates[1], approval = filter_approval, location = filter_location) }}" class="badge badge-primary">неделя</a>
+				<a href="{{ url_for('main.ShowIndex', from = dates[1], approval = filter_approval, location = filter_location) }}" class="badge badge-dark text-white">неделя</a>
 			{% endif %}
 			{% if filter_from == dates[2] %}
-				<span class="badge badge-primary font-weight-bold">МЕСЯЦ</span>
+				<span class="badge badge-dark text-white font-weight-bold">МЕСЯЦ</span>
 			{% else %}
-				<a href="{{ url_for('main.ShowIndex', from = dates[2], approval = filter_approval, location = filter_location) }}" class="badge badge-primary">месяц</a>
+				<a href="{{ url_for('main.ShowIndex', from = dates[2], approval = filter_approval, location = filter_location) }}" class="badge badge-dark text-white">месяц</a>
 			{% endif %}
 			{% if filter_from == None %}
-				<span class="badge badge-primary font-weight-bold">ВСЕ</span>
+				<span class="badge badge-dark text-white font-weight-bold">ВСЕ</span>
 			{% else %}
-				<a href="{{ url_for('main.ShowIndex', approval = filter_approval, location = filter_location) }}" class="badge badge-primary">все</a>
+				<a href="{{ url_for('main.ShowIndex', approval = filter_approval, location = filter_location) }}" class="badge badge-dark text-white">все</a>
 			{% endif %}
 		</div>
 	</div>
@@ -72,9 +72,15 @@
 		<div class="row">
 			<div class="col">
 				{% for initiative in initiatives %}
-					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = initiative) }}" class="badge badge-primary">{{ initiatives[initiative] }}</a>
+					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = initiative) }}" class="badge badge-dark text-white">{{ initiatives[initiative] }}</a>
 				{% endfor %}
-					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}" class="badge badge-primary">все</a>
+					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}" class="badge badge-dark text-white">
+						{% if initiatives| length > 1 %}
+							ВСЕ
+						{% else %}
+							все
+						{% endif %}
+					</a>
 			</div>
 		</div>
 	{% endif %}
