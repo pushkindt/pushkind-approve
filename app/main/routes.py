@@ -479,7 +479,7 @@ def SaveQuantity(order_id):
 def ProcessHubOrder(order_id):
 
 	_DISALLOWED_ORDERS_ITEM_FIELDS = ['productId', 'id', 'categoryId']
-	_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId']
+	_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'privateAdminNotes', 'externalFulfillment']
 	try:
 		json = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
 		if 'items' not in json or len(json['items']) == 0:
@@ -516,7 +516,7 @@ def ProcessHubOrder(order_id):
 		items = order['items']
 		order['items'] = products
 		order['subtotal'] = total
-		order['total'] = total		
+		order['total'] = total	
 		result = store.EcwidSetStoreOrder(order)
 		if 'id' not in result:
 			flash('Не удалось отправить заявку поставщику {}.'.format(store.store_id))
