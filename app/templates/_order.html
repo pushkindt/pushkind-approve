@@ -3,9 +3,9 @@
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Номер: </span>
 			{% if approval_form %}
-				{{ order['vendorOrderNumber'] }}
+				#{{ order['vendorOrderNumber'] }}
 			{% else %}
-				<a href="{{ url_for('main.ShowOrder', order_id=order['orderNumber']) }}">{{ order['vendorOrderNumber'] }}</a>
+				<a href="{{ url_for('main.ShowOrder', order_id=order['orderNumber']) }}">#{{ order['vendorOrderNumber'] }}</a>
 			{% endif %}
 		</div>
 		<div class="col-sm overflow-hidden">

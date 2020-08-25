@@ -516,7 +516,8 @@ def ProcessHubOrder(order_id):
 		items = order['items']
 		order['items'] = products
 		order['subtotal'] = total
-		order['total'] = total	
+		order['total'] = total
+		order['email'] = current_user.email
 		result = store.EcwidSetStoreOrder(order)
 		if 'id' not in result:
 			flash('Не удалось отправить заявку поставщику {}.'.format(store.store_id))
@@ -529,7 +530,7 @@ def ProcessHubOrder(order_id):
 		order['items'] = items
 
 	if len(got_orders) > 0:
-		vendor_str = ', '.join(f'{vendor}: №{order}' for vendor,order in got_orders.items())
+		vendor_str = ', '.join(f'{vendor}: #{order}' for vendor,order in got_orders.items())
 		try:
 			current_user.hub.EcwidUpdateStoreOrder(order_id, {'privateAdminNotes':vendor_str, 'externalFulfillment':True})
 		except EcwidAPIException as e:
