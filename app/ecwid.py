@@ -7,7 +7,6 @@ _REST_API_URL = 'https://app.ecwid.com/api/v3/{store_id}/{endpoint}'
 _PARTNERS_API_URL = 'https://my.ecwid.com/resellerapi/v1/'
 _OAUTH_URL = 'https://my.ecwid.com/api/oauth/token/'
 _DEFAULT_STORE_PROFILE = {'languages':{'enabledLanguages': ['ru'], 'defaultLanguage': 'ru'},
-						  'company':{'city':'Москва', 'countryCode':'RU'},
 						  'formatsAndUnits':{'currency':'RUB', 'currencyPrefix':'', 'currencySuffix':'₽',
 						  'weightUnit':'KILOGRAM', 'dateFormat':'dd-MM-yyyy', 'timezone':'Europe/Moscow',
 						  'timeFormat': 'HH:mm:ss', 'dimensionsUnit':'CM'}}
@@ -145,6 +144,8 @@ class EcwidAPI():
 		params = {'token':self.token}
 		if not template:
 			template = _DEFAULT_STORE_PROFILE
+		else:
+			template =  {**template, **_DEFAULT_STORE_PROFILE}
 		response = put(_REST_API_URL.format(store_id=self.store_id, endpoint='profile'), json=template, params=params)
 		if response.status_code != 200:
 			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))

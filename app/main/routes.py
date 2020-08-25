@@ -234,7 +234,6 @@ def RemoveUser(user_id):
 Stores page
 ################################################################################
 '''
-
 @bp.route('/stores/', methods=['GET', 'POST'])
 @login_required
 @role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
@@ -252,7 +251,7 @@ def ShowStores():
 								client_id = current_user.hub.client_id, client_secret = current_user.hub.client_secret)
 				db.session.add(store)
 				store.EcwidGetStoreToken()
-				store.EcwidUpdateStoreProfile()
+				store.EcwidUpdateStoreProfile({'settings':{'storeName':store_name}, 'company':{'companyName':store_name, 'city':'Москва', 'countryCode':'RU'}})
 				db.session.commit()
 				flash('Магазин успешно добавлен.')
 			except EcwidAPIException as e:
