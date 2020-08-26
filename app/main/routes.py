@@ -66,10 +66,7 @@ def GetDateTimestamps():
 	dates = [int(today.timestamp()), int(week.timestamp()), int(month.timestamp())]
 	return dates
 	
-def GetOrderStatus(order):
-	if order['externalFulfillment']:
-		return OrderStatus.sent
-	order_id = order['orderNumber']
+def GetOrderStatus(order_id):
 	not_approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id != None, User.ecwid_id == current_user.ecwid_id).count() > 0
 	if not_approved:
 		return OrderStatus.not_approved
@@ -80,11 +77,11 @@ def GetOrderStatus(order):
 		return OrderStatus.new
 	elif approved == approvers:
 		return OrderStatus.approved
-	return OrderStatus.partly_approved
+	return OrderStatus.partly_approved	
 	
-def GetProductStatus(order_id, product_id, user_id):
+def GetProductApproval(order_id, product_id, user_id):
 	'''
-		Returns current user order status if product_id is None
+		Returns current user order approval if product_id is None
 	'''
 	return OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.product_id == product_id, OrderApproval.user_id == user_id).count() == 0
 
@@ -104,7 +101,9 @@ def ShowIndex():
 	filter_from = request.args.get('from', default = None, type = int)
 	filter_approval = request.args.get('approval', default = None, type = str)
 	filter_location = request.args.get('location', default = None, type = str)
-	if filter_approval not in [str(status) for status in OrderStatus]:
+	filters = [str(status) for status in OrderStatus]
+	filters.append('sent')
+	if filter_approval not in filters:
 		filter_approval = None
 	try:
 		filter_from = datetime.fromtimestamp(filter_from)
@@ -146,9 +145,12 @@ def ShowIndex():
 		if len(order['orderComments']) > 50:
 			order['orderComments'] = order['orderComments'][:50] + '...'
 		order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
-		order['status'] = str(GetOrderStatus(order))
-		if filter_approval and order['status'] != filter_approval:
-			continue
+		order['status'] = str(GetOrderStatus(order['orderNumber']))
+		if filter_approval:
+			if filter_approval == 'sent' and order['externalFulfillment'] != True:
+				continue
+			if filter_approval != 'sent' and order['status'] != filter_approval:
+				continue
 		new_orders.append(order)
 	orders = new_orders
 
@@ -331,13 +333,13 @@ def ShowOrder(order_id):
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
 		return redirect(url_for('main.ShowIndex'))
-		
-	order['status'] = str(GetOrderStatus(order))
+
+	order['status'] = str(GetOrderStatus(order['orderNumber']))
 	if current_user.role in [UserRoles.validator, UserRoles.approver]:
 		for product in order['items']:
-			product['approval'] = GetProductStatus(order_id, product['productId'], current_user.id)
+			product['approval'] = GetProductApproval(order_id, product['productId'], current_user.id)
 		if current_user.role == UserRoles.approver:
-			order['approval'] = not GetProductStatus(order_id, None, current_user.id)
+			order['approval'] = not GetProductApproval(order_id, None, current_user.id)
 			
 	order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
 	order['initiative'] = owner.location if owner.location and owner.location != '' else order_email

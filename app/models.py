@@ -26,10 +26,9 @@ class OrderStatus(enum.IntEnum):
 	not_approved = 1
 	partly_approved = 2
 	approved = 3
-	sent = 4
 	
 	def __str__(self):
-		pretty = ['new', 'not_approved', 'partly_approved', 'approved', 'sent']
+		pretty = ['new', 'not_approved', 'partly_approved', 'approved']
 		return pretty[self.value]
 
 @login.user_loader
