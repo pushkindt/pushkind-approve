@@ -32,11 +32,6 @@
 		{% else %}
 			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = 'not_approved', location = filter_location) }}" class="badge badge-danger">не согласованные</a>
 		{% endif %}
-		{% if filter_approval == 'sent' %}
-			<span class="badge badge-info font-weight-bold">ОТПРАВЛЕННЫЕ</span>
-		{% else %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = 'sent', location = filter_location) }}" class="badge badge-info">отправленные</a>
-		{% endif %}
 		{% if filter_approval == None %}
 			<span class="badge badge-dark text-white font-weight-bold">ВСЕ</span>
 		{% else %}
@@ -71,8 +66,15 @@
 	{% if current_user.role.name != 'initiative' %}
 		<div class="row">
 			<div class="col">
-				{% for initiative in initiatives %}
-					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = initiative) }}" class="badge badge-dark text-white">{{ initiatives[initiative] }}</a>
+				{% for email, initiative in initiatives.items() %}
+					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = email) }}" class="badge badge-dark text-white">
+						{% if initiative.location != '' or initiative.name != '' %}
+							{{ initiative.location }}<br>
+							<sup class="small font-italic font-weight-light">{{ initiative.name }}</sup>
+						{% else %}
+							{{ email }}
+						{% endif %}
+					</a>
 				{% endfor %}
 					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}" class="badge badge-dark text-white">
 						{% if initiatives| length > 1 %}

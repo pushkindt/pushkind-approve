@@ -126,31 +126,19 @@
 			<div class="form-group row">
 				{{ user_form.about_user.full_name.label(class_ = "col-md-2 col-form-label") }}
 				<div class="col-md-10">
-					{% if current_user.name %}
-						{{ user_form.about_user.full_name(class_ = 'form-control', autofocus = '', value = current_user.name) }}
-					{% else %}
-						{{ user_form.about_user.full_name(class_ = 'form-control', autofocus = '') }}
-					{% endif %}
+					{{ user_form.about_user.full_name(class_ = 'form-control', autofocus = '', value = current_user.name) }}
 				</div>
 			</div>
 			<div class="form-group row">
 				{{ user_form.about_user.phone.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
-					{% if current_user.phone %}
-						{{ user_form.about_user.phone(class_ = 'form-control', value = current_user.phone) }}
-					{% else %}
-						{{ user_form.about_user.phone(class_ = 'form-control') }}
-					{% endif %}
+					{{ user_form.about_user.phone(class_ = 'form-control', value = current_user.phone) }}
 				</div>
 			</div>
 			<div class="form-group row">
 				{{ user_form.about_user.location.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
-					{% if current_user.location %}
-						{{ user_form.about_user.location(class_ = 'form-control', value = current_user.location) }}
-					{% else %}
-						{{ user_form.about_user.location(class_ = 'form-control') }}
-					{% endif %}
+					{{ user_form.about_user.location(class_ = 'form-control', value = current_user.location) }}
 				</div>
 			</div>
 			<div class="form-group row">

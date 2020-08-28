@@ -12,7 +12,7 @@
 		{% elif current_user.role.name == 'approver' %}
 			<div class="row">
 				<div class="col text-right">
-					<a href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" class="btn btn-info btn-sm" {% if order['status'] == 'sent' %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>Отправить</a>
+					<a href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" class="btn btn-info btn-sm" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>Отправить</a>
 				</div>
 			</div>
 		{% endif %}
@@ -108,59 +108,80 @@
 		</div>
 	{% endif %}
 	
-	{% if approvals|length > 0 or comments|length > 0 %}
-		<div class="container my-1">
-			<div class="card-columns" id="commentsSection">
-				{% for approval in approvals %}
-					<div class="card text-white {% if approval.product_id %}bg-danger{% else %}bg-success{% endif %}">
-						<div class="card-body">
-							<p>
-							{% if approval.product_id %}
-								Товар {{ approval.product_sku }} отклонён.
-							{% else %}
-								Заявка одобрена.
-							{% endif %}
-							</p>
-						</div>
-						<div class="card-footer font-weight-bold">
-							{% if approval.user.name %}
-								{{ approval.user.name }}
-							{% else %}
-								{{ approval.user.email }}
-							{% endif %}
-						</div>
-					</div>
-				{% endfor %}
-				{% for comment in comments %}
-					<div class="card text-white bg-warning" id="{{'comment{}'.format(comment.user.id)}}">
-						<div class="card-body">
-							<p>
-								{{ comment.comment }}
-							</p>
-						</div>
-						<div class="card-footer font-weight-bold">
-							{% if comment.user.name %}
-								{{ comment.user.name }}
-							{% else %}
-								{{ comment.user.email }}
-							{% endif %}
-						</div>
-					</div>
-				{% endfor %}
-			</div>
-		</div>
-		
-	{% else %}
-		<div class="container my-1 d-none">
-			<div class="card-columns" id="commentsSection">
-			</div>
-		</div>
-	{% endif %}
 
+	<div class="container my-1">
+		<div class="card-columns" id="commentsSection">
+			{% if order['externalFulfillment'] %}
+			
+				<div class="card text-white bg-info">
+					<div class="card-header font-weight-bold">
+						{{ moment(order['privateAdminNotes']).format() }}
+					</div>
+					<div class="card-body">
+						<p>
+							Заявка отправлена поставщикам.
+						</p>
+					</div>
+					<div class="card-footer font-weight-bold">
+						{{ order['externalOrderId'] }}
+					</div>
+				</div>
+				
+			{% endif %}
+			{% for approval in approvals %}
+				<div class="card text-white {% if approval.product_id %}bg-danger{% else %}bg-success{% endif %}">
+					<div class="card-header font-weight-bold">
+						{% if approval.timestamp %}
+							{{ moment(approval.timestamp).format() }}
+						{% endif %}
+					</div>
+					<div class="card-body">
+						<p>
+						{% if approval.product_id %}
+							Товар {{ approval.product_sku }} отклонён.
+						{% else %}
+							Заявка одобрена.
+						{% endif %}
+						</p>
+					</div>
+					<div class="card-footer font-weight-bold">
+						{% if approval.user.name %}
+							{{ approval.user.name }}
+						{% else %}
+							{{ approval.user.email }}
+						{% endif %}
+					</div>
+				</div>
+			{% endfor %}
+			{% for comment in comments %}
+				<div class="card text-white bg-warning" id="comment{{comment.user.id}}">
+					<div class="card-header font-weight-bold">
+						{% if comment.timestamp %}
+							{{ moment(comment.timestamp).format() }}
+						{% endif %}
+					</div>
+					<div class="card-body">
+						<p>
+							{{ comment.comment }}
+						</p>
+					</div>
+					<div class="card-footer font-weight-bold">
+						{% if comment.user.name %}
+							{{ comment.user.name }}
+						{% else %}
+							{{ comment.user.email }}
+						{% endif %}
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+	</div>
 {% endblock %}
 
 {% block templates %}
 	<div class="card text-white bg-warning" id="commentTemplate">
+		<div class="card-header font-weight-bold">
+		</div>
 		<div class="card-body">
 			<p>
 			</p>
@@ -175,7 +196,7 @@
 <script>
 	function UpdateOrderTotal(data){
 		if (data.status == true){
-			$("#orderTotal").text(data.total);
+			$(".orderTotal").text(data.total);
 		}
 		ShowAjaxFlashes(data);
 	}
@@ -184,11 +205,10 @@
 			var authorComment = $("{{ '#comment{}'.format(current_user.id) }}");
 			var commentsSection = $("#commentsSection");
 			if (data.comment.length > 0){
-				commentsSection.parent().removeClass('d-none');
 				if (authorComment.length == 0){
 					authorComment = $("#commentTemplate").clone();
 					authorComment.attr("id", "{{'comment{}'.format(current_user.id)}}");
-					var author = authorComment.find('.card-footer');
+					var author = authorComment.find(".card-footer");
 					{% if current_user.name %}
 						author.text("{{ current_user.name }}");
 					{% else %}
@@ -198,10 +218,10 @@
 				}
 				var comment = authorComment.find(".card-body p");
 				comment.text(data.comment);
+				var timestamp = authorComment.find(".card-header");
+				timestamp.text(moment(data.timestamp).format("DD.MM.YYYY HH:mm"));
 			}else{
 				authorComment.remove();
-				if (commentsSection.find(".card").length == 0)
-					commentsSection.parent().addClass("d-none");
 			}
 		}else
 			ShowAjaxFlashes(data);

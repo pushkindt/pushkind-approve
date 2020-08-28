@@ -5,10 +5,18 @@ from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval, Orde
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm, AddStoreForm
 from sqlalchemy import or_
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from app.ecwid import EcwidAPIException
 import subprocess
+
+
+'''
+################################################################################
+Consts
+################################################################################
+'''
+DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S %z'
 
 '''
 ################################################################################
@@ -59,7 +67,7 @@ def ecwid_required_ajax(function):
 	return wrapper
 	
 def GetDateTimestamps():
-	now = datetime.now()
+	now = datetime.now(timezone.utc)
 	today = datetime(now.year, now.month, now.day)
 	week = today - timedelta(days = today.weekday())
 	month = datetime(now.year, now.month, 1)
@@ -101,57 +109,42 @@ def ShowIndex():
 	filter_from = request.args.get('from', default = None, type = int)
 	filter_approval = request.args.get('approval', default = None, type = str)
 	filter_location = request.args.get('location', default = None, type = str)
-	filters = [str(status) for status in OrderStatus]
-	filters.append('sent')
-	if filter_approval not in filters:
+	if filter_approval not in [str(status) for status in OrderStatus]:
 		filter_approval = None
-	try:
-		filter_from = datetime.fromtimestamp(filter_from)
-		filter_from = int(filter_from.timestamp())
-	except:
-		filter_from = None
-		
-	orders = []
-	initiatives = {}
-
+	
+	initiatives = User.query.filter(User.ecwid_id == current_user.ecwid_id, User.role == UserRoles.initiative).all()
+	initiatives = {k.email:k for k in initiatives}
+	
 	try:
 		args = {}
 		if filter_from:
 			args['createdFrom'] = filter_from
 		if current_user.role == UserRoles.initiative:
 			args['email'] = current_user.email
-		else:
-			if filter_location:
-				args['email'] = filter_location
+		elif filter_location:
+			args['email'] = filter_location
 		json = current_user.hub.EcwidGetStoreOrders(**args)
-		if 'items' in json:
-			orders = json['items']
+		orders = json.get('items', list())
 	except EcwidAPIException as e:
+		orders = []
 		flash('Ошибка API: {}'.format(e))
 		flash('Возможно неверные настройки?')
 
 	new_orders = []
+
 	for order in orders:
-		order_email = order['email'].lower()
-		if not order_email in initiatives:
-			initiative = User.query.filter(User.email == order_email, User.role == UserRoles.initiative).first()
-			if not initiative:
-				continue
-			if initiative.location and initiative.location != '':
-				initiatives[order_email] = initiative.location
-			else:
-				initiatives[order_email] = order_email
-		order['initiative'] = initiatives[order_email]
+		order['status'] = str(GetOrderStatus(order['orderNumber']))
+		if filter_approval and order['status'] != filter_approval:
+			continue
 		if len(order['orderComments']) > 50:
 			order['orderComments'] = order['orderComments'][:50] + '...'
-		order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
-		order['status'] = str(GetOrderStatus(order['orderNumber']))
-		if filter_approval:
-			if filter_approval == 'sent' and order['externalFulfillment'] != True:
-				continue
-			if filter_approval != 'sent' and order['status'] != filter_approval:
-				continue
+		order['createDate'] = datetime.strptime(order['createDate'], DATE_TIME_FORMAT)
+		order['email'] = order['email'].lower()
+		if order['email'] not in initiatives:
+			continue
+		order['initiative'] = initiatives[order['email']]
 		new_orders.append(order)
+
 	orders = new_orders
 
 	return render_template('index.html',
@@ -183,7 +176,6 @@ def ShowSettings():
 			current_user.hub.client_id = ecwid_form.client_id.data
 			current_user.hub.client_secret = ecwid_form.client_secret.data
 			current_user.hub.store_id = ecwid_form.store_id.data
-			current_user.hub.ecwid_id = None
 			try:
 				current_user.hub.EcwidGetStoreToken()
 				db.session.commit()
@@ -341,8 +333,12 @@ def ShowOrder(order_id):
 		if current_user.role == UserRoles.approver:
 			order['approval'] = not GetProductApproval(order_id, None, current_user.id)
 			
-	order['createDate'] = datetime.strptime(order['createDate'], '%Y-%m-%d %H:%M:%S %z')
-	order['initiative'] = owner.location if owner.location and owner.location != '' else order_email
+	order['createDate'] = datetime.strptime(order['createDate'], DATE_TIME_FORMAT)
+	order['initiative'] = owner
+	try:
+		order['privateAdminNotes'] = datetime.strptime(order['privateAdminNotes'], DATE_TIME_FORMAT)
+	except (ValueError, KeyError):
+		order['privateAdminNotes'] = datetime.now()
 	if len(order['orderComments']) > 50:
 		order['orderComments'] = order['orderComments'][:50] + '...'
 		
@@ -371,6 +367,7 @@ def SaveComment(order_id):
 	status = False
 	form = OrderCommentsForm()
 	stripped = ''
+	timestamp = datetime.now(timezone.utc)
 	if form.validate_on_submit():
 		comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
 		stripped = form.comment.data.strip() if form.comment.data else ''
@@ -382,10 +379,11 @@ def SaveComment(order_id):
 				comment = OrderComment(user_id = current_user.id, order_id = order_id)
 				db.session.add(comment)
 			comment.comment = stripped
+			comment.timestamp = timestamp
 		status = True
 		flash_messages = []
 		db.session.commit()
-	return jsonify({'status':status, 'flash':flash_messages, 'comment':stripped})
+	return jsonify({'status':status, 'flash':flash_messages, 'comment':stripped, 'timestamp':timestamp.strftime(DATE_TIME_FORMAT)})
 
 
 @bp.route('/approval/<int:order_id>', methods=['POST'])
@@ -533,7 +531,7 @@ def ProcessHubOrder(order_id):
 	if len(got_orders) > 0:
 		vendor_str = ', '.join(f'{vendor}: #{order}' for vendor,order in got_orders.items())
 		try:
-			current_user.hub.EcwidUpdateStoreOrder(order_id, {'privateAdminNotes':vendor_str, 'externalFulfillment':True})
+			current_user.hub.EcwidUpdateStoreOrder(order_id, {'externalOrderId':vendor_str, 'externalFulfillment':True, 'privateAdminNotes': datetime.now(timezone.utc).strftime(DATE_TIME_FORMAT)})
 		except EcwidAPIException as e:
 			flash('Ошибка API: {}'.format(e))
 			flash('Не удалось сохранить информацию о передаче поставщикам.')

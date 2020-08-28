@@ -7,9 +7,9 @@ from app.models import UserRoles
 
 class AddStoreForm(FlaskForm):
 	name = StringField('Поставщик', validators = [DataRequired(message='Название поставщика - обязательное поле.')])
-	email = EmailField('Электронная почта', validators = [DataRequired(), Email()])
-	password = PasswordField('Пароль', validators = [DataRequired()])
-	plan = StringField('Платежный план', default = 'J_PUSHKIND_FREEDEMO', validators = [DataRequired(message='План - обязательное поле.')])
+	email = EmailField('Электронная почта', validators = [DataRequired(message='Электронная почта - обязательное поле.'), Email()])
+	password = PasswordField('Пароль', validators = [DataRequired(message='Пароль - обязательное поле.')])
+	plan = StringField('Платежный план', default = 'J_PUSHKIND_FREEDEMO', validators = [DataRequired(message='Платежный план - обязательное поле.')])
 	submit = SubmitField('Создать')
 
 class EcwidSettingsForm(FlaskForm):

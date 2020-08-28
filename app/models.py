@@ -9,6 +9,8 @@ import json
 import jwt
 from time import time
 from flask import current_app
+from datetime import datetime, timezone
+from sqlalchemy.sql import func
 
 class UserRoles(enum.IntEnum):
 	default = 0
@@ -36,24 +38,24 @@ def load_user(id):
 	return User.query.get(int(id))
 
 class Ecwid(db.Model, EcwidAPI):
-	id  = db.Column(db.Integer, primary_key = True)
+	id  = db.Column(db.Integer, primary_key=True)
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'))
 	hub = db.relationship('Ecwid')
 
 class User(UserMixin, db.Model):
-	id  = db.Column(db.Integer, primary_key = True, nullable=False)
-	email	= db.Column(db.String(120), index = True, unique = True, nullable=False)
+	id  = db.Column(db.Integer, primary_key=True, nullable=False)
+	email	= db.Column(db.String(120), index=True, unique=True, nullable=False)
 	password = db.Column(db.String(128), nullable=False)
-	role = db.Column(db.Enum(UserRoles), nullable=False, default = UserRoles.default)
-	name = db.Column(db.String(120))
-	phone = db.Column(db.String(120))
-	location = db.Column(db.String(120))
-	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'))
+	role = db.Column(db.Enum(UserRoles), index=True, nullable=False, default=UserRoles.default)
+	name = db.Column(db.String(120), nullable=False, default='', server_default='')
+	phone = db.Column(db.String(120), nullable=False, default='', server_default='')
+	location = db.Column(db.String(120), nullable=False, default='', server_default='')
+	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=True, index=True)
 	hub = db.relationship('Ecwid')
 	
 	def __repr__(self):
 		return json.dumps(self.to_dict())
-	
+
 	def SetPassword(self, password):
 		self.password = generate_password_hash(password)
 		
@@ -85,16 +87,18 @@ class User(UserMixin, db.Model):
 	
 class OrderApproval(db.Model):
 	id  = db.Column(db.Integer, primary_key = True, nullable=False)
-	order_id  = db.Column(db.Integer, nullable=False)
-	product_id  = db.Column(db.Integer, nullable=True)
-	product_sku = db.Column(db.String(120), nullable = True)
-	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+	order_id  = db.Column(db.Integer, index=True, nullable=False)
+	product_id  = db.Column(db.Integer, index=True, nullable=True)
+	product_sku = db.Column(db.String(120), nullable=True)
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True, nullable=False)
 	user = db.relationship('User')
+	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc), server_default=func.datetime('now'))
 	
 class OrderComment(db.Model):
 	user = db.relationship('User')
 	order_id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, primary_key = True)
-	comment = db.Column(db.String(120))
+	comment = db.Column(db.String(120), nullable=False, default='', server_default='')
+	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc), server_default=func.datetime('now'))
 	
 	
