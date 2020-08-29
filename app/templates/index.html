@@ -66,22 +66,13 @@
 	{% if current_user.role.name != 'initiative' %}
 		<div class="row">
 			<div class="col">
-				{% for email, initiative in initiatives.items() %}
-					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = email) }}" class="badge badge-dark text-white">
-						{% if initiative.location != '' or initiative.name != '' %}
-							{{ initiative.location }}<br>
-							<sup class="small font-italic font-weight-light">{{ initiative.name }}</sup>
-						{% else %}
-							{{ email }}
-						{% endif %}
+				{% for location in locations %}
+					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = location[0]) }}" class="badge badge-dark text-white">
+						{{ location[0] }}
 					</a>
 				{% endfor %}
 					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}" class="badge badge-dark text-white">
-						{% if initiatives| length > 1 %}
-							ВСЕ
-						{% else %}
-							все
-						{% endif %}
+						все
 					</a>
 			</div>
 		</div>
@@ -89,6 +80,11 @@
 </div>
 <div class="container border bg-light my-1">
 	<h6 class="text-secondary">Заявки</h6>
+	<div class="row my-1">
+		<div class="col">
+			<input class="form-control" id="orderFilter" type="text" placeholder="Фильтр..">
+		</div>
+	</div>
 	<div class="row my-1 d-none d-sm-flex font-weight-bold">
 		<div class="col overflow-hidden">
 			Номер
@@ -116,7 +112,13 @@
 
 <script>
 	$(document).ready(function(){
-		//Scripts
+	
+		$("#orderFilter").on("keyup", function() {
+			var value = $(this).val().toLowerCase();
+			$(".ecwidOrder").filter(function() {
+				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+			});
+		});
 		
 		$(".ecwidOrder").click(function(event){
 			var orderId = Number($(this).attr('id').replace('order', ''));

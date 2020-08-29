@@ -4,7 +4,7 @@ from app.main import bp
 from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval, OrderStatus
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm, AddStoreForm
-from sqlalchemy import or_
+from sqlalchemy import or_, distinct
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from app.ecwid import EcwidAPIException
@@ -108,30 +108,34 @@ def ShowIndex():
 	dates = GetDateTimestamps()
 	filter_from = request.args.get('from', default = None, type = int)
 	filter_approval = request.args.get('approval', default = None, type = str)
-	filter_location = request.args.get('location', default = None, type = str)
+	filter_location = request.args.get('location', default = '', type = str).strip()
 	if filter_approval not in [str(status) for status in OrderStatus]:
 		filter_approval = None
+	locations = db.session.query(distinct(User.location)).filter(User.ecwid_id == current_user.ecwid_id, User.role == UserRoles.initiative).all()
 	
-	initiatives = User.query.filter(User.ecwid_id == current_user.ecwid_id, User.role == UserRoles.initiative).all()
+	if current_user.role == UserRoles.initiative:
+		initiatives = [current_user]
+	else:
+		if filter_location != '':
+			initiatives = User.query.filter(User.ecwid_id == current_user.ecwid_id, User.role == UserRoles.initiative, User.location == filter_location).all()
+		else:
+			initiatives = User.query.filter(User.ecwid_id == current_user.ecwid_id, User.role == UserRoles.initiative).all()
+
 	initiatives = {k.email:k for k in initiatives}
-	
+
+	orders = []
+
+	args = {}
+	if filter_from:
+		args['createdFrom'] = filter_from
+		
 	try:
-		args = {}
-		if filter_from:
-			args['createdFrom'] = filter_from
-		if current_user.role == UserRoles.initiative:
-			args['email'] = current_user.email
-		elif filter_location:
-			args['email'] = filter_location
 		json = current_user.hub.EcwidGetStoreOrders(**args)
-		orders = json.get('items', list())
+		orders = json.get('items', [])
 	except EcwidAPIException as e:
-		orders = []
 		flash('Ошибка API: {}'.format(e))
-		flash('Возможно неверные настройки?')
-
+	
 	new_orders = []
-
 	for order in orders:
 		order['status'] = str(GetOrderStatus(order['orderNumber']))
 		if filter_approval and order['status'] != filter_approval:
@@ -144,11 +148,10 @@ def ShowIndex():
 			continue
 		order['initiative'] = initiatives[order['email']]
 		new_orders.append(order)
-
+	
 	orders = new_orders
-
 	return render_template('index.html',
-							orders = orders, dates = dates, initiatives = initiatives,
+							orders = orders, dates = dates, locations = locations,
 							filter_from = filter_from,
 							filter_approval = filter_approval,
 							filter_location = filter_location)

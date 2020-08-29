@@ -39,7 +39,7 @@
 				{% endwith %}
 				<div class="row">
 					<div class="col">
-						<h3 {% if 'auth' in request.endpoint %} class="text-center" {% endif %}>
+						<h3 {% if request.endpoint and 'auth' in request.endpoint %} class="text-center" {% endif %}>
 							<a href="/index"><img src="http://approvals.pushkind.com/static/logo.png" alt="Logo"></a>
 							Согласование заявок
 						</h3>

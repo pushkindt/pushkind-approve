@@ -5,7 +5,7 @@
 #include "model.h"
 #include "ecwid.h"
 
-#define USAGE_STRING "ecwid-api ecwid_id"
+#define USAGE_STRING "ecwid-api ecwid_id {store_id}"
 
 int main(int argc, char* argv[]){
 	int result = -1;

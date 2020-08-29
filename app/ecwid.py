@@ -1,5 +1,6 @@
 from app import db
 from requests import post, get, delete, put
+from requests.exceptions import RequestException
 from urllib.parse import urljoin
 from xml.etree import ElementTree
 
@@ -24,7 +25,10 @@ class EcwidAPI():
 	def EcwidGetStoreToken(self):
 		'''Gets store token using REST API, returns JSON'''
 		payload = {'client_id':self.client_id, 'client_secret':self.client_secret, 'grant_type':'authorization_code'}
-		response = post(urljoin(_OAUTH_URL, str(self.store_id)), data = payload)
+		try:
+			response = post(urljoin(_OAUTH_URL, str(self.store_id)), data = payload)
+		except RequestException:
+			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
 			raise EcwidAPIException('Неизвестная ошибка API.')
 		json = response.json()
@@ -36,7 +40,10 @@ class EcwidAPI():
 	def EcwidGetStoreEndpoint(self, endpoint, **kwargs):
 		'''Gets store's endpoint using REST API, returns JSON'''
 		params = {'token':self.token, **kwargs}
-		response = get(_REST_API_URL.format(store_id = self.store_id,endpoint = endpoint), params = params)
+		try:
+			response = get(_REST_API_URL.format(store_id = self.store_id,endpoint = endpoint), params = params)
+		except RequestException:
+			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
 			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
 		result = response.json()
@@ -44,7 +51,10 @@ class EcwidAPI():
 			received = result['count']
 			while received < result['total']:
 				params['offset'] = received
-				response = get(_REST_API_URL.format(store_id = self.store_id,endpoint = endpoint), params = params)
+				try:
+					response = get(_REST_API_URL.format(store_id = self.store_id,endpoint = endpoint), params = params)
+				except RequestException:
+					raise EcwidAPIException('Ошибка обращения по API.')
 				if response.status_code != 200:
 					raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
 				next = response.json()
@@ -78,7 +88,10 @@ class EcwidAPI():
 	def EcwidDeleteStoreOrder(self, order_id):
 		'''Deletes store's product using REST API, returns JSON'''
 		params = {'token':self.token}
-		response = delete(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}'.format(order_id)), params = params)
+		try:
+			response = delete(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}'.format(order_id)), params = params)
+		except RequestException:
+			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
 			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
 		json = response.json()
@@ -89,7 +102,10 @@ class EcwidAPI():
 	def EcwidUpdateStoreOrder(self, order_id, order):
 		'''Deletes store's product using REST API, returns JSON'''
 		params = {'token':self.token}
-		response = put(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}'.format(order_id)), params = params, json = order)
+		try:
+			response = put(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}'.format(order_id)), params = params, json = order)
+		except RequestException:
+			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
 			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
 		json = response.json()
@@ -100,7 +116,10 @@ class EcwidAPI():
 	def EcwidOrderInvoice(self, order_id):
 		'''Deletes store's product using REST API, returns JSON'''
 		params = {'token':self.token}
-		response = get(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}/invoice'.format(order_id)), params = params)
+		try:
+			response = get(_REST_API_URL.format(store_id = self.store_id,endpoint = 'orders/{}/invoice'.format(order_id)), params = params)
+		except RequestException:
+			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
 			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
 		return response.text
@@ -109,7 +128,10 @@ class EcwidAPI():
 		'''Create store using Partners API, returns store_id'''
 		payload = {'name':name, 'email':email, 'password':password, 'plan':plan, 'key':self.partners_key, **kwargs}
 		params = {'register':'y'}
-		response = post(urljoin(_PARTNERS_API_URL, 'register'), data = payload, params = params)
+		try:
+			response = post(urljoin(_PARTNERS_API_URL, 'register'), data = payload, params = params)
+		except RequestException:
+			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code == 409:
 			raise EcwidAPIException('Электронный адрес уже используется.')
 		elif response.status_code == 400:
@@ -126,7 +148,10 @@ class EcwidAPI():
 	def EcwidDeleteStore(self):
 		'''Removes store using Partners API, returns Boolean'''
 		payload = {'ownerid':self.store_id, 'key':self.partners_key}
-		response = post(urljoin(_PARTNERS_API_URL, 'delete'), data = payload)
+		try:
+			response = post(urljoin(_PARTNERS_API_URL, 'delete'), data = payload)
+		except RequestException:
+			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code == 403:
 			raise EcwidAPIException('Недостаточно прав на удаление поставщика {}.'.format(self.store_id))
 		elif response.status_code != 200:
@@ -146,7 +171,10 @@ class EcwidAPI():
 			template = _DEFAULT_STORE_PROFILE
 		else:
 			template =  {**template, **_DEFAULT_STORE_PROFILE}
-		response = put(_REST_API_URL.format(store_id=self.store_id, endpoint='profile'), json=template, params=params)
+		try:
+			response = put(_REST_API_URL.format(store_id=self.store_id, endpoint='profile'), json=template, params=params)
+		except RequestException:
+			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
 			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
 		json = response.json()
@@ -157,7 +185,10 @@ class EcwidAPI():
 	def EcwidSetStoreOrder(self, order):
 		'''Sets store's order using REST API, returns JSON'''
 		params = {'token':self.token}
-		response = post(_REST_API_URL.format(store_id = self.store_id, endpoint = 'orders'), json = order, params=params)
+		try:
+			response = post(_REST_API_URL.format(store_id = self.store_id, endpoint = 'orders'), json = order, params=params)
+		except RequestException:
+			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
 			raise Exception(self._EcwidGetErrorMessage(response.status_code))
 		return response.json()
