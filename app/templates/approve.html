@@ -29,9 +29,15 @@
 			<div class="col overflow-hidden">
 				Сумма
 			</div>
-			<div class="col overflow-hidden">
-				Согласование
-			</div>
+			{% if current_user.role.name == 'approver' %}
+				<div class="col overflow-hidden">
+					Согласование
+				</div>
+			{% else %}
+				<div class="col overflow-hidden">
+					Статус
+				</div>
+			{% endif %}
 		</div>
 		{% include '_order.html' %}
 	</div>

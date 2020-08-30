@@ -46,13 +46,13 @@
 			{% else %}
 				<span class="d-sm-none font-weight-bold">Статус: </span>
 				{% if order['status'] == 'approved' %}
-					<button class="btn btn-success"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Согласовать"></button>
+					<span class="badge badge-success">согласована</span>
 				{% elif order['status'] == 'partly_approved' %}
-					<button class="btn btn-warning"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Согласовать"></button>
+					<span class="badge badge-warning">в работе</span>
 				{% elif order['status'] == 'not_approved' %}
-					<button class="btn btn-danger"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Согласовать"></button>
+					<span class="badge badge-danger">не согласована</span>
 				{% else %}
-					<button class="btn btn-secondary"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Согласовать"></button>
+					<span class="badge badge-secondary">новая</span>
 				{% endif %}
 				{% if order['externalFulfillment'] %}
 					<span class="badge badge-info"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена"></span>
