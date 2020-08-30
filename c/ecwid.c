@@ -5,8 +5,8 @@
 #include "http.h"
 
 static const char *_DISALLOWED_PRODUCTS_FIELDS[] = {"id", "categories", "defaultCategoryId", "relatedProducts",
-													"combinations", "url", "productClassId","defaultCombinationId", "categoryIds",
-													"tax", "galleryImages", "media", "files", "sku"};
+													"combinations", "url", "productClassId", "defaultCombinationId", "categoryIds",
+													"tax", "galleryImages", "media", "files", "sku", "showOnFrontpage"};
 
 #define ARRAY_SIZE(arr)     (sizeof(arr) / sizeof((arr)[0]))
 
@@ -359,7 +359,8 @@ bool ProcessStore(TEcwid hub, TEcwid store){
 	/*****************************************************************************/
 	//	Process store category products
 	/*****************************************************************************/
-	ProcessCategoryProducts(hub, store, 0, 0, hub_products, vendor);
+	//ProcessCategoryProducts(hub, store, 0, 0, hub_products, vendor);
+	ProcessCategories(hub, store, 0, 0, hub_products, vendor);
 	
 	/*****************************************************************************/
 	//	Remove excess hub products
