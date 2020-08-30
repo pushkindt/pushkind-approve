@@ -38,12 +38,21 @@
 					{% endif %}
 				{% endwith %}
 				<div class="row">
-					<div class="col">
-						<h3 {% if request.endpoint and 'auth' in request.endpoint %} class="text-center" {% endif %}>
-							<a href="/index"><img src="http://approvals.pushkind.com/static/logo.png" alt="Logo"></a>
-							Согласование заявок
-						</h3>
-					</div>
+					{% if request.endpoint and 'auth' in request.endpoint %}
+						<div class="col text-center overflow-hidden">
+							<h3>
+								<a href="/index"><img src="http://approvals.pushkind.com/static/logo.png" alt="Logo"></a>
+								Личный&nbsp;кабинет
+							</h3>						
+						</div>
+					{% else %}
+						<div class="col overflow-hidden">
+							<h3>
+								<a href="/index"><img src="http://approvals.pushkind.com/static/logo.png" alt="Logo"></a>
+								Личный&nbsp;кабинет
+							</h3>						
+						</div>
+					{% endif %}
 				</div>
 				{% if not current_user.is_anonymous %}
 					<div class = "row bg-light">
