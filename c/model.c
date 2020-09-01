@@ -35,7 +35,7 @@ TEcwid *GetHub(sqlite3 *pDB, uint64_t ecwid_id){
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	TEcwid *hub = NULL;
-	check(pDB != NULL, "Invalid function inputs.");
+	check(pDB != NULL && ecwid_id != 0, "Invalid function inputs.");
 	
 	/*****************************************************************************/
 	//	Prepare SQL query
@@ -78,7 +78,7 @@ TEcwid *GetStores(sqlite3 *pDB, uint64_t ecwid_id, size_t *stores_count){
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	TEcwid *stores = NULL;
-	check(pDB != NULL && stores_count != NULL, "Invalid function inputs.");
+	check(pDB != NULL && stores_count != NULL && ecwid_id != 0, "Invalid function inputs.");
 	
 	/*****************************************************************************/
 	//	Prepare SQL query
@@ -117,6 +117,51 @@ error:
 	if (result != 0){
 		if (stores != NULL){
 			FreeStores(stores, *stores_count);
+			stores = NULL;
+		}
+	}
+	return stores;
+}
+
+TEcwid *GetStore(sqlite3 *pDB, uint64_t ecwid_id, uint64_t store_id){
+	
+	int result = -1;
+	sqlite3_stmt *stmt = NULL;
+	TEcwid *stores = NULL;
+	check(pDB != NULL && store_id != 0 && ecwid_id != 0, "Invalid function inputs.");
+	
+	/*****************************************************************************/
+	//	Prepare SQL query
+	/*****************************************************************************/	
+	result = sqlite3_prepare_v2(pDB, "select partners_key,client_id,client_secret,token,store_id from ecwid where ecwid_id = ? and store_id = ? limit 1", -1, &stmt, NULL);
+	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
+	result = sqlite3_bind_int64(stmt, 1, ecwid_id);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_bind_int64(stmt, 2, store_id);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	
+	/*****************************************************************************/
+	//	Get SQL query result
+	/*****************************************************************************/
+	result = sqlite3_step(stmt);
+	check(result == SQLITE_ROW, "No data available.");
+	stores = calloc(sizeof(TEcwid), 1);
+	check_mem(stores);
+	stores[0].partners_key = strdup((const char *)sqlite3_column_text(stmt, 0));
+	stores[0].client_id = strdup((const char *)sqlite3_column_text(stmt, 1));
+	stores[0].client_secret = strdup((const char *)sqlite3_column_text(stmt, 2));
+	stores[0].token = strdup((const char *)sqlite3_column_text(stmt, 3));
+	stores[0].id = sqlite3_column_int64(stmt, 4);
+	result = 0;
+	
+error:
+	/*****************************************************************************/
+	//	Clean everything up
+	/*****************************************************************************/
+	sqlite3_finalize(stmt);
+	if (result != 0){
+		if (stores != NULL){
+			FreeStores(stores, 1);
 			stores = NULL;
 		}
 	}

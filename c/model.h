@@ -13,4 +13,5 @@ extern void FreeHub(TEcwid *hub);
 
 extern TEcwid *GetHub(sqlite3 *pDB, uint64_t ecwid_id);
 extern TEcwid *GetStores(sqlite3 *pDB, uint64_t ecwid_id, size_t *stores_count);
+extern TEcwid *GetStore(sqlite3 *pDB, uint64_t ecwid_id, uint64_t store_id);
 

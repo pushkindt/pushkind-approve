@@ -1,1 +1,1 @@
-extern bool ProcessHub(uint64_t user_id);
+extern bool ProcessHub(uint64_t ecwid_id, uint64_t store_id);

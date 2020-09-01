@@ -402,7 +402,7 @@ error:
 }
 
 
-bool ProcessHub(uint64_t ecwid_id){
+bool ProcessHub(uint64_t ecwid_id, uint64_t store_id){
 	
 	bool result = false;
 	sqlite3 *pDB = NULL;
@@ -417,7 +417,13 @@ bool ProcessHub(uint64_t ecwid_id){
 	check(sqlite3_open_v2("app.db", &pDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_WAL, NULL) == SQLITE_OK, "Error while opening DB.");
 	hub = GetHub(pDB, ecwid_id);
 	check(hub != NULL, "There is no such ecwid settings.");
-	stores = GetStores(pDB, ecwid_id, &stores_count);
+	
+	if (store_id == 0)
+		stores = GetStores(pDB, ecwid_id, &stores_count);
+	else {
+		stores_count = 1;
+		stores = GetStore(pDB, ecwid_id, store_id);
+	}
 	check(stores != NULL && stores_count > 0, "There are no registered stores.");
 
 	/*****************************************************************************/

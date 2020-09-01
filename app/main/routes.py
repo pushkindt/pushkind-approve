@@ -285,12 +285,16 @@ def WithdrawStore(store_id):
 		flash('Этот поставщик не зарегистрован в системе.')
 	return redirect(url_for('main.ShowStores'))
 	
-@bp.route('/sync/')
+@bp.route('/sync/', defaults={'store_id': None})
+@bp.route('/sync/<int:store_id>')
 @login_required
 @role_required([UserRoles.admin])
 @ecwid_required
-def SyncStores():
-	args = ("c/ecwid-api", str(current_user.ecwid_id))
+def SyncStores(store_id):
+	if not store_id:
+		args = ("c/ecwid-api", str(current_user.ecwid_id))
+	else:
+		args = ("c/ecwid-api", str(current_user.ecwid_id), str(store_id))
 	popen = subprocess.Popen(args, stderr=subprocess.PIPE)
 	popen.wait()
 	output = popen.stderr.read()
