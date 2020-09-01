@@ -192,3 +192,14 @@ class EcwidAPI():
 		if response.status_code != 200:
 			raise Exception(self._EcwidGetErrorMessage(response.status_code))
 		return response.json()
+		
+	def EcwidDeleteStoreProduct(self, product_id):
+		'''Deletes store's product using REST API, returns JSON'''
+		params = {'token':self.token}
+		response = delete(_REST_API_URL.format(store_id = self.store_id, endpoint = 'products/{}'.format(product_id)), params = params)
+		if response.status_code != 200:
+			raise Exception(self._EcwidGetErrorMessage(response.status_code))
+		json = response.json()
+		if json.get('deleteCount', 0) != 1:
+			raise EcwidAPIException('Не удалось удалить товар {}.'.format(product_id))
+		return response.json()

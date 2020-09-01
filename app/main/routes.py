@@ -277,7 +277,21 @@ def WithdrawStore(store_id):
 		try:
 			store.EcwidDeleteStore()
 		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
+			flash('Ошибка удаления магазина: {}'.format(e))
+		
+		try:
+			json = current_user.hub.EcwidGetStoreProducts(keyword = store.store_id)
+			products = json.get('items', [])
+		except EcwidAPIException as e:
+			flash('Ошибка удаления товаров: {}'.format(e))
+			products = []
+			
+		for product in products:
+			try:
+				current_user.hub.EcwidDeleteStoreProduct(product['id'])
+			except EcwidAPIException as e:
+				flash('Ошибка удаления товаров: {}'.format(e))
+				continue
 		db.session.delete(store)
 		db.session.commit()
 		flash('Поставщик успешно удалён.')
