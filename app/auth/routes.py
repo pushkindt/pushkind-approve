@@ -6,6 +6,7 @@ from werkzeug.urls import url_parse
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.models import User
 from app.auth.email import SendPasswordResetEmail
+from flask import current_app
 
 @bp.route('/login/', methods = ['GET', 'POST'])
 def PerformLogin():
@@ -22,6 +23,7 @@ def PerformLogin():
 		next_page = request.args.get('next')
 		if not next_page or url_parse(next_page).netloc != '':
 			next_page = url_for('main.ShowIndex')
+		current_app.logger.info('{} logged'.format(user.email))
 		return redirect(next_page)
 	return render_template ('auth/login.html', form = form)
 
@@ -37,6 +39,7 @@ def PerformRegistration():
 		db.session.add(user)
 		db.session.commit()
 		flash ('Теперь вы можете войти.')
+		current_app.logger.info('{} registered'.format(user.email))
 		return redirect(url_for('auth.PerformLogin'))
 	return render_template ('auth/register.html', form = form)
 

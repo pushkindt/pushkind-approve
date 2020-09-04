@@ -67,7 +67,7 @@ def ecwid_required_ajax(function):
 	return wrapper
 	
 def GetDateTimestamps():
-	now = datetime.now(timezone.utc)
+	now = datetime.now(tz = timezone.utc)
 	today = datetime(now.year, now.month, now.day)
 	week = today - timedelta(days = today.weekday())
 	month = datetime(now.year, now.month, 1)
@@ -388,7 +388,7 @@ def SaveComment(order_id):
 	status = False
 	form = OrderCommentsForm()
 	stripped = ''
-	timestamp = datetime.now(timezone.utc)
+	timestamp = datetime.now(tz = timezone.utc)
 	if form.validate_on_submit():
 		comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
 		stripped = form.comment.data.strip() if form.comment.data else ''
@@ -402,9 +402,9 @@ def SaveComment(order_id):
 			comment.comment = stripped
 			comment.timestamp = timestamp
 		status = True
-		flash_messages = []
+		flash_messages = ['Комментарий успешно обновлён.']
 		db.session.commit()
-	return jsonify({'status':status, 'flash':flash_messages, 'comment':stripped, 'timestamp':timestamp.strftime(DATE_TIME_FORMAT)})
+	return jsonify({'status':status, 'flash':flash_messages, 'comment':stripped, 'timestamp':timestamp.timestamp() * 1000})
 
 
 @bp.route('/approval/<int:order_id>', methods=['POST'])
@@ -552,7 +552,7 @@ def ProcessHubOrder(order_id):
 	if len(got_orders) > 0:
 		vendor_str = ', '.join(f'{vendor}: #{order}' for vendor,order in got_orders.items())
 		try:
-			current_user.hub.EcwidUpdateStoreOrder(order_id, {'externalOrderId':vendor_str, 'externalFulfillment':True, 'privateAdminNotes': datetime.now(timezone.utc).strftime(DATE_TIME_FORMAT)})
+			current_user.hub.EcwidUpdateStoreOrder(order_id, {'externalOrderId':vendor_str, 'externalFulfillment':True, 'privateAdminNotes': datetime.now(tz = timezone.utc).strftime(DATE_TIME_FORMAT)})
 		except EcwidAPIException as e:
 			flash('Ошибка API: {}'.format(e))
 			flash('Не удалось сохранить информацию о передаче поставщикам.')

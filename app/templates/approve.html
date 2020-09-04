@@ -46,22 +46,25 @@
 		<h6 class="text-secondary">Товары</h6>
 		<div class="row my-1 d-none d-sm-flex font-weight-bold">
 			<div class="col overflow-hidden">
-				Название
-			</div>
+				Изображение
+			</div>		
 			<div class="col overflow-hidden">
 				Артикул
+			</div>		
+			<div class="col overflow-hidden">
+				Название
+			</div>		
+			<div class="col overflow-hidden">
+				Постащик
+			</div>
+			<div class="col overflow-hidden">
+				Единицы
 			</div>
 			<div class="col overflow-hidden">
 				Цена
 			</div>
 			<div class="col overflow-hidden">
 				Количество
-			</div>
-			<div class="col overflow-hidden">
-				Единицы
-			</div>
-			<div class="col overflow-hidden">
-				Изображение
 			</div>
 			{% if current_user.role.name in ['validator','approver'] %}
 				<div class="col">
@@ -224,13 +227,15 @@
 				}
 				var comment = authorComment.find(".card-body p");
 				comment.text(data.comment);
-				var timestamp = authorComment.find(".card-header");
-				timestamp.text(moment(data.timestamp).format("DD.MM.YYYY HH:mm"));
+				var header = authorComment.find(".card-header");
+				var timestamp = new Date(data.timestamp);
+				header.text(moment(timestamp).format("DD.MM.YYYY HH:mm"));
+				$("#commentFormCollapse").collapse('hide');
 			}else{
 				authorComment.remove();
 			}
-		}else
-			ShowAjaxFlashes(data);
+		}
+		ShowAjaxFlashes(data);
 	}	
 	$(document).ready(function(){
 		//Scripts

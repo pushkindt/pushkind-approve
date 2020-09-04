@@ -92,13 +92,13 @@ class OrderApproval(db.Model):
 	product_sku = db.Column(db.String(120), nullable=True)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True, nullable=False)
 	user = db.relationship('User')
-	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc), server_default=func.datetime('now'))
+	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
 	
 class OrderComment(db.Model):
 	user = db.relationship('User')
 	order_id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, primary_key = True)
 	comment = db.Column(db.String(120), nullable=False, default='', server_default='')
-	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc), server_default=func.datetime('now'))
+	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
 	
 	

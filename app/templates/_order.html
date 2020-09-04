@@ -32,15 +32,15 @@
 					<span class="d-sm-none font-weight-bold">Согласование: </span>
 					{% if order['approval'] %}
 						<button type="submit" class="btn btn-success">
-							<img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Одобрить">
+							<img class="octicon" src="/static/octicons/check.svg" alt="Одобрить">
 						</button>
 					{% else %}
 						<button type="submit" class="btn btn-secondary">
-							<img class="octicon" src="http://approvals.pushkind.com/static/octicons/check.svg" alt="Одобрить">
+							<img class="octicon" src="/static/octicons/check.svg" alt="Одобрить">
 						</button>
 					{% endif %}
 					{% if order['externalFulfillment'] %}
-						<span class="badge badge-info"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена"></span>
+						<span class="badge badge-info"><img class="octicon" src="/static/octicons/mail.svg" alt="Отправлена"></span>
 					{% endif%}
 				</form>
 			{% else %}
@@ -55,7 +55,7 @@
 					<span class="badge badge-secondary">новая</span>
 				{% endif %}
 				{% if order['externalFulfillment'] %}
-					<span class="badge badge-info"><img class="octicon" src="http://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена"></span>
+					<span class="badge badge-info"><img class="octicon" src="/static/octicons/mail.svg" alt="Отправлена"></span>
 				{% endif%}
 			{% endif %}
 		</div>

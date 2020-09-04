@@ -1,12 +1,27 @@
 <div class = "container border bg-white my-1">
 	<div class="row my-1">
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Название:</span>
-			{{ product['name'] }}
+			{% if product['imageUrl'] %}
+				<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
+			{% endif %}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Артикул:</span>
 			{{ product['sku'] }}
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Название:</span>
+			{{ product['name'] }}
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Поставщик:</span>
+			{{ product['vendor'] }}
+		</div>		
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Единицы:</span>
+			{% if 'selectedOptions' in product %}
+				{{ product['selectedOptions'][0]['value'] }}
+			{% endif %}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Цена:</span>
@@ -24,17 +39,6 @@
 				{{ product['quantity'] }}
 			{% endif %}
 		</div>
-		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Единицы:</span>
-			{% if 'selectedOptions' in product %}
-				{{ product['selectedOptions'][0]['value'] }}
-			{% endif %}
-		</div>
-		<div class="col-sm overflow-hidden">
-			{% if product['imageUrl'] %}
-				<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
-			{% endif %}
-		</div>
 		{% if current_user.role.name in ['validator','approver'] %}
 			<div class="col-sm overflow-hidden">
 				<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
@@ -44,11 +48,11 @@
 					<span class="d-sm-none font-weight-bold">Отклонить:</span>
 					{% if product['approval'] %}
 						<button type="submit" class="btn btn-secondary">
-							<img class="octicon" src="http://approvals.pushkind.com/static/octicons/x.svg" alt="Отклонить">
+							<img class="octicon" src="/static/octicons/x.svg" alt="Отклонить">
 						</button>
 					{% else %}
 						<button type="submit" class="btn btn-danger">
-							<img class="octicon" src="http://approvals.pushkind.com/static/octicons/x.svg" alt="Отклонить">
+							<img class="octicon" src="/static/octicons/x.svg" alt="Отклонить">
 						</button>
 					{% endif %}
 				</form>
