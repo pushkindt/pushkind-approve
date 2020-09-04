@@ -21,6 +21,7 @@ class EcwidAPI():
 	client_secret = db.Column(db.String(128))
 	store_id = db.Column(db.Integer, unique = True)
 	token = db.Column(db.String(128))
+	store_name = db.Column(db.String(128))
 
 	def EcwidGetStoreToken(self):
 		'''Gets store token using REST API, returns JSON'''
@@ -159,7 +160,14 @@ class EcwidAPI():
 
 	def EcwidGetStoreProfile(self, **kwargs):
 		'''Gets store profile using REST API, returns JSON'''
-		return self.EcwidGetStoreEndpoint('profile', **kwargs)			
+		json = self.EcwidGetStoreEndpoint('profile', **kwargs)
+		try:
+			self.store_name = json['settings']['storeName']
+			db.session.commit()
+		except (KeyError, TypeError):
+			pass
+		return json
+		
 	def EcwidGetStoreProducts(self, **kwargs):
 		'''Gets store profile using REST API, returns JSON'''
 		return self.EcwidGetStoreEndpoint('products', **kwargs)

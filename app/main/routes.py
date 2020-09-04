@@ -363,6 +363,18 @@ def ShowOrder(order_id):
 	if len(order['orderComments']) > 50:
 		order['orderComments'] = order['orderComments'][:50] + '...'
 		
+	for product in order['items']:
+		try:
+			dash = product['sku'].index('-')
+		except ValueError:
+			product['vendor'] = None
+			continue
+		store = Ecwid.query.filter(Ecwid.store_id == product['sku'][:dash]).first()
+		if not store:
+			product['vendor'] = None
+			continue
+		product['vendor'] = store.store_name
+		
 	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 	user_comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
 	approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()

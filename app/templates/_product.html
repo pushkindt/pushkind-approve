@@ -15,7 +15,9 @@
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Поставщик:</span>
-			{{ product['vendor'] }}
+			{% if product['vendor'] %}
+				{{ product['vendor'] }}
+			{% endif %}
 		</div>		
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Единицы:</span>
