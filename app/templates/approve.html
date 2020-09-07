@@ -210,7 +210,7 @@
 					alert("Заявка удалена, вы будете перенаправлены на главную страницу.");
 					setTimeout(function(){
 						document.location.href = "{{ url_for('main.ShowIndex') }}";
-					}, 3000);
+					}, 2000);
 				}else
 					document.location.reload();
 			}
@@ -261,9 +261,22 @@
 			$(this).addClass ('form-control')
 		});
 		$('.productQuantity').focusout(function() {
-			$(this).parent().submit();
-			$(this).removeClass('form-control');
-			$(this).addClass ('form-control-plaintext')
+			var agreed = true;
+			if ($(this).val() == 0){
+				if ($(".ecwidOrderProduct").length == 1){
+					agreed = window.confirm("Заявка будет удалена.");
+				} else {
+					agreed = window.confirm("Товар будет удален.");
+				}
+			}
+			if (agreed == true){
+				$(this).parent().submit();
+				$(this).removeClass('form-control');
+				$(this).addClass ('form-control-plaintext')
+			} else {
+				alert("Заявка не будет изменена.");
+				document.location.reload();
+			}
 		});
 		var options = {
 			success:	UpdateOrderComment,

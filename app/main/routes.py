@@ -402,20 +402,26 @@ def SaveComment(order_id):
 	stripped = ''
 	timestamp = datetime.now(tz = timezone.utc)
 	if form.validate_on_submit():
-		comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
-		stripped = form.comment.data.strip() if form.comment.data else ''
-		if len(stripped) == 0:
-			if comment:
-				db.session.delete(comment)
-		else:
-			if not comment:
-				comment = OrderComment(user_id = current_user.id, order_id = order_id)
-				db.session.add(comment)
-			comment.comment = stripped
-			comment.timestamp = timestamp
-		status = True
-		flash_messages = ['Комментарий успешно обновлён.']
-		db.session.commit()
+		try:
+			json = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
+			if 'items' not in json or len(json['items']) == 0:
+				raise EcwidAPIException('Такой заявки не существует.')
+			comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
+			stripped = form.comment.data.strip() if form.comment.data else ''
+			if len(stripped) == 0:
+				if comment:
+					db.session.delete(comment)
+			else:
+				if not comment:
+					comment = OrderComment(user_id = current_user.id, order_id = order_id)
+					db.session.add(comment)
+				comment.comment = stripped
+				comment.timestamp = timestamp
+			status = True
+			flash_messages = ['Комментарий успешно обновлён.']
+			db.session.commit()
+		except EcwidAPIException as e:
+			flash_messages = ['Ошибка API: {}'.format(e)]
 	return jsonify({'status':status, 'flash':flash_messages, 'comment':stripped, 'timestamp':timestamp.timestamp() * 1000})
 
 
@@ -425,24 +431,30 @@ def SaveComment(order_id):
 def SaveApproval(order_id):
 	form = OrderApprovalForm()
 	if form.validate_on_submit():
-		order_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == None).first()
-		if not form.product_id.data:
-			if current_user.role != UserRoles.approver:
-				return render_template('errors/403.html'),403
-			OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).delete()
-			if not order_approval:
-				order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
-				db.session.add(order_approval)
-		else:
-			product_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == form.product_id.data).first()
-			if product_approval:
-				db.session.delete(product_approval)
+		try:
+			json = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
+			if 'items' not in json or len(json['items']) == 0:
+				raise EcwidAPIException('Такой заявки не существует.')
+			order_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == None).first()
+			if not form.product_id.data:
+				if current_user.role != UserRoles.approver:
+					return render_template('errors/403.html'),403
+				OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).delete()
+				if not order_approval:
+					order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
+					db.session.add(order_approval)
 			else:
-				if order_approval:
-					db.session.delete(order_approval)
-				product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id, product_sku = form.product_sku.data.strip())
-				db.session.add(product_approval)
-		db.session.commit()
+				product_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == form.product_id.data).first()
+				if product_approval:
+					db.session.delete(product_approval)
+				else:
+					if order_approval:
+						db.session.delete(order_approval)
+					product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id, product_sku = form.product_sku.data.strip())
+					db.session.add(product_approval)
+			db.session.commit()
+		except EcwidAPIException as e:
+			flash('Ошибка API: {}'.format(e))
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
 
 
