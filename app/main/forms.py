@@ -52,7 +52,7 @@ class OrderApprovalForm(FlaskForm):
 	
 class ChangeQuantityForm(FlaskForm):
 	product_id    = IntegerField('Идентификатор товара', [DataRequired(message = 'ID товара - обязательное поле')], render_kw={'hidden': ''})
-	product_quantity   = IntegerField('Количество товара', [DataRequired(message = 'Невозможное значение количества')], render_kw={'type': 'number', 'step' : 1, 'min' : 0})
+	product_quantity   = IntegerField('Количество товара', [InputRequired(message = 'Невозможное значение количества')], render_kw={'type': 'number', 'step' : 1, 'min' : 0})
 	
 	def validate_product_quantity(self, product_quantity):
 		if product_quantity.data < 0:

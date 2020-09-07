@@ -1,4 +1,4 @@
-<div class = "container border bg-white my-1">
+<div class = "container border bg-white my-1 ecwidOrderProduct" id="product{{ product['id'] }}">
 	<div class="row my-1">
 		<div class="col-sm overflow-hidden">
 			{% if product['imageUrl'] %}
@@ -34,7 +34,7 @@
 			{% if current_user.role.name == 'initiative' %}
 				<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order['orderNumber']) }}" method="POST">
 					{{ quantity_form.csrf_token }}
-					{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['productId']) }}
+					{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['id']) }}
 					{{ quantity_form.product_quantity(class_ = 'productQuantity text-primary form-control-plaintext', value = product['quantity']) }}
 				</form>
 			{% else %}
@@ -45,7 +45,7 @@
 			<div class="col-sm overflow-hidden">
 				<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
 					{{ approval_form.csrf_token }}
-					{{ approval_form.product_id(class_ = 'd-none', hidden = '', value = product['productId']) }}
+					{{ approval_form.product_id(class_ = 'd-none', hidden = '', value = product['id']) }}
 					{{ approval_form.product_sku(class_ = 'd-none', hidden = '', value = product['sku']) }}
 					<span class="d-sm-none font-weight-bold">Отклонить:</span>
 					{% if product['approval'] %}

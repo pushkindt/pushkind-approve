@@ -350,7 +350,7 @@ def ShowOrder(order_id):
 	order['status'] = str(GetOrderStatus(order['orderNumber']))
 	if current_user.role in [UserRoles.validator, UserRoles.approver]:
 		for product in order['items']:
-			product['approval'] = GetProductApproval(order_id, product['productId'], current_user.id)
+			product['approval'] = GetProductApproval(order_id, product['id'], current_user.id)
 		if current_user.role == UserRoles.approver:
 			order['approval'] = not GetProductApproval(order_id, None, current_user.id)
 			
@@ -459,8 +459,13 @@ def DeleteOrder(order_id):
 		if current_user.email != order['email'].lower():
 			raise EcwidAPIException('Вы не являетесь владельцем этой заявки.')
 		json = current_user.hub.EcwidDeleteStoreOrder(order_id = order_id)
-		OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).delete()
-		OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).delete()
+		comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+		approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+		for approval in approvals:
+			db.session.delete(approval)
+		for comment in comments:
+			db.session.delete(comment)
+		db.session.commit()
 		flash('Заявка успешно удалена')
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
@@ -484,24 +489,45 @@ def SaveQuantity(order_id):
 			order = json['items'][0]
 			if current_user.email != order['email'].lower():
 				raise EcwidAPIException('Вы не являетесь автором заявки.')
-			for product in order['items']:
-				if form.product_id.data == product['productId']:
+			for i, product in enumerate(order['items']):
+				if form.product_id.data == product['id']:
 					order['total'] += (form.product_quantity.data - product['quantity'])*product['price']
 					if order['total'] < 0:
 						order['total'] = 0
 					new_total = '{:,.2f}'.format(order['total'])
 					product['quantity'] = form.product_quantity.data
+					index = i
 					break
-			json = current_user.hub.EcwidUpdateStoreOrder(order_id, order)
-			flash_messages.append('Количество {} было изменено в заявке.'.format(product['sku']))
-			status = True
+			else:
+				index = None
+				flash_messages.append('Указанный товар не найден в заявке.')
+			if index != None:
+				if form.product_quantity.data == 0:
+					order['items'].pop(index)
+					approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id == form.product_id.data, User.ecwid_id == current_user.ecwid_id, ).all()
+					for approval in approvals:
+						db.session.delete(approval)
+					db.session.commit()
+				if len(order['items']) == 0:
+					json = current_user.hub.EcwidDeleteStoreOrder(order_id = order_id)
+					comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+					approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+					for approval in approvals:
+						db.session.delete(approval)
+					for comment in comments:
+						db.session.delete(comment)
+					db.session.commit()
+					flash_messages.append('Заявка удалена, вернитесь на главную страницу.')
+				else:
+					json = current_user.hub.EcwidUpdateStoreOrder(order_id, order)
+					flash_messages.append('Количество {} было изменено в заявке.'.format(product['sku']))
+				status = True
 		except EcwidAPIException as e:
 			flash_messages.append('Ошибка API: {}'.format(e))
-			flash_messages.append('Не удалось изменить количество.')
 	else:
 		for error in form.product_id.errors + form.product_quantity.errors:
 			flash_messages.append(error)
-	return jsonify({'status':status, 'flash':flash_messages, 'total':new_total})
+	return jsonify({'status':status, 'flash':flash_messages, 'total':new_total, 'id':form.product_id.data, 'quantity':form.product_quantity.data})
 
 	
 @bp.route('/process/<int:order_id>')

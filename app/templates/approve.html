@@ -205,6 +205,15 @@
 <script>
 	function UpdateOrderTotal(data){
 		if (data.status == true){
+			if (data.quantity == 0){
+				if ($(".ecwidOrderProduct").length == 1){
+					alert("Заявка удалена, вы будете перенаправлены на главную страницу.");
+					setTimeout(function(){
+						document.location.href = "{{ url_for('main.ShowIndex') }}";
+					}, 3000);
+				}else
+					document.location.reload();
+			}
 			$(".orderTotal").text(data.total);
 		}
 		ShowAjaxFlashes(data);
