@@ -17,6 +17,8 @@ Consts
 ################################################################################
 '''
 DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S %z'
+_DISALLOWED_ORDERS_ITEM_FIELDS = ['productId', 'id', 'categoryId']
+_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'privateAdminNotes', 'externalFulfillment', 'createDate', 'externalOrderId']
 
 '''
 ################################################################################
@@ -478,10 +480,35 @@ def DeleteOrder(order_id):
 		for comment in comments:
 			db.session.delete(comment)
 		db.session.commit()
-		flash('Заявка успешно удалена')
+		flash('Заявка успешно удалена.')
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
 	return redirect(url_for('main.ShowIndex'))
+	
+@bp.route('/duplicate/<int:order_id>')
+@login_required
+@role_required([UserRoles.initiative])
+@ecwid_required
+def DuplicateOrder(order_id):
+	try:
+		json = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
+		if 'items' not in json or len(json['items']) == 0:
+			raise EcwidAPIException('Такой заявки не существует.')
+		order = json['items'][0]
+		if current_user.email != order['email'].lower():
+			raise EcwidAPIException('Вы не являетесь владельцем этой заявки.')
+		for key in _DISALLOWED_ORDERS_FIELDS:
+			order.pop(key, None)
+		for product in order['items']:
+			for key in _DISALLOWED_ORDERS_ITEM_FIELDS:
+				product.pop(key, None)
+		json = current_user.hub.EcwidSetStoreOrder(order)
+		if 'id' not in json:
+			raise EcwidAPIException('Не удалось дулировать заявку.')
+		flash('Заявка успешно дублирована с внутренним номером {}.'.format(json['id']))
+	except EcwidAPIException as e:
+		flash('Ошибка API: {}'.format(e))
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
 
 
 @bp.route('/quantity/<int:order_id>', methods=['POST'])
@@ -548,8 +575,6 @@ def SaveQuantity(order_id):
 @ecwid_required
 def ProcessHubOrder(order_id):
 
-	_DISALLOWED_ORDERS_ITEM_FIELDS = ['productId', 'id', 'categoryId']
-	_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'privateAdminNotes', 'externalFulfillment']
 	try:
 		json = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
 		if 'items' not in json or len(json['items']) == 0:
