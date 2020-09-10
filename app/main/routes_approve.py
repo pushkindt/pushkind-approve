@@ -1,327 +1,23 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval, OrderStatus
-from flask import render_template, redirect, url_for, flash, request, jsonify
-from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm, AddStoreForm
-from sqlalchemy import or_, distinct
-from datetime import datetime, timedelta, timezone
-from functools import wraps
+from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval
+from flask import render_template, redirect, url_for, flash, jsonify, current_app
+from app.main.forms import OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm
+from datetime import datetime, timezone
 from app.ecwid import EcwidAPIException
-import subprocess
-
+from app.email import SendEmail
+from app.main.utils import DATE_TIME_FORMAT, role_required, ecwid_required, GetOrderStatus, GetProductApproval, role_required_ajax, ecwid_required_ajax
 
 '''
 ################################################################################
 Consts
 ################################################################################
 '''
-DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S %z'
 _DISALLOWED_ORDERS_ITEM_FIELDS = ['productId', 'id', 'categoryId']
 _DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'privateAdminNotes', 'externalFulfillment', 'createDate', 'externalOrderId']
 
-'''
-################################################################################
-Utilities
-################################################################################
-'''
 
-def role_required(roles_list):
-	def decorator(function):
-		@wraps(function)
-		def wrapper(*args, **kwargs):
-			if current_user.role not in roles_list:
-				return render_template('errors/403.html'),403
-			else:
-				return function(*args, **kwargs)
-		return wrapper
-	return decorator
-	
-def role_required_ajax(roles_list):
-	def decorator(function):
-		@wraps(function)
-		def wrapper(*args, **kwargs):
-			if current_user.role not in roles_list:
-				return jsonify({'status':False, 'flash':['У вас нет соответствующих полномочий.']}),403
-			else:
-				return function(*args, **kwargs)
-		return wrapper
-	return decorator
-	
-
-def ecwid_required(function):
-	@wraps(function)
-	def wrapper(*args, **kwargs):
-		if not current_user.hub:
-			flash('Взаимодействие с ECWID не настроено.')
-			return render_template('errors/400.html'),400
-		else:
-			return function(*args, **kwargs)
-	return wrapper
-
-def ecwid_required_ajax(function):
-	@wraps(function)
-	def wrapper(*args, **kwargs):
-		if not current_user.hub:
-			return jsonify({'status':False, 'flash':['Взаимодействие с ECWID не настроено.']}),400
-		else:
-			return function(*args, **kwargs)
-	return wrapper
-	
-def GetDateTimestamps():
-	now = datetime.now(tz = timezone.utc)
-	today = datetime(now.year, now.month, now.day)
-	week = today - timedelta(days = today.weekday())
-	month = datetime(now.year, now.month, 1)
-	dates = [int(today.timestamp()), int(week.timestamp()), int(month.timestamp())]
-	return dates
-	
-def GetOrderStatus(order_id):
-	not_approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id != None, User.ecwid_id == current_user.ecwid_id).count() > 0
-	if not_approved:
-		return OrderStatus.not_approved
-	approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id == None, User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
-	approvers = User.query.filter(User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
-	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).count()
-	if approved == 0 and comments == 0:
-		return OrderStatus.new
-	elif approved == approvers:
-		return OrderStatus.approved
-	return OrderStatus.partly_approved	
-	
-def GetProductApproval(order_id, product_id, user_id):
-	'''
-		Returns current user order approval if product_id is None
-	'''
-	return OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.product_id == product_id, OrderApproval.user_id == user_id).count() == 0
-
-'''
-################################################################################
-Index page
-################################################################################
-'''
-
-@bp.route('/')
-@bp.route('/index/')
-@login_required
-@role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
-@ecwid_required
-def ShowIndex():
-	dates = GetDateTimestamps()
-	filter_from = request.args.get('from', default = None, type = int)
-	filter_approval = request.args.get('approval', default = None, type = str)
-	filter_location = request.args.get('location', default = '', type = str).strip()
-	if filter_approval not in [str(status) for status in OrderStatus]:
-		filter_approval = None
-	locations = db.session.query(distinct(User.location)).filter(User.ecwid_id == current_user.ecwid_id, User.role == UserRoles.initiative).all()
-	
-	if current_user.role == UserRoles.initiative:
-		initiatives = [current_user]
-	else:
-		if filter_location != '':
-			initiatives = User.query.filter(User.ecwid_id == current_user.ecwid_id, User.role == UserRoles.initiative, User.location == filter_location).all()
-		else:
-			initiatives = User.query.filter(User.ecwid_id == current_user.ecwid_id, User.role == UserRoles.initiative).all()
-
-	initiatives = {k.email:k for k in initiatives}
-
-	orders = []
-
-	args = {}
-	if filter_from:
-		args['createdFrom'] = filter_from
-		
-	try:
-		json = current_user.hub.EcwidGetStoreOrders(**args)
-		orders = json.get('items', [])
-	except EcwidAPIException as e:
-		flash('Ошибка API: {}'.format(e))
-	
-	new_orders = []
-	for order in orders:
-		order['status'] = str(GetOrderStatus(order['orderNumber']))
-		if filter_approval and order['status'] != filter_approval:
-			continue
-		if len(order['orderComments']) > 50:
-			order['orderComments'] = order['orderComments'][:50] + '...'
-		order['createDate'] = datetime.strptime(order['createDate'], DATE_TIME_FORMAT)
-		order['email'] = order['email'].lower()
-		if order['email'] not in initiatives:
-			continue
-		order['initiative'] = initiatives[order['email']]
-		new_orders.append(order)
-	
-	orders = new_orders
-	return render_template('index.html',
-							orders = orders, dates = dates, locations = locations,
-							filter_from = filter_from,
-							filter_approval = filter_approval,
-							filter_location = filter_location)
-
-'''
-################################################################################
-Settings page
-################################################################################
-'''
-
-@bp.route('/settings/', methods=['GET', 'POST'])
-@login_required
-@role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
-def ShowSettings():
-	if current_user.role == UserRoles.admin:
-		if not current_user.hub:
-			current_user.hub = Ecwid()
-			db.session.commit()
-		ecwid_form = EcwidSettingsForm()
-		role_form = UserRolesForm()
-		users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
-		role_form.user_id.choices = [(u.id, u.email) for u in users if u.id != current_user.id]
-		if ecwid_form.submit1.data and ecwid_form.validate_on_submit():
-			current_user.hub.partners_key = ecwid_form.partners_key.data
-			current_user.hub.client_id = ecwid_form.client_id.data
-			current_user.hub.client_secret = ecwid_form.client_secret.data
-			current_user.hub.store_id = ecwid_form.store_id.data
-			try:
-				current_user.hub.EcwidGetStoreToken()
-				db.session.commit()
-				flash('Данные успешно сохранены.')
-			except:
-				db.session.rollback()
-				flash('Ошибка API или магазин уже используется.')
-				flash('Возможно неверные настройки?')
-		elif role_form.submit2.data and role_form.validate_on_submit():
-			user = User.query.filter(User.id == role_form.user_id.data).first()
-			if user:
-				user.ecwid_id = current_user.ecwid_id
-				user.role = UserRoles(role_form.role.data)
-				user.phone = role_form.about_user.phone.data.strip()
-				user.name = role_form.about_user.full_name.data.strip()
-				user.location = role_form.about_user.location.data.strip()
-				db.session.commit()
-				flash('Данные успешно сохранены.')
-			else:
-				flash('Пользователь не найден.')
-		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users)
-	else:
-		user_form = UserSettingsForm()
-		if user_form.validate_on_submit():
-			current_user.phone = user_form.about_user.phone.data.strip()
-			current_user.name = user_form.about_user.full_name.data.strip()
-			current_user.location = user_form.about_user.location.data.strip()
-			db.session.commit()
-			flash('Данные успешно сохранены.')
-		return render_template('settings.html', user_form = user_form)
-
-@bp.route('/remove/<int:user_id>')
-@login_required
-@role_required([UserRoles.admin])
-def RemoveUser(user_id):
-	user = User.query.filter(User.id == user_id, or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).first()
-	if not user:
-		flash('Пользователь не найден.')
-		return redirect(url_for('main.ShowSettings'))
-	OrderApproval.query.filter(OrderApproval.user_id == user_id).delete()
-	OrderComment.query.filter(OrderComment.user_id == user_id).delete()
-	db.session.delete(user)
-	db.session.commit()
-	flash('Пользователь успешно удалён.')
-	return redirect(url_for('main.ShowSettings'))
-	
-	
-'''
-################################################################################
-Stores page
-################################################################################
-'''
-@bp.route('/stores/', methods=['GET', 'POST'])
-@login_required
-@role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
-@ecwid_required
-def ShowStores():
-	store_form = AddStoreForm()
-	if current_user.role == UserRoles.admin:
-		if store_form.validate_on_submit():
-			try:
-				store_name = store_form.name.data.strip()
-				store_email = store_form.email.data.strip().lower()
-				store_id = current_user.hub.EcwidCreateStore(name = store_name, email = store_email, password = store_form.password.data, plan = store_form.plan.data,
-																defaultlanguage='ru')
-				store = Ecwid(store_id = store_id, ecwid_id = current_user.ecwid_id, partners_key = current_user.hub.partners_key,
-								client_id = current_user.hub.client_id, client_secret = current_user.hub.client_secret)
-				db.session.add(store)
-				store.EcwidGetStoreToken()
-				store.EcwidUpdateStoreProfile({'settings':{'storeName':store_name}, 'company':{'companyName':store_name, 'city':'Москва', 'countryCode':'RU'}})
-				db.session.commit()
-				flash('Магазин успешно добавлен.')
-			except EcwidAPIException as e:
-				db.session.rollback()
-				flash('Ошибка API или магазин уже используется.')
-				flash('Возможно неверные настройки?')
-	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
-	stores = list()
-	for vendor in vendors:
-		try:
-			stores.append(vendor.EcwidGetStoreProfile())
-		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
-	if len(stores) == 0:
-		flash('Ни один поставщик не зарегистрован в системе.')
-	return render_template('stores.html', store_form = store_form, stores = stores)
-	
-	
-@bp.route('/withdraw/<int:store_id>')
-@login_required
-@role_required([UserRoles.admin])
-@ecwid_required
-def WithdrawStore(store_id):
-	store = Ecwid.query.filter(Ecwid.store_id == store_id, Ecwid.ecwid_id == current_user.ecwid_id).first()
-	if store:
-		try:
-			store.EcwidDeleteStore()
-		except EcwidAPIException as e:
-			flash('Ошибка удаления магазина: {}'.format(e))
-		
-		try:
-			json = current_user.hub.EcwidGetStoreProducts(keyword = store.store_id)
-			products = json.get('items', [])
-		except EcwidAPIException as e:
-			flash('Ошибка удаления товаров: {}'.format(e))
-			products = []
-			
-		for product in products:
-			try:
-				current_user.hub.EcwidDeleteStoreProduct(product['id'])
-			except EcwidAPIException as e:
-				flash('Ошибка удаления товаров: {}'.format(e))
-				continue
-		db.session.delete(store)
-		db.session.commit()
-		flash('Поставщик успешно удалён.')
-	else:	
-		flash('Этот поставщик не зарегистрован в системе.')
-	return redirect(url_for('main.ShowStores'))
-	
-@bp.route('/sync/', defaults={'store_id': None})
-@bp.route('/sync/<int:store_id>')
-@login_required
-@role_required([UserRoles.admin])
-@ecwid_required
-def SyncStores(store_id):
-	if not store_id:
-		args = ("c/ecwid-api", str(current_user.ecwid_id))
-	else:
-		args = ("c/ecwid-api", str(current_user.ecwid_id), str(store_id))
-	popen = subprocess.Popen(args, stderr=subprocess.PIPE)
-	popen.wait()
-	output = popen.stderr.read()
-	if output and len(output) > 0:
-		for s in output.decode('utf-8').strip().split('\n'):
-			flash(s)
-	else:
-		flash('Синхронизация успешно завершена.')
-	return redirect(url_for('main.ShowStores'))
-	
-	
 '''
 ################################################################################
 Approve page
@@ -635,4 +331,29 @@ def ProcessHubOrder(order_id):
 	else:
 		flash('Не удалось перезаказать данные товары у зарегистрованных поставщиков.')
 
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
+	
+	
+@bp.route('/notify/<int:order_id>')
+@login_required
+@role_required_ajax([UserRoles.initiative])
+@ecwid_required_ajax
+def NotifyApprovers(order_id):
+	try:
+		json = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
+		if 'items' not in json or len(json['items']) == 0:
+			raise EcwidAPIException('Такой заявки не существует.')
+		order = json['items'][0]
+		if current_user.email != order['email'].lower():
+			raise EcwidAPIException('Вы не являетесь автором заявки.')
+	except EcwidAPIException as e:
+		flash('Ошибка API: {}'.format(e))
+		return redirect(url_for('main.ShowIndex'))
+	approvers = User.query.filter(User.role.in_([UserRoles.approver, UserRoles.validator]), User.ecwid_id == current_user.ecwid_id).all()
+	SendEmail('Уведомление о заявке #{}.'.format(order['orderNumber']),
+			   sender=current_app.config['MAIL_USERNAME'],
+			   recipients=[approver.email for approver in approvers],
+			   text_body=render_template('email/notify.txt', order=order),
+			   html_body=render_template('email/notify.html', order=order))
+	flash('Уведомление успешно выслано')
 	return redirect(url_for('main.ShowOrder', order_id = order_id))

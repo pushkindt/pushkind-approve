@@ -8,6 +8,7 @@
 				<div class="col text-right">
 					<a class="btn btn-danger btn-sm" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">Удалить</a>
 					<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Дублировать заявку?')">Дублировать</a>
+					<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.NotifyApprovers', order_id = order['orderNumber']) }}" onclick="return confirm('Послать уведомление?')">Уведомить</a>
 				</div>
 			</div>
 		{% elif current_user.role.name == 'approver' %}
