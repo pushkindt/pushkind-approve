@@ -4,6 +4,9 @@
 			<span class="d-sm-none font-weight-bold">Номер: </span>
 			{% if approval_form %}
 				#{{ order['vendorOrderNumber'] }}
+				{% if current_user.role.name == 'initiative' %}
+					<a class="badge badge-danger" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">&times;</a>
+				{% endif %}
 			{% else %}
 				<a href="{{ url_for('main.ShowOrder', order_id=order['orderNumber']) }}">#{{ order['vendorOrderNumber'] }}</a>
 			{% endif %}
@@ -45,15 +48,7 @@
 				</form>
 			{% else %}
 				<span class="d-sm-none font-weight-bold">Статус: </span>
-				{% if order['status'] == 'approved' %}
-					<span class="badge badge-success">согласована</span>
-				{% elif order['status'] == 'partly_approved' %}
-					<span class="badge badge-warning">в работе</span>
-				{% elif order['status'] == 'not_approved' %}
-					<span class="badge badge-danger">не согласована</span>
-				{% else %}
-					<span class="badge badge-secondary">новая</span>
-				{% endif %}
+				<span class="badge badge-{{order['status'].color() }}">{{ order['status'] }}</span>
 				{% if order['externalFulfillment'] %}
 					<span class="badge badge-info"><img class="octicon" src="/static/octicons/mail.svg" alt="Отправлена"></span>
 				{% endif%}

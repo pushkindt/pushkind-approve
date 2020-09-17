@@ -6,9 +6,8 @@
 		{% if current_user.role.name == 'initiative' %}
 			<div class="row">
 				<div class="col text-right">
-					<a class="btn btn-danger btn-sm" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">Удалить</a>
-					<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Дублировать заявку?')">Дублировать</a>
-					<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.NotifyApprovers', order_id = order['orderNumber']) }}" onclick="return confirm('Послать уведомление?')">Уведомить</a>
+					<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Клонировать заявку?')">Клонировать</a>
+					<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.NotifyApprovers', order_id = order['orderNumber']) }}" onclick="return confirm('Отправить уведомление согласующим?')">Уведомить</a>
 				</div>
 			</div>
 		{% elif current_user.role.name == 'approver' %}
@@ -249,36 +248,32 @@
 		ShowAjaxFlashes(data);
 	}	
 	$(document).ready(function(){
+		var oldQuantity = 0;
 		//Scripts
-		var options = {
-			success:	UpdateOrderTotal,
-			url: "{{ url_for('main.SaveQuantity', order_id = order['orderNumber']) }}",
-			dataType:	'json',
-			method: 'POST',
-			clearForm: false
-		};
-		$('.changeQuantityForm').ajaxForm(options);
 		$('.productQuantity').focus(function() {
 			$(this).removeClass('form-control-plaintext');
-			$(this).addClass ('form-control')
+			$(this).addClass ('form-control');
+			oldQuantity = $(this).val();
 		});
 		$('.productQuantity').focusout(function() {
-			var agreed = true;
-			if ($(this).val() == 0){
-				if ($(".ecwidOrderProduct").length == 1){
-					agreed = window.confirm("Заявка будет удалена.");
+			if ($(this).val() != oldQuantity){
+				var agreed = true;
+				if ($(this).val() == 0){
+					if ($(".ecwidOrderProduct").length == 1){
+						agreed = window.confirm("Заявка будет удалена.");
+					} else {
+						agreed = window.confirm("Товар будет удален.");
+					}
+				}
+				if (agreed == true){
+					$(this).parent().submit();
 				} else {
-					agreed = window.confirm("Товар будет удален.");
+					alert("Заявка не будет изменена.");
+					$(this).val(oldQuantity);
 				}
 			}
-			if (agreed == true){
-				$(this).parent().submit();
-				$(this).removeClass('form-control');
-				$(this).addClass ('form-control-plaintext')
-			} else {
-				alert("Заявка не будет изменена.");
-				document.location.reload();
-			}
+			$(this).removeClass ('form-control');
+			$(this).addClass('form-control-plaintext');
 		});
 		var options = {
 			success:	UpdateOrderComment,

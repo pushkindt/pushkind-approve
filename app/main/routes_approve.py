@@ -45,14 +45,16 @@ def ShowOrder(order_id):
 		flash('Ошибка API: {}'.format(e))
 		return redirect(url_for('main.ShowIndex'))
 
-	order['status'] = str(GetOrderStatus(order['orderNumber']))
+	order['createDate'] = datetime.strptime(order['createDate'], DATE_TIME_FORMAT)
+	order['updateDate'] = datetime.strptime(order['updateDate'], DATE_TIME_FORMAT)
+	order['status'] = GetOrderStatus(order)
 	if current_user.role in [UserRoles.validator, UserRoles.approver]:
 		for product in order['items']:
 			product['approval'] = GetProductApproval(order_id, product['id'], current_user.id)
 		if current_user.role == UserRoles.approver:
 			order['approval'] = not GetProductApproval(order_id, None, current_user.id)
 			
-	order['createDate'] = datetime.strptime(order['createDate'], DATE_TIME_FORMAT)
+	
 	order['initiative'] = owner
 	try:
 		order['privateAdminNotes'] = datetime.strptime(order['privateAdminNotes'], DATE_TIME_FORMAT)
@@ -209,11 +211,9 @@ def DuplicateOrder(order_id):
 
 @bp.route('/quantity/<int:order_id>', methods=['POST'])
 @login_required
-@role_required_ajax([UserRoles.initiative])
-@ecwid_required_ajax
+@role_required([UserRoles.initiative])
+@ecwid_required
 def SaveQuantity(order_id):
-	flash_messages = list()
-	status = False
 	new_total = ''
 	form = ChangeQuantityForm()
 	if form.validate_on_submit():
@@ -235,34 +235,36 @@ def SaveQuantity(order_id):
 					break
 			else:
 				index = None
-				flash_messages.append('Указанный товар не найден в заявке.')
+				flash('Указанный товар не найден в заявке.')
 			if index != None:
+				approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+				for approval in approvals:
+					db.session.delete(approval)
 				if form.product_quantity.data == 0:
 					order['items'].pop(index)
-					approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id == form.product_id.data, User.ecwid_id == current_user.ecwid_id, ).all()
-					for approval in approvals:
-						db.session.delete(approval)
-					db.session.commit()
 				if len(order['items']) == 0:
 					json = current_user.hub.EcwidDeleteStoreOrder(order_id = order_id)
 					comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-					approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-					for approval in approvals:
-						db.session.delete(approval)
 					for comment in comments:
 						db.session.delete(comment)
-					db.session.commit()
-					flash_messages.append('Заявка удалена, вернитесь на главную страницу.')
+					flash('Заявка удалена, вернитесь на главную страницу.')
 				else:
 					json = current_user.hub.EcwidUpdateStoreOrder(order_id, order)
-					flash_messages.append('Количество {} было изменено в заявке.'.format(product['sku']))
-				status = True
+					message = 'Количество {} было изменено в заявке.'.format(product['sku'])
+					flash(message)
+					comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
+					if not comment:
+						comment = OrderComment(user_id = current_user.id, order_id = order_id)
+						db.session.add(comment)
+					comment.comment = message
+				db.session.commit()
 		except EcwidAPIException as e:
-			flash_messages.append('Ошибка API: {}'.format(e))
+			flash('Ошибка API: {}'.format(e))
+			db.session.rollback()
 	else:
 		for error in form.product_id.errors + form.product_quantity.errors:
-			flash_messages.append(error)
-	return jsonify({'status':status, 'flash':flash_messages, 'total':new_total, 'id':form.product_id.data, 'quantity':form.product_quantity.data})
+			flash(error)
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
 
 	
 @bp.route('/process/<int:order_id>')
@@ -350,7 +352,7 @@ def NotifyApprovers(order_id):
 		flash('Ошибка API: {}'.format(e))
 		return redirect(url_for('main.ShowIndex'))
 	approvers = User.query.filter(User.role.in_([UserRoles.approver, UserRoles.validator]), User.ecwid_id == current_user.ecwid_id).all()
-	SendEmail('Уведомление о заявке #{}.'.format(order['orderNumber']),
+	SendEmail('Уведомление о заявке #{}.'.format(order['vendorOrderNumber']),
 			   sender=current_app.config['MAIL_USERNAME'],
 			   recipients=[approver.email for approver in approvers],
 			   text_body=render_template('email/notify.txt', order=order),

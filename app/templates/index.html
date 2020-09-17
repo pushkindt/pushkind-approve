@@ -12,31 +12,10 @@
 <div class="container border bg-light my-1">
 	<div class="row border-bottom">
 		<div class="col">
-		{% if filter_approval == 'new' %}
-			<span class="badge badge-secondary font-weight-bold">НОВЫЕ</span>
-		{% else %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = 'new', location = filter_location) }}" class="badge badge-secondary">новые</a>
-		{% endif %}
-		{% if filter_approval == 'partly_approved' %}
-			<span class="badge badge-warning font-weight-bold">В РАБОТЕ</span>
-		{% else %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = 'partly_approved', location = filter_location) }}" class="badge badge-warning">в работе</a>
-		{% endif %}
-		{% if filter_approval == 'approved' %}
-			<span class="badge badge-success font-weight-bold">СОГЛАСОВАННЫЕ</span>
-		{% else %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = 'approved', location = filter_location) }}" class="badge badge-success">согласованные</a>
-		{% endif %}
-		{% if filter_approval == 'not_approved' %}
-			<span class="badge badge-danger font-weight-bold">НЕ СОГЛАСОВАННЫЕ</span>
-		{% else %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = 'not_approved', location = filter_location) }}" class="badge badge-danger">не согласованные</a>
-		{% endif %}
-		{% if filter_approval == None %}
-			<span class="badge badge-dark text-white font-weight-bold">ВСЕ</span>
-		{% else %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, location = filter_location) }}" class="badge badge-dark text-white">все</a>
-		{% endif %}
+		{% for status in OrderStatus %}
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = status.name, location = filter_location) }}" class="badge badge-{{status.color()}} {%if filter_approval == status.name %}text-uppercase{%endif%}">{{ status }}</a>
+		{% endfor %}
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, location = filter_location) }}" class="badge badge-dark {%if not filter_approval %}text-uppercase{%endif%}">все</a>
 		</div>
 	</div>
 	<div class="row border-bottom">

@@ -2,7 +2,7 @@
 
 инициатор: {{ current_user.location }} ({{ current_user.name }} {{ current_user.email }})
 	
-уведомляет вас заявке #{{ order['vendorOrderNumber'] }}
+уведомляет вас о заявке #{{ order['vendorOrderNumber'] }}
 
 Вы можете просмотреть заявку, оставить комментарий и отметить согласование по ссылке:
 {{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}

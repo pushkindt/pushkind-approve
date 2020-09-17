@@ -28,10 +28,15 @@ class OrderStatus(enum.IntEnum):
 	not_approved = 1
 	partly_approved = 2
 	approved = 3
+	modified = 4
 	
 	def __str__(self):
-		pretty = ['new', 'not_approved', 'partly_approved', 'approved']
+		pretty = ['Новая', 'Не согласована', 'В работе', 'Согласована', 'Исправлена']
 		return pretty[self.value]
+		
+	def color(self):
+		colors = ['secondary', 'danger', 'warning', 'success', 'primary']
+		return colors[self.value]
 
 @login.user_loader
 def load_user(id):

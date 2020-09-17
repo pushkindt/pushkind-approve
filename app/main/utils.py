@@ -2,6 +2,7 @@ from flask_login import current_user
 from app.models import User, UserRoles, OrderComment, OrderApproval, OrderStatus
 from flask import render_template, flash, jsonify
 from functools import wraps
+from datetime import datetime, timedelta, timezone
 	
 
 '''
@@ -59,17 +60,20 @@ def ecwid_required_ajax(function):
 			return function(*args, **kwargs)
 	return wrapper
 	
-def GetOrderStatus(order_id):
+def GetOrderStatus(order):
+	order_id = order['orderNumber']
 	not_approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id != None, User.ecwid_id == current_user.ecwid_id).count() > 0
 	if not_approved:
 		return OrderStatus.not_approved
 	approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id == None, User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
 	approvers = User.query.filter(User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
 	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).count()
+	if approved == approvers and approvers > 0:
+		return OrderStatus.approved
+	if (order['updateDate'] - order['createDate']) > timedelta(seconds=10):
+		return OrderStatus.modified
 	if approved == 0 and comments == 0:
 		return OrderStatus.new
-	elif approved == approvers:
-		return OrderStatus.approved
 	return OrderStatus.partly_approved	
 	
 def GetProductApproval(order_id, product_id, user_id):

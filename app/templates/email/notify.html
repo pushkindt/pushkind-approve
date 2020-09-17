@@ -1,7 +1,7 @@
 <p>Уважаемый коллега,</p>
 <p>
 	<b>инициатор: </b>{{ current_user.location }} (<i> {{ current_user.name }} {{ current_user.email }}</i>)
-	уведомляет вас заявке #{{ order['vendorOrderNumber'] }}
+	уведомляет вас о заявке <b>#{{ order['vendorOrderNumber'] }}</b>
 </p>
 <p>Вы можете просмотреть заявку, оставить комментарий и отметить согласование по 
 <a href="{{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}">ссылке</a>
