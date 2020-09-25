@@ -6,7 +6,7 @@ from flask import render_template, redirect, url_for, flash
 from app.main.forms import AddStoreForm
 from app.ecwid import EcwidAPIException
 import subprocess
-from app.main.utils import role_required, ecwid_required
+from app.main.utils import role_required, ecwid_required, role_forbidden
 
 '''
 ################################################################################
@@ -15,7 +15,7 @@ Stores page
 '''
 @bp.route('/stores/', methods=['GET', 'POST'])
 @login_required
-@role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
+@role_forbidden([UserRoles.default])
 @ecwid_required
 def ShowStores():
 	store_form = AddStoreForm()

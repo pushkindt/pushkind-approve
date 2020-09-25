@@ -41,7 +41,7 @@
 				{{ product['quantity'] }}
 			{% endif %}
 		</div>
-		{% if current_user.role.name in ['validator','approver'] %}
+		{% if current_user.role.name in ['validator','approver', 'validator_l', 'validator_c'] %}
 			<div class="col-sm overflow-hidden">
 				<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
 					{{ approval_form.csrf_token }}

@@ -1,10 +1,9 @@
-<p>Уважаемый коллега,</p>
 <p>
-	<b>инициатор: </b>{{ current_user.location }} (<i> {{ current_user.name }} {{ current_user.email }}</i>)
-	уведомляет вас о заявке <b>#{{ order['vendorOrderNumber'] }}</b>
+Инициатор {{ current_user.name }} ({{ current_user.location }}) уведомляет, что заявка #{{ order['vendorOrderNumber'] }} исправлена и ожидает согласования.
 </p>
-<p>Вы можете просмотреть заявку, оставить комментарий и отметить согласование по 
-<a href="{{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}">ссылке</a>
+<p>
+Нажмите на <a href="{{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}">ссылку</a> для перехода в Личный Кабинет.
 </p>
-<p>С уважением,</p>
-<p>команда PUSHKIND</p>
+<p>
+Это автоматическое уведомление, не отвечайте на него. В случае возникновения вопросов по заявке - свяжитесь с инициатором.
+</p>

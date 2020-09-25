@@ -1,11 +1,6 @@
-Уважаемый коллега,
+Инициатор {{ current_user.name }} ({{ current_user.location }}) уведомляет, что заявка #{{ order['vendorOrderNumber'] }} исправлена и ожидает согласования.
 
-инициатор: {{ current_user.location }} ({{ current_user.name }} {{ current_user.email }})
-	
-уведомляет вас о заявке #{{ order['vendorOrderNumber'] }}
-
-Вы можете просмотреть заявку, оставить комментарий и отметить согласование по ссылке:
+Нажмите на ссылку для перехода в Личный Кабинет:
 {{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}
 
-С уважением
-команда PUSHKIND
+Это автоматическое уведомление, не отвечайте на него. В случае возникновения вопросов по заявке - свяжитесь с инициатором.
