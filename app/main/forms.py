@@ -22,18 +22,12 @@ class EcwidSettingsForm(FlaskForm):
 class UserSettings(Form):
 	full_name  = StringField('Имя', [DataRequired(message = 'Имя - обязательное поле')])
 	phone = StringField('Телефон', [DataRequired(message = 'Телефон - обязательное поле')])
-	location = StringField('Расположение', [DataRequired(message = 'Расположение - обязательное поле')])
+	location = StringField('Площадка', [DataRequired(message = 'Площадка - обязательное поле')])
 
 class UserRolesForm(FlaskForm):
 	user_id = SelectField('Идентификатор пользователя',[DataRequired(message = 'Некорректный идентификатор пользователя')], coerce = int)
 	role = SelectField('Роль',[InputRequired(message = 'Некорректная роль пользователя')], coerce = int,
-						choices = [
-							(int(UserRoles.default), str(UserRoles.default)),
-							(int(UserRoles.initiative), str(UserRoles.initiative)),
-							(int(UserRoles.validator), str(UserRoles.validator)),
-							(int(UserRoles.approver), str(UserRoles.approver)),
-							(int(UserRoles.admin), str(UserRoles.admin)),
-						])
+						choices = [(int(role), str(role)) for role in UserRoles])
 	about_user = FormField(UserSettings, [DataRequired()])
 	submit2 = SubmitField('Сохранить')
 	

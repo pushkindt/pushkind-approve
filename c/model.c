@@ -30,6 +30,60 @@ void FreeStores(TEcwid *stores, size_t stores_count){
 	free(stores);
 }
 
+void FreeCacheCategories(TCacheCategories *cache){
+	if (cache == NULL)
+		return;
+	if (cache->name != NULL)
+		free(cache->name);
+	if (cache->children != NULL)
+		free(cache->children);
+	free(cache);
+}
+
+int DeleteCacheCategories(sqlite3 *pDB, uint64_t ecwid_id){
+	int result = -1;
+	sqlite3_stmt *stmt = NULL;
+	check(pDB != NULL, "Invalid function inputs.");
+	
+	/*****************************************************************************/
+	//	Prepare SQL query
+	/*****************************************************************************/	
+	result = sqlite3_prepare_v2(pDB, "delete from cache_categories where ecwid_id = ?", -1, &stmt, NULL);
+	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
+	result = sqlite3_bind_int64(stmt, 1, ecwid_id);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");	
+	result = sqlite3_step(stmt);
+	check(result == SQLITE_DONE, "Error while deleting cache.");
+	result = 0;
+error:
+	sqlite3_finalize(stmt);
+	return result;
+}
+
+int StoreCacheCategories(sqlite3 *pDB, TCacheCategories *cache){
+	int result = -1;
+	sqlite3_stmt *stmt = NULL;
+	check(pDB != NULL && cache != NULL, "Invalid function inputs.");
+	
+	/*****************************************************************************/
+	//	Prepare SQL query
+	/*****************************************************************************/	
+	result = sqlite3_prepare_v2(pDB, "insert into cache_categories(`name`, `children`, `ecwid_id`) values (?,?,?)", -1, &stmt, NULL);
+	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
+	result = sqlite3_bind_text(stmt, 1, cache->name, -1, SQLITE_STATIC);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_bind_text(stmt, 2, cache->children, -1, SQLITE_STATIC);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_bind_int64(stmt, 3, cache->ecwid_id);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_step(stmt);
+	check(result == SQLITE_DONE, "Error while saving cache.");
+	result = 0;
+error:
+	sqlite3_finalize(stmt);
+	return result;
+}
+	
 TEcwid *GetHub(sqlite3 *pDB, uint64_t ecwid_id){
 	
 	int result = -1;

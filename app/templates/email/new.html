@@ -1,5 +1,5 @@
 <p>
-Инициатор {{ current_user.name }} ({{ current_user.location }}) уведомляет, что заявка #{{ order['vendorOrderNumber'] }} исправлена и ожидает согласования.
+Инициатор {{ order['initiative'].name }} ({{ order['initiative'].location }}) уведомляет, что создана заявка #{{ order['vendorOrderNumber'] }}.
 </p>
 <p>
 Нажмите на <a href="{{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}">ссылку</a> для перехода в Личный Кабинет.

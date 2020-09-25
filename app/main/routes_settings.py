@@ -1,13 +1,13 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval
+from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval, CacheCategories
 from flask import render_template, redirect, url_for, flash
 from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm
-from sqlalchemy import or_
+from sqlalchemy import distinct, func, or_
 from app.ecwid import EcwidAPIException
 from sqlalchemy.exc import SQLAlchemyError
-from app.main.utils import role_required
+from app.main.utils import role_required, role_forbidden
 
 '''
 ################################################################################
@@ -17,8 +17,10 @@ Settings page
 
 @bp.route('/settings/', methods=['GET', 'POST'])
 @login_required
-@role_required([UserRoles.initiative, UserRoles.validator, UserRoles.approver, UserRoles.admin])
+@role_forbidden([UserRoles.default])
 def ShowSettings():
+	locations = [loc[0] for loc in db.session.query(distinct(func.lower(User.location))).filter(User.ecwid_id == current_user.ecwid_id, User.role == UserRoles.initiative).all()]
+	categories = CacheCategories.query.all()
 	if current_user.role == UserRoles.admin:
 		if not current_user.hub:
 			current_user.hub = Ecwid()
@@ -61,7 +63,7 @@ def ShowSettings():
 			current_user.location = user_form.about_user.location.data.strip()
 			db.session.commit()
 			flash('Данные успешно сохранены.')
-		return render_template('settings.html', user_form = user_form)
+		return render_template('settings.html', user_form=user_form, locations=locations, categories=categories)
 
 @bp.route('/remove/<int:user_id>')
 @login_required

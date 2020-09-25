@@ -52,7 +52,7 @@ int main(int argc, char* argv[]){
 		check(ProcessHub(ecwid_id, store_id) == true, "Cannot process hub products.");
 	}
 	
-
+	check(ProcessCache(ecwid_id) == true, "Cannot process cache.");
 	
 	result = 0;
 error:

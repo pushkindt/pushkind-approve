@@ -46,8 +46,8 @@
 		<div class="row">
 			<div class="col">
 				{% for location in locations %}
-					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = location[0]) }}" class="badge badge-dark text-white">
-						{{ location[0] }}
+					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = location) }}" class="badge badge-dark text-white">
+						{{ location }}
 					</a>
 				{% endfor %}
 					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}" class="badge badge-dark text-white">

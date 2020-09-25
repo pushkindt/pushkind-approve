@@ -67,7 +67,7 @@
 			<div class="col overflow-hidden">
 				Количество
 			</div>
-			{% if current_user.role.name in ['validator','approver'] %}
+			{% if current_user.role.name in ['validator','approver', 'validator_c', 'validator_l'] %}
 				<div class="col">
 					Отклонить
 				</div>
@@ -78,7 +78,7 @@
 		{% endfor %}
 	</div>
 	
-	{% if current_user.role.name in ['validator','approver','initiative'] %}
+	{% if current_user.role.name not in ['admin','default'] %}
 		<div class="container border bg-light my-1">
 			<div class="row">
 				<div class="col text-right">
