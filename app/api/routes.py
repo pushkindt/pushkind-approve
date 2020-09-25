@@ -30,7 +30,6 @@ def NotifyNewOrders():
 	
 	initiatives = User.query.filter(User.ecwid_id == user.ecwid_id, User.role == UserRoles.initiative).all()
 	initiatives = {k.email:k for k in initiatives}
-	print(len(orders))
 	for order in orders:
 		order['email'] = order['email'].lower()
 		if order['email'] not in initiatives:

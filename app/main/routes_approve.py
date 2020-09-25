@@ -149,7 +149,7 @@ def SaveApproval(order_id):
 					db.session.add(order_approval)
 					SendEmail('Согласована заявка #{}'.format(order['vendorOrderNumber']),
 							   sender=current_app.config['MAIL_USERNAME'],
-							   recipients=order['initiative'].email,
+							   recipients=[order['initiative'].email],
 							   text_body=render_template('email/approval.txt', order=order, approval=True),
 							   html_body=render_template('email/approval.html', order=order, approval=True))
 			else:
@@ -163,7 +163,7 @@ def SaveApproval(order_id):
 					db.session.add(product_approval)
 					SendEmail('Отклонена заявка #{}'.format(order['vendorOrderNumber']),
 							   sender=current_app.config['MAIL_USERNAME'],
-							   recipients=order['initiative'].email,
+							   recipients=[order['initiative'].email],
 							   text_body=render_template('email/approval.txt', order=order, approval=False),
 							   html_body=render_template('email/approval.html', order=order, approval=False))
 			db.session.commit()

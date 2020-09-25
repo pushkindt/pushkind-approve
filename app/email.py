@@ -11,6 +11,7 @@ def SendEmailAsync(app, msg):
 
 def SendEmail(subject, sender, recipients, text_body, html_body,
 			   attachments=None, sync=False):
+	current_app.logger.info('Email {} was sent to {}'.format(subject, recipients))
 	msg = Message(subject, sender=sender, recipients=recipients)
 	msg.body = text_body
 	msg.html = html_body

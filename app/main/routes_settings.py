@@ -56,7 +56,8 @@ def ShowSettings():
 				else:
 					user.position = ''
 				user.name = role_form.about_user.full_name.data.strip()
-				user.location = role_form.about_user.location.data.strip()
+				if role_form.about_user.location.data:
+					user.location = role_form.about_user.location.data.strip()
 				db.session.commit()
 				flash('Данные успешно сохранены.')
 			else:
@@ -74,7 +75,8 @@ def ShowSettings():
 			else:
 				current_user.position = ''
 			current_user.name = user_form.about_user.full_name.data.strip()
-			current_user.location = user_form.about_user.location.data.strip()
+			if role_form.about_user.location.data:
+				current_user.location = user_form.about_user.location.data.strip()
 			db.session.commit()
 			flash('Данные успешно сохранены.')
 		return render_template('settings.html', user_form=user_form, locations=locations, categories=categories)
