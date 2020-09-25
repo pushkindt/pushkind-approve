@@ -3,51 +3,59 @@
 {% block content %}
 {% if current_user.role.name == "admin" %}
 	<div class="container border bg-light my-1">
-		<h6 class="text-secondary">Настройки API</h6>
-		{% set errorsList = ecwid_form.partners_key.errors + ecwid_form.client_id.errors + ecwid_form.client_secret.errors + ecwid_form.store_id.errors %}
-		{% if errorsList|length > 0 %}
-			<div class = "row">
-				<div class="col">
-					<div class="alert alert-danger" role="alert">
-						{% for error in  errorsList %}
-							{{ error }}<br>
-						{% endfor %}
+		<div class="row">
+			<div class="col text-right">
+				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#ecwidFormCollapse" aria-expanded="false" aria-controls="ecwidFormCollapse">
+					Настроить API
+				</button>
+			</div>
+		</div>
+		<div class="collapse" id="ecwidFormCollapse">
+			{% set errorsList = ecwid_form.partners_key.errors + ecwid_form.client_id.errors + ecwid_form.client_secret.errors + ecwid_form.store_id.errors %}
+			{% if errorsList|length > 0 %}
+				<div class = "row">
+					<div class="col">
+						<div class="alert alert-danger" role="alert">
+							{% for error in  errorsList %}
+								{{ error }}<br>
+							{% endfor %}
+						</div>
 					</div>
 				</div>
-			</div>
-		{% endif %}
-		<form method="post">
-			{{ ecwid_form.csrf_token }}
-			<div class="form-group row">
-				{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
-				<div class="col-md-10">
-					{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '', value = current_user.hub.partners_key if current_user.hub.partners_key else '') }}
+			{% endif %}
+			<form method="post">
+				{{ ecwid_form.csrf_token }}
+				<div class="form-group row">
+					{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
+					<div class="col-md-10">
+						{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '', value = current_user.hub.partners_key if current_user.hub.partners_key else '') }}
+					</div>
 				</div>
-			</div>
-			<div class="form-group row">
-				{{ ecwid_form.client_id.label(class_ = "col-md-2 col-form-label") }} 
-				<div class="col-md-10">
-					{{ ecwid_form.client_id(class_ = 'form-control', value = current_user.hub.client_id if current_user.hub.client_id else '') }}
+				<div class="form-group row">
+					{{ ecwid_form.client_id.label(class_ = "col-md-2 col-form-label") }} 
+					<div class="col-md-10">
+						{{ ecwid_form.client_id(class_ = 'form-control', value = current_user.hub.client_id if current_user.hub.client_id else '') }}
+					</div>
 				</div>
-			</div>
-			<div class="form-group row">
-				{{ ecwid_form.client_secret.label(class_ = "col-md-2 col-form-label") }} 
-				<div class="col-md-10">
-					{{ ecwid_form.client_secret(class_ = 'form-control', value = current_user.hub.client_secret if current_user.hub.client_secret else '') }}
+				<div class="form-group row">
+					{{ ecwid_form.client_secret.label(class_ = "col-md-2 col-form-label") }} 
+					<div class="col-md-10">
+						{{ ecwid_form.client_secret(class_ = 'form-control', value = current_user.hub.client_secret if current_user.hub.client_secret else '') }}
+					</div>
 				</div>
-			</div>
-			<div class="form-group row">
-				{{ ecwid_form.store_id.label(class_ = "col-md-2 col-form-label") }} 
-				<div class="col-md-10">
-					{{  ecwid_form.store_id(class_ = 'form-control', value = current_user.hub.store_id if current_user.hub.store_id else '') }}
+				<div class="form-group row">
+					{{ ecwid_form.store_id.label(class_ = "col-md-2 col-form-label") }} 
+					<div class="col-md-10">
+						{{  ecwid_form.store_id(class_ = 'form-control', value = current_user.hub.store_id if current_user.hub.store_id else '') }}
+					</div>
 				</div>
-			</div>
-			<div class="form-group row">
-				<div class="col">
-					{{ ecwid_form.submit1(class_ = 'btn btn-primary') }}
+				<div class="form-group row">
+					<div class="col">
+						{{ ecwid_form.submit1(class_ = 'btn btn-primary') }}
+					</div>
 				</div>
-			</div>
-		</form>
+			</form>
+		</div>
 	</div>
 	<div class="container border bg-light my-1">
 		<h6 class="text-secondary">Пользователи</h6>
@@ -84,6 +92,12 @@
 				</div>
 			</div>
 			<div class="form-group row">
+				{{ role_form.about_user.position.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ role_form.about_user.position(class_ = 'form-control') }}
+				</div>
+			</div>
+			<div class="form-group row">
 				{{ role_form.about_user.location.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
 					{{ role_form.about_user.location(class_ = 'form-control') }}
@@ -102,6 +116,11 @@
 				</div>
 			</div>
 		</form>
+		<div class="row my-1">
+			<div class="col">
+				<a href="{{ url_for('auth.PerformRegistration') }}">Создание нового пользователя</a>
+			</div>
+		</div>
 	</div>
 
 {% else %}
@@ -132,6 +151,12 @@
 				{{ user_form.about_user.phone.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
 					{{ user_form.about_user.phone(class_ = 'form-control', value = current_user.phone) }}
+				</div>
+			</div>
+			<div class="form-group row">
+				{{ user_form.about_user.position.label(class_ = "col-md-2 col-form-label") }} 
+				<div class="col-md-10">
+					{{ user_form.about_user.position(class_ = 'form-control', value = current_user.position) }}
 				</div>
 			</div>
 			{% if current_user.role.name == 'validator' %}
@@ -193,11 +218,23 @@
 				
 				users.forEach(function(user){
 					if (user["id"] == user_id){
+						var locationInput = $("#about_user-location");
 						$("#about_user-phone").val(user["phone"]);
-						$("#about_user-location").val(user["location"]);
+						$("#about_user-position").val(user["position"]);
+						locationInput.val(user["location"]);
 						$("#about_user-full_name").val(user["name"]);
 						$("#role").val(user["role_id"]);
 						$("#removeUserButton").attr('href','/remove/'+user_id);
+						if (user["role"] == 'initiative'){
+							locationInput.prop( "required", true );
+							locationInput.prop( "disabled", false );
+						}else if (user["role"] == 'validator'){
+							locationInput.prop( "required", false );
+							locationInput.prop( "disabled", true );
+						}else{
+							locationInput.prop( "required", false );
+							locationInput.prop( "disabled", false );
+						}
 					}
 				});
 				

@@ -47,7 +47,14 @@ def ShowSettings():
 			if user:
 				user.ecwid_id = current_user.ecwid_id
 				user.role = UserRoles(role_form.role.data)
-				user.phone = role_form.about_user.phone.data.strip()
+				if role_form.about_user.phone.data:
+					user.phone = role_form.about_user.phone.data.strip()
+				else:
+					user.phone = ''
+				if role_form.about_user.position.data:
+					user.position = role_form.about_user.position.data.strip()
+				else:
+					user.position = ''
 				user.name = role_form.about_user.full_name.data.strip()
 				user.location = role_form.about_user.location.data.strip()
 				db.session.commit()
@@ -58,7 +65,14 @@ def ShowSettings():
 	else:
 		user_form = UserSettingsForm()
 		if user_form.validate_on_submit():
-			current_user.phone = user_form.about_user.phone.data.strip()
+			if user_form.about_user.phone.data:
+				current_user.phone = user_form.about_user.phone.data.strip()
+			else:
+				current_user.phone = ''
+			if user_form.about_user.position.data:
+				current_user.position = user_form.about_user.position.data.strip()
+			else:
+				current_user.position = ''
 			current_user.name = user_form.about_user.full_name.data.strip()
 			current_user.location = user_form.about_user.location.data.strip()
 			db.session.commit()

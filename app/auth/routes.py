@@ -4,7 +4,7 @@ from app.auth import bp
 from flask_login import login_user, logout_user, current_user
 from werkzeug.urls import url_parse
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
-from app.models import User
+from app.models import User, UserRoles
 from app.auth.email import SendPasswordResetEmail
 from flask import current_app
 
@@ -29,7 +29,7 @@ def PerformLogin():
 
 @bp.route('/register/', methods = ['GET', 'POST'])
 def PerformRegistration():
-	if current_user.is_authenticated:
+	if current_user.is_authenticated and current_user.role != UserRoles.admin:
 		return redirect(url_for('main.ShowIndex'))
 	form = RegistrationForm()
 	if form.validate_on_submit():
@@ -38,9 +38,12 @@ def PerformRegistration():
 		user.SetPassword(form.password.data)
 		db.session.add(user)
 		db.session.commit()
-		flash ('Теперь вы можете войти.')
+		flash ('Теперь пользователь может войти.')
 		current_app.logger.info('{} registered'.format(user.email))
-		return redirect(url_for('auth.PerformLogin'))
+		if current_user.is_authenticated and current_user.role == UserRoles.admin:
+			return redirect(url_for('main.ShowSettings'))
+		else:
+			return redirect(url_for('auth.PerformLogin'))
 	return render_template ('auth/register.html', form = form)
 
 @bp.route('/logout/')

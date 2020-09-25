@@ -1,8 +1,9 @@
 from flask_wtf import FlaskForm
 from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FormField, Form, PasswordField
 from wtforms.fields.html5 import EmailField
-from wtforms.validators import DataRequired, Length, ValidationError, Email, InputRequired
+from wtforms.validators import DataRequired, Length, ValidationError, Email, InputRequired, Optional
 from app.models import UserRoles
+from flask_login import current_user
 
 
 class AddStoreForm(FlaskForm):
@@ -21,8 +22,14 @@ class EcwidSettingsForm(FlaskForm):
 
 class UserSettings(Form):
 	full_name  = StringField('Имя', [DataRequired(message = 'Имя - обязательное поле')])
-	phone = StringField('Телефон', [DataRequired(message = 'Телефон - обязательное поле')])
-	location = StringField('Площадка', [DataRequired(message = 'Площадка - обязательное поле')])
+	phone = StringField('Телефон')
+	location = StringField('Площадка')
+	position = StringField('Должность')
+	
+	def validate_location(self, location):
+		if current_user.role == UserRoles.initiative and (location.data == None or location.data.strip() == ''):
+			raise ValidationError('Площадка - обязательное поле')
+	
 
 class UserRolesForm(FlaskForm):
 	user_id = SelectField('Идентификатор пользователя',[DataRequired(message = 'Некорректный идентификатор пользователя')], coerce = int)
@@ -30,13 +37,17 @@ class UserRolesForm(FlaskForm):
 						choices = [(int(role), str(role)) for role in UserRoles])
 	about_user = FormField(UserSettings, [DataRequired()])
 	submit2 = SubmitField('Сохранить')
+
+	def validate_role(self, role):
+		if UserRoles(role.data) == UserRoles.initiative and (self.about_user.location.data == None or self.about_user.location.data.strip() == ''):
+			raise ValidationError('Площадка - обязательное поле')
 	
 class UserSettingsForm(FlaskForm):
 	about_user = FormField(UserSettings, [DataRequired()])
 	submit3 = SubmitField('Сохранить')
 	
 class OrderCommentsForm(FlaskForm):
-	comment  = TextAreaField('Комментарий', [Length(max = 120, message = 'Слишком длинный комментарий')])
+	comment  = TextAreaField('Комментарий', [Length(max = 128, message = 'Слишком длинный комментарий')])
 	submit = SubmitField('Сохранить')
 	
 class OrderApprovalForm(FlaskForm):

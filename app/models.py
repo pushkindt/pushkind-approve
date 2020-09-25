@@ -55,6 +55,7 @@ class User(UserMixin, db.Model):
 	role = db.Column(db.Enum(UserRoles), index=True, nullable=False, default=UserRoles.default)
 	name = db.Column(db.String(128), nullable=False, default='', server_default='')
 	phone = db.Column(db.String(128), nullable=False, default='', server_default='')
+	position = db.Column(db.String(128), nullable=False, default='', server_default='')
 	location = db.Column(db.String(), nullable=False, default='', server_default='', index=True)
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=True, index=True)
 	hub = db.relationship('Ecwid')
@@ -73,7 +74,7 @@ class User(UserMixin, db.Model):
 		return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(digest, size)
 		
 	def to_dict(self):
-		data = {'id':self.id, 'email':self.email, 'phone':self.phone, 'location':self.location, 'role_id':int(self.role), 'name':self.name, 'ecwid_id':self.ecwid_id}
+		data = {'id':self.id, 'email':self.email, 'phone':self.phone, 'location':self.location, 'role': self.role.name,'role_id':int(self.role), 'name':self.name, 'ecwid_id':self.ecwid_id, 'position':self.position}
 		return data
 		
 	def GetPasswordResetToken(self, expires_in=600):
