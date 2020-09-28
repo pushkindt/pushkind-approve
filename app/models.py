@@ -21,7 +21,7 @@ class UserRoles(enum.IntEnum):
 	admin = 4
 	
 	def __str__(self):
-		pretty = ['Без роли', 'Инициатор', 'Валидатор', 'Согласующий', 'Администратор']
+		pretty = ['Без роли', 'Инициатор', 'Валидатор', 'Закупщик', 'Администратор']
 		return pretty[self.value]
 		
 class OrderStatus(enum.IntEnum):
