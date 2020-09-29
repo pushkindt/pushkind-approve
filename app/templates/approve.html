@@ -13,7 +13,8 @@
 		{% elif current_user.role.name == 'approver' %}
 			<div class="row">
 				<div class="col text-right">
-					<a href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" class="btn btn-info btn-sm" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>Отправить</a>
+					<a href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" class="btn btn-info btn-sm my-1" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>Отправить</a>
+					<a href="{{ url_for('main.GetExcelReport', order_id = order['orderNumber']) }}" class="btn btn-success btn-sm my-1">Excel-отчёт</a>
 				</div>
 			</div>
 		{% endif %}
@@ -56,7 +57,7 @@
 				Название
 			</div>		
 			<div class="col overflow-hidden">
-				Постащик
+				Поставщик
 			</div>
 			<div class="col overflow-hidden">
 				Единицы

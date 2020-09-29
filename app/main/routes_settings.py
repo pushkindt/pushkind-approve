@@ -75,7 +75,7 @@ def ShowSettings():
 			else:
 				current_user.position = ''
 			current_user.name = user_form.about_user.full_name.data.strip()
-			if role_form.about_user.location.data:
+			if user_form.about_user.location.data:
 				current_user.location = user_form.about_user.location.data.strip()
 			db.session.commit()
 			flash('Данные успешно сохранены.')

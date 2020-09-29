@@ -2,12 +2,16 @@ from app import db
 from flask_login import current_user, login_required
 from app.main import bp
 from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval
-from flask import render_template, redirect, url_for, flash, jsonify, current_app
+from flask import render_template, redirect, url_for, flash, jsonify, current_app, Response
 from app.main.forms import OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm
 from datetime import datetime, timezone
 from app.ecwid import EcwidAPIException
 from app.email import SendEmail
 from app.main.utils import DATE_TIME_FORMAT, role_required, ecwid_required, GetOrderStatus, GetProductApproval, role_required_ajax, ecwid_required_ajax, role_forbidden, role_forbidden_ajax, GetReviewersEmails
+
+from openpyxl import load_workbook
+from copy import copy
+from openpyxl.writer.excel import save_virtual_workbook
 
 '''
 ################################################################################
@@ -66,18 +70,16 @@ def ShowOrder(order_id):
 		order['privateAdminNotes'] = datetime.now()
 	if len(order['orderComments']) > 50:
 		order['orderComments'] = order['orderComments'][:50] + '...'
-		
+	
+	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
+	vendors = {str(vendor.store_id):vendor.store_name for vendor in vendors}
+	
 	for product in order['items']:
 		try:
 			dash = product['sku'].index('-')
-		except ValueError:
-			product['vendor'] = None
-			continue
-		store = Ecwid.query.filter(Ecwid.store_id == product['sku'][:dash]).first()
-		if not store:
-			product['vendor'] = None
-			continue
-		product['vendor'] = store.store_name
+			product['vendor'] = vendors[product['sku'][:dash]]
+		except (ValueError, KeyError):
+			product['vendor'] = ''
 		
 	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 	user_comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
@@ -349,3 +351,58 @@ def NotifyApprovers(order_id):
 			   html_body=render_template('email/notify.html', order=order))
 	flash('Уведомление успешно выслано')
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
+	
+
+@bp.route('/report/<int:order_id>')
+@login_required
+@role_required([UserRoles.approver])
+@ecwid_required
+def GetExcelReport(order_id):
+	order = GetOrder(order_id)
+	if not order:
+		return redirect(url_for('main.ShowIndex'))
+	
+	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
+	vendors = {str(vendor.store_id):vendor.store_name for vendor in vendors}
+	
+	data_len = len(order['items'])
+	starting_row = 11
+	wb = load_workbook(filename = 'template.xlsx')
+	ws = wb.active
+	ws['P17'] = order['initiative'].name
+	if data_len > 1:
+		for merged_cell in ws.merged_cells.ranges:
+			if merged_cell.bounds[1] >= starting_row:
+				merged_cell.shift(0, data_len)
+		ws.insert_rows(starting_row, data_len-1)
+	for k,i in enumerate(range(starting_row, starting_row+data_len)):
+		product = order['items'][k]
+		ws.row_dimensions[i].height = 50
+		if data_len > 1:
+			for j in range(1, 20):
+				target_cell = ws.cell(row=i, column=j)
+				source_cell = ws.cell(row=starting_row + data_len - 1, column=j)
+				target_cell._style = copy(source_cell._style)
+				target_cell.font = copy(source_cell.font)
+				target_cell.border = copy(source_cell.border)
+				target_cell.fill = copy(source_cell.fill)
+				target_cell.number_format = copy(source_cell.number_format)
+				target_cell.protection = copy(source_cell.protection)
+				target_cell.alignment = copy(source_cell.alignment)
+		ws.cell(i, 1).value = k + 1
+		ws.cell(i, 5).value = product['name']
+		try:
+			dash = product['sku'].index('-')
+			vendor = vendors[product['sku'][:dash]]
+		except (ValueError, KeyError):
+			vendor = ''
+		ws.cell(i, 3).value = order['initiative'].location
+		ws.cell(i, 7).value = vendor
+		ws.cell(i, 8).value = product['quantity']
+		c1 = ws.cell(i, 8).coordinate
+		ws.cell(i, 10).value = product['price']
+		c2 = ws.cell(i, 10).coordinate
+		ws.cell(i, 12).value = f"={c1}*{c2}"
+		
+	data = save_virtual_workbook(wb)
+	return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=report.xlsx'})
