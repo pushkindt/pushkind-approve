@@ -128,6 +128,6 @@ class CacheCategories(db.Model):
 class ApiData(db.Model):
 	id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
-	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=True, index=True, unique=True)
+	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False, index=True, unique=True)
 	hub = db.relationship('Ecwid')
 	

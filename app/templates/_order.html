@@ -19,41 +19,30 @@
 			<span class="d-sm-none font-weight-bold">Инициатор: </span>
 				{{ order['initiative'].location }}<br>
 				<sup class="small font-italic font-weight-light">
-					{{ order['initiative'].name }}</br>
+					{{ order['initiative'].name }}<br>
 					{{ order['initiative'].email }}
 				</sup>
 		</div>
-
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Сумма: </span>
 			<span class="orderTotal">{{ '{:,.2f}'.format(order['total']) }}</span>
 		</div>
 		<div class="col-sm overflow-hidden">
-			{% if approval_form and current_user.role.name == 'approver' %}
+			<span class="d-sm-none font-weight-bold">Статус: </span>
+			<span class="badge badge-{{order['status'].color() }}">{{ order['status'] }}</span>
+			{% if order['externalFulfillment'] %}
+				<span class="badge badge-info"><img class="octicon" src="https://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена"></span>
+			{% endif%}
+		</div>
+		{% if approval_form and current_user.role.name in ['approver','validator'] %}
+			<div class="col-sm">
 				<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
 					{{ approval_form.csrf_token }}
 					<span class="d-sm-none font-weight-bold">Согласование: </span>
-					{% if order['approval'] %}
-						<button type="submit" class="btn btn-success">
-							<img class="octicon" src="/static/octicons/check.svg" alt="Одобрить">
-						</button>
-					{% else %}
-						<button type="submit" class="btn btn-secondary">
-							<img class="octicon" src="/static/octicons/check.svg" alt="Одобрить">
-						</button>
-					{% endif %}
-					{% if order['externalFulfillment'] %}
-						<span class="badge badge-info"><img class="octicon" src="/static/octicons/mail.svg" alt="Отправлена"></span>
-					{% endif%}
+					<input type="checkbox" {% if order['approval'] %}checked{% endif %} data-toggle="toggle" data-on="Да" data-off="Нет" data-onstyle="success" data-offstyle="secondary" onChange="this.form.submit()" data-size="sm">
 				</form>
-			{% else %}
-				<span class="d-sm-none font-weight-bold">Статус: </span>
-				<span class="badge badge-{{order['status'].color() }}">{{ order['status'] }}</span>
-				{% if order['externalFulfillment'] %}
-					<span class="badge badge-info"><img class="octicon" src="/static/octicons/mail.svg" alt="Отправлена"></span>
-				{% endif%}
-			{% endif %}
-		</div>
+			</div>
+		{% endif %}
 	</div>
 	<div class="row">
 		<div class="col">

@@ -36,6 +36,8 @@ int main(int argc, char* argv[]){
 	int rc = flock(pid_file, LOCK_EX | LOCK_NB);
 	check(rc != -1, "You are not allowed to run multiple instances of the program.");
 	
+	args=5;
+	
 	if (argc == 2){
 		/*****************************************************************************/
 		//	Synchronize stores with the hub store

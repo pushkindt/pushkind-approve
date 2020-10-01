@@ -25,7 +25,7 @@
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Цена:</span>
-			{{ product['price'] }}
+			{{ "%.2f"|format(product['price'])  }}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Количество:</span>
@@ -39,22 +39,14 @@
 				{{ product['quantity'] }}
 			{% endif %}
 		</div>
-		{% if current_user.role.name in ['validator','approver', 'validator_l', 'validator_c'] %}
+		{% if current_user.role.name in ['validator','approver'] %}
 			<div class="col-sm overflow-hidden">
 				<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
 					{{ approval_form.csrf_token }}
 					{{ approval_form.product_id(class_ = 'd-none', hidden = '', value = product['id']) }}
 					{{ approval_form.product_sku(class_ = 'd-none', hidden = '', value = product['sku']) }}
-					<span class="d-sm-none font-weight-bold">Отклонить:</span>
-					{% if product['approval'] %}
-						<button type="submit" class="btn btn-secondary">
-							<img class="octicon" src="/static/octicons/x.svg" alt="Отклонить">
-						</button>
-					{% else %}
-						<button type="submit" class="btn btn-danger">
-							<img class="octicon" src="/static/octicons/x.svg" alt="Отклонить">
-						</button>
-					{% endif %}
+					<span class="d-sm-none font-weight-bold">Отклонение:</span>
+					<input type="checkbox" {% if product['approval'] %}checked{% endif %} data-toggle="toggle" data-on="Да" data-off="Нет" data-onstyle="secondary" data-offstyle="danger" onChange="this.form.submit()" data-size="sm">
 				</form>
 			</div>
 		{% endif %}

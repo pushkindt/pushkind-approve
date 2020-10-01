@@ -2,23 +2,19 @@
 
 {% block content %}
 	<div class="container border bg-light my-1">
-		<h6 class="text-secondary">Заявка</h6>
-		{% if current_user.role.name == 'initiative' %}
+		<h6 class="border-bottom border-gray pb-2 mb-0">Заявка</h6>
 			<div class="row">
 				<div class="col text-right">
-					<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Клонировать заявку?')">Клонировать</a>
-					<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.NotifyApprovers', order_id = order['orderNumber']) }}" onclick="return confirm('Отправить уведомление согласующим?')">Уведомить</a>
+					<a class="btn btn-success btn-sm my-1" href="{{ url_for('main.GetExcelReport', order_id = order['orderNumber']) }}">Excel-отчёт</a>
+					{% if current_user.role.name == 'initiative' %}
+						<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Клонировать заявку?')">Клонировать</a>
+						<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.NotifyApprovers', order_id = order['orderNumber']) }}" onclick="return confirm('Отправить уведомление согласующим?')">Уведомить</a>
+					{% elif current_user.role.name == 'approver' %}
+						<a class="btn btn-info btn-sm my-1" href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>Отправить</a>
+					{% endif %}
 				</div>
-			</div>
-		{% elif current_user.role.name == 'approver' %}
-			<div class="row">
-				<div class="col text-right">
-					<a href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" class="btn btn-info btn-sm my-1" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>Отправить</a>
-					<a href="{{ url_for('main.GetExcelReport', order_id = order['orderNumber']) }}" class="btn btn-success btn-sm my-1">Excel-отчёт</a>
-				</div>
-			</div>
-		{% endif %}
-		<div class="row my-1 d-none d-sm-flex font-weight-bold">
+			</div>		
+		<div class="row my-1 d-none d-sm-flex font-weight-bold  px-3">
 			<div class="col overflow-hidden">
 				Номер
 			</div>
@@ -31,13 +27,12 @@
 			<div class="col overflow-hidden">
 				Сумма
 			</div>
-			{% if current_user.role.name == 'approver' %}
+			<div class="col overflow-hidden">
+				Статус
+			</div>
+			{% if current_user.role.name in ['validator','approver'] %}
 				<div class="col overflow-hidden">
 					Согласование
-				</div>
-			{% else %}
-				<div class="col overflow-hidden">
-					Статус
 				</div>
 			{% endif %}
 		</div>
@@ -45,8 +40,8 @@
 	</div>
 
 	<div class="container border bg-light my-1">
-		<h6 class="text-secondary">Товары</h6>
-		<div class="row my-1 d-none d-sm-flex font-weight-bold">
+		<h6 class="border-bottom border-gray pb-2 mb-0">Товары</h6>
+		<div class="row my-1 d-none d-sm-flex font-weight-bold px-3">
 			<div class="col overflow-hidden">
 				Изображение
 			</div>		
@@ -68,9 +63,9 @@
 			<div class="col overflow-hidden">
 				Количество
 			</div>
-			{% if current_user.role.name in ['validator','approver', 'validator_c', 'validator_l'] %}
+			{% if current_user.role.name in ['validator','approver'] %}
 				<div class="col">
-					Отклонить
+					Отклонение
 				</div>
 			{% endif %}
 		</div>
@@ -118,70 +113,85 @@
 			</div>
 		</div>
 	{% endif %}
-	
-
-	<div class="container my-1">
-		<div class="card-columns" id="commentsSection">
+	<div class="container border bg-light my-1">
+		<h6 class="border-bottom border-gray pb-2 mb-0">История</h6>
+		<div class="row my-1">
+			<div class="col">
+				<input class="form-control" id="actionsFilter" type="text" placeholder="Фильтр..">
+			</div>
+		</div>
+		<div id="actionsSection">
 			{% if order['externalFulfillment'] %}
-			
-				<div class="card text-white bg-info">
-					<div class="card-header font-weight-bold">
-						{{ moment(order['privateAdminNotes']).format() }}
+				<div class="action row my-1 alert-info" data-datetime="{{ order['privateAdminNotes'].timestamp() }}">
+					<div class="col-1">
+						<img class=" my-2 bg-info rounded-circle" style="width:32px;height:32px" src="https://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена">
 					</div>
-					<div class="card-body">
-						<p>
-							Заявка отправлена поставщикам.
-						</p>
+					<div class="col-3">
+						<h6 class="mt-0">
+							Отправлена поставщикам<br>
+							<sup class="small">
+								{{ moment(order['privateAdminNotes']).format() }}
+							</sup>
+						</h6>
 					</div>
-					<div class="card-footer font-weight-bold">
-						{{ order['externalOrderId'] }}
+					<div class="col">
+						Номера заявок у поставщиков - <strong>{{ order['externalOrderId'] }}</strong>
 					</div>
 				</div>
-				
 			{% endif %}
 			{% for approval in approvals %}
-				<div class="card text-white {% if approval.product_id %}bg-danger{% else %}bg-success{% endif %}">
-					<div class="card-header font-weight-bold">
-						{% if approval.timestamp %}
-							{{ moment(approval.timestamp).format() }}
-						{% endif %}
+				{% if approval.product_id %}
+				<div class="action row my-1 alert-danger" data-datetime="{{ approval.timestamp.timestamp() }}">
+					<div class="col-1">
+						<img class=" my-2 bg-danger rounded-circle" style="width:32px;height:32px" src="https://approvals.pushkind.com/static/octicons/x.svg" alt="Отклонен">
+				{% else %}
+				<div class="action row my-1 alert-success" data-datetime="{{ approval.timestamp.timestamp() }}">
+					<div class="col-1">
+						<img class=" my-2 bg-success rounded-circle" style="width:32px;height:32px" src="https://approvals.pushkind.com/static/octicons/check.svg" alt="Согласована">
+				{% endif %}
 					</div>
-					<div class="card-body">
-						<p>
+					<div class="col-3">
+						<h6 class="mt-0">
+							{% if approval.user.name %}
+								{{ approval.user.name }}
+							{% else %}
+								{{ approval.user.email }}
+							{% endif %}
+							<br>
+							<sup class="small">
+								{{ moment(approval.timestamp).format() }}
+							</sup>
+						</h6>
+					</div>
+					<div class="col">
 						{% if approval.product_id %}
-							Товар {{ approval.product_sku }} отклонён.
+							Товар <strong>{{ approval.product_sku }}</strong> отклонён.
 						{% else %}
 							Заявка одобрена.
-						{% endif %}
-						</p>
-					</div>
-					<div class="card-footer font-weight-bold">
-						{% if approval.user.name %}
-							{{ approval.user.name }}
-						{% else %}
-							{{ approval.user.email }}
 						{% endif %}
 					</div>
 				</div>
 			{% endfor %}
-			{% for comment in comments %}
-				<div class="card text-white bg-warning" id="comment{{comment.user.id}}">
-					<div class="card-header font-weight-bold">
-						{% if comment.timestamp %}
-							{{ moment(comment.timestamp).format() }}
-						{% endif %}
+			{% for comment in comments %}			
+				<div class="action row my-1 alert-warning" data-datetime="{{ comment.timestamp.timestamp() }}" id="comment{{comment.user_id}}">
+					<div class="col-1">
+						<img class="align-self-center mr-3 bg-warning rounded-circle" style="width:32px;height:32px" src="https://approvals.pushkind.com/static/octicons/pencil.svg" alt="Комментарий">
 					</div>
-					<div class="card-body">
-						<p>
-							{{ comment.comment }}
-						</p>
+					<div class="col-3">
+						<h6 class="mt-0">
+							{% if comment.user.name %}
+								{{ comment.user.name }}
+							{% else %}
+								{{ comment.user.email }}
+							{% endif %}
+							<br>
+							<sup class="small">
+								{{ moment(comment.timestamp).format() }}
+							</sup>
+						</h6>
 					</div>
-					<div class="card-footer font-weight-bold">
-						{% if comment.user.name %}
-							{{ comment.user.name }}
-						{% else %}
-							{{ comment.user.email }}
-						{% endif %}
+					<div class="col commentBody">
+						{{ comment.comment }}
 					</div>
 				</div>
 			{% endfor %}
@@ -190,103 +200,119 @@
 {% endblock %}
 
 {% block templates %}
-	<div class="card text-white bg-warning" id="commentTemplate">
-		<div class="card-header font-weight-bold">
+	<div class="action row my-1 alert-warning" id="commentTemplate">
+		<div class="col-1">
+			<img class="align-self-center mr-3 bg-warning rounded-circle" style="width:32px;height:32px" src="https://approvals.pushkind.com/static/octicons/pencil.svg" alt="Комментарий">
 		</div>
-		<div class="card-body">
-			<p>
-			</p>
+		<div class="col-3">
+			<h6 class="mt-0">
+			</h6>
 		</div>
-		<div class="card-footer font-weight-bold">
+		<div class="col commentBody">
 		</div>
 	</div>
 {% endblock %}
 
 {% block scripts %}
 
-<script>
-	function UpdateOrderTotal(data){
-		if (data.status == true){
-			if (data.quantity == 0){
-				if ($(".ecwidOrderProduct").length == 1){
-					alert("Заявка удалена, вы будете перенаправлены на главную страницу.");
-					setTimeout(function(){
-						document.location.href = "{{ url_for('main.ShowIndex') }}";
-					}, 2000);
-				}else
-					document.location.reload();
-			}
-			$(".orderTotal").text(data.total);
-		}
-		ShowAjaxFlashes(data);
-	}
-	function UpdateOrderComment(data){
-		if (data.status == true){
-			var authorComment = $("{{ '#comment{}'.format(current_user.id) }}");
-			var commentsSection = $("#commentsSection");
-			if (data.comment.length > 0){
-				if (authorComment.length == 0){
-					authorComment = $("#commentTemplate").clone();
-					authorComment.attr("id", "{{'comment{}'.format(current_user.id)}}");
-					var author = authorComment.find(".card-footer");
-					{% if current_user.name %}
-						author.text("{{ current_user.name }}");
-					{% else %}
-						author.text("{{ current_user.email }}");
-					{% endif %}
-					commentsSection.append(authorComment);
-				}
-				var comment = authorComment.find(".card-body p");
-				comment.text(data.comment);
-				var header = authorComment.find(".card-header");
-				var timestamp = new Date(data.timestamp);
-				header.text(moment(timestamp).format("DD.MM.YYYY HH:mm"));
-				$("#commentFormCollapse").collapse('hide');
-			}else{
-				authorComment.remove();
-			}
-		}
-		ShowAjaxFlashes(data);
-	}	
+<script>	
 	$(document).ready(function(){
-		var oldQuantity = 0;
-		//Scripts
-		$('.productQuantity').focus(function() {
-			$(this).removeClass('form-control-plaintext');
-			$(this).addClass ('form-control');
-			oldQuantity = $(this).val();
+	
+		$("#actionsFilter").on("keyup", function() {
+			var value = $(this).val().toLowerCase();
+			$(".action").filter(function() {
+				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+			});
 		});
-		$('.productQuantity').focusout(function() {
-			if ($(this).val() != oldQuantity){
-				var agreed = true;
-				if ($(this).val() == 0){
-					if ($(".ecwidOrderProduct").length == 1){
-						agreed = window.confirm("Заявка будет удалена.");
+	
+		$("#actionsSection").find(".action").sort(function(a, b){return +$(b).data('datetime') - +$(a).data('datetime')}).appendTo('#actionsSection');
+		
+		{% if current_user.role.name == 'initiative' %}
+			function UpdateOrderTotal(data){
+				if (data.status == true){
+					if (data.quantity == 0){
+						if ($(".ecwidOrderProduct").length == 1){
+							alert("Заявка удалена, вы будете перенаправлены на главную страницу.");
+							setTimeout(function(){
+								document.location.href = "{{ url_for('main.ShowIndex') }}";
+							}, 2000);
+						}else
+							document.location.reload();
+					}
+					$(".orderTotal").text(data.total);
+				}
+				ShowAjaxFlashes(data);
+			}
+			
+			var oldQuantity = 0;
+			$('.productQuantity').focus(function() {
+				$(this).removeClass('form-control-plaintext');
+				$(this).addClass ('form-control');
+				oldQuantity = $(this).val();
+			});
+			$('.productQuantity').focusout(function() {
+				if ($(this).val() != oldQuantity){
+					var agreed = true;
+					if ($(this).val() == 0){
+						if ($(".ecwidOrderProduct").length == 1){
+							agreed = window.confirm("Заявка будет удалена.");
+						} else {
+							agreed = window.confirm("Товар будет удален.");
+						}
+					}
+					if (agreed == true){
+						$(this).parent().submit();
 					} else {
-						agreed = window.confirm("Товар будет удален.");
+						alert("Заявка не будет изменена.");
+						$(this).val(oldQuantity);
 					}
 				}
-				if (agreed == true){
-					$(this).parent().submit();
-				} else {
-					alert("Заявка не будет изменена.");
-					$(this).val(oldQuantity);
+				$(this).removeClass ('form-control');
+				$(this).addClass('form-control-plaintext');
+			});
+		{% endif %}
+		{% if current_user.role.name not in ['default','admin'] %}
+			function UpdateOrderComment(data){
+				if (data.status == true){
+					var authorComment = $("#comment{{ current_user.id }}");
+					var actionsSection = $("#actionsSection");
+					if (data.comment.length > 0){
+						if (authorComment.length == 0){
+							authorComment = $("#commentTemplate").clone();
+							authorComment.attr("id", "comment{{ current_user.id }}");
+						}
+						var timestamp = new Date(data.timestamp);
+						var author = authorComment.find("h6");
+						{% if current_user.name %}
+							author.text("{{ current_user.name }}");
+						{% else %}
+							author.text("{{ current_user.email }}");
+						{% endif %}
+						author.append('<br>');
+						author.append('<sup class="small">' + moment(timestamp).format("DD.MM.YYYY HH:mm") + '</sup>');
+						actionsSection.prepend(authorComment);
+						var comment = authorComment.find(".commentBody");
+						comment.text(data.comment);
+					}else{
+						if (authorComment.length != 0)
+							authorComment.remove();
+					}
+					$("#commentFormCollapse").collapse('hide');
 				}
+				ShowAjaxFlashes(data);
 			}
-			$(this).removeClass ('form-control');
-			$(this).addClass('form-control-plaintext');
-		});
-		var options = {
-			success:	UpdateOrderComment,
-			url: "{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}",
-			dataType:	'json',
-			method: 'POST',
-			clearForm: false
-		};
-		$('#changeCommentForm').ajaxForm(options);
-		$('#comment').focusout(function() {
-			$(this).parent().submit();
-		});
+			var options = {
+				success:	UpdateOrderComment,
+				url: "{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}",
+				dataType:	'json',
+				method: 'POST',
+				clearForm: false
+			};
+			$('#changeCommentForm').ajaxForm(options);
+			$('#comment').focusout(function() {
+				$(this).parent().submit();
+			});
+		{% endif %}
 	});
 </script>
 {%endblock %}

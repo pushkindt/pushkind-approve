@@ -58,7 +58,7 @@ def ShowOrder(order_id):
 	order['createDate'] = datetime.strptime(order['createDate'], DATE_TIME_FORMAT)
 	order['updateDate'] = datetime.strptime(order['updateDate'], DATE_TIME_FORMAT)
 	order['status'] = GetOrderStatus(order)
-	if current_user.role not in [UserRoles.admin, UserRoles.default]:
+	if current_user.role != UserRoles.admin:
 		for product in order['items']:
 			product['approval'] = GetProductApproval(order_id, product['id'], current_user.id)
 		if current_user.role == UserRoles.approver:
@@ -143,8 +143,6 @@ def SaveApproval(order_id):
 		try:
 			order_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == None).first()
 			if not form.product_id.data:
-				if current_user.role != UserRoles.approver:
-					return render_template('errors/403.html'),403
 				OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).delete()
 				if not order_approval:
 					order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)

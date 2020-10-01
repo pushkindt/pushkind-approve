@@ -92,11 +92,12 @@ def GetOrderStatus(order):
 	approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id == None, User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
 	approvers = User.query.filter(User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
 	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).count()
+	validated = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id == None, User.role == UserRoles.validator, User.ecwid_id == current_user.ecwid_id).count()
 	if approved == approvers and approvers > 0:
 		return OrderStatus.approved
 	if (order['updateDate'] - order['createDate']) > timedelta(seconds=10):
 		return OrderStatus.modified
-	if approved == 0 and comments == 0:
+	if approved == 0 and comments == 0 and validated == 0:
 		return OrderStatus.new
 	return OrderStatus.partly_approved	
 	
