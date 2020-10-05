@@ -60,6 +60,12 @@ class User(UserMixin, db.Model):
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=True, index=True)
 	hub = db.relationship('Ecwid')
 	
+	def __hash__(self):
+		return self.id
+		
+	def __eq__(self, another):
+		return isinstance(another, User) and self.id == another.id
+	
 	def __repr__(self):
 		return json.dumps(self.to_dict())
 
@@ -101,11 +107,14 @@ class OrderApproval(db.Model):
 	user = db.relationship('User')
 	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
 	
+	def __bool__(self):
+		return self.product_id == None
+	
 class OrderComment(db.Model):
 	user = db.relationship('User')
 	order_id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, primary_key = True)
-	comment = db.Column(db.String(128), nullable=False, default='', server_default='')
+	comment = db.Column(db.String(256), nullable=False, default='', server_default='')
 	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
 
 

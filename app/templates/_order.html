@@ -34,15 +34,6 @@
 				<span class="badge badge-info"><img class="octicon" src="https://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена"></span>
 			{% endif%}
 		</div>
-		{% if approval_form and current_user.role.name in ['approver','validator'] %}
-			<div class="col-sm">
-				<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
-					{{ approval_form.csrf_token }}
-					<span class="d-sm-none font-weight-bold">Согласование: </span>
-					<input type="checkbox" {% if order['approval'] %}checked{% endif %} data-toggle="toggle" data-on="Да" data-off="Нет" data-onstyle="success" data-offstyle="secondary" onChange="this.form.submit()" data-size="sm">
-				</form>
-			</div>
-		{% endif %}
 	</div>
 	<div class="row">
 		<div class="col">

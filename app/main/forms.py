@@ -47,7 +47,7 @@ class UserSettingsForm(FlaskForm):
 	submit3 = SubmitField('Сохранить')
 	
 class OrderCommentsForm(FlaskForm):
-	comment  = TextAreaField('Комментарий', [Length(max = 128, message = 'Слишком длинный комментарий')])
+	comment  = TextAreaField('Комментарий', [Length(max = 256, message = 'Слишком длинный комментарий')])
 	submit = SubmitField('Сохранить')
 	
 class OrderApprovalForm(FlaskForm):

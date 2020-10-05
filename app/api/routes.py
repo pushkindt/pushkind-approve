@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from app.models import User, UserRoles, ApiData, CacheCategories
 from app.ecwid import EcwidAPIException
 from app.email import SendEmail
-from app.main.utils import GetReviewersEmails
+from app.main.utils import PrepareOrder
 
 
 @bp.route('/orders/', methods=['GET'])
@@ -35,7 +35,8 @@ def NotifyNewOrders():
 		if order['email'] not in initiatives:
 			continue
 		order['initiative'] = initiatives[order['email']]
-		emails = GetReviewersEmails(order)
+		PrepareOrder(order)
+		emails = [reviewer[0].id for reviewer in order['reviewers']]
 		SendEmail('Новая заявка #{}'.format(order['vendorOrderNumber']),
 				   sender=current_app.config['MAIL_USERNAME'],
 				   recipients=emails,

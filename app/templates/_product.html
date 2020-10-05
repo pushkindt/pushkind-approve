@@ -1,54 +1,60 @@
-<div class = "container border bg-white my-1 ecwidOrderProduct" id="product{{ product['id'] }}">
-	<div class="row my-1">
-		<div class="col-sm overflow-hidden">
-			{% if product['imageUrl'] %}
-				<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
-			{% endif %}
-		</div>
-		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Артикул:</span>
-			{{ product['sku'] }}
-		</div>
-		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Название:</span>
-			{{ product['name'] }}
-		</div>
-		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Поставщик:</span>
-			{{ product['vendor'] }}
-		</div>		
-		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Единицы:</span>
-			{% if 'selectedOptions' in product %}
-				{{ product['selectedOptions'][0]['value'] }}
-			{% endif %}
-		</div>
-		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Цена:</span>
-			{{ "%.2f"|format(product['price'])  }}
-		</div>
-		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Количество:</span>
-			{% if current_user.role.name == 'initiative' %}
-				<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order['orderNumber']) }}" method="POST">
-					{{ quantity_form.csrf_token }}
-					{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['id']) }}
-					{{ quantity_form.product_quantity(class_ = 'productQuantity text-primary form-control-plaintext', value = product['quantity']) }}
-				</form>
-			{% else %}
-				{{ product['quantity'] }}
-			{% endif %}
-		</div>
-		{% if current_user.role.name in ['validator','approver'] %}
+<div class="row border">
+	<div class="col-sm-10">
+		<div class="row my-1 ecwidOrderProduct" id="product{{ product['id'] }}">
 			<div class="col-sm overflow-hidden">
-				<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
-					{{ approval_form.csrf_token }}
-					{{ approval_form.product_id(class_ = 'd-none', hidden = '', value = product['id']) }}
-					{{ approval_form.product_sku(class_ = 'd-none', hidden = '', value = product['sku']) }}
-					<span class="d-sm-none font-weight-bold">Отклонение:</span>
-					<input type="checkbox" {% if product['approval'] %}checked{% endif %} data-toggle="toggle" data-on="Да" data-off="Нет" data-onstyle="secondary" data-offstyle="danger" onChange="this.form.submit()" data-size="sm">
-				</form>
+				{% if product['imageUrl'] %}
+					<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
+				{% endif %}
 			</div>
+			<div class="col-sm overflow-hidden">
+				<span class="d-sm-none font-weight-bold">Артикул:</span>
+				{{ product['sku'] }}
+			</div>
+			<div class="col-sm-3 overflow-hidden">
+				<span class="d-sm-none font-weight-bold">Название:</span>
+				{{ product['name'] }}
+			</div>
+			<div class="col-sm overflow-hidden">
+				<span class="d-sm-none font-weight-bold">Поставщик:</span>
+				{{ product['vendor'] }}
+			</div>		
+			<div class="col-sm overflow-hidden">
+				<span class="d-sm-none font-weight-bold">Единицы:</span>
+				{% if 'selectedOptions' in product %}
+					{{ product['selectedOptions'][0]['value'] }}
+				{% endif %}
+			</div>
+			<div class="col-sm overflow-hidden">
+				<span class="d-sm-none font-weight-bold">Цена:</span>
+				{{ '{:,.2f}'.format(product['price'])  }}
+			</div>
+			<div class="col-sm overflow-hidden">
+				<span class="d-sm-none font-weight-bold">Кол-во:</span>
+				{% if current_user.role.name == 'initiative' %}
+					<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order['orderNumber']) }}" method="POST">
+						{{ quantity_form.csrf_token }}
+						{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['id']) }}
+						{{ quantity_form.product_quantity(class_ = 'productQuantity text-primary form-control-plaintext', value = product['quantity']) }}
+					</form>
+				{% else %}
+					{{ product['quantity'] }}
+				{% endif %}
+			</div>
+		</div>
+	</div>
+	<div class="col my-1">
+		{% if current_user.role.name in ['validator','approver'] %}
+			<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
+				{{ approval_form.csrf_token }}
+				{{ approval_form.product_id(class_ = 'd-none', hidden = '', value = product['id']) }}
+				{{ approval_form.product_sku(class_ = 'd-none', hidden = '', value = product['sku']) }}
+				{% if order['reviewers'][current_user]|selectattr('product_id','equalto', product['id'])|list|length > 0 %}
+					<input type="checkbox" data-toggle="toggle" data-on="согласен" data-off="НЕ согласен" data-onstyle="success" data-offstyle="secondary" onChange="this.form.submit()" data-height="20"  data-width="150">
+				{% else %}
+					<input type="checkbox" checked data-toggle="toggle" data-on="согласен" data-off="НЕ согласен" data-onstyle="success" data-offstyle="secondary" onChange="this.form.submit()" data-height="20"  data-width="150">
+				{% endif %}
+				
+			</form>
 		{% endif %}
 	</div>
 </div>

@@ -84,39 +84,39 @@ def ecwid_required_ajax(function):
 			return function(*args, **kwargs)
 	return wrapper
 	
-def GetOrderStatus(order):
-	order_id = order['orderNumber']
-	not_approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id != None, User.ecwid_id == current_user.ecwid_id).count() > 0
-	if not_approved:
-		return OrderStatus.not_approved
-	approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id == None, User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
-	approvers = User.query.filter(User.role == UserRoles.approver, User.ecwid_id == current_user.ecwid_id).count()
-	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).count()
-	validated = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, OrderApproval.product_id == None, User.role == UserRoles.validator, User.ecwid_id == current_user.ecwid_id).count()
-	if approved == approvers and approvers > 0:
-		return OrderStatus.approved
-	if (order['updateDate'] - order['createDate']) > timedelta(seconds=10):
-		return OrderStatus.modified
-	if approved == 0 and comments == 0 and validated == 0:
-		return OrderStatus.new
-	return OrderStatus.partly_approved	
-	
-def GetProductApproval(order_id, product_id, user_id):
-	'''
-		Returns current user order approval if product_id is None
-	'''
-	return OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.product_id == product_id, OrderApproval.user_id == user_id).count() == 0
+def GetProductApproval(order_id, user):
+	return OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == user.id).all()
 
 
-def GetReviewersEmails(order):
+def PrepareOrder(order, filter_location=None):
+	if filter_location:
+		order['initiative'] = User.query.filter(User.email == order['email'], User.location.ilike(filter_location)).first()
+	else:
+		order['initiative'] = User.query.filter(User.email == order['email']).first()
+	if not order['initiative']:
+		return False
+	try:
+		order['createDate'] = datetime.strptime(order['createDate'], DATE_TIME_FORMAT)
+	except (ValueError, KeyError):
+		pass
+	try:
+		order['updateDate'] = datetime.strptime(order['updateDate'], DATE_TIME_FORMAT)
+	except (ValueError, KeyError):
+		pass
+	try:
+		order['privateAdminNotes'] = datetime.strptime(order['privateAdminNotes'], DATE_TIME_FORMAT)
+	except (ValueError, KeyError):
+		order['privateAdminNotes'] = datetime.now()
+	if len(order['orderComments']) > 50:
+		order['orderComments'] = order['orderComments'][:50] + '...'
 	approvers = User.query.filter(User.role == UserRoles.approver, User.ecwid_id == order['initiative'].ecwid_id).all()
 	validators = User.query.filter(User.role == UserRoles.validator, User.ecwid_id == order['initiative'].ecwid_id).all()
-	emails = [approver.email for approver in approvers]
+	reviewers = {approver: GetProductApproval(order['orderNumber'], approver) for approver in approvers}
 	for validator in validators:
 		try:
 			filter_validator = json.loads(validator.location)
 		except JSONDecodeError:
-			emails.append(validator.email)
+			reviewers[validator] = GetProductApproval(order['orderNumber'], validator)
 			continue
 		try:
 			locations = [loc.lower() for loc in filter_validator['locations']]
@@ -131,9 +131,8 @@ def GetReviewersEmails(order):
 		except (TypeError,KeyError):
 			categories = None
 		if locations == None and categories == None:
-			emails.append(validator.email)
+			reviewers[validator] = GetProductApproval(order['orderNumber'], validator)
 			continue
-		
 		if categories != None:
 			caches = CacheCategories.query.filter(CacheCategories.ecwid_id == order['initiative'].ecwid_id, or_(*[CacheCategories.name.ilike(cat) for cat in categories])).all()
 			categories = set([cat_id for cache in caches for cat_id in cache.children])
@@ -147,7 +146,22 @@ def GetReviewersEmails(order):
 			check_locations = True
 		
 		if	check_locations == True and check_categories == True:
-			emails.append(validator.email)
-	return list(set(emails))
-		
-		
+			reviewers[validator] = GetProductApproval(order['orderNumber'], validator)
+	order['reviewers'] = reviewers
+	order['comments'] = OrderComment.query.join(User).filter(OrderComment.order_id == order['orderNumber'], User.ecwid_id == order['initiative'].ecwid_id).all()
+	not_approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order['orderNumber'], OrderApproval.product_id != None, User.ecwid_id == order['initiative'].ecwid_id).count() > 0
+	if not_approved:
+		order['status'] = OrderStatus.not_approved
+		return True
+	approvals = [any(status) for reviewer, status in reviewers.items()]
+	if all(approvals):
+		order['status'] = OrderStatus.approved
+		return True
+	if (order['updateDate'] - order['createDate']) > timedelta(seconds=10):
+		order['status'] = OrderStatus.modified
+		return True
+	if any(approvals) or len(order['comments']) > 0:
+		order['status'] = OrderStatus.partly_approved
+		return True
+	order['status'] = OrderStatus.new
+	return True

@@ -7,7 +7,7 @@ from app.main.forms import OrderCommentsForm, OrderApprovalForm, ChangeQuantityF
 from datetime import datetime, timezone
 from app.ecwid import EcwidAPIException
 from app.email import SendEmail
-from app.main.utils import DATE_TIME_FORMAT, role_required, ecwid_required, GetOrderStatus, GetProductApproval, role_required_ajax, ecwid_required_ajax, role_forbidden, role_forbidden_ajax, GetReviewersEmails
+from app.main.utils import DATE_TIME_FORMAT, role_required, ecwid_required, PrepareOrder, GetProductApproval, role_required_ajax, ecwid_required_ajax, role_forbidden, role_forbidden_ajax
 
 from openpyxl import load_workbook
 from copy import copy
@@ -21,7 +21,6 @@ Consts
 _DISALLOWED_ORDERS_ITEM_FIELDS = ['productId', 'id', 'categoryId']
 _DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'privateAdminNotes', 'externalFulfillment', 'createDate', 'externalOrderId', 'initiative']
 
-
 '''
 ################################################################################
 Approve page
@@ -34,13 +33,10 @@ def GetOrder(order_id):
 		if 'items' not in response or len(response['items']) == 0:
 			raise EcwidAPIException('Такой заявки не существует.')
 		order = response['items'][0]
-		order_email = order.get('email', '').lower()
-		owner = User.query.filter(User.email == order_email).first()
-		if not owner:
+		if not PrepareOrder(order):
 			raise EcwidAPIException('Заявка не принадлежит ни одному из инициаторов.')
-		if current_user.role == UserRoles.initiative and order_email != current_user.email:
+		if current_user.role == UserRoles.initiative and order['email'] != current_user.email:
 			raise EcwidAPIException('Вы не являетесь владельцем этой заявки.')
-		order['initiative'] = owner
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
 		order = None
@@ -55,22 +51,6 @@ def ShowOrder(order_id):
 	if not order:
 		return redirect(url_for('main.ShowIndex'))
 
-	order['createDate'] = datetime.strptime(order['createDate'], DATE_TIME_FORMAT)
-	order['updateDate'] = datetime.strptime(order['updateDate'], DATE_TIME_FORMAT)
-	order['status'] = GetOrderStatus(order)
-	if current_user.role != UserRoles.admin:
-		for product in order['items']:
-			product['approval'] = GetProductApproval(order_id, product['id'], current_user.id)
-		if current_user.role == UserRoles.approver:
-			order['approval'] = not GetProductApproval(order_id, None, current_user.id)
-			
-	try:
-		order['privateAdminNotes'] = datetime.strptime(order['privateAdminNotes'], DATE_TIME_FORMAT)
-	except (ValueError, KeyError):
-		order['privateAdminNotes'] = datetime.now()
-	if len(order['orderComments']) > 50:
-		order['orderComments'] = order['orderComments'][:50] + '...'
-	
 	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
 	vendors = {str(vendor.store_id):vendor.store_name for vendor in vendors}
 	
@@ -81,18 +61,13 @@ def ShowOrder(order_id):
 		except (ValueError, KeyError):
 			product['vendor'] = ''
 		
-	comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 	user_comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
-	approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-	
 	approval_form = OrderApprovalForm()
 	quantity_form = ChangeQuantityForm()
 	comment_form = OrderCommentsForm(comment = user_comment.comment if user_comment else None)
 	
 	return render_template('approve.html',
 							order = order,
-							comments = comments,
-							approvals = approvals,
 							comment_form = comment_form,
 							approval_form = approval_form,
 							quantity_form = quantity_form)
@@ -128,6 +103,9 @@ def SaveComment(order_id):
 			db.session.commit()
 		except EcwidAPIException as e:
 			flash_messages = ['Ошибка API: {}'.format(e)]
+	else:
+		for error in form.comment.errors:
+			flash_messages.append(error)
 	return jsonify({'status':status, 'flash':flash_messages, 'comment':stripped, 'timestamp':timestamp.timestamp() * 1000})
 
 
@@ -144,7 +122,7 @@ def SaveApproval(order_id):
 			order_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == None).first()
 			if not form.product_id.data:
 				OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).delete()
-				if not order_approval:
+				if order_approval == None:
 					order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
 					db.session.add(order_approval)
 					SendEmail('Согласована заявка #{}'.format(order['vendorOrderNumber']),
@@ -154,10 +132,10 @@ def SaveApproval(order_id):
 							   html_body=render_template('email/approval.html', order=order, approval=True))
 			else:
 				product_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == form.product_id.data).first()
-				if product_approval:
+				if product_approval != None:
 					db.session.delete(product_approval)
 				else:
-					if order_approval:
+					if order_approval != None:
 						db.session.delete(order_approval)
 					product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id, product_sku = form.product_sku.data.strip())
 					db.session.add(product_approval)
@@ -320,9 +298,10 @@ def ProcessHubOrder(order_id):
 		order['items'] = items
 
 	if len(got_orders) > 0:
-		vendor_str = ', '.join(f'{vendor}: #{order}' for vendor,order in got_orders.items())
+		vendor_str = ', '.join(f'{vendor} (#{order})' for vendor,order in got_orders.items())
 		try:
-			current_user.hub.EcwidUpdateStoreOrder(order_id, {'externalOrderId':vendor_str, 'externalFulfillment':True, 'privateAdminNotes': datetime.now(tz = timezone.utc).strftime(DATE_TIME_FORMAT)})
+			referer = current_user.name if current_user.name else current_user.email
+			current_user.hub.EcwidUpdateStoreOrder(order_id, {'refererId': referer,'externalOrderId':vendor_str, 'externalFulfillment':True, 'privateAdminNotes': datetime.now(tz = timezone.utc).strftime(DATE_TIME_FORMAT)})
 		except EcwidAPIException as e:
 			flash('Ошибка API: {}'.format(e))
 			flash('Не удалось сохранить информацию о передаче поставщикам.')
@@ -341,7 +320,7 @@ def NotifyApprovers(order_id):
 	order = GetOrder(order_id)
 	if not order:
 		return redirect(url_for('main.ShowIndex'))
-	emails = GetReviewersEmails(order)
+	emails = [reviewer[0].id for reviewer in order['reviewers']]
 	SendEmail('Исправлена заявка #{} ({})'.format(order['vendorOrderNumber'], current_user.location),
 			   sender=current_app.config['MAIL_USERNAME'],
 			   recipients=emails,

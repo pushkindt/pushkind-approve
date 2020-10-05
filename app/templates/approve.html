@@ -1,73 +1,126 @@
 {% extends "base.html" %}
 
 {% block content %}
-	<div class="container border bg-light my-1">
-		<h6 class="border-bottom border-gray pb-2 mb-0">Заявка</h6>
-			<div class="row">
-				<div class="col text-right">
-					<a class="btn btn-success btn-sm my-1" href="{{ url_for('main.GetExcelReport', order_id = order['orderNumber']) }}">Excel-отчёт</a>
-					{% if current_user.role.name == 'initiative' %}
-						<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Клонировать заявку?')">Клонировать</a>
-						<a class="btn btn-warning btn-sm my-1" href="{{ url_for('main.NotifyApprovers', order_id = order['orderNumber']) }}" onclick="return confirm('Отправить уведомление согласующим?')">Уведомить</a>
-					{% elif current_user.role.name == 'approver' %}
-						<a class="btn btn-info btn-sm my-1" href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>Отправить</a>
-					{% endif %}
-				</div>
-			</div>		
-		<div class="row my-1 d-none d-sm-flex font-weight-bold  px-3">
-			<div class="col overflow-hidden">
-				Номер
+	<div class="container my-1">
+		<div class="row my-2 ml-2">
+			<div class="col">
+				{% if current_user in order['reviewers'] %}	
+					<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
+						{{ approval_form.csrf_token }}
+						<span class="font-weight-bold">ЗАЯВКА </span>
+						<input type="checkbox" {% if order['reviewers'][current_user]|select|list|first  %}checked{% endif %} data-toggle="toggle" data-on="согласен" data-off="НЕ согласен" data-onstyle="success" data-offstyle="secondary" onChange="this.form.submit()" data-height="20" data-width="150">
+					</form>
+				{% else %}
+					<span class="font-weight-bold">ЗАЯВКА </span>
+				{% endif %}
 			</div>
-			<div class="col overflow-hidden">
-				Дата
+			<div class="col">
+				<span class="font-weight-bold">Сумма: </span>
+				<span class="orderTotal">{{ '{:,.2f}'.format(order['total']) }}</span>
 			</div>
-			<div class="col overflow-hidden">
-				Инициатор
-			</div>
-			<div class="col overflow-hidden">
-				Сумма
-			</div>
-			<div class="col overflow-hidden">
-				Статус
-			</div>
-			{% if current_user.role.name in ['validator','approver'] %}
-				<div class="col overflow-hidden">
-					Согласование
-				</div>
-			{% endif %}
 		</div>
-		{% include '_order.html' %}
-	</div>
-
-	<div class="container border bg-light my-1">
-		<h6 class="border-bottom border-gray pb-2 mb-0">Товары</h6>
-		<div class="row my-1 d-none d-sm-flex font-weight-bold px-3">
-			<div class="col overflow-hidden">
-				Изображение
-			</div>		
-			<div class="col overflow-hidden">
-				Артикул
-			</div>		
-			<div class="col overflow-hidden">
-				Название
-			</div>		
-			<div class="col overflow-hidden">
-				Поставщик
-			</div>
-			<div class="col overflow-hidden">
-				Единицы
-			</div>
-			<div class="col overflow-hidden">
-				Цена
-			</div>
-			<div class="col overflow-hidden">
-				Количество
-			</div>
-			{% if current_user.role.name in ['validator','approver'] %}
-				<div class="col">
-					Отклонение
+		<div class="row ml-2">
+			<div class="col">
+				<div class="row">
+					<div class="col">
+						#{{ order['vendorOrderNumber'] }}
+						{% if current_user.role.name == 'initiative' %}
+							<a class="badge badge-danger" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">&times;</a>
+						{% endif %}
+						от {{ moment(order['createDate']).format() }}
+					</div>
 				</div>
-			{% endif %}
+				<div class="row">
+					<div class="col">
+						{{ order['initiative'].location }}
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						{{ order['initiative'].name }}
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						{{ order['initiative'].email }}
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						{{ order['initiative'].phone }}
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<span class="badge badge-{{order['status'].color() }}">{{ order['status'] }}</span>
+						{% if order['externalFulfillment'] %}
+							<span class="badge badge-info"><img class="octicon" src="https://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена"></span>
+						{% endif%}
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						{{ order['orderComments'] }}
+					</div>	
+				</div>
+			</div>
+			<div class="col overflow-hidden">
+				<div class="row">
+					<div class="col">
+						<span class="font-weight-bold">СОГЛАСОВАНИЯ</span>
+					</div>
+				</div>
+				{% for reviewer,status in order['reviewers'].items() %}
+					<div class="row">
+						<div class="col">
+							{% if status|length == 0 %}
+								<span class="badge badge-secondary">{{reviewer.name}}</span>
+							{% elif status|select|list|first %}
+								<span class="badge badge-success">{{reviewer.name}}</span>
+							{% else %}
+								<span class="badge badge-danger">{{reviewer.name}}</span>
+							{% endif %}
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+	<div class="container my-2">
+		<div class="row mx-2 my-2">
+			<div class="col">
+				<span class="font-weight-bold">ПОЗИЦИИ ЗАЯВКИ</span>
+			</div>
+		</div>
+		<div class="row my-1 d-none d-sm-flex font-weight-bold">
+			<div class="col-10">
+				<div class="row">
+					<div class="col overflow-hidden">
+						&nbsp;
+					</div>		
+					<div class="col overflow-hidden">
+						Артикул
+					</div>		
+					<div class="col-3 overflow-hidden">
+						Название
+					</div>		
+					<div class="col overflow-hidden">
+						Поставщик
+					</div>
+					<div class="col overflow-hidden">
+						Единицы
+					</div>
+					<div class="col overflow-hidden">
+						Цена
+					</div>
+					<div class="col overflow-hidden">
+						Кол-во
+					</div>
+				</div>
+			</div>
+			<div class="col">
+				&nbsp;
+			</div>
 		</div>
 		{% for product in order['items'] %}
 			{% include '_product.html' %}
@@ -75,11 +128,11 @@
 	</div>
 	
 	{% if current_user.role.name not in ['admin','default'] %}
-		<div class="container border bg-light my-1">
+		<div class="container my-1">
 			<div class="row">
 				<div class="col text-right">
 					<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#commentFormCollapse" aria-expanded="false" aria-controls="commentFormCollapse">
-						Редактировать комментарий
+						Редактировать
 					</button>
 				</div>
 			</div>
@@ -102,19 +155,32 @@
 						{{ comment_form.comment.label(class_ = "col-md-2 col-form-label") }}
 						<div class="col-md-10">
 							{{ comment_form.comment(class_ = 'form-control') }}
+							<small class="form-text text-muted">Максимальная длина комментария 256 символов.</small>
 						</div>
 					</div>
 					<div class="form-group row">
 						<div class="col">
 							{{ comment_form.submit(class_ = 'btn btn-primary') }}
+							{% if current_user.role.name == 'initiative' %}
+								<a class="btn btn-primary" href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Клонировать заявку?')">Клонировать</a>
+								<a class="btn btn-primary" href="{{ url_for('main.NotifyApprovers', order_id = order['orderNumber']) }}" onclick="return confirm('Отправить уведомление согласующим?')">Уведомить</a>
+							{% elif current_user.role.name == 'approver' %}
+								<a class="btn btn-primary" href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>Поставщику</a>
+							{% endif %}
+							<a class="btn btn-primary" href="{{ url_for('main.GetExcelReport', order_id = order['orderNumber']) }}">в Excel</a>
+							
 						</div>
 					</div>
 				</form>
 			</div>
 		</div>
 	{% endif %}
-	<div class="container border bg-light my-1">
-		<h6 class="border-bottom border-gray pb-2 mb-0">История</h6>
+	<div class="container my-1">
+		<div class="row mx-2">
+			<div class="col">
+				<span class="font-weight-bold">ИСТОРИЯ</span>
+			</div>
+		</div>
 		<div class="row my-1">
 			<div class="col">
 				<input class="form-control" id="actionsFilter" type="text" placeholder="Фильтр..">
@@ -122,76 +188,76 @@
 		</div>
 		<div id="actionsSection">
 			{% if order['externalFulfillment'] %}
-				<div class="action row my-1 alert-info" data-datetime="{{ order['privateAdminNotes'].timestamp() }}">
-					<div class="col-1">
-						<img class=" my-2 bg-info rounded-circle" style="width:32px;height:32px" src="https://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена">
+				<div class="action my-1" data-datetime="{{ order['privateAdminNotes'].timestamp() }}">
+					<div class="row">
+						<div class="col">
+							<span class="badge badge-info">
+								{%if order['refererId'] %}
+									{{ order['refererId'] }}
+								{% else %}
+									Отправлена поставщику
+								{% endif %}
+							</span>
+							{{ moment(order['privateAdminNotes']).format() }}
+						</div>
 					</div>
-					<div class="col-3">
-						<h6 class="mt-0">
-							Отправлена поставщикам<br>
-							<sup class="small">
-								{{ moment(order['privateAdminNotes']).format() }}
-							</sup>
-						</h6>
-					</div>
-					<div class="col">
-						Номера заявок у поставщиков - <strong>{{ order['externalOrderId'] }}</strong>
+					<div class="row">
+						<div class="col px-5">
+							&boxur; Заказ #{{ order['vendorOrderNumber'] }} отправлен (в скобках указан внутренний номер заказа в Личном Кабинете Поставщика) <strong>{{ order['externalOrderId'] }}</strong>
+						</div>
 					</div>
 				</div>
 			{% endif %}
-			{% for approval in approvals %}
-				{% if approval.product_id %}
-				<div class="action row my-1 alert-danger" data-datetime="{{ approval.timestamp.timestamp() }}">
-					<div class="col-1">
-						<img class=" my-2 bg-danger rounded-circle" style="width:32px;height:32px" src="https://approvals.pushkind.com/static/octicons/x.svg" alt="Отклонен">
-				{% else %}
-				<div class="action row my-1 alert-success" data-datetime="{{ approval.timestamp.timestamp() }}">
-					<div class="col-1">
-						<img class=" my-2 bg-success rounded-circle" style="width:32px;height:32px" src="https://approvals.pushkind.com/static/octicons/check.svg" alt="Согласована">
-				{% endif %}
-					</div>
-					<div class="col-3">
-						<h6 class="mt-0">
-							{% if approval.user.name %}
-								{{ approval.user.name }}
-							{% else %}
-								{{ approval.user.email }}
-							{% endif %}
-							<br>
-							<sup class="small">
+			{% for reviewer,status in order['reviewers'].items() %}
+				{% for approval in status %}
+					<div class="action my-1" data-datetime="{{ approval.timestamp.timestamp() }}">
+						<div class="row">
+							<div class="col">
+								{% if approval.product_id %}
+									<span class="badge badge-danger">
+								{% else %}
+									<span class="badge badge-success">
+								{% endif %}
+									{% if reviewer.name %}
+										{{ reviewer.name }}
+									{% else %}
+										{{ reviewer.email }}
+									{% endif %}
+								</span>
 								{{ moment(approval.timestamp).format() }}
-							</sup>
-						</h6>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col px-5">
+								&boxur;
+								{% if approval.product_id %}
+									Товар <strong>{{ approval.product_sku }}</strong> отклонён.
+								{% else %}
+									Заявка одобрена.
+								{% endif %}
+							</div>
+						</div>
 					</div>
-					<div class="col">
-						{% if approval.product_id %}
-							Товар <strong>{{ approval.product_sku }}</strong> отклонён.
-						{% else %}
-							Заявка одобрена.
-						{% endif %}
-					</div>
-				</div>
+				{% endfor %}
 			{% endfor %}
-			{% for comment in comments %}			
-				<div class="action row my-1 alert-warning" data-datetime="{{ comment.timestamp.timestamp() }}" id="comment{{comment.user_id}}">
-					<div class="col-1">
-						<img class="align-self-center mr-3 bg-warning rounded-circle" style="width:32px;height:32px" src="https://approvals.pushkind.com/static/octicons/pencil.svg" alt="Комментарий">
+			{% for comment in order['comments'] %}			
+				<div class="action my-1" data-datetime="{{ comment.timestamp.timestamp() }}" id="comment{{comment.user_id}}">
+					<div class="row">
+						<div class="col commentHeader">
+							<span class="badge badge-warning">
+								{% if comment.user.name %}
+									{{ comment.user.name }}
+								{% else %}
+									{{ comment.user.email }}
+								{% endif %}
+							</span>
+							{{ moment(comment.timestamp).format() }}
+						</div>
 					</div>
-					<div class="col-3">
-						<h6 class="mt-0">
-							{% if comment.user.name %}
-								{{ comment.user.name }}
-							{% else %}
-								{{ comment.user.email }}
-							{% endif %}
-							<br>
-							<sup class="small">
-								{{ moment(comment.timestamp).format() }}
-							</sup>
-						</h6>
-					</div>
-					<div class="col commentBody">
-						{{ comment.comment }}
+					<div class="row">
+						<div class="col commentBody px-5 overflow-hidden">
+							&boxur; {{ comment.comment }}
+						</div>
 					</div>
 				</div>
 			{% endfor %}
@@ -200,17 +266,18 @@
 {% endblock %}
 
 {% block templates %}
-	<div class="action row my-1 alert-warning" id="commentTemplate">
-		<div class="col-1">
-			<img class="align-self-center mr-3 bg-warning rounded-circle" style="width:32px;height:32px" src="https://approvals.pushkind.com/static/octicons/pencil.svg" alt="Комментарий">
+
+	<div class="action row my-1" id="commentTemplate">
+		<div class="row">
+			<div class="col commentHeader">
+			</div>
 		</div>
-		<div class="col-3">
-			<h6 class="mt-0">
-			</h6>
-		</div>
-		<div class="col commentBody">
+		<div class="row">
+			<div class="col commentBody px-5 overflow-hidden">
+			</div>
 		</div>
 	</div>
+		
 {% endblock %}
 
 {% block scripts %}
@@ -282,17 +349,18 @@
 							authorComment.attr("id", "comment{{ current_user.id }}");
 						}
 						var timestamp = new Date(data.timestamp);
-						var author = authorComment.find("h6");
+						authorComment.find(".col").empty();
+						var author = authorComment.find(".commentHeader");
 						{% if current_user.name %}
-							author.text("{{ current_user.name }}");
+							author.append("<span class='badge badge-warning'>{{ current_user.name }}</span> ");
 						{% else %}
-							author.text("{{ current_user.email }}");
+							author.append("<span class='badge badge-warning'>{{ current_user.email }}</span> ");
 						{% endif %}
-						author.append('<br>');
-						author.append('<sup class="small">' + moment(timestamp).format("DD.MM.YYYY HH:mm") + '</sup>');
+						
+						author.append("<span>" + moment(timestamp).format("DD.MM.YYYY HH:mm") + "</span>");
 						actionsSection.prepend(authorComment);
 						var comment = authorComment.find(".commentBody");
-						comment.text(data.comment);
+						comment.text('└ ' + data.comment);
 					}else{
 						if (authorComment.length != 0)
 							authorComment.remove();
