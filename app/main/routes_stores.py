@@ -84,7 +84,7 @@ def WithdrawStore(store_id):
 @bp.route('/sync/', defaults={'store_id': None})
 @bp.route('/sync/<int:store_id>')
 @login_required
-@role_required([UserRoles.admin])
+@role_required([UserRoles.admin, UserRoles.approver])
 @ecwid_required
 def SyncStores(store_id):
 	if not store_id:

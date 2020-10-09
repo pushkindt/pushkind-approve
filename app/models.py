@@ -13,6 +13,22 @@ from datetime import datetime, timezone
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
 
+
+class EventType(enum.IntEnum):
+	comment = 0
+	approved = 1
+	disapproved = 2
+	quantity = 3
+	duplicated = 4
+	vendor = 5
+
+	def __str__(self):
+		pretty = ['оставлен комментарий', 'согласовано', 'отклонено', 'количество изменено', 'заявка дублирована', 'отправлена поставщикам']
+		return pretty[self.value]
+	def color(self):
+		colors = ['warning', 'success', 'danger', 'primary', 'primary', 'info']
+		return colors[self.value]
+
 class UserRoles(enum.IntEnum):
 	default = 0
 	initiative = 1
@@ -105,19 +121,10 @@ class OrderApproval(db.Model):
 	product_sku = db.Column(db.String(128), nullable=True)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True, nullable=False)
 	user = db.relationship('User')
-	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
 	
 	def __bool__(self):
 		return self.product_id == None
 	
-class OrderComment(db.Model):
-	user = db.relationship('User')
-	order_id  = db.Column(db.Integer, primary_key = True, nullable=False)
-	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, primary_key = True)
-	comment = db.Column(db.String(256), nullable=False, default='', server_default='')
-	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
-
-
 class JsonType(TypeDecorator):
 	impl = db.String()
 
@@ -139,4 +146,13 @@ class ApiData(db.Model):
 	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False, index=True, unique=True)
 	hub = db.relationship('Ecwid')
+
+class EventLog(db.Model):
+	id  = db.Column(db.Integer, primary_key = True, nullable=False)
+	user = db.relationship('User')
+	order_id  = db.Column(db.Integer, nullable=False)
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
+	type = db.Column(db.Enum(EventType), nullable=False, default=EventType.comment)
+	data = db.Column(db.String(), nullable=False, default='', server_default='')
 	

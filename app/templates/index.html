@@ -9,8 +9,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="container border bg-light my-1">
-	<div class="row border-bottom">
+<div class="container">
+	<div class="row">
 		<div class="col">
 		{% for status in OrderStatus %}
 			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = status.name, location = filter_location) }}" class="badge badge-{{status.color()}} {%if filter_approval == status.name %}text-uppercase{%endif%}">{{ status }}</a>
@@ -18,53 +18,37 @@
 			<a href="{{ url_for('main.ShowIndex', from = filter_from, location = filter_location) }}" class="badge badge-dark {%if not filter_approval %}text-uppercase{%endif%}">все</a>
 		</div>
 	</div>
-	<div class="row border-bottom">
+	<div class="row">
 		<div class="col">
-			{% if filter_from == dates[0] %}
-				<span class="badge badge-dark text-white font-weight-bold">СЕГОДНЯ</span>
-			{% else %}
-				<a href="{{ url_for('main.ShowIndex', from = dates[0], approval = filter_approval, location = filter_location) }}" class="badge badge-dark text-white">сегодня</a>
-			{% endif %}
-			{% if filter_from == dates[1] %}
-				<span class="badge badge-dark text-white font-weight-bold">НЕДЕЛЯ</span>
-			{% else %}
-				<a href="{{ url_for('main.ShowIndex', from = dates[1], approval = filter_approval, location = filter_location) }}" class="badge badge-dark text-white">неделя</a>
-			{% endif %}
-			{% if filter_from == dates[2] %}
-				<span class="badge badge-dark text-white font-weight-bold">МЕСЯЦ</span>
-			{% else %}
-				<a href="{{ url_for('main.ShowIndex', from = dates[2], approval = filter_approval, location = filter_location) }}" class="badge badge-dark text-white">месяц</a>
-			{% endif %}
-			{% if filter_from == None %}
-				<span class="badge badge-dark text-white font-weight-bold">ВСЕ</span>
-			{% else %}
-				<a href="{{ url_for('main.ShowIndex', approval = filter_approval, location = filter_location) }}" class="badge badge-dark text-white">все</a>
-			{% endif %}
+			{% for d in dates %}
+				<a href="{{ url_for('main.ShowIndex', from = dates[d], approval = filter_approval, location = filter_location) }}" class="badge badge-dark text-white {%if filter_from == dates[d] %}text-uppercase{%endif%}">{{ d }}</a>
+			{% endfor %}
+			<a href="{{ url_for('main.ShowIndex', approval = filter_approval, location = filter_location) }}" class="badge badge-dark {%if not filter_from %}text-uppercase{%endif%}">все</a>
 		</div>
 	</div>
 	{% if current_user.role.name != 'initiative' %}
 		<div class="row">
 			<div class="col">
 				{% for location in locations %}
-					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = location) }}" class="badge badge-dark text-white">
-						{{ location }}
-					</a>
+					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = location) }}" class="badge badge-dark text-white">{{ location }}</a>
 				{% endfor %}
-					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}" class="badge badge-dark text-white">
-						все
-					</a>
+					<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}" class="badge badge-dark text-white">все</a>
 			</div>
 		</div>
 	{% endif %}
 </div>
-<div class="container border bg-light my-1">
-	<h6 class="border-bottom border-gray pb-2 mb-0">Заявки</h6>
-	<div class="row my-1">
+<div class="container">
+	<div class="row my-2">
+		<div class="col">
+			<span class="font-weight-bold">ЗАЯВКИ</span>
+		</div>
+	</div>	
+	<div class="row">
 		<div class="col">
 			<input class="form-control" id="orderFilter" type="text" placeholder="Фильтр..">
 		</div>
 	</div>
-	<div class="row my-1 d-none d-sm-flex font-weight-bold px-3">
+	<div class="row d-none d-sm-flex font-weight-bold px-3">
 		<div class="col overflow-hidden">
 			Номер
 		</div>

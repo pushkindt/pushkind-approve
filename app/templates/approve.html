@@ -1,26 +1,122 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<style>
+/*switch on-off */
+.toggle-label {
+  position: relative;
+  width: 200px;
+  height: 30px;
+  margin-top: 10px;
+}
+.toggle-label input[type=checkbox] { 
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+}
+.toggle-label input[type=checkbox]+.back {
+    position: absolute;
+    width: 100%;
+    height: 30px;
+    left: 0;
+    top: 0;
+    border-radius: 50px;
+    border: 1px solid #000;
+    transition: background 150ms linear;
+	background: #6c757d;
+}
+.toggle-label input[type=checkbox]:checked+.back {
+    border: 1px solid #000;
+    cursor: pointer;
+}
+
+.toggle-label input[type=checkbox]+.back .toggle {
+  display: block;
+  position: absolute;
+  content: ' ';
+  background: #28a745;
+  width: 50%; 
+  height: 100%;
+  transition: margin 150ms linear,  background 150ms linear;
+  border: 1px solid #808080;
+  border-radius: 50px;
+}
+.toggle-label input[type=checkbox]:checked+.back .toggle {
+  margin-left: 100px;
+  background: #dc3545;
+}
+.toggle-label .label {
+  display: block;
+  position: absolute;
+  width: 50%;
+  color: #fff;
+  line-height: 24px;
+  text-align: center;
+  font-size: 14px;
+}
+.toggle-label .label.on { left: 0px; }
+.toggle-label .label.off { right: 0px; }
+
+.toggle-label input[type=checkbox]:checked+.back .label.on {
+  color: #fff;
+}
+.toggle-label input[type=checkbox]+.back .label.off {
+  color: #fff;
+  cursor: pointer;
+}
+.toggle-label input[type=checkbox]:checked+.back .label.off {
+  color: #fff;
+}
+
+
+</style>
+{% endblock%}
+
 {% block content %}
-	<div class="container my-1">
-		<div class="row my-2 ml-2">
-			<div class="col">
-				{% if current_user in order['reviewers'] %}	
-					<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
+	<div class="container">
+		{% if current_user in order['reviewers'] %}
+			<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
+				<div class="row">
+					<div class="col-3 pt-3">
+						<span class="font-weight-bold">ЗАЯВКА</span>
 						{{ approval_form.csrf_token }}
-						<span class="font-weight-bold">ЗАЯВКА </span>
-						<input type="checkbox" {% if order['reviewers'][current_user]|select|list|first  %}checked{% endif %} data-toggle="toggle" data-on="согласен" data-off="НЕ согласен" data-onstyle="success" data-offstyle="secondary" onChange="this.form.submit()" data-height="20" data-width="150">
-					</form>
-				{% else %}
-					<span class="font-weight-bold">ЗАЯВКА </span>
-				{% endif %}
+					</div>
+					<div class="col text-right">
+						<label class="toggle-label">
+							<input type="checkbox" {% if not order['reviewers'][current_user]|select|list|first  %}checked{% endif %} onChange="this.form.submit()">
+							<span class="back">
+								<span class="toggle"></span>
+								<span class="label on">согласен</span>
+								<span class="label off">НЕ согласен</span>
+							</span>
+						</label>
+					</div>
+				</div>
+			</form>
+		{% else %}
+			<div class="row my-2">
+				<div class="col">
+					<span class="font-weight-bold">ЗАЯВКА</span>
+				</div>
 			</div>
+		{% endif %}
+		<div class="row">
 			<div class="col">
-				<span class="font-weight-bold">Сумма: </span>
-				<span class="orderTotal">{{ '{:,.2f}'.format(order['total']) }}</span>
-			</div>
-		</div>
-		<div class="row ml-2">
-			<div class="col">
+				<div class="row">
+					<div class="col">
+						Кем согласована:
+						{% for reviewer,status in order['reviewers'].items() %}
+							{% if status|length > 0 %}
+								{% if status|select|list|first %}
+									<span class="font-italic">{{reviewer.name}} {% if reviewer.position %}({{reviewer.position}}){% endif %}</span>,
+								{% endif %}
+							{% endif %}
+						{% endfor %}
+					</div>
+				</div>
 				<div class="row">
 					<div class="col">
 						#{{ order['vendorOrderNumber'] }}
@@ -52,74 +148,37 @@
 				</div>
 				<div class="row">
 					<div class="col">
-						<span class="badge badge-{{order['status'].color() }}">{{ order['status'] }}</span>
-						{% if order['externalFulfillment'] %}
-							<span class="badge badge-info"><img class="octicon" src="https://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена"></span>
-						{% endif%}
-					</div>
-				</div>
-				<div class="row">
-					<div class="col">
 						{{ order['orderComments'] }}
 					</div>	
 				</div>
-			</div>
-			<div class="col overflow-hidden">
 				<div class="row">
 					<div class="col">
-						<span class="font-weight-bold">СОГЛАСОВАНИЯ</span>
-					</div>
+						Всего позиций {{ order['items']|length }} на сумму
+						<span class="orderTotal">{{ '{:,.2f}'.format(order['total']) }}</span>
+					</div>	
 				</div>
-				{% for reviewer,status in order['reviewers'].items() %}
-					<div class="row">
-						<div class="col">
-							{% if status|length == 0 %}
-								<span class="badge badge-secondary">{{reviewer.name}}</span>
-							{% elif status|select|list|first %}
-								<span class="badge badge-success">{{reviewer.name}}</span>
-							{% else %}
-								<span class="badge badge-danger">{{reviewer.name}}</span>
-							{% endif %}
-						</div>
-					</div>
-				{% endfor %}
 			</div>
 		</div>
 	</div>
-	<div class="container my-2">
-		<div class="row mx-2 my-2">
-			<div class="col">
-				<span class="font-weight-bold">ПОЗИЦИИ ЗАЯВКИ</span>
-			</div>
-		</div>
-		<div class="row my-1 d-none d-sm-flex font-weight-bold">
-			<div class="col-10">
-				<div class="row">
-					<div class="col overflow-hidden">
-						&nbsp;
-					</div>		
-					<div class="col overflow-hidden">
-						Артикул
-					</div>		
-					<div class="col-3 overflow-hidden">
-						Название
-					</div>		
-					<div class="col overflow-hidden">
-						Поставщик
-					</div>
-					<div class="col overflow-hidden">
-						Единицы
-					</div>
-					<div class="col overflow-hidden">
-						Цена
-					</div>
-					<div class="col overflow-hidden">
-						Кол-во
-					</div>
-				</div>
-			</div>
-			<div class="col">
+	<div class="container mt-5">
+		<div class="row d-none d-sm-flex font-weight-bold">
+			<div class="col overflow-hidden">
 				&nbsp;
+			</div>		
+			<div class="col overflow-hidden">
+				Артикул
+			</div>		
+			<div class="col-3 overflow-hidden">
+				Название
+			</div>		
+			<div class="col overflow-hidden">
+				Поставщик
+			</div>
+			<div class="col overflow-hidden">
+				Цена
+			</div>
+			<div class="col overflow-hidden">
+				Кол-во
 			</div>
 		</div>
 		{% for product in order['items'] %}
@@ -128,14 +187,27 @@
 	</div>
 	
 	{% if current_user.role.name not in ['admin','default'] %}
-		<div class="container my-1">
-			<div class="row">
-				<div class="col text-right">
-					<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#commentFormCollapse" aria-expanded="false" aria-controls="commentFormCollapse">
-						Редактировать
-					</button>
-				</div>
-			</div>
+		<div class="container">
+			<ul class="nav justify-content-center">
+				{% if current_user.role.name == 'initiative' %}
+				<li class="nav-item">
+					<a class="nav-link pl-0" href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Клонировать заявку?')">Клонировать</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="{{ url_for('main.NotifyApprovers', order_id = order['orderNumber']) }}" onclick="return confirm('Отправить уведомление согласующим?')">Уведомить</a>
+				</li>
+				{% elif current_user.role.name == 'approver' %}
+				<li class="nav-item">
+					<a class="nav-link" href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>Поставщику</a>
+				</li>
+				{% endif %}
+				<li class="nav-item">
+					<a class="nav-link" href="{{ url_for('main.GetExcelReport', order_id = order['orderNumber']) }}">в Excel</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href data-toggle="collapse" data-target="#commentFormCollapse" aria-expanded="false" aria-controls="commentFormCollapse">Комментировать</a>
+				</li>						
+			</ul>
 			<div class="collapse" id="commentFormCollapse">
 				{% set errorsList = comment_form.comment.errors %}
 				{% if errorsList|length > 0 %}
@@ -149,7 +221,7 @@
 						</div>
 					</div>
 				{% endif %}
-				<form action="{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}" method="post" id="changeCommentForm">
+				<form action="{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}" method="post">
 					{{ comment_form.csrf_token }}
 					<div class="form-group row">
 						{{ comment_form.comment.label(class_ = "col-md-2 col-form-label") }}
@@ -160,124 +232,45 @@
 					</div>
 					<div class="form-group row">
 						<div class="col">
-							{{ comment_form.submit(class_ = 'btn btn-primary') }}
-							{% if current_user.role.name == 'initiative' %}
-								<a class="btn btn-primary" href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Клонировать заявку?')">Клонировать</a>
-								<a class="btn btn-primary" href="{{ url_for('main.NotifyApprovers', order_id = order['orderNumber']) }}" onclick="return confirm('Отправить уведомление согласующим?')">Уведомить</a>
-							{% elif current_user.role.name == 'approver' %}
-								<a class="btn btn-primary" href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>Поставщику</a>
-							{% endif %}
-							<a class="btn btn-primary" href="{{ url_for('main.GetExcelReport', order_id = order['orderNumber']) }}">в Excel</a>
-							
+							{{ comment_form.submit1(class_ = 'btn btn-primary') }}							
 						</div>
 					</div>
 				</form>
 			</div>
 		</div>
 	{% endif %}
-	<div class="container my-1">
-		<div class="row mx-2">
+	<div class="container">
+		<div class="row my-2">
 			<div class="col">
 				<span class="font-weight-bold">ИСТОРИЯ</span>
 			</div>
 		</div>
-		<div class="row my-1">
+		<div class="row">
 			<div class="col">
 				<input class="form-control" id="actionsFilter" type="text" placeholder="Фильтр..">
 			</div>
 		</div>
 		<div id="actionsSection">
-			{% if order['externalFulfillment'] %}
-				<div class="action my-1" data-datetime="{{ order['privateAdminNotes'].timestamp() }}">
+			{% for event in order['events'] %}	
+				<div class="action" data-datetime="{{ event.timestamp.timestamp() }}">
 					<div class="row">
 						<div class="col">
-							<span class="badge badge-info">
-								{%if order['refererId'] %}
-									{{ order['refererId'] }}
-								{% else %}
-									Отправлена поставщику
-								{% endif %}
+							<span class="badge badge-{{event.type.color()}}">
+								{{ event.user.name }}
 							</span>
-							{{ moment(order['privateAdminNotes']).format() }}
+							{{ moment(event.timestamp).format() }}
 						</div>
 					</div>
 					<div class="row">
-						<div class="col px-5">
-							&boxur; Заказ #{{ order['vendorOrderNumber'] }} отправлен (в скобках указан внутренний номер заказа в Личном Кабинете Поставщика) <strong>{{ order['externalOrderId'] }}</strong>
-						</div>
-					</div>
-				</div>
-			{% endif %}
-			{% for reviewer,status in order['reviewers'].items() %}
-				{% for approval in status %}
-					<div class="action my-1" data-datetime="{{ approval.timestamp.timestamp() }}">
-						<div class="row">
-							<div class="col">
-								{% if approval.product_id %}
-									<span class="badge badge-danger">
-								{% else %}
-									<span class="badge badge-success">
-								{% endif %}
-									{% if reviewer.name %}
-										{{ reviewer.name }}
-									{% else %}
-										{{ reviewer.email }}
-									{% endif %}
-								</span>
-								{{ moment(approval.timestamp).format() }}
-							</div>
-						</div>
-						<div class="row">
-							<div class="col px-5">
-								&boxur;
-								{% if approval.product_id %}
-									Товар <strong>{{ approval.product_sku }}</strong> отклонён.
-								{% else %}
-									Заявка одобрена.
-								{% endif %}
-							</div>
-						</div>
-					</div>
-				{% endfor %}
-			{% endfor %}
-			{% for comment in order['comments'] %}			
-				<div class="action my-1" data-datetime="{{ comment.timestamp.timestamp() }}" id="comment{{comment.user_id}}">
-					<div class="row">
-						<div class="col commentHeader">
-							<span class="badge badge-warning">
-								{% if comment.user.name %}
-									{{ comment.user.name }}
-								{% else %}
-									{{ comment.user.email }}
-								{% endif %}
-							</span>
-							{{ moment(comment.timestamp).format() }}
-						</div>
-					</div>
-					<div class="row">
-						<div class="col commentBody px-5 overflow-hidden">
-							&boxur; {{ comment.comment }}
+						<div class="col px-5 overflow-hidden">
+							&boxur; <span class="font-weight-bold">{{event.type}}</span>: {{ event.data|safe }}
 						</div>
 					</div>
 				</div>
 			{% endfor %}
+			
 		</div>
 	</div>
-{% endblock %}
-
-{% block templates %}
-
-	<div class="action row my-1" id="commentTemplate">
-		<div class="row">
-			<div class="col commentHeader">
-			</div>
-		</div>
-		<div class="row">
-			<div class="col commentBody px-5 overflow-hidden">
-			</div>
-		</div>
-	</div>
-		
 {% endblock %}
 
 {% block scripts %}
@@ -285,14 +278,18 @@
 <script>	
 	$(document).ready(function(){
 	
+		$("#actionsSection").find(".action").sort(function(a, b){return +$(b).data("datetime") - +$(a).data("datetime")}).appendTo("#actionsSection");
+	
 		$("#actionsFilter").on("keyup", function() {
 			var value = $(this).val().toLowerCase();
 			$(".action").filter(function() {
 				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
 			});
 		});
-	
-		$("#actionsSection").find(".action").sort(function(a, b){return +$(b).data('datetime') - +$(a).data('datetime')}).appendTo('#actionsSection');
+		
+		$(".product-sku").click(
+		   function(){ var val= '#'+$(this).text(); $(val).addClass("alert-warning") },
+		);
 		
 		{% if current_user.role.name == 'initiative' %}
 			function UpdateOrderTotal(data){
@@ -328,7 +325,7 @@
 						}
 					}
 					if (agreed == true){
-						$(this).parent().submit();
+						$(this).closest("form").submit();
 					} else {
 						alert("Заявка не будет изменена.");
 						$(this).val(oldQuantity);
@@ -336,49 +333,6 @@
 				}
 				$(this).removeClass ('form-control');
 				$(this).addClass('form-control-plaintext');
-			});
-		{% endif %}
-		{% if current_user.role.name not in ['default','admin'] %}
-			function UpdateOrderComment(data){
-				if (data.status == true){
-					var authorComment = $("#comment{{ current_user.id }}");
-					var actionsSection = $("#actionsSection");
-					if (data.comment.length > 0){
-						if (authorComment.length == 0){
-							authorComment = $("#commentTemplate").clone();
-							authorComment.attr("id", "comment{{ current_user.id }}");
-						}
-						var timestamp = new Date(data.timestamp);
-						authorComment.find(".col").empty();
-						var author = authorComment.find(".commentHeader");
-						{% if current_user.name %}
-							author.append("<span class='badge badge-warning'>{{ current_user.name }}</span> ");
-						{% else %}
-							author.append("<span class='badge badge-warning'>{{ current_user.email }}</span> ");
-						{% endif %}
-						
-						author.append("<span>" + moment(timestamp).format("DD.MM.YYYY HH:mm") + "</span>");
-						actionsSection.prepend(authorComment);
-						var comment = authorComment.find(".commentBody");
-						comment.text('└ ' + data.comment);
-					}else{
-						if (authorComment.length != 0)
-							authorComment.remove();
-					}
-					$("#commentFormCollapse").collapse('hide');
-				}
-				ShowAjaxFlashes(data);
-			}
-			var options = {
-				success:	UpdateOrderComment,
-				url: "{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}",
-				dataType:	'json',
-				method: 'POST',
-				clearForm: false
-			};
-			$('#changeCommentForm').ajaxForm(options);
-			$('#comment').focusout(function() {
-				$(this).parent().submit();
 			});
 		{% endif %}
 	});

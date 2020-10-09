@@ -1,5 +1,5 @@
 from flask_login import current_user
-from app.models import User, UserRoles, OrderComment, OrderApproval, OrderStatus, CacheCategories
+from app.models import User, UserRoles, OrderApproval, OrderStatus, CacheCategories, EventLog
 from flask import render_template, flash, jsonify
 from functools import wraps
 from datetime import datetime, timedelta, timezone
@@ -148,7 +148,7 @@ def PrepareOrder(order, filter_location=None):
 		if	check_locations == True and check_categories == True:
 			reviewers[validator] = GetProductApproval(order['orderNumber'], validator)
 	order['reviewers'] = reviewers
-	order['comments'] = OrderComment.query.join(User).filter(OrderComment.order_id == order['orderNumber'], User.ecwid_id == order['initiative'].ecwid_id).all()
+	order['events'] = EventLog.query.join(User).filter(EventLog.order_id == order['orderNumber'], User.ecwid_id == order['initiative'].ecwid_id).order_by(EventLog.timestamp.desc()).all()
 	not_approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order['orderNumber'], OrderApproval.product_id != None, User.ecwid_id == order['initiative'].ecwid_id).count() > 0
 	if not_approved:
 		order['status'] = OrderStatus.not_approved
@@ -157,11 +157,11 @@ def PrepareOrder(order, filter_location=None):
 	if all(approvals):
 		order['status'] = OrderStatus.approved
 		return True
+	if any(approvals) or len(order['events']) > 0:
+		order['status'] = OrderStatus.partly_approved
+		return True
 	if (order['updateDate'] - order['createDate']) > timedelta(seconds=10):
 		order['status'] = OrderStatus.modified
-		return True
-	if any(approvals) or len(order['comments']) > 0:
-		order['status'] = OrderStatus.partly_approved
 		return True
 	order['status'] = OrderStatus.new
 	return True

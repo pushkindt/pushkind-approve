@@ -1,7 +1,7 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval
+from app.models import User, UserRoles, Ecwid, OrderApproval, EventLog, EventType
 from flask import render_template, redirect, url_for, flash, jsonify, current_app, Response
 from app.main.forms import OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm
 from datetime import datetime, timezone
@@ -19,7 +19,7 @@ Consts
 ################################################################################
 '''
 _DISALLOWED_ORDERS_ITEM_FIELDS = ['productId', 'id', 'categoryId']
-_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'privateAdminNotes', 'externalFulfillment', 'createDate', 'externalOrderId', 'initiative']
+_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'privateAdminNotes', 'externalFulfillment', 'createDate', 'externalOrderId', 'initiative', 'updateDate', 'reviewers', 'events']
 
 '''
 ################################################################################
@@ -31,15 +31,23 @@ def GetOrder(order_id):
 	try:
 		response = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
 		if 'items' not in response or len(response['items']) == 0:
-			raise EcwidAPIException('Такой заявки не существует.')
+			raise EcwidAPIException('Такой заявки не существует')
 		order = response['items'][0]
 		if not PrepareOrder(order):
-			raise EcwidAPIException('Заявка не принадлежит ни одному из инициаторов.')
+			raise EcwidAPIException('Заявка не принадлежит ни одному из инициаторов')
 		if current_user.role == UserRoles.initiative and order['email'] != current_user.email:
-			raise EcwidAPIException('Вы не являетесь владельцем этой заявки.')
+			raise EcwidAPIException('Вы не являетесь владельцем этой заявки')
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
 		order = None
+	return order
+	
+def FilterForbiddenOrderFields(order):
+	for key in _DISALLOWED_ORDERS_FIELDS:
+		order.pop(key, None)
+	for product in order['items']:
+		for key in _DISALLOWED_ORDERS_ITEM_FIELDS:
+			product.pop(key, None)
 	return order
 
 @bp.route('/order/<int:order_id>')
@@ -61,10 +69,9 @@ def ShowOrder(order_id):
 		except (ValueError, KeyError):
 			product['vendor'] = ''
 		
-	user_comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
 	approval_form = OrderApprovalForm()
 	quantity_form = ChangeQuantityForm()
-	comment_form = OrderCommentsForm(comment = user_comment.comment if user_comment else None)
+	comment_form = OrderCommentsForm()
 	
 	return render_template('approve.html',
 							order = order,
@@ -72,41 +79,24 @@ def ShowOrder(order_id):
 							approval_form = approval_form,
 							quantity_form = quantity_form)
 
-
 @bp.route('/comment/<int:order_id>', methods=['POST'])
 @login_required
-@role_forbidden_ajax([UserRoles.admin, UserRoles.default])
+@role_forbidden([UserRoles.admin, UserRoles.default])
 def SaveComment(order_id):
-	flash_messages = ['Не удалось изменить комментарий.']
-	status = False
+	order = GetOrder(order_id)
+	if not order:
+		return redirect(url_for('main.ShowIndex'))
 	form = OrderCommentsForm()
-	stripped = ''
-	timestamp = datetime.now(tz = timezone.utc)
 	if form.validate_on_submit():
-		try:
-			response = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
-			if 'items' not in response or len(response['items']) == 0:
-				raise EcwidAPIException('Такой заявки не существует.')
-			comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
-			stripped = form.comment.data.strip() if form.comment.data else ''
-			if len(stripped) == 0:
-				if comment:
-					db.session.delete(comment)
-			else:
-				if not comment:
-					comment = OrderComment(user_id = current_user.id, order_id = order_id)
-					db.session.add(comment)
-				comment.comment = stripped
-				comment.timestamp = timestamp
-			status = True
-			flash_messages = ['Комментарий успешно обновлён.']
-			db.session.commit()
-		except EcwidAPIException as e:
-			flash_messages = ['Ошибка API: {}'.format(e)]
-	else:
-		for error in form.comment.errors:
-			flash_messages.append(error)
-	return jsonify({'status':status, 'flash':flash_messages, 'comment':stripped, 'timestamp':timestamp.timestamp() * 1000})
+		stripped = form.comment.data.strip()
+		if len(stripped) > 0:
+			comment = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.comment, data=stripped, timestamp = datetime.now(tz = timezone.utc))
+			db.session.add(comment)
+			flash('Комментарий успешно добавлен')
+		else:
+			flash('Комментарий не может быть пустым')
+		db.session.commit()
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
 
 
 @bp.route('/approval/<int:order_id>', methods=['POST'])
@@ -125,25 +115,36 @@ def SaveApproval(order_id):
 				if order_approval == None:
 					order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
 					db.session.add(order_approval)
+					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.approved, data='заявка', timestamp = datetime.now(tz = timezone.utc))
 					SendEmail('Согласована заявка #{}'.format(order['vendorOrderNumber']),
 							   sender=current_app.config['MAIL_USERNAME'],
 							   recipients=[order['initiative'].email],
 							   text_body=render_template('email/approval.txt', order=order, approval=True),
 							   html_body=render_template('email/approval.html', order=order, approval=True))
+				else:
+					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data='согласованная ранее заявка', timestamp = datetime.now(tz = timezone.utc))
+					for product in order['items']:
+						product_approval = OrderApproval(order_id = order_id, product_id=product['id'], user_id = current_user.id)
+						db.session.add(product_approval)						
 			else:
 				product_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == form.product_id.data).first()
 				if product_approval != None:
 					db.session.delete(product_approval)
+					message = 'товар <span class="product-sku text-primary">{}</span>'.format(product_approval.product_sku)
+					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message, timestamp = datetime.now(tz = timezone.utc))
 				else:
 					if order_approval != None:
 						db.session.delete(order_approval)
 					product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id, product_sku = form.product_sku.data.strip())
 					db.session.add(product_approval)
+					message = 'товар <span class="product-sku text-primary">{}</span>'.format(product_approval.product_sku)
+					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp = datetime.now(tz = timezone.utc))
 					SendEmail('Отклонена заявка #{}'.format(order['vendorOrderNumber']),
 							   sender=current_app.config['MAIL_USERNAME'],
 							   recipients=[order['initiative'].email],
 							   text_body=render_template('email/approval.txt', order=order, approval=False),
 							   html_body=render_template('email/approval.html', order=order, approval=False))
+			db.session.add(event)
 			db.session.commit()
 		except EcwidAPIException as e:
 			flash('Ошибка API: {}'.format(e))
@@ -160,14 +161,14 @@ def DeleteOrder(order_id):
 		return redirect(url_for('main.ShowIndex'))
 	try:
 		response = current_user.hub.EcwidDeleteStoreOrder(order_id = order_id)
-		comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+		events = EventLog.query.join(User).filter(EventLog.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 		approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 		for approval in approvals:
 			db.session.delete(approval)
-		for comment in comments:
-			db.session.delete(comment)
+		for event in events:
+			db.session.delete(event)
 		db.session.commit()
-		flash('Заявка успешно удалена.')
+		flash('Заявка успешно удалена')
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
 	return redirect(url_for('main.ShowIndex'))
@@ -185,8 +186,15 @@ def DuplicateOrder(order_id):
 	try:
 		response = current_user.hub.EcwidSetStoreOrder(order)
 		if 'id' not in response:
-			raise EcwidAPIException('Не удалось дулировать заявку.')
-		flash('Заявка успешно дублирована с внутренним номером {}.'.format(response['id']))
+			raise EcwidAPIException('Не удалось дулировать заявку')
+		message = 'Заявка дублирована с внутренним номером <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = response['id']), response['id'])
+		event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.duplicated, data=message, timestamp = datetime.now(tz = timezone.utc))
+		db.session.add(event)
+		message = 'Заявка дублирована из заявки <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = order_id), order_id)
+		event = EventLog(user_id = current_user.id, order_id = response['id'], type=EventType.duplicated, data=message, timestamp = datetime.now(tz = timezone.utc))
+		db.session.add(event)
+		db.session.commit()
+		flash('Заявка успешно дублирована')
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
@@ -209,12 +217,13 @@ def SaveQuantity(order_id):
 				if order['total'] < 0:
 					order['total'] = 0
 				new_total = '{:,.2f}'.format(order['total'])
+				message = '<span class="product-sku text-primary">{}</span> было {} стало {}'.format(product['sku'], product['quantity'], form.product_quantity.data)
 				product['quantity'] = form.product_quantity.data
 				index = i
 				break
 		else:
 			index = None
-			flash('Указанный товар не найден в заявке.')
+			flash('Указанный товар не найден в заявке')
 		if index != None:
 			approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 			for approval in approvals:
@@ -224,20 +233,17 @@ def SaveQuantity(order_id):
 			try:
 				if len(order['items']) == 0:
 					response = current_user.hub.EcwidDeleteStoreOrder(order_id = order_id)
-					comments = OrderComment.query.join(User).filter(OrderComment.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-					for comment in comments:
-						db.session.delete(comment)
-					flash('Заявка удалена, вернитесь на главную страницу.')
+					events = EventLog.query.join(User).filter(EventLog.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+					for event in events:
+						db.session.delete(event)
+					flash('Заявка удалена, вернитесь на главную страницу')
+					db.session.commit()
+					return redirect(url_for('main.ShowIndex'))
 				else:
-					order.pop('initiative', None)
+					order = FilterForbiddenOrderFields(order)
 					response = current_user.hub.EcwidUpdateStoreOrder(order_id, order)
-					message = 'Количество {} было изменено в заявке.'.format(product['sku'])
-					flash(message)
-					comment = OrderComment.query.filter(OrderComment.order_id == order_id, OrderComment.user_id == current_user.id).first()
-					if not comment:
-						comment = OrderComment(user_id = current_user.id, order_id = order_id)
-						db.session.add(comment)
-					comment.comment = message
+					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.quantity, data=message, timestamp=datetime.now(tz = timezone.utc))
+					db.session.add(event)
 				db.session.commit()
 			except EcwidAPIException as e:
 				flash('Ошибка API: {}'.format(e))
@@ -258,12 +264,7 @@ def ProcessHubOrder(order_id):
 	if not order:
 		return redirect(url_for('main.ShowIndex'))
 	
-	for key in _DISALLOWED_ORDERS_FIELDS:
-		order.pop(key, None)
-	for product in order['items']:
-		for key in _DISALLOWED_ORDERS_ITEM_FIELDS:
-			product.pop(key, None)
-			
+	order = FilterForbiddenOrderFields(order)
 	stores = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
 	got_orders = {}
 	for store in stores:
@@ -288,7 +289,7 @@ def ProcessHubOrder(order_id):
 		order['email'] = current_user.email
 		result = store.EcwidSetStoreOrder(order)
 		if 'id' not in result:
-			flash('Не удалось отправить заявку поставщику {}.'.format(store.store_id))
+			flash('Не удалось отправить заявку поставщику {}'.format(store.store_id))
 		else:
 			try:
 				profile = store.EcwidGetStoreProfile()
@@ -298,16 +299,19 @@ def ProcessHubOrder(order_id):
 		order['items'] = items
 
 	if len(got_orders) > 0:
-		vendor_str = ', '.join(f'{vendor} (#{order})' for vendor,order in got_orders.items())
+		message = ', '.join(f'{vendor} (#{order})' for vendor,order in got_orders.items())
 		try:
 			referer = current_user.name if current_user.name else current_user.email
-			current_user.hub.EcwidUpdateStoreOrder(order_id, {'refererId': referer,'externalOrderId':vendor_str, 'externalFulfillment':True, 'privateAdminNotes': datetime.now(tz = timezone.utc).strftime(DATE_TIME_FORMAT)})
+			current_user.hub.EcwidUpdateStoreOrder(order_id, {'externalFulfillment':True})
+			event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.vendor, data=message, timestamp=datetime.now(tz = timezone.utc))
+			db.session.add(event)
+			db.session.commit()
 		except EcwidAPIException as e:
 			flash('Ошибка API: {}'.format(e))
-			flash('Не удалось сохранить информацию о передаче поставщикам.')
-		flash('Заявка была отправлена поставщикам: {}.'.format(vendor_str))
+			flash('Не удалось сохранить информацию о передаче поставщикам')
+		flash('Заявка была отправлена поставщикам: {}'.format(message))
 	else:
-		flash('Не удалось перезаказать данные товары у зарегистрованных поставщиков.')
+		flash('Не удалось перезаказать данные товары у зарегистрованных поставщиков')
 
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
 	
@@ -320,7 +324,7 @@ def NotifyApprovers(order_id):
 	order = GetOrder(order_id)
 	if not order:
 		return redirect(url_for('main.ShowIndex'))
-	emails = [reviewer[0].id for reviewer in order['reviewers']]
+	emails = [reviewer.email for reviewer in order['reviewers']]
 	SendEmail('Исправлена заявка #{} ({})'.format(order['vendorOrderNumber'], current_user.location),
 			   sender=current_app.config['MAIL_USERNAME'],
 			   recipients=emails,
@@ -332,7 +336,7 @@ def NotifyApprovers(order_id):
 
 @bp.route('/report/<int:order_id>')
 @login_required
-@role_required([UserRoles.approver])
+@role_forbidden([UserRoles.default])
 @ecwid_required
 def GetExcelReport(order_id):
 	order = GetOrder(order_id)

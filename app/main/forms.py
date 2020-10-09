@@ -47,8 +47,8 @@ class UserSettingsForm(FlaskForm):
 	submit3 = SubmitField('Сохранить')
 	
 class OrderCommentsForm(FlaskForm):
-	comment  = TextAreaField('Комментарий', [Length(max = 256, message = 'Слишком длинный комментарий')])
-	submit = SubmitField('Сохранить')
+	comment  = TextAreaField('Комментарий', [InputRequired(message = 'Комментарий не может быть пустым'), Length(max = 256, message = 'Слишком длинный комментарий')])
+	submit1 = SubmitField('Сохранить')
 	
 class OrderApprovalForm(FlaskForm):
 	product_id    = IntegerField('Идентификатор товара', render_kw={'hidden': ''})

@@ -21,7 +21,7 @@ def GetDateTimestamps():
 	today = datetime(now.year, now.month, now.day)
 	week = today - timedelta(days = today.weekday())
 	month = datetime(now.year, now.month, 1)
-	dates = [int(today.timestamp()), int(week.timestamp()), int(month.timestamp())]
+	dates = {'сегодня':int(today.timestamp()), 'неделя':int(week.timestamp()), 'месяц':int(month.timestamp())}
 	return dates
 
 @bp.route('/')
@@ -55,7 +55,6 @@ def ShowIndex():
 		orders = orders.get('items', [])
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
-	
 
 	new_orders = []
 	for order in orders:

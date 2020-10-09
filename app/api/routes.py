@@ -31,12 +31,9 @@ def NotifyNewOrders():
 	initiatives = User.query.filter(User.ecwid_id == user.ecwid_id, User.role == UserRoles.initiative).all()
 	initiatives = {k.email:k for k in initiatives}
 	for order in orders:
-		order['email'] = order['email'].lower()
-		if order['email'] not in initiatives:
+		if not PrepareOrder(order):
 			continue
-		order['initiative'] = initiatives[order['email']]
-		PrepareOrder(order)
-		emails = [reviewer[0].id for reviewer in order['reviewers']]
+		emails =[reviewer.email for reviewer in order['reviewers']]
 		SendEmail('Новая заявка #{}'.format(order['vendorOrderNumber']),
 				   sender=current_app.config['MAIL_USERNAME'],
 				   recipients=emails,

@@ -1,7 +1,7 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderComment, OrderApproval, CacheCategories
+from app.models import User, UserRoles, Ecwid, OrderApproval, CacheCategories
 from flask import render_template, redirect, url_for, flash
 from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm
 from sqlalchemy import distinct, func, or_
@@ -90,7 +90,7 @@ def RemoveUser(user_id):
 		flash('Пользователь не найден.')
 		return redirect(url_for('main.ShowSettings'))
 	OrderApproval.query.filter(OrderApproval.user_id == user_id).delete()
-	OrderComment.query.filter(OrderComment.user_id == user_id).delete()
+	EventType.query.filter(EventType.user_id == user_id).delete()
 	db.session.delete(user)
 	db.session.commit()
 	flash('Пользователь успешно удалён.')
