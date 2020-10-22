@@ -23,7 +23,7 @@ class EcwidAPI():
 	token = db.Column(db.String(128))
 	store_name = db.Column(db.String(128))
 
-	def EcwidGetStoreToken(self):
+	def GetStoreToken(self):
 		'''Gets store token using REST API, returns JSON'''
 		payload = {'client_id':self.client_id, 'client_secret':self.client_secret, 'grant_type':'authorization_code'}
 		try:
@@ -32,13 +32,16 @@ class EcwidAPI():
 			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
 			raise EcwidAPIException('Неизвестная ошибка API.')
-		json = response.json()
+		try:
+			json = response.json()
+		except ValueError:
+			raise EcwidAPIException('Ошибка обращения по API.')
 		if 'access_token' not in json:
 			raise EcwidAPIException('Не удалось получить токен доступа к магазину {}.'.format(self.store_id))
 		self.token = json['access_token']
 		return json
 
-	def EcwidGetStoreEndpoint(self, endpoint, **kwargs):
+	def GetStoreEndpoint(self, endpoint, **kwargs):
 		'''Gets store's endpoint using REST API, returns JSON'''
 		params = {'token':self.token, **kwargs}
 		try:
@@ -46,8 +49,11 @@ class EcwidAPI():
 		except RequestException:
 			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
-			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
-		result = response.json()
+			raise EcwidAPIException(self._GetErrorMessage(response.status_code))
+		try:
+			result = response.json()
+		except ValueError:
+			raise EcwidAPIException('Ошибка обращения по API.')
 		if all([k in result for k in ['count', 'total', 'items']]):
 			received = result['count']
 			while received < result['total']:
@@ -57,8 +63,11 @@ class EcwidAPI():
 				except RequestException:
 					raise EcwidAPIException('Ошибка обращения по API.')
 				if response.status_code != 200:
-					raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
-				next = response.json()
+					raise EcwidAPIException(self._GetErrorMessage(response.status_code))
+				try:
+					next = response.json()
+				except ValueError:
+					raise EcwidAPIException('Ошибка обращения по API.')
 				if not all([k in next for k in ['count', 'total', 'items']]):
 					break
 				received += next['count']
@@ -67,11 +76,11 @@ class EcwidAPI():
 			result['count'] = received
 		return result
 
-	def EcwidGetStoreOrders(self, **kwargs):
+	def GetStoreOrders(self, **kwargs):
 		'''Gets store's orders using REST API, returns JSON'''
-		return self.EcwidGetStoreEndpoint('orders', **kwargs)
+		return self.GetStoreEndpoint('orders', **kwargs)
 
-	def _EcwidGetErrorMessage(self, error):
+	def _GetErrorMessage(self, error):
 		if error == 400:
 			message = 'Неверные параметры запроса.'
 		elif error == 402 or error == 403:
@@ -81,12 +90,12 @@ class EcwidAPI():
 		elif error == 409:
 			message = 'Значения полей товара не верные.'
 		elif error == 415 or error == 422:
-			message = 'Неверные тип запроса.'
+			message = 'Неверный тип запроса.'
 		elif error != 200:
 			message = 'Неизвестная ошибка API.'
 		return '{}: {}'.format(error, message)
 
-	def EcwidDeleteStoreOrder(self, order_id):
+	def DeleteStoreOrder(self, order_id):
 		'''Deletes store's product using REST API, returns JSON'''
 		params = {'token':self.token}
 		try:
@@ -94,13 +103,16 @@ class EcwidAPI():
 		except RequestException:
 			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
-			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
-		json = response.json()
-		if json.get('deleteCount', 0) != 1:
+			raise EcwidAPIException(self._GetErrorMessage(response.status_code))
+		try:
+			json = response.json()
+		except ValueError:
+			raise EcwidAPIException('Ошибка обращения по API.')
+		if json.get('deleteCount', 0) == 0:
 			raise EcwidAPIException('Не удалось удалить заявку {}.'.format(order_id))
 		return json
 
-	def EcwidUpdateStoreOrder(self, order_id, order):
+	def UpdateStoreOrder(self, order_id, order):
 		'''Deletes store's product using REST API, returns JSON'''
 		params = {'token':self.token}
 		try:
@@ -108,13 +120,16 @@ class EcwidAPI():
 		except RequestException:
 			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
-			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
-		json = response.json()
-		if json.get('updateCount', 0) != 1:
+			raise EcwidAPIException(self._GetErrorMessage(response.status_code))
+		try:
+			json = response.json()
+		except ValueError:
+			raise EcwidAPIException('Ошибка обращения по API.')
+		if json.get('updateCount', 0) == 0:
 			raise EcwidAPIException('Не удалось обновить заявку {}.'.format(order_id))
 		return json
 		
-	def EcwidOrderInvoice(self, order_id):
+	def OrderInvoice(self, order_id):
 		'''Deletes store's product using REST API, returns JSON'''
 		params = {'token':self.token}
 		try:
@@ -122,10 +137,10 @@ class EcwidAPI():
 		except RequestException:
 			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
-			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
+			raise EcwidAPIException(self._GetErrorMessage(response.status_code))
 		return response.text
 		
-	def EcwidCreateStore(self, name, email, password, plan, **kwargs):
+	def CreateStore(self, name, email, password, plan, **kwargs):
 		'''Create store using Partners API, returns store_id'''
 		payload = {'name':name, 'email':email, 'password':password, 'plan':plan, 'key':self.partners_key, **kwargs}
 		params = {'register':'y'}
@@ -146,7 +161,7 @@ class EcwidAPI():
 		xml = ElementTree.fromstring(response.text)
 		return int(xml.text)
 		
-	def EcwidDeleteStore(self):
+	def DeleteStore(self):
 		'''Removes store using Partners API, returns Boolean'''
 		payload = {'ownerid':self.store_id, 'key':self.partners_key}
 		try:
@@ -158,24 +173,24 @@ class EcwidAPI():
 		elif response.status_code != 200:
 			raise EcwidAPIException('Неизвестная ошибка API.')
 
-	def EcwidGetStoreProfile(self, **kwargs):
+	def GetStoreProfile(self, **kwargs):
 		'''Gets store profile using REST API, returns JSON'''
-		json = self.EcwidGetStoreEndpoint('profile', **kwargs)
+		json = self.GetStoreEndpoint('profile', **kwargs)
 		try:
 			self.store_name = json['settings']['storeName']
 			db.session.commit()
 		except (KeyError, TypeError):
-			pass
+			raise EcwidAPIException('Ошибка обращения по API.')
 		return json
 		
-	def EcwidGetStoreProducts(self, **kwargs):
+	def GetStoreProducts(self, **kwargs):
 		'''Gets store profile using REST API, returns JSON'''
-		return self.EcwidGetStoreEndpoint('products', **kwargs)
+		return self.GetStoreEndpoint('products', **kwargs)
 		
-	def EcwidUpdateStoreProfile(self, template = None):
+	def UpdateStoreProfile(self, template = None):
 		'''Updates store profile using REST API, returns JSON'''
 		params = {'token':self.token}
-		if not template:
+		if template is None:
 			template = _DEFAULT_STORE_PROFILE
 		else:
 			template =  {**template, **_DEFAULT_STORE_PROFILE}
@@ -184,13 +199,16 @@ class EcwidAPI():
 		except RequestException:
 			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
-			raise EcwidAPIException(self._EcwidGetErrorMessage(response.status_code))
-		json = response.json()
-		if json.get('updateCount', 0) != 1:
+			raise EcwidAPIException(self._GetErrorMessage(response.status_code))
+		try:
+			json = response.json()
+		except ValueError:
+			raise EcwidAPIException('Ошибка обращения по API.')
+		if json.get('updateCount', 0) == 0:
 			raise EcwidAPIException('Не удалось обновить профиль поставщика {}.'.format(self.store_id))
 		return json
 		
-	def EcwidSetStoreOrder(self, order):
+	def SetStoreOrder(self, order):
 		'''Sets store's order using REST API, returns JSON'''
 		params = {'token':self.token}
 		try:
@@ -198,16 +216,25 @@ class EcwidAPI():
 		except RequestException:
 			raise EcwidAPIException('Ошибка обращения по API.')
 		if response.status_code != 200:
-			raise Exception(self._EcwidGetErrorMessage(response.status_code))
-		return response.json()
+			raise Exception(self._GetErrorMessage(response.status_code))
+		try:
+			json = response.json()
+		except ValueError:
+			raise EcwidAPIException('Ошибка обращения по API.')
+		if json.get('id', 0) == 0:
+			raise EcwidAPIException('Не удалось создать заявку.')
+		return json
 		
-	def EcwidDeleteStoreProduct(self, product_id):
+	def DeleteStoreProduct(self, product_id):
 		'''Deletes store's product using REST API, returns JSON'''
 		params = {'token':self.token}
 		response = delete(_REST_API_URL.format(store_id = self.store_id, endpoint = 'products/{}'.format(product_id)), params = params)
 		if response.status_code != 200:
-			raise Exception(self._EcwidGetErrorMessage(response.status_code))
-		json = response.json()
-		if json.get('deleteCount', 0) != 1:
+			raise Exception(self._GetErrorMessage(response.status_code))
+		try:
+			json = response.json()
+		except ValueError:
+			raise EcwidAPIException('Ошибка обращения по API.')
+		if json.get('deleteCount', 0) == 0:
 			raise EcwidAPIException('Не удалось удалить товар {}.'.format(product_id))
-		return response.json()
+		return json

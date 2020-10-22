@@ -24,13 +24,13 @@ def ShowStores():
 			try:
 				store_name = store_form.name.data.strip()
 				store_email = store_form.email.data.strip().lower()
-				store_id = current_user.hub.EcwidCreateStore(name = store_name, email = store_email, password = store_form.password.data, plan = store_form.plan.data,
+				store_id = current_user.hub.CreateStore(name = store_name, email = store_email, password = store_form.password.data, plan = store_form.plan.data,
 																defaultlanguage='ru')
 				store = Ecwid(store_id = store_id, ecwid_id = current_user.ecwid_id, partners_key = current_user.hub.partners_key,
 								client_id = current_user.hub.client_id, client_secret = current_user.hub.client_secret)
 				db.session.add(store)
-				store.EcwidGetStoreToken()
-				store.EcwidUpdateStoreProfile({'settings':{'storeName':store_name}, 'company':{'companyName':store_name, 'city':'Москва', 'countryCode':'RU'}})
+				store.GetStoreToken()
+				store.UpdateStoreProfile({'settings':{'storeName':store_name}, 'company':{'companyName':store_name, 'city':'Москва', 'countryCode':'RU'}})
 				db.session.commit()
 				flash('Магазин успешно добавлен.')
 			except EcwidAPIException as e:
@@ -41,7 +41,7 @@ def ShowStores():
 	stores = list()
 	for vendor in vendors:
 		try:
-			stores.append(vendor.EcwidGetStoreProfile())
+			stores.append(vendor.GetStoreProfile())
 		except EcwidAPIException as e:
 			flash('Ошибка API: {}'.format(e))
 	if len(stores) == 0:
@@ -55,14 +55,14 @@ def ShowStores():
 @ecwid_required
 def WithdrawStore(store_id):
 	store = Ecwid.query.filter(Ecwid.store_id == store_id, Ecwid.ecwid_id == current_user.ecwid_id).first()
-	if store:
+	if store is not None:
 		try:
-			store.EcwidDeleteStore()
+			store.DeleteStore()
 		except EcwidAPIException as e:
 			flash('Ошибка удаления магазина: {}'.format(e))
 		
 		try:
-			json = current_user.hub.EcwidGetStoreProducts(keyword = store.store_id)
+			json = current_user.hub.GetStoreProducts(keyword = store.store_id)
 			products = json.get('items', [])
 		except EcwidAPIException as e:
 			flash('Ошибка удаления товаров: {}'.format(e))
@@ -70,7 +70,7 @@ def WithdrawStore(store_id):
 			
 		for product in products:
 			try:
-				current_user.hub.EcwidDeleteStoreProduct(product['id'])
+				current_user.hub.DeleteStoreProduct(product['id'])
 			except EcwidAPIException as e:
 				flash('Ошибка удаления товаров: {}'.format(e))
 				continue
@@ -87,14 +87,14 @@ def WithdrawStore(store_id):
 @role_required([UserRoles.admin, UserRoles.approver])
 @ecwid_required
 def SyncStores(store_id):
-	if not store_id:
+	if store_id is None:
 		args = ("c/ecwid-api", str(current_user.ecwid_id))
 	else:
 		args = ("c/ecwid-api", str(current_user.ecwid_id), str(store_id))
 	popen = subprocess.Popen(args, stderr=subprocess.PIPE)
 	popen.wait()
 	output = popen.stderr.read()
-	if output and len(output) > 0:
+	if output is not None and len(output) > 0:
 		for s in output.decode('utf-8').strip().split('\n'):
 			flash(s)
 	else:

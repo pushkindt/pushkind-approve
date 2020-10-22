@@ -128,7 +128,7 @@
 				</div>
 				<div class="row">
 					<div class="col">
-						{{ order['initiative'].location }}
+						{{ order['paymentMethod'] }}
 					</div>
 				</div>
 				<div class="row">
@@ -292,22 +292,6 @@
 		);
 		
 		{% if current_user.role.name == 'initiative' %}
-			function UpdateOrderTotal(data){
-				if (data.status == true){
-					if (data.quantity == 0){
-						if ($(".ecwidOrderProduct").length == 1){
-							alert("Заявка удалена, вы будете перенаправлены на главную страницу.");
-							setTimeout(function(){
-								document.location.href = "{{ url_for('main.ShowIndex') }}";
-							}, 2000);
-						}else
-							document.location.reload();
-					}
-					$(".orderTotal").text(data.total);
-				}
-				ShowAjaxFlashes(data);
-			}
-			
 			var oldQuantity = 0;
 			$('.productQuantity').focus(function() {
 				$(this).removeClass('form-control-plaintext');

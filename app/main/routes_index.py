@@ -1,7 +1,7 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, OrderStatus, CacheCategories
+from app.models import User, UserRoles, OrderStatus, CacheCategories, Location
 from flask import render_template, flash, request
 from sqlalchemy import distinct, func, or_
 from app.ecwid import EcwidAPIException
@@ -37,30 +37,29 @@ def ShowIndex():
 
 	if filter_approval not in [status.name for status in OrderStatus]:
 		filter_approval = None
-	if current_user.role == UserRoles.initiative:
-		initiatives = [current_user]
-		locations = [current_user.location]
-		filter_location = None
-	else:
-		if filter_location != None:
-			filter_location = filter_location.strip()
-		locations = [loc[0] for loc in db.session.query(distinct(func.lower(User.location))).filter(User.ecwid_id == current_user.ecwid_id, User.role == UserRoles.initiative).all()]
+		
+	if filter_location is not None:
+		filter_location = filter_location.strip()
+	locations = Location.query.all()
 
 	orders = []
 	args = {}
-	if filter_from:
+	if filter_from is not None:
 		args['createdFrom'] = filter_from
+	if filter_location is not None:
+		filter_location = filter_location.strip()
+		args['paymentMethod'] = filter_location
+	if current_user.role == UserRoles.initiative:
+		args['email'] = current_user.email
 	try:
-		orders = current_user.hub.EcwidGetStoreOrders(**args)
+		orders = current_user.hub.GetStoreOrders(**args)
 		orders = orders.get('items', [])
 	except EcwidAPIException as e:
 		flash('Ошибка API: {}'.format(e))
 
 	new_orders = []
 	for order in orders:
-		if current_user.role == UserRoles.initiative and order['email'] != current_user.email:
-			continue
-		if not PrepareOrder(order, filter_location):
+		if not PrepareOrder(order):
 			continue
 		reviewers = [rev.id for rev in order['reviewers']]
 		if current_user.role == UserRoles.validator:

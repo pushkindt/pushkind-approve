@@ -1,6 +1,6 @@
 <div class="row ecwidOrderProduct" id="{{ product['sku'] }}">
 	<div class="col-sm overflow-hidden">
-		{% if product['imageUrl'] %}
+		{% if product.imageUrl is defined %}
 			<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
 		{% endif %}
 	</div>

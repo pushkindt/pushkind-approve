@@ -3,9 +3,7 @@ from app.models import User, UserRoles, OrderApproval, OrderStatus, CacheCategor
 from flask import render_template, flash, jsonify
 from functools import wraps
 from datetime import datetime, timedelta, timezone
-import json
 from sqlalchemy import or_
-from json.decoder import JSONDecodeError
 
 '''
 ################################################################################
@@ -68,7 +66,7 @@ def role_forbidden_ajax(roles_list):
 def ecwid_required(function):
 	@wraps(function)
 	def wrapper(*args, **kwargs):
-		if not current_user.hub:
+		if current_user.hub is None:
 			flash('Взаимодействие с ECWID не настроено.')
 			return render_template('errors/400.html'),400
 		else:
@@ -78,7 +76,7 @@ def ecwid_required(function):
 def ecwid_required_ajax(function):
 	@wraps(function)
 	def wrapper(*args, **kwargs):
-		if not current_user.hub:
+		if current_user.hub is None:
 			return jsonify({'status':False, 'flash':['Взаимодействие с ECWID не настроено.']}),400
 		else:
 			return function(*args, **kwargs)
@@ -88,24 +86,21 @@ def GetProductApproval(order_id, user):
 	return OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == user.id).all()
 
 
-def PrepareOrder(order, filter_location=None):
-	if filter_location:
-		order['initiative'] = User.query.filter(User.email == order['email'], User.location.ilike(filter_location)).first()
-	else:
-		order['initiative'] = User.query.filter(User.email == order['email']).first()
-	if not order['initiative']:
+def PrepareOrder(order):
+	order['initiative'] = User.query.filter(User.email == order['email'], User.role == UserRoles.initiative).first()
+	if order['initiative'] is None:
 		return False
 	try:
 		order['createDate'] = datetime.strptime(order['createDate'], DATE_TIME_FORMAT)
-	except (ValueError, KeyError):
-		pass
+	except (ValueError, KeyError, TypeError):
+		order['createDate'] = datetime.now()
 	try:
 		order['updateDate'] = datetime.strptime(order['updateDate'], DATE_TIME_FORMAT)
-	except (ValueError, KeyError):
-		pass
+	except (ValueError, KeyError, TypeError):
+		order['createDate'] = datetime.now()
 	try:
 		order['privateAdminNotes'] = datetime.strptime(order['privateAdminNotes'], DATE_TIME_FORMAT)
-	except (ValueError, KeyError):
+	except (ValueError, KeyError, TypeError):
 		order['privateAdminNotes'] = datetime.now()
 	if len(order['orderComments']) > 50:
 		order['orderComments'] = order['orderComments'][:50] + '...'
@@ -113,35 +108,33 @@ def PrepareOrder(order, filter_location=None):
 	validators = User.query.filter(User.role == UserRoles.validator, User.ecwid_id == order['initiative'].ecwid_id).all()
 	reviewers = {approver: GetProductApproval(order['orderNumber'], approver) for approver in approvers}
 	for validator in validators:
-		try:
-			filter_validator = json.loads(validator.location)
-		except JSONDecodeError:
+		if not isinstance(validator.data,dict):
 			reviewers[validator] = GetProductApproval(order['orderNumber'], validator)
 			continue
 		try:
-			locations = [loc.lower() for loc in filter_validator['locations']]
+			locations = [loc.lower() for loc in validator.data['locations']]
 			if len(locations) == 0:
 				raise KeyError
 		except (TypeError,KeyError):
 			locations = None
 		try:
-			categories = [cat.lower() for cat in filter_validator['categories']]
+			categories = [cat.lower() for cat in validator.data['categories']]
 			if len(categories) == 0:
 				raise KeyError
 		except (TypeError,KeyError):
 			categories = None
-		if locations == None and categories == None:
+		if locations is None and categories is None:
 			reviewers[validator] = GetProductApproval(order['orderNumber'], validator)
 			continue
-		if categories != None:
+		if categories is not None:
 			caches = CacheCategories.query.filter(CacheCategories.ecwid_id == order['initiative'].ecwid_id, or_(*[CacheCategories.name.ilike(cat) for cat in categories])).all()
 			categories = set([cat_id for cache in caches for cat_id in cache.children])
 			product_cats = set([product.get('categoryId', None) for product in order['items']])
 			check_categories = len(categories.intersection(product_cats)) > 0
 		else:
 			check_categories = True
-		if locations != None:
-			check_locations = order['initiative'].location.lower() in locations
+		if locations is not None:
+			check_locations = order['paymentMethod'].lower() in locations
 		else:
 			check_locations = True
 		
@@ -150,14 +143,20 @@ def PrepareOrder(order, filter_location=None):
 	order['reviewers'] = reviewers
 	order['events'] = EventLog.query.join(User).filter(EventLog.order_id == order['orderNumber'], User.ecwid_id == order['initiative'].ecwid_id).order_by(EventLog.timestamp.desc()).all()
 	not_approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order['orderNumber'], OrderApproval.product_id != None, User.ecwid_id == order['initiative'].ecwid_id).count() > 0
-	if not_approved:
+	if not_approved is True:
 		order['status'] = OrderStatus.not_approved
 		return True
-	approvals = [any(status) for reviewer, status in reviewers.items()]
-	if all(approvals):
+
+	approvals = {}
+	for reviewer,status in order['reviewers'].items():
+		if reviewer.role == UserRoles.validator:
+			position = reviewer.position.lower()
+			approvals[position] = approvals.get(position, False) or any(status)
+			
+	if all(approvals.values()):
 		order['status'] = OrderStatus.approved
 		return True
-	if any(approvals) or len(order['events']) > 0:
+	if len(order['events']) > 0:
 		order['status'] = OrderStatus.partly_approved
 		return True
 	if (order['updateDate'] - order['createDate']) > timedelta(seconds=10):

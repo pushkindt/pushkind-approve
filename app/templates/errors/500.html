@@ -1,20 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
 
-<section>
-	<div class="container my-1">
-		<div class="row">
-			<div class="col">
-				<h1>Произошла непредвиденная ошибка.</h1>
-				<p>Администратор был уведомлён об этом событии. Извините за неудобство.</p>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col">	
-				<p><a href="{{ url_for('main.ShowIndex') }}">Назад</a></p>
-			</div>
+<div class="container my-1">
+	<div class="row">
+		<div class="col">
+			<h1>Произошла непредвиденная ошибка.</h1>
+			<p>Администратор был уведомлён об этом событии. Извините за неудобство.</p>
 		</div>
 	</div>
-</section>
+	<div class="row">
+		<div class="col">	
+			<p><a href="{{ url_for('main.ShowIndex') }}">Назад</a></p>
+		</div>
+	</div>
+</div>
 
 {% endblock %}

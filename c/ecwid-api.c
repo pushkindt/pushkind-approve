@@ -35,7 +35,7 @@ int main(int argc, char* argv[]){
 	check(pid_file > 0, "You are not allowed to run multiple instances of the program.");
 	int rc = flock(pid_file, LOCK_EX | LOCK_NB);
 	check(rc != -1, "You are not allowed to run multiple instances of the program.");
-	
+
 	if (argc == 2){
 		/*****************************************************************************/
 		//	Synchronize stores with the hub store
@@ -53,6 +53,7 @@ int main(int argc, char* argv[]){
 	}
 	
 	check(ProcessCache(ecwid_id) == true, "Cannot process cache.");
+	check(ProcessLocations(ecwid_id) == true, "Cannot process locations.");
 	
 	result = 0;
 error:

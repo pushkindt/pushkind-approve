@@ -28,25 +28,25 @@
 				<div class="form-group row">
 					{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
 					<div class="col-md-10">
-						{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '', value = current_user.hub.partners_key if current_user.hub.partners_key else '') }}
+						{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '', value = current_user.hub.partners_key if current_user.hub.partners_key is not none else '') }}
 					</div>
 				</div>
 				<div class="form-group row">
 					{{ ecwid_form.client_id.label(class_ = "col-md-2 col-form-label") }} 
 					<div class="col-md-10">
-						{{ ecwid_form.client_id(class_ = 'form-control', value = current_user.hub.client_id if current_user.hub.client_id else '') }}
+						{{ ecwid_form.client_id(class_ = 'form-control', value = current_user.hub.client_id if current_user.hub.client_id is not none else '') }}
 					</div>
 				</div>
 				<div class="form-group row">
 					{{ ecwid_form.client_secret.label(class_ = "col-md-2 col-form-label") }} 
 					<div class="col-md-10">
-						{{ ecwid_form.client_secret(class_ = 'form-control', value = current_user.hub.client_secret if current_user.hub.client_secret else '') }}
+						{{ ecwid_form.client_secret(class_ = 'form-control', value = current_user.hub.client_secret if current_user.hub.client_secret is not none else '') }}
 					</div>
 				</div>
 				<div class="form-group row">
 					{{ ecwid_form.store_id.label(class_ = "col-md-2 col-form-label") }} 
 					<div class="col-md-10">
-						{{  ecwid_form.store_id(class_ = 'form-control', value = current_user.hub.store_id if current_user.hub.store_id else '') }}
+						{{  ecwid_form.store_id(class_ = 'form-control', value = current_user.hub.store_id if current_user.hub.store_id is not none else '') }}
 					</div>
 				</div>
 				<div class="form-group row">
@@ -63,7 +63,7 @@
 				<span class="font-weight-bold">ПОЛЬЗОВАТЕЛИ</span>
 			</div>
 		</div>		
-		{% set errorsList = role_form.user_id.errors + role_form.role.errors + role_form.about_user.full_name.errors + role_form.about_user.phone.errors + role_form.about_user.location.errors %}
+		{% set errorsList = role_form.user_id.errors + role_form.role.errors + role_form.about_user.full_name.errors + role_form.about_user.phone.errors + role_form.about_user.user_data.errors %}
 		{% if errorsList|length > 0 %}
 			<div class = "row">
 				<div class="col">
@@ -102,12 +102,6 @@
 				</div>
 			</div>
 			<div class="form-group row">
-				{{ role_form.about_user.location.label(class_ = "col-md-2 col-form-label") }} 
-				<div class="col-md-10">
-					{{ role_form.about_user.location(class_ = 'form-control') }}
-				</div>
-			</div>
-			<div class="form-group row">
 				{{ role_form.role.label(class_ = "col-md-2 col-form-label") }} 
 				<div class="col-md-10">
 					{{ role_form.role(class_ = 'form-control') }}
@@ -125,6 +119,11 @@
 				<a href="{{ url_for('auth.PerformRegistration') }}">Создание нового пользователя</a>
 			</div>
 		</div>
+		<div class="row">
+			<div class="col">
+				<a href="/static/app.log">Лог файл веб приложения</a>
+			</div>
+		</div>
 	</div>
 
 {% else %}
@@ -135,7 +134,7 @@
 				<span class="font-weight-bold">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ</span>
 			</div>
 		</div>				
-		{% set errorsList = user_form.about_user.full_name.errors + user_form.about_user.phone.errors + user_form.about_user.location.errors %}
+		{% set errorsList = user_form.about_user.full_name.errors + user_form.about_user.phone.errors + user_form.about_user.user_data.errors %}
 		{% if errorsList|length > 0 %}
 			<div class = "row">
 				<div class="col">
@@ -168,14 +167,14 @@
 				</div>
 			</div>
 			{% if current_user.role.name == 'validator' %}
-				{{ user_form.about_user.location(class_='form-control d-none', value=current_user.location, hidden='') }}
 				<div class="row">
+					{{ user_form.about_user.user_data(class_='form-control d-none', hidden='') }}
 					<div class="col">
 						<p class="font-weight-bold">Площадки</p>
 						{% for location in locations %}
 							<div class="form-check">
 								<label class="form-check-label">
-									<input type="checkbox" class="form-check-input locationCheck" value="{{ location }}"><span class="text-capitalize">{{ location }}</span>
+									<input type="checkbox" class="form-check-input locationCheck" value="{{ location.name }}"><span class="text-capitalize">{{ location.name }}</span>
 								</label>
 							</div>
 						{% endfor %}
@@ -189,13 +188,6 @@
 								</label>
 							</div>
 						{% endfor %}
-					</div>
-				</div>
-			{% else %}
-				<div class="form-group row">
-					{{ user_form.about_user.location.label(class_ = "col-md-2 col-form-label") }} 
-					<div class="col-md-10">
-						{{ user_form.about_user.location(class_ = 'form-control', value = current_user.location) }}
 					</div>
 				</div>
 			{% endif %}
@@ -221,36 +213,25 @@
 							{{ user|safe }},
 						{% endfor %}
 						];
-			$("#user_id").change(function(){
-				var user_id = Number($(this).val());
-				
+			
+			function UserFieldsSettings(){
+				var user_id = Number($("#user_id").val());
 				users.forEach(function(user){
 					if (user["id"] == user_id){
-						var locationInput = $("#about_user-location");
 						$("#about_user-phone").val(user["phone"]);
 						$("#about_user-position").val(user["position"]);
-						locationInput.val(user["location"]);
 						$("#about_user-full_name").val(user["name"]);
 						$("#role").val(user["role_id"]);
 						$("#removeUserButton").attr('href','/remove/'+user_id);
-						if (user["role"] == 'initiative'){
-							locationInput.prop( "required", true );
-							locationInput.prop( "disabled", false );
-						}else if (user["role"] == 'validator'){
-							locationInput.prop( "required", false );
-							locationInput.prop( "disabled", true );
-						}else{
-							locationInput.prop( "required", false );
-							locationInput.prop( "disabled", false );
-						}
 					}
 				});
-				
-			});
-			$("#user_id").change();
+			}
+			
+			$("#user_id").change(UserFieldsSettings);
+			UserFieldsSettings()
 		{% elif current_user.role.name == "validator" %}
-			var locationInput = $("#about_user-location");
-			function MakeLocationInput(){
+			var userData = $("#about_user-user_data");
+			function MakeUserData(){
 				var locations = [];
 				var categories = [];
 				$.each($(".locationCheck:checked"), function(){
@@ -260,10 +241,11 @@
 					categories.push($(this).val());
 				});
 				var jObj = {locations:locations, categories:categories};
-				locationInput.val(JSON.stringify(jObj));
+				userData.val(JSON.stringify(jObj));
+				console.log(userData.val());
 			}
-			try{
-				var jObj = JSON.parse(locationInput.val());
+			{% if current_user.data %}
+				var jObj = {{ current_user.data|tojson|safe }};
 				jObj["locations"].forEach(function(loc){
 					var selector = ".locationCheck[value='"+loc+"']";
 					$(selector).prop("checked", true);
@@ -272,11 +254,8 @@
 					var selector = ".categoryCheck[value='"+cat+"']";
 					$(selector).prop("checked", true);
 				});
-			}catch(e){
-				MakeLocationInput();
-			}
-			$('.locationCheck, .categoryCheck').on('click', MakeLocationInput);
-			
+			{% endif %}
+			$('.locationCheck, .categoryCheck').on('change', MakeUserData);
 		{% endif %}
 	});
 </script>

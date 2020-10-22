@@ -15,10 +15,10 @@ def SendEmail(subject, sender, recipients, text_body, html_body,
 	msg = Message(subject, sender=sender, recipients=recipients)
 	msg.body = text_body
 	msg.html = html_body
-	if attachments:
+	if attachments is not None:
 		for attachment in attachments:
 			msg.attach(*attachment)
-	if sync:
+	if sync is True:
 		mail.send(msg)
 	else:
 		Thread(target=SendEmailAsync,

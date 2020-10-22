@@ -12,6 +12,7 @@ from flask import current_app
 from datetime import datetime, timezone
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
+from json.decoder import JSONDecodeError
 
 
 class EventType(enum.IntEnum):
@@ -64,6 +65,22 @@ class Ecwid(db.Model, EcwidAPI):
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'))
 	hub = db.relationship('Ecwid')
 
+class JsonType(TypeDecorator):
+	impl = db.String()
+
+	def process_bind_param(self, value, dialect):
+		if value is not None:
+			return json.dumps(value)
+		else:
+			return None
+		
+	def process_result_value(self, value, dialect):
+		try:
+			result = json.loads(value)
+			return result
+		except (JSONDecodeError, TypeError):
+			return None
+
 class User(UserMixin, db.Model):
 	id  = db.Column(db.Integer, primary_key=True, nullable=False)
 	email	= db.Column(db.String(128), index=True, unique=True, nullable=False)
@@ -72,7 +89,7 @@ class User(UserMixin, db.Model):
 	name = db.Column(db.String(128), nullable=False, default='', server_default='')
 	phone = db.Column(db.String(128), nullable=False, default='', server_default='')
 	position = db.Column(db.String(128), nullable=False, default='', server_default='')
-	location = db.Column(db.String(), nullable=False, default='', server_default='', index=True)
+	data = db.Column(JsonType())
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=True, index=True)
 	hub = db.relationship('Ecwid')
 	
@@ -96,7 +113,7 @@ class User(UserMixin, db.Model):
 		return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(digest, size)
 		
 	def to_dict(self):
-		data = {'id':self.id, 'email':self.email, 'phone':self.phone, 'location':self.location, 'role': self.role.name,'role_id':int(self.role), 'name':self.name, 'ecwid_id':self.ecwid_id, 'position':self.position}
+		data = {'id':self.id, 'email':self.email, 'phone':self.phone, 'data':self.data, 'role': self.role.name,'role_id':int(self.role), 'name':self.name, 'ecwid_id':self.ecwid_id, 'position':self.position}
 		return data
 		
 	def GetPasswordResetToken(self, expires_in=600):
@@ -123,17 +140,8 @@ class OrderApproval(db.Model):
 	user = db.relationship('User')
 	
 	def __bool__(self):
-		return self.product_id == None
+		return self.product_id is None
 	
-class JsonType(TypeDecorator):
-	impl = db.String()
-
-	def process_bind_param(self, value, dialect):
-		return json.dumps(value)
-		
-	def process_result_value(self, value, dialect):
-		return json.loads(value)
-
 class CacheCategories(db.Model):
 	id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	name = db.Column(db.String(128), nullable=False, index=True)
@@ -155,4 +163,10 @@ class EventLog(db.Model):
 	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
 	type = db.Column(db.Enum(EventType), nullable=False, default=EventType.comment)
 	data = db.Column(db.String(), nullable=False, default='', server_default='')
+	
+class Location(db.Model):
+	id  = db.Column(db.Integer, primary_key = True, nullable=False)
+	name = db.Column(db.String(128), nullable=False, index=True)
+	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), index=True)
+	hub = db.relationship('Ecwid')
 	

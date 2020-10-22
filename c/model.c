@@ -40,6 +40,14 @@ void FreeCacheCategories(TCacheCategories *cache){
 	free(cache);
 }
 
+void FreeLocation(TLocation *location){
+	if (location == NULL)
+		return;
+	if (location->name != NULL)
+		free(location->name);
+	free(location);
+}
+
 int DeleteCacheCategories(sqlite3 *pDB, uint64_t ecwid_id){
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
@@ -78,6 +86,48 @@ int StoreCacheCategories(sqlite3 *pDB, TCacheCategories *cache){
 	check(result == SQLITE_OK, "Error while binding SQLite statement.");
 	result = sqlite3_step(stmt);
 	check(result == SQLITE_DONE, "Error while saving cache.");
+	result = 0;
+error:
+	sqlite3_finalize(stmt);
+	return result;
+}
+
+int DeleteLocations(sqlite3 *pDB, uint64_t ecwid_id){
+	int result = -1;
+	sqlite3_stmt *stmt = NULL;
+	check(pDB != NULL, "Invalid function inputs.");
+	
+	/*****************************************************************************/
+	//	Prepare SQL query
+	/*****************************************************************************/	
+	result = sqlite3_prepare_v2(pDB, "delete from location where ecwid_id = ?", -1, &stmt, NULL);
+	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
+	result = sqlite3_bind_int64(stmt, 1, ecwid_id);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");	
+	result = sqlite3_step(stmt);
+	check(result == SQLITE_DONE, "Error while deleting location.");
+	result = 0;
+error:
+	sqlite3_finalize(stmt);
+	return result;
+}
+
+int StoreLocation(sqlite3 *pDB, TLocation *location){
+	int result = -1;
+	sqlite3_stmt *stmt = NULL;
+	check(pDB != NULL && location != NULL, "Invalid function inputs.");
+	
+	/*****************************************************************************/
+	//	Prepare SQL query
+	/*****************************************************************************/	
+	result = sqlite3_prepare_v2(pDB, "insert into location(`name`, `ecwid_id`) values (?,?)", -1, &stmt, NULL);
+	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
+	result = sqlite3_bind_text(stmt, 1, location->name, -1, SQLITE_STATIC);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_bind_int64(stmt, 2, location->ecwid_id);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_step(stmt);
+	check(result == SQLITE_DONE, "Error while saving location.");
 	result = 0;
 error:
 	sqlite3_finalize(stmt);

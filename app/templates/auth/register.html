@@ -43,9 +43,11 @@
 						<div class="form-group row">
 							<div class="col-md-6 offset-md-4">
 								{{ form.submit(class_ = 'btn btn-primary') }}
-								<a href="{{ url_for('auth.PerformLogin') }}" class="btn btn-link">
-									Авторизация
-								</a>
+								{% if current_user.is_anonymous %}
+									<a href="{{ url_for('auth.PerformLogin') }}" class="btn btn-link">
+										Авторизация
+									</a>
+								{% endif %}
 							</div>
 						</div>
 					</form>

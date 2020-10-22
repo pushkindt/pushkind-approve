@@ -47,8 +47,8 @@ def create_app(config_class=Config):
 	from app.api import bp as api_bp
 	app.register_blueprint(api_bp, url_prefix='/api')
 
-	if not app.debug:
-		if not os.path.exists('logs'):
+	if app.debug is False:
+		if os.path.exists('logs') is False:
 			os.mkdir('logs')
 		file_handler = RotatingFileHandler('logs/{}.log'.format(__name__), maxBytes=10240, backupCount=10, encoding='utf-8')
 		file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))

@@ -1,7 +1,7 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderApproval, EventLog, EventType
+from app.models import User, UserRoles, Ecwid, OrderApproval, EventLog, EventType, OrderStatus
 from flask import render_template, redirect, url_for, flash, jsonify, current_app, Response
 from app.main.forms import OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm
 from datetime import datetime, timezone
@@ -29,11 +29,11 @@ Approve page
 
 def GetOrder(order_id):
 	try:
-		response = current_user.hub.EcwidGetStoreOrders(orderNumber = order_id)
+		response = current_user.hub.GetStoreOrders(orderNumber = order_id)
 		if 'items' not in response or len(response['items']) == 0:
 			raise EcwidAPIException('Такой заявки не существует')
 		order = response['items'][0]
-		if not PrepareOrder(order):
+		if PrepareOrder(order) is False:
 			raise EcwidAPIException('Заявка не принадлежит ни одному из инициаторов')
 		if current_user.role == UserRoles.initiative and order['email'] != current_user.email:
 			raise EcwidAPIException('Вы не являетесь владельцем этой заявки')
@@ -56,7 +56,7 @@ def FilterForbiddenOrderFields(order):
 @ecwid_required
 def ShowOrder(order_id):
 	order = GetOrder(order_id)
-	if not order:
+	if order is None:
 		return redirect(url_for('main.ShowIndex'))
 
 	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
@@ -84,7 +84,7 @@ def ShowOrder(order_id):
 @role_forbidden([UserRoles.admin, UserRoles.default])
 def SaveComment(order_id):
 	order = GetOrder(order_id)
-	if not order:
+	if order is None:
 		return redirect(url_for('main.ShowIndex'))
 	form = OrderCommentsForm()
 	if form.validate_on_submit():
@@ -104,15 +104,15 @@ def SaveComment(order_id):
 @role_forbidden([UserRoles.admin, UserRoles.default, UserRoles.initiative])
 def SaveApproval(order_id):
 	order = GetOrder(order_id)
-	if not order:
+	if order is None:
 		return redirect(url_for('main.ShowIndex'))
 	form = OrderApprovalForm()
 	if form.validate_on_submit():
 		try:
 			order_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == None).first()
-			if not form.product_id.data:
+			if form.product_id.data is None:
 				OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).delete()
-				if order_approval == None:
+				if order_approval is None:
 					order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
 					db.session.add(order_approval)
 					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.approved, data='заявка', timestamp = datetime.now(tz = timezone.utc))
@@ -121,6 +121,14 @@ def SaveApproval(order_id):
 							   recipients=[order['initiative'].email],
 							   text_body=render_template('email/approval.txt', order=order, approval=True),
 							   html_body=render_template('email/approval.html', order=order, approval=True))
+					if PrepareOrder(order):
+						if order['status'] == OrderStatus.approved:
+							emails = [rev.email for rev in order['reviewers'] if rev.role == UserRoles.approver]
+							SendEmail('Согласована заявка #{}'.format(order['vendorOrderNumber']),
+									   sender=current_app.config['MAIL_USERNAME'],
+									   recipients=emails,
+									   text_body=render_template('email/approved.txt', order=order),
+									   html_body=render_template('email/approved.html', order=order))
 				else:
 					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data='согласованная ранее заявка', timestamp = datetime.now(tz = timezone.utc))
 					for product in order['items']:
@@ -128,12 +136,12 @@ def SaveApproval(order_id):
 						db.session.add(product_approval)						
 			else:
 				product_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == form.product_id.data).first()
-				if product_approval != None:
+				if product_approval is not None:
 					db.session.delete(product_approval)
 					message = 'товар <span class="product-sku text-primary">{}</span>'.format(product_approval.product_sku)
 					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message, timestamp = datetime.now(tz = timezone.utc))
 				else:
-					if order_approval != None:
+					if order_approval is not None:
 						db.session.delete(order_approval)
 					product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id, product_sku = form.product_sku.data.strip())
 					db.session.add(product_approval)
@@ -157,10 +165,10 @@ def SaveApproval(order_id):
 @ecwid_required
 def DeleteOrder(order_id):
 	order = GetOrder(order_id)
-	if not order:
+	if order is None:
 		return redirect(url_for('main.ShowIndex'))
 	try:
-		response = current_user.hub.EcwidDeleteStoreOrder(order_id = order_id)
+		response = current_user.hub.DeleteStoreOrder(order_id = order_id)
 		events = EventLog.query.join(User).filter(EventLog.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 		approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 		for approval in approvals:
@@ -179,12 +187,12 @@ def DeleteOrder(order_id):
 @ecwid_required
 def DuplicateOrder(order_id):
 	order = GetOrder(order_id)
-	if not order:
+	if order is None:
 		return redirect(url_for('main.ShowIndex'))
 	for key in _DISALLOWED_ORDERS_FIELDS:
 		order.pop(key, None)
 	try:
-		response = current_user.hub.EcwidSetStoreOrder(order)
+		response = current_user.hub.SetStoreOrder(order)
 		if 'id' not in response:
 			raise EcwidAPIException('Не удалось дулировать заявку')
 		message = 'Заявка дублирована с внутренним номером <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = response['id']), response['id'])
@@ -208,7 +216,7 @@ def SaveQuantity(order_id):
 	new_total = ''
 	form = ChangeQuantityForm()
 	order = GetOrder(order_id)
-	if not order:
+	if order is None:
 		return redirect(url_for('main.ShowIndex'))
 	if form.validate_on_submit():
 		for i, product in enumerate(order['items']):
@@ -222,32 +230,33 @@ def SaveQuantity(order_id):
 				index = i
 				break
 		else:
-			index = None
 			flash('Указанный товар не найден в заявке')
-		if index != None:
-			approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-			for approval in approvals:
-				db.session.delete(approval)
-			if form.product_quantity.data == 0:
-				order['items'].pop(index)
-			try:
-				if len(order['items']) == 0:
-					response = current_user.hub.EcwidDeleteStoreOrder(order_id = order_id)
-					events = EventLog.query.join(User).filter(EventLog.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-					for event in events:
-						db.session.delete(event)
-					flash('Заявка удалена, вернитесь на главную страницу')
-					db.session.commit()
-					return redirect(url_for('main.ShowIndex'))
-				else:
-					order = FilterForbiddenOrderFields(order)
-					response = current_user.hub.EcwidUpdateStoreOrder(order_id, order)
-					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.quantity, data=message, timestamp=datetime.now(tz = timezone.utc))
-					db.session.add(event)
+			return redirect(url_for('main.ShowOrder', order_id = order_id))
+
+		approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+		for approval in approvals:
+			db.session.delete(approval)
+		if form.product_quantity.data == 0:
+			order['items'].pop(index)
+		try:
+			if len(order['items']) == 0:
+				response = current_user.hub.DeleteStoreOrder(order_id = order_id)
+				events = EventLog.query.join(User).filter(EventLog.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+				for event in events:
+					db.session.delete(event)
+				flash('Заявка удалена, вернитесь на главную страницу')
 				db.session.commit()
-			except EcwidAPIException as e:
-				flash('Ошибка API: {}'.format(e))
-				db.session.rollback()
+				return redirect(url_for('main.ShowIndex'))
+			else:
+				order = FilterForbiddenOrderFields(order)
+				response = current_user.hub.UpdateStoreOrder(order_id, order)
+				event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.quantity, data=message, timestamp=datetime.now(tz = timezone.utc))
+				db.session.add(event)
+				flash('Количество {} было изменено'.format(product['sku']))
+			db.session.commit()
+		except EcwidAPIException as e:
+			flash('Ошибка API: {}'.format(e))
+			db.session.rollback()
 	else:
 		for error in form.product_id.errors + form.product_quantity.errors:
 			flash(error)
@@ -259,11 +268,9 @@ def SaveQuantity(order_id):
 @role_required([UserRoles.approver])
 @ecwid_required
 def ProcessHubOrder(order_id):
-
 	order = GetOrder(order_id)
-	if not order:
+	if order is None:
 		return redirect(url_for('main.ShowIndex'))
-	
 	order = FilterForbiddenOrderFields(order)
 	stores = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
 	got_orders = {}
@@ -287,22 +294,18 @@ def ProcessHubOrder(order_id):
 		order['subtotal'] = total
 		order['total'] = total
 		order['email'] = current_user.email
-		result = store.EcwidSetStoreOrder(order)
-		if 'id' not in result:
-			flash('Не удалось отправить заявку поставщику {}'.format(store.store_id))
-		else:
-			try:
-				profile = store.EcwidGetStoreProfile()
-				got_orders[profile['account']['accountName']] = result['id']
-			except:
-				got_orders[store.store_id] = result['id']
+		try:
+			result = store.SetStoreOrder(order)
+			got_orders[store.store_name] = result['id']
+		except EcwidAPIException as e:
+			flash('Не удалось перезаказать товары у {}'.format(store.store_name))
 		order['items'] = items
 
 	if len(got_orders) > 0:
 		message = ', '.join(f'{vendor} (#{order})' for vendor,order in got_orders.items())
 		try:
 			referer = current_user.name if current_user.name else current_user.email
-			current_user.hub.EcwidUpdateStoreOrder(order_id, {'externalFulfillment':True})
+			current_user.hub.UpdateStoreOrder(order_id, {'externalFulfillment':True})
 			event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.vendor, data=message, timestamp=datetime.now(tz = timezone.utc))
 			db.session.add(event)
 			db.session.commit()
@@ -322,10 +325,10 @@ def ProcessHubOrder(order_id):
 @ecwid_required_ajax
 def NotifyApprovers(order_id):
 	order = GetOrder(order_id)
-	if not order:
+	if order is None:
 		return redirect(url_for('main.ShowIndex'))
 	emails = [reviewer.email for reviewer in order['reviewers']]
-	SendEmail('Исправлена заявка #{} ({})'.format(order['vendorOrderNumber'], current_user.location),
+	SendEmail('Исправлена заявка #{} ({})'.format(order['vendorOrderNumber'], order['paymentMethod']),
 			   sender=current_app.config['MAIL_USERNAME'],
 			   recipients=emails,
 			   text_body=render_template('email/notify.txt', order=order),
@@ -340,7 +343,7 @@ def NotifyApprovers(order_id):
 @ecwid_required
 def GetExcelReport(order_id):
 	order = GetOrder(order_id)
-	if not order:
+	if order is None:
 		return redirect(url_for('main.ShowIndex'))
 	
 	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
@@ -377,7 +380,7 @@ def GetExcelReport(order_id):
 			vendor = vendors[product['sku'][:dash]]
 		except (ValueError, KeyError):
 			vendor = ''
-		ws.cell(i, 3).value = order['initiative'].location
+		ws.cell(i, 3).value = order['paymentMethod']
 		ws.cell(i, 7).value = vendor
 		ws.cell(i, 8).value = product['quantity']
 		c1 = ws.cell(i, 8).coordinate

@@ -1,4 +1,4 @@
-Инициатор {{ order['initiative'].name }} ({{ order['initiative'].location }}) уведомляет, что создана заявка #{{ order['vendorOrderNumber'] }}.
+Инициатор {{ order['initiative'].name }} ({{ order['paymentMethod'] }}) уведомляет, что создана заявка #{{ order['vendorOrderNumber'] }}.
 
 Нажмите на ссылку для перехода в Личный Кабинет:
 {{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}

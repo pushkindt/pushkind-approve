@@ -2,14 +2,7 @@
 	<div class="row">
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Номер: </span>
-			{% if approval_form %}
-				#{{ order['vendorOrderNumber'] }}
-				{% if current_user.role.name == 'initiative' %}
-					<a class="badge badge-danger" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">&times;</a>
-				{% endif %}
-			{% else %}
-				<a href="{{ url_for('main.ShowOrder', order_id=order['orderNumber']) }}">#{{ order['vendorOrderNumber'] }}</a>
-			{% endif %}
+			<a href="{{ url_for('main.ShowOrder', order_id=order['orderNumber']) }}">#{{ order['vendorOrderNumber'] }}</a>
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Дата: </span>
@@ -17,7 +10,7 @@
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Инициатор: </span>
-				{{ order['initiative'].location }}<br>
+				{{ order['paymentMethod'] }}<br>
 				<sup class="small font-italic font-weight-light">
 					{{ order['initiative'].name }}<br>
 					{{ order['initiative'].email }}
@@ -30,7 +23,7 @@
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Статус: </span>
 			<span class="badge badge-{{order['status'].color() }}">{{ order['status'] }}</span>
-			{% if order['externalFulfillment'] %}
+			{% if order['externalFulfillment'] is sameas true %}
 				<span class="badge badge-info"><img class="octicon" src="https://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена"></span>
 			{% endif%}
 		</div>

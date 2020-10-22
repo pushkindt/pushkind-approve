@@ -1,13 +1,15 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderApproval, CacheCategories
+from app.models import User, UserRoles, Ecwid, OrderApproval, CacheCategories, EventLog, Location
 from flask import render_template, redirect, url_for, flash
 from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm
 from sqlalchemy import distinct, func, or_
 from app.ecwid import EcwidAPIException
 from sqlalchemy.exc import SQLAlchemyError
 from app.main.utils import role_required, role_forbidden
+import json
+from json.decoder import JSONDecodeError
 
 '''
 ################################################################################
@@ -19,10 +21,10 @@ Settings page
 @login_required
 @role_forbidden([UserRoles.default])
 def ShowSettings():
-	locations = [loc[0] for loc in db.session.query(distinct(func.lower(User.location))).filter(User.ecwid_id == current_user.ecwid_id, User.role == UserRoles.initiative).all()]
+	locations = Location.query.all()
 	categories = CacheCategories.query.all()
 	if current_user.role == UserRoles.admin:
-		if not current_user.hub:
+		if current_user.hub is None:
 			current_user.hub = Ecwid()
 			db.session.commit()
 		ecwid_form = EcwidSettingsForm()
@@ -35,7 +37,8 @@ def ShowSettings():
 			current_user.hub.client_secret = ecwid_form.client_secret.data
 			current_user.hub.store_id = ecwid_form.store_id.data
 			try:
-				current_user.hub.EcwidGetStoreToken()
+				current_user.hub.GetStoreToken()
+				profile = current_user.hub.GetStoreProfile()
 				db.session.commit()
 				flash('Данные успешно сохранены.')
 			except (SQLAlchemyError, EcwidAPIException):
@@ -44,39 +47,45 @@ def ShowSettings():
 				flash('Возможно неверные настройки?')
 		elif role_form.submit2.data and role_form.validate_on_submit():
 			user = User.query.filter(User.id == role_form.user_id.data).first()
-			if user:
+			if user is not None:
 				user.ecwid_id = current_user.ecwid_id
 				user.role = UserRoles(role_form.role.data)
-				if role_form.about_user.phone.data:
+				if role_form.about_user.phone.data is not None:
 					user.phone = role_form.about_user.phone.data.strip()
 				else:
 					user.phone = ''
-				if role_form.about_user.position.data:
+				if role_form.about_user.position.data is not None:
 					user.position = role_form.about_user.position.data.strip()
 				else:
 					user.position = ''
 				user.name = role_form.about_user.full_name.data.strip()
-				if role_form.about_user.location.data:
-					user.location = role_form.about_user.location.data.strip()
 				db.session.commit()
 				flash('Данные успешно сохранены.')
 			else:
 				flash('Пользователь не найден.')
-		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users)
+		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users, UserRoles=UserRoles)
 	else:
 		user_form = UserSettingsForm()
 		if user_form.validate_on_submit():
-			if user_form.about_user.phone.data:
+			if user_form.about_user.phone.data is not None:
 				current_user.phone = user_form.about_user.phone.data.strip()
 			else:
 				current_user.phone = ''
-			if user_form.about_user.position.data:
+			if user_form.about_user.position.data is not None:
 				current_user.position = user_form.about_user.position.data.strip()
 			else:
 				current_user.position = ''
 			current_user.name = user_form.about_user.full_name.data.strip()
-			if user_form.about_user.location.data:
-				current_user.location = user_form.about_user.location.data.strip()
+			if user_form.about_user.user_data.data is not None:
+				try:
+					current_user.data = json.loads(user_form.about_user.user_data.data)
+					for key in current_user.data.keys():
+						if key not in ['locations', 'categories']:
+							current_user.data.pop(key)
+						else:
+							current_user.data[key] = list(set(current_user.data[key]))
+				except (JSONDecodeError, TypeError):
+					current_user.data = None
 			db.session.commit()
 			flash('Данные успешно сохранены.')
 		return render_template('settings.html', user_form=user_form, locations=locations, categories=categories)
@@ -86,11 +95,11 @@ def ShowSettings():
 @role_required([UserRoles.admin])
 def RemoveUser(user_id):
 	user = User.query.filter(User.id == user_id, or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).first()
-	if not user:
+	if user is None:
 		flash('Пользователь не найден.')
 		return redirect(url_for('main.ShowSettings'))
 	OrderApproval.query.filter(OrderApproval.user_id == user_id).delete()
-	EventType.query.filter(EventType.user_id == user_id).delete()
+	EventLog.query.filter(EventLog.user_id == user_id).delete()
 	db.session.delete(user)
 	db.session.commit()
 	flash('Пользователь успешно удалён.')

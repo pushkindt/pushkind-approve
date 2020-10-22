@@ -21,7 +21,7 @@ def NotifyNewOrders():
 		api_data = ApiData(ecwid_id = user.ecwid_id, timestamp = datetime.now(tz = timezone.utc))
 		db.session.add(api_data)
 	try:
-		json = user.hub.EcwidGetStoreOrders(createdFrom=int(api_data.timestamp.timestamp()))
+		json = user.hub.GetStoreOrders(createdFrom=int(api_data.timestamp.timestamp()))
 		orders = json.get('items', [])
 	except EcwidAPIException as e:
 		return ErrorResponse(503)
@@ -33,7 +33,7 @@ def NotifyNewOrders():
 	for order in orders:
 		if not PrepareOrder(order):
 			continue
-		emails =[reviewer.email for reviewer in order['reviewers']]
+		emails = [reviewer.email for reviewer in order['reviewers']]
 		SendEmail('Новая заявка #{}'.format(order['vendorOrderNumber']),
 				   sender=current_app.config['MAIL_USERNAME'],
 				   recipients=emails,
