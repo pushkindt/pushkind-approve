@@ -19,7 +19,7 @@ Consts
 ################################################################################
 '''
 _DISALLOWED_ORDERS_ITEM_FIELDS = ['productId', 'id', 'categoryId']
-_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'externalFulfillment', 'createDate', 'initiative', 'updateDate', 'reviewers', 'events', 'status']
+_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'externalFulfillment', 'createDate', 'initiative', 'updateDate', 'reviewers', 'events', 'status', 'positions']
 
 '''
 ################################################################################

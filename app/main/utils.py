@@ -128,17 +128,19 @@ def PrepareOrder(order):
 			reviewers[validator] = GetProductApproval(order['orderNumber'], validator)
 	order['reviewers'] = reviewers
 	order['events'] = EventLog.query.join(User).filter(EventLog.order_id == order['orderNumber'], User.ecwid_id == order['initiative'].ecwid_id).order_by(EventLog.timestamp.desc()).all()
-	not_approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order['orderNumber'], OrderApproval.product_id != None, User.ecwid_id == order['initiative'].ecwid_id).count() > 0
-	if not_approved is True:
-		order['status'] = OrderStatus.not_approved
-		return True
-
+	
 	approvals = {}
 	for reviewer,status in order['reviewers'].items():
 		if reviewer.role == UserRoles.validator:
 			position = reviewer.position.lower()
 			approvals[position] = approvals.get(position, False) or any(status)
-			
+	order['positions'] = approvals	
+	
+	not_approved = OrderApproval.query.join(User).filter(OrderApproval.order_id == order['orderNumber'], OrderApproval.product_id != None, User.ecwid_id == order['initiative'].ecwid_id).count() > 0
+	if not_approved is True:
+		order['status'] = OrderStatus.not_approved
+		return True
+
 	if all(approvals.values()) and len(approvals) > 0:
 		order['status'] = OrderStatus.approved
 		return True

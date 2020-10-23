@@ -34,4 +34,12 @@
 			{{ order['orderComments'] }}
 		</div>
 	</div>
+	{% if current_user.role.name == "admin" %}
+		<div class="row">
+			<div class="col">
+				<span class="font-weight-bold">Согласования должностей: </span>
+				{{ order['positions'] }}
+			</div>
+		</div>
+	{% endif %}
 </div>
