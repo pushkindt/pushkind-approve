@@ -107,6 +107,29 @@
 					{{ role_form.role(class_ = 'form-control') }}
 				</div>
 			</div>
+			<div class="row my-1" id="userDataWrapper">
+				{{ role_form.about_user.user_data(class_='form-control d-none', hidden='') }}
+				<div class="col">
+					<p class="font-weight-bold">Площадки</p>
+					{% for location in locations %}
+						<div class="form-check">
+							<label class="form-check-label">
+								<input type="checkbox" class="form-check-input locationCheck" value="{{ location.name }}"><span class="text-capitalize">{{ location.name }}</span>
+							</label>
+						</div>
+					{% endfor %}
+				</div>
+				<div class="col">
+					<p class="font-weight-bold">Категории</p>
+					{% for category in categories %}
+						<div class="form-check">
+							<label class="form-check-label">
+								<input type="checkbox" class="form-check-input categoryCheck" value="{{ category.name }}">{{ category.name }}
+							</label>
+						</div>
+					{% endfor %}
+				</div>
+			</div>
 			<div class="form-group row">
 				<div class="col">
 					{{ role_form.submit2(class_ = 'btn btn-primary') }}
@@ -207,7 +230,11 @@
 <script>
 	$(document).ready(function(){
 		//Scripts
-		{% if current_user.role.name == "admin" %}
+		{% if current_user.role.name in ['validator', 'admin'] %}
+			var userData = $("#about_user-user_data");
+		{% endif %}
+		
+		{% if current_user.role.name == 'admin' %}
 			var users = [
 						{% for user in users %}
 							{{ user|safe }},
@@ -223,14 +250,23 @@
 						$("#about_user-full_name").val(user["name"]);
 						$("#role").val(user["role_id"]);
 						$("#removeUserButton").attr('href','/remove/'+user_id);
+						if (user["role"] == "validator" ){
+							$("#userDataWrapper").show();
+							MakeUserDataCheckboxes(user["data"]);
+							userData.val(JSON.stringify(user["data"]));
+						}
+						else{
+							$("#userDataWrapper").hide();
+							userData.val('');
+						}
 					}
 				});
 			}
 			
 			$("#user_id").change(UserFieldsSettings);
 			UserFieldsSettings()
-		{% elif current_user.role.name == "validator" %}
-			var userData = $("#about_user-user_data");
+		{% endif %}
+		{% if current_user.role.name in ['validator', 'admin'] %}	
 			function MakeUserData(){
 				var locations = [];
 				var categories = [];
@@ -242,10 +278,10 @@
 				});
 				var jObj = {locations:locations, categories:categories};
 				userData.val(JSON.stringify(jObj));
-				console.log(userData.val());
 			}
-			{% if current_user.data %}
-				var jObj = {{ current_user.data|tojson|safe }};
+			
+			function MakeUserDataCheckboxes(jObj){
+				$(".locationCheck,.categoryCheck").prop("checked", false);
 				jObj["locations"].forEach(function(loc){
 					var selector = ".locationCheck[value='"+loc+"']";
 					$(selector).prop("checked", true);
@@ -254,8 +290,14 @@
 					var selector = ".categoryCheck[value='"+cat+"']";
 					$(selector).prop("checked", true);
 				});
-			{% endif %}
+			}
 			$('.locationCheck, .categoryCheck').on('change', MakeUserData);
+		{% endif %}
+		{% if current_user.role.name == "validator" %}
+			{% if current_user.data %}
+				var jObj = {{ current_user.data|tojson|safe }};
+				MakeUserDataCheckboxes(jObj);
+			{% endif %}
 		{% endif %}
 	});
 </script>

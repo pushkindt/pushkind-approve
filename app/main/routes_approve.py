@@ -19,7 +19,7 @@ Consts
 ################################################################################
 '''
 _DISALLOWED_ORDERS_ITEM_FIELDS = ['productId', 'id', 'categoryId']
-_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'privateAdminNotes', 'externalFulfillment', 'createDate', 'externalOrderId', 'initiative', 'updateDate', 'reviewers', 'events']
+_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'externalFulfillment', 'createDate', 'initiative', 'updateDate', 'reviewers', 'events', 'status']
 
 '''
 ################################################################################
@@ -42,14 +42,6 @@ def GetOrder(order_id):
 		order = None
 	return order
 	
-def FilterForbiddenOrderFields(order):
-	for key in _DISALLOWED_ORDERS_FIELDS:
-		order.pop(key, None)
-	for product in order['items']:
-		for key in _DISALLOWED_ORDERS_ITEM_FIELDS:
-			product.pop(key, None)
-	return order
-
 @bp.route('/order/<int:order_id>')
 @login_required
 @role_forbidden([UserRoles.default])
@@ -58,7 +50,7 @@ def ShowOrder(order_id):
 	order = GetOrder(order_id)
 	if order is None:
 		return redirect(url_for('main.ShowIndex'))
-
+	
 	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
 	vendors = {str(vendor.store_id):vendor.store_name for vendor in vendors}
 	
@@ -248,7 +240,10 @@ def SaveQuantity(order_id):
 				db.session.commit()
 				return redirect(url_for('main.ShowIndex'))
 			else:
-				order = FilterForbiddenOrderFields(order)
+			
+				for key in _DISALLOWED_ORDERS_FIELDS:
+					order.pop(key, None)
+						
 				response = current_user.hub.UpdateStoreOrder(order_id, order)
 				event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.quantity, data=message, timestamp=datetime.now(tz = timezone.utc))
 				db.session.add(event)
@@ -271,7 +266,13 @@ def ProcessHubOrder(order_id):
 	order = GetOrder(order_id)
 	if order is None:
 		return redirect(url_for('main.ShowIndex'))
-	order = FilterForbiddenOrderFields(order)
+		
+	for key in _DISALLOWED_ORDERS_FIELDS:
+		order.pop(key, None)
+	for product in order['items']:
+		for key in _DISALLOWED_ORDERS_ITEM_FIELDS:
+			product.pop(key, None)
+
 	stores = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
 	got_orders = {}
 	for store in stores:

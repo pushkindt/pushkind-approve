@@ -98,10 +98,6 @@ def PrepareOrder(order):
 		order['updateDate'] = datetime.strptime(order['updateDate'], DATE_TIME_FORMAT)
 	except (ValueError, KeyError, TypeError):
 		order['createDate'] = datetime.now()
-	try:
-		order['privateAdminNotes'] = datetime.strptime(order['privateAdminNotes'], DATE_TIME_FORMAT)
-	except (ValueError, KeyError, TypeError):
-		order['privateAdminNotes'] = datetime.now()
 	if len(order['orderComments']) > 50:
 		order['orderComments'] = order['orderComments'][:50] + '...'
 	approvers = User.query.filter(User.role == UserRoles.approver, User.ecwid_id == order['initiative'].ecwid_id).all()
@@ -109,36 +105,26 @@ def PrepareOrder(order):
 	reviewers = {approver: GetProductApproval(order['orderNumber'], approver) for approver in approvers}
 	for validator in validators:
 		if not isinstance(validator.data,dict):
-			reviewers[validator] = GetProductApproval(order['orderNumber'], validator)
 			continue
 		try:
 			locations = [loc.lower() for loc in validator.data['locations']]
 			if len(locations) == 0:
 				raise KeyError
 		except (TypeError,KeyError):
-			locations = None
+			continue
 		try:
 			categories = [cat.lower() for cat in validator.data['categories']]
 			if len(categories) == 0:
 				raise KeyError
 		except (TypeError,KeyError):
-			categories = None
-		if locations is None and categories is None:
-			reviewers[validator] = GetProductApproval(order['orderNumber'], validator)
 			continue
-		if categories is not None:
-			caches = CacheCategories.query.filter(CacheCategories.ecwid_id == order['initiative'].ecwid_id, or_(*[CacheCategories.name.ilike(cat) for cat in categories])).all()
-			categories = set([cat_id for cache in caches for cat_id in cache.children])
-			product_cats = set([product.get('categoryId', None) for product in order['items']])
-			check_categories = len(categories.intersection(product_cats)) > 0
-		else:
-			check_categories = True
-		if locations is not None:
-			check_locations = order['paymentMethod'].lower() in locations
-		else:
-			check_locations = True
-		
-		if	check_locations == True and check_categories == True:
+			
+		caches = CacheCategories.query.filter(CacheCategories.ecwid_id == order['initiative'].ecwid_id, or_(*[CacheCategories.name.ilike(cat) for cat in categories])).all()
+		categories = set([cat_id for cache in caches for cat_id in cache.children])
+		product_cats = set([product.get('categoryId', None) for product in order['items']])
+		check_categories = len(categories.intersection(product_cats)) > 0
+		check_locations = order['paymentMethod'].lower() in locations
+		if	check_locations is True and check_categories is True:
 			reviewers[validator] = GetProductApproval(order['orderNumber'], validator)
 	order['reviewers'] = reviewers
 	order['events'] = EventLog.query.join(User).filter(EventLog.order_id == order['orderNumber'], User.ecwid_id == order['initiative'].ecwid_id).order_by(EventLog.timestamp.desc()).all()
@@ -153,7 +139,7 @@ def PrepareOrder(order):
 			position = reviewer.position.lower()
 			approvals[position] = approvals.get(position, False) or any(status)
 			
-	if all(approvals.values()):
+	if all(approvals.values()) and len(approvals) > 0:
 		order['status'] = OrderStatus.approved
 		return True
 	if len(order['events']) > 0:

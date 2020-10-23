@@ -17,6 +17,20 @@ Settings page
 ################################################################################
 '''
 
+def ValidateUserData(userDataStr):
+	try:
+		result = json.loads(userDataStr)
+		if not all(k in result.keys() for k in ['locations', 'categories']):
+			raise JSONDecodeError
+		for key in result.keys():
+			if key not in ['locations', 'categories']:
+				result.pop(key)
+			else:
+				result[key] = list(set(result[key]))
+	except (JSONDecodeError, TypeError):
+		result = {'locations':[], 'categories':[]}
+	return result
+
 @bp.route('/settings/', methods=['GET', 'POST'])
 @login_required
 @role_forbidden([UserRoles.default])
@@ -50,6 +64,8 @@ def ShowSettings():
 			if user is not None:
 				user.ecwid_id = current_user.ecwid_id
 				user.role = UserRoles(role_form.role.data)
+				if user.role == UserRoles.validator and role_form.about_user.user_data.data is not None:
+					user.data = ValidateUserData(role_form.about_user.user_data.data)
 				if role_form.about_user.phone.data is not None:
 					user.phone = role_form.about_user.phone.data.strip()
 				else:
@@ -63,7 +79,7 @@ def ShowSettings():
 				flash('Данные успешно сохранены.')
 			else:
 				flash('Пользователь не найден.')
-		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users, UserRoles=UserRoles)
+		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users, locations=locations, categories=categories)
 	else:
 		user_form = UserSettingsForm()
 		if user_form.validate_on_submit():
@@ -76,16 +92,8 @@ def ShowSettings():
 			else:
 				current_user.position = ''
 			current_user.name = user_form.about_user.full_name.data.strip()
-			if user_form.about_user.user_data.data is not None:
-				try:
-					current_user.data = json.loads(user_form.about_user.user_data.data)
-					for key in current_user.data.keys():
-						if key not in ['locations', 'categories']:
-							current_user.data.pop(key)
-						else:
-							current_user.data[key] = list(set(current_user.data[key]))
-				except (JSONDecodeError, TypeError):
-					current_user.data = None
+			if current_user.role == UserRoles.validator and user_form.about_user.user_data.data is not None:
+				current_user.data = ValidateUserData(user_form.about_user.user_data.data)
 			db.session.commit()
 			flash('Данные успешно сохранены.')
 		return render_template('settings.html', user_form=user_form, locations=locations, categories=categories)
