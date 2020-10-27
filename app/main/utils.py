@@ -100,20 +100,20 @@ def PrepareOrder(order):
 		order['createDate'] = datetime.now()
 	if len(order['orderComments']) > 50:
 		order['orderComments'] = order['orderComments'][:50] + '...'
-	approvers = User.query.filter(User.role == UserRoles.approver, User.ecwid_id == order['initiative'].ecwid_id).all()
-	validators = User.query.filter(User.role == UserRoles.validator, User.ecwid_id == order['initiative'].ecwid_id).all()
-	reviewers = {approver: GetProductApproval(order['orderNumber'], approver) for approver in approvers}
-	for validator in validators:
-		if not isinstance(validator.data,dict):
+		
+	users = User.query.filter(or_(User.role == UserRoles.approver,User.role == UserRoles.validator), User.ecwid_id == order['initiative'].ecwid_id).all()
+	reviewers = {}
+	for user in users:
+		if not isinstance(user.data,dict):
 			continue
 		try:
-			locations = [loc.lower() for loc in validator.data['locations']]
+			locations = [loc.lower() for loc in user.data['locations']]
 			if len(locations) == 0:
 				raise KeyError
 		except (TypeError,KeyError):
 			continue
 		try:
-			categories = [cat.lower() for cat in validator.data['categories']]
+			categories = [cat.lower() for cat in user.data['categories']]
 			if len(categories) == 0:
 				raise KeyError
 		except (TypeError,KeyError):
@@ -125,7 +125,8 @@ def PrepareOrder(order):
 		check_categories = len(categories.intersection(product_cats)) > 0
 		check_locations = order['paymentMethod'].lower() in locations
 		if	check_locations is True and check_categories is True:
-			reviewers[validator] = GetProductApproval(order['orderNumber'], validator)
+			reviewers[user] = GetProductApproval(order['orderNumber'], user)
+			
 	order['reviewers'] = reviewers
 	order['events'] = EventLog.query.join(User).filter(EventLog.order_id == order['orderNumber'], User.ecwid_id == order['initiative'].ecwid_id).order_by(EventLog.timestamp.desc()).all()
 	

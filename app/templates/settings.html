@@ -189,7 +189,7 @@
 					{{ user_form.about_user.position(class_ = 'form-control', value = current_user.position) }}
 				</div>
 			</div>
-			{% if current_user.role.name == 'validator' %}
+			{% if current_user.role.name in ['validator', 'approver'] %}
 				<div class="row">
 					{{ user_form.about_user.user_data(class_='form-control d-none', hidden='') }}
 					<div class="col">
@@ -230,7 +230,7 @@
 <script>
 	$(document).ready(function(){
 		//Scripts
-		{% if current_user.role.name in ['validator', 'admin'] %}
+		{% if current_user.role.name in ['validator', 'admin', 'approver'] %}
 			var userData = $("#about_user-user_data");
 		{% endif %}
 		
@@ -250,7 +250,7 @@
 						$("#about_user-full_name").val(user["name"]);
 						$("#role").val(user["role_id"]);
 						$("#removeUserButton").attr('href','/remove/'+user_id);
-						if (user["role"] == "validator" ){
+						if (user["role"] == "validator" || user["role"] == "approver"){
 							$("#userDataWrapper").show();
 							MakeUserDataCheckboxes(user["data"]);
 							userData.val(JSON.stringify(user["data"]));
@@ -258,15 +258,21 @@
 						else{
 							$("#userDataWrapper").hide();
 							userData.val('');
+							userData.removeAttr('value');
 						}
 					}
 				});
 			}
-			
 			$("#user_id").change(UserFieldsSettings);
+			$("#role").change(function(){
+				userData.val('');
+				userData.removeAttr('value');
+				$(".locationCheck,.categoryCheck").prop("checked", false);
+				$("#userDataWrapper").hide();
+			});
 			UserFieldsSettings()
 		{% endif %}
-		{% if current_user.role.name in ['validator', 'admin'] %}	
+		{% if current_user.role.name in ['validator', 'admin', 'approver'] %}	
 			function MakeUserData(){
 				var locations = [];
 				var categories = [];
@@ -293,7 +299,7 @@
 			}
 			$('.locationCheck, .categoryCheck').on('change', MakeUserData);
 		{% endif %}
-		{% if current_user.role.name == "validator" %}
+		{% if current_user.role.name in ['validator', 'approver'] %}
 			{% if current_user.data %}
 				var jObj = {{ current_user.data|tojson|safe }};
 				MakeUserDataCheckboxes(jObj);

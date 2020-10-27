@@ -24,11 +24,11 @@ class UserSettings(Form):
 	full_name  = StringField('Имя', [DataRequired(message = 'Имя - обязательное поле')])
 	phone = StringField('Телефон')
 	user_data = StringField('Параметры')
-	position = StringField('Должность')
+	position = StringField('Роль')
 
 class UserRolesForm(FlaskForm):
 	user_id = SelectField('Идентификатор пользователя',[DataRequired(message = 'Некорректный идентификатор пользователя')], coerce = int)
-	role = SelectField('Роль',[InputRequired(message = 'Некорректная роль пользователя')], coerce = int,
+	role = SelectField('Права доступа',[InputRequired(message = 'Некорректные права доступа пользователя')], coerce = int,
 						choices = [(int(role), str(role)) for role in UserRoles])
 	about_user = FormField(UserSettings, [DataRequired()])
 	submit2 = SubmitField('Сохранить')

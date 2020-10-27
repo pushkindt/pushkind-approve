@@ -64,8 +64,10 @@ def ShowSettings():
 			if user is not None:
 				user.ecwid_id = current_user.ecwid_id
 				user.role = UserRoles(role_form.role.data)
-				if user.role == UserRoles.validator and role_form.about_user.user_data.data is not None:
+				if user.role in [UserRoles.validator,UserRoles.approver] and role_form.about_user.user_data.data is not None:
 					user.data = ValidateUserData(role_form.about_user.user_data.data)
+				else:
+					user.data = None
 				if role_form.about_user.phone.data is not None:
 					user.phone = role_form.about_user.phone.data.strip()
 				else:
@@ -92,7 +94,7 @@ def ShowSettings():
 			else:
 				current_user.position = ''
 			current_user.name = user_form.about_user.full_name.data.strip()
-			if current_user.role == UserRoles.validator and user_form.about_user.user_data.data is not None:
+			if current_user.role in [UserRoles.validator,UserRoles.approver] and user_form.about_user.user_data.data is not None:
 				current_user.data = ValidateUserData(user_form.about_user.user_data.data)
 			db.session.commit()
 			flash('Данные успешно сохранены.')

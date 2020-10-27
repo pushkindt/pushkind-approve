@@ -62,7 +62,7 @@ def ShowIndex():
 		if not PrepareOrder(order):
 			continue
 		reviewers = [rev.id for rev in order['reviewers']]
-		if current_user.role == UserRoles.validator:
+		if current_user.role in [UserRoles.validator, UserRoles.approver]:
 			if current_user.id not in reviewers:
 				continue
 		if filter_approval and order['status'].name != filter_approval:

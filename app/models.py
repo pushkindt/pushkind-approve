@@ -168,5 +168,5 @@ class Location(db.Model):
 	id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	name = db.Column(db.String(128), nullable=False, index=True)
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), index=True)
-	hub = db.relationship('Ecwid')
+	hub = db.relationship('Ecwid')	
 	
