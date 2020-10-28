@@ -114,7 +114,8 @@ def SaveApproval(order_id):
 					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data='согласованная ранее заявка', timestamp = datetime.now(tz = timezone.utc))
 					for product in order['items']:
 						product_approval = OrderApproval(order_id = order_id, product_id=product['id'], user_id = current_user.id)
-						db.session.add(product_approval)						
+						db.session.add(product_approval)
+					SendEmailNotification('disapproved', order)
 			else:
 				product_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == form.product_id.data).first()
 				if product_approval is not None:
