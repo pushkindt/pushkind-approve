@@ -76,6 +76,10 @@ def ShowSettings():
 					user.position = role_form.about_user.position.data.strip()
 				else:
 					user.position = ''
+				user.email_new = role_form.about_user.email_new.data
+				user.email_modified = role_form.about_user.email_modified.data
+				user.email_disapproved = role_form.about_user.email_disapproved.data
+				user.email_approved = role_form.about_user.email_approved.data
 				user.name = role_form.about_user.full_name.data.strip()
 				db.session.commit()
 				flash('Данные успешно сохранены.')
@@ -93,6 +97,10 @@ def ShowSettings():
 				current_user.position = user_form.about_user.position.data.strip()
 			else:
 				current_user.position = ''
+			current_user.email_new = user_form.about_user.email_new.data
+			current_user.email_modified = user_form.about_user.email_modified.data
+			current_user.email_disapproved = user_form.about_user.email_disapproved.data
+			current_user.email_approved = user_form.about_user.email_approved.data
 			current_user.name = user_form.about_user.full_name.data.strip()
 			if current_user.role in [UserRoles.validator,UserRoles.approver] and user_form.about_user.user_data.data is not None:
 				current_user.data = ValidateUserData(user_form.about_user.user_data.data)

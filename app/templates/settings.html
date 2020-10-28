@@ -107,6 +107,27 @@
 					{{ role_form.role(class_ = 'form-control') }}
 				</div>
 			</div>
+			<div class="form-group row">
+				<div class="col-md-2">Оповещения</div>
+				<div class="col-md-10">
+					<div class="form-check form-check-inline">
+						{{ role_form.about_user.email_new(class_="form-check-input") }}
+						{{ role_form.about_user.email_new.label(class_="form-check-label") }}
+					</div>
+					<div class="form-check form-check-inline">
+						{{ role_form.about_user.email_modified(class_="form-check-input") }}
+						{{ role_form.about_user.email_modified.label(class_="form-check-label") }}
+					</div>
+					<div class="form-check form-check-inline">
+						{{ role_form.about_user.email_disapproved(class_="form-check-input") }}
+						{{ role_form.about_user.email_disapproved.label(class_="form-check-label") }}
+					</div>
+					<div class="form-check form-check-inline">
+						{{ role_form.about_user.email_approved(class_="form-check-input") }}
+						{{ role_form.about_user.email_approved.label(class_="form-check-label") }}
+					</div>
+				</div>
+			</div>
 			<div class="row my-1" id="userDataWrapper">
 				{{ role_form.about_user.user_data(class_='form-control d-none', hidden='') }}
 				<div class="col">
@@ -189,6 +210,27 @@
 					{{ user_form.about_user.position(class_ = 'form-control', value = current_user.position) }}
 				</div>
 			</div>
+			<div class="form-group row">
+				<div class="col-md-2">Оповещения</div>
+				<div class="col-md-10">
+					<div class="form-check form-check-inline">
+						{{ user_form.about_user.email_new(class_="form-check-input", checked=current_user.email_new) }}
+						{{ user_form.about_user.email_new.label(class_="form-check-label") }}
+					</div>
+					<div class="form-check form-check-inline">
+						{{ user_form.about_user.email_modified(class_="form-check-input", checked=current_user.email_modified) }}
+						{{ user_form.about_user.email_modified.label(class_="form-check-label") }}
+					</div>
+					<div class="form-check form-check-inline">
+						{{ user_form.about_user.email_disapproved(class_="form-check-input", checked=current_user.email_disapproved) }}
+						{{ user_form.about_user.email_disapproved.label(class_="form-check-label") }}
+					</div>
+					<div class="form-check form-check-inline">
+						{{ user_form.about_user.email_approved(class_="form-check-input", checked=current_user.email_approved) }}
+						{{ user_form.about_user.email_approved.label(class_="form-check-label") }}
+					</div>
+				</div>
+			</div>
 			{% if current_user.role.name in ['validator', 'approver'] %}
 				<div class="row">
 					{{ user_form.about_user.user_data(class_='form-control d-none', hidden='') }}
@@ -248,12 +290,16 @@
 						$("#about_user-phone").val(user["phone"]);
 						$("#about_user-position").val(user["position"]);
 						$("#about_user-full_name").val(user["name"]);
+						$("#about_user-email_new").prop("checked", user["email_new"]);
+						$("#about_user-email_modified").prop("checked", user["email_modified"]);
+						$("#about_user-email_disapproved").prop("checked", user["email_disapproved"]);
+						$("#about_user-email_approved").prop("checked", user["email_approved"]);
 						$("#role").val(user["role_id"]);
 						$("#removeUserButton").attr('href','/remove/'+user_id);
 						if (user["role"] == "validator" || user["role"] == "approver"){
 							$("#userDataWrapper").show();
 							MakeUserDataCheckboxes(user["data"]);
-							userData.val(JSON.stringify(user["data"]));
+							MakeUserData();
 						}
 						else{
 							$("#userDataWrapper").hide();
@@ -303,6 +349,7 @@
 			{% if current_user.data %}
 				var jObj = {{ current_user.data|tojson|safe }};
 				MakeUserDataCheckboxes(jObj);
+				MakeUserData();
 			{% endif %}
 		{% endif %}
 	});

@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
 from json.decoder import JSONDecodeError
+from sqlalchemy.sql import expression
 
 
 class EventType(enum.IntEnum):
@@ -92,6 +93,10 @@ class User(UserMixin, db.Model):
 	data = db.Column(JsonType())
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=True, index=True)
 	hub = db.relationship('Ecwid')
+	email_new = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+	email_modified = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+	email_disapproved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+	email_approved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
 	
 	def __hash__(self):
 		return self.id
@@ -113,7 +118,11 @@ class User(UserMixin, db.Model):
 		return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(digest, size)
 		
 	def to_dict(self):
-		data = {'id':self.id, 'email':self.email, 'phone':self.phone, 'data':self.data, 'role': self.role.name,'role_id':int(self.role), 'name':self.name, 'ecwid_id':self.ecwid_id, 'position':self.position}
+		data = {'id':self.id, 'email':self.email, 'phone':self.phone,\
+				'data':self.data, 'role': self.role.name,'role_id':int(self.role),\
+				'name':self.name, 'ecwid_id':self.ecwid_id, 'position':self.position,\
+				'email_new':self.email_new, 'email_modified':self.email_modified,\
+				'email_disapproved':self.email_disapproved, 'email_approved':self.email_approved}
 		return data
 		
 	def GetPasswordResetToken(self, expires_in=600):

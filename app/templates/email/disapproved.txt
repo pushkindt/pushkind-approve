@@ -1,0 +1,6 @@
+Заявка #{{ order['vendorOrderNumber'] }} была отклонена
+
+Нажмите на ссылку для перехода в Личный Кабинет
+{{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}
+
+Это автоматическое уведомление, не отвечайте на него.

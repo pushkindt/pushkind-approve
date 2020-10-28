@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FormField, Form, PasswordField
+from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FormField, Form, PasswordField, BooleanField
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired, Length, ValidationError, Email, InputRequired, Optional
 from app.models import UserRoles
@@ -25,6 +25,10 @@ class UserSettings(Form):
 	phone = StringField('Телефон')
 	user_data = StringField('Параметры')
 	position = StringField('Роль')
+	email_new = BooleanField('Новые заявки')
+	email_modified = BooleanField('Заявка изменена')
+	email_disapproved = BooleanField('Заявка отклонена')
+	email_approved = BooleanField('Заяка согласована')
 
 class UserRolesForm(FlaskForm):
 	user_id = SelectField('Идентификатор пользователя',[DataRequired(message = 'Некорректный идентификатор пользователя')], coerce = int)

@@ -6,8 +6,7 @@ from flask import render_template, redirect, url_for, flash, jsonify, current_ap
 from app.main.forms import OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm
 from datetime import datetime, timezone
 from app.ecwid import EcwidAPIException
-from app.email import SendEmail
-from app.main.utils import DATE_TIME_FORMAT, role_required, ecwid_required, PrepareOrder, GetProductApproval, role_required_ajax, ecwid_required_ajax, role_forbidden, role_forbidden_ajax
+from app.main.utils import DATE_TIME_FORMAT, role_required, ecwid_required, PrepareOrder, GetProductApproval, role_required_ajax, ecwid_required_ajax, role_forbidden, role_forbidden_ajax, SendEmailNotification
 
 from openpyxl import load_workbook
 from copy import copy
@@ -108,19 +107,9 @@ def SaveApproval(order_id):
 					order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
 					db.session.add(order_approval)
 					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.approved, data='заявка', timestamp = datetime.now(tz = timezone.utc))
-					SendEmail('Согласована заявка #{}'.format(order['vendorOrderNumber']),
-							   sender=current_app.config['MAIL_USERNAME'],
-							   recipients=[order['initiative'].email],
-							   text_body=render_template('email/approval.txt', order=order, approval=True),
-							   html_body=render_template('email/approval.html', order=order, approval=True))
 					if PrepareOrder(order):
 						if order['status'] == OrderStatus.approved:
-							emails = [rev.email for rev in order['reviewers'] if rev.role == UserRoles.approver]
-							SendEmail('Согласована заявка #{}'.format(order['vendorOrderNumber']),
-									   sender=current_app.config['MAIL_USERNAME'],
-									   recipients=emails,
-									   text_body=render_template('email/approved.txt', order=order),
-									   html_body=render_template('email/approved.html', order=order))
+							SendEmailNotification('approved', order)
 				else:
 					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data='согласованная ранее заявка', timestamp = datetime.now(tz = timezone.utc))
 					for product in order['items']:
@@ -139,11 +128,7 @@ def SaveApproval(order_id):
 					db.session.add(product_approval)
 					message = 'товар <span class="product-sku text-primary">{}</span>'.format(product_approval.product_sku)
 					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp = datetime.now(tz = timezone.utc))
-					SendEmail('Отклонена заявка #{}'.format(order['vendorOrderNumber']),
-							   sender=current_app.config['MAIL_USERNAME'],
-							   recipients=[order['initiative'].email],
-							   text_body=render_template('email/approval.txt', order=order, approval=False),
-							   html_body=render_template('email/approval.html', order=order, approval=False))
+					SendEmailNotification('disapproved', order)
 			db.session.add(event)
 			db.session.commit()
 		except EcwidAPIException as e:
@@ -328,12 +313,7 @@ def NotifyApprovers(order_id):
 	order = GetOrder(order_id)
 	if order is None:
 		return redirect(url_for('main.ShowIndex'))
-	emails = [reviewer.email for reviewer in order['reviewers']]
-	SendEmail('Исправлена заявка #{} ({})'.format(order['vendorOrderNumber'], order['paymentMethod']),
-			   sender=current_app.config['MAIL_USERNAME'],
-			   recipients=emails,
-			   text_body=render_template('email/notify.txt', order=order),
-			   html_body=render_template('email/notify.html', order=order))
+	SendEmailNotification('modified', order)
 	flash('Уведомление успешно выслано')
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
 	

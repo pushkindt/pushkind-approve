@@ -6,8 +6,7 @@ from app.api.errors import BadRequest, ErrorResponse
 from datetime import datetime, timedelta, timezone
 from app.models import User, UserRoles, ApiData, CacheCategories
 from app.ecwid import EcwidAPIException
-from app.email import SendEmail
-from app.main.utils import PrepareOrder
+from app.main.utils import PrepareOrder, SendEmailNotification
 
 
 @bp.route('/orders/', methods=['GET'])
@@ -33,11 +32,5 @@ def NotifyNewOrders():
 	for order in orders:
 		if not PrepareOrder(order):
 			continue
-		emails = [reviewer.email for reviewer in order['reviewers']]
-		SendEmail('Новая заявка #{}'.format(order['vendorOrderNumber']),
-				   sender=current_app.config['MAIL_USERNAME'],
-				   recipients=emails,
-				   text_body=render_template('email/new.txt', order=order),
-				   html_body=render_template('email/new.html', order=order),
-				   sync=True)
+		SendEmailNotification('new', order)
 	return jsonify({'result':'success'})

@@ -4,6 +4,8 @@ from flask import render_template, flash, jsonify
 from functools import wraps
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import or_
+from app.email import SendEmail
+from flask import current_app
 
 '''
 ################################################################################
@@ -153,3 +155,15 @@ def PrepareOrder(order):
 		return True
 	order['status'] = OrderStatus.new
 	return True
+	
+def SendEmailNotification(type, order):
+	recipients = [reviewer.email for reviewer in order['reviewers'] if getattr(reviewer, 'email_{}'.format(type), False) == True]
+	if getattr(order['initiative'], 'email_{}'.format(type), False) == True:
+		recipients.append(order['initiative'].email)
+	current_app.logger.info('"{}" email has been sent to {}'.format(type, recipients))
+	if len(recipients) > 0:
+		SendEmail('Уведомление по заявке #{}'.format(order['vendorOrderNumber']),
+				   sender=current_app.config['MAIL_USERNAME'],
+				   recipients=recipients,
+				   text_body=render_template('email/{}.txt'.format(type), order=order),
+				   html_body=render_template('email/{}.html'.format(type), order=order))
