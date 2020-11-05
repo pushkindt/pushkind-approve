@@ -128,7 +128,14 @@
 				</div>
 				<div class="row">
 					<div class="col">
-						{{ order['paymentMethod'] }}
+					{% if current_user.role.name == 'initiative' %}
+					<form action="{{ url_for('main.SaveLocation', order_id = order['orderNumber']) }}" id="locationForm" method="POST">
+						{{location_form.csrf_token}}
+						{{location_form.location_name() }}
+					</form>
+					{% else %}
+						{{ order['refererId'] }}
+					{% endif %}
 					</div>
 				</div>
 				<div class="row">
@@ -324,6 +331,9 @@
 				}
 				$(this).removeClass ('form-control');
 				$(this).addClass('form-control-plaintext');
+			});
+			$('#location_name').change(function(){
+				$(this).closest("form").submit();
 			});
 		{% endif %}
 	});

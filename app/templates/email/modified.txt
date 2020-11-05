@@ -1,4 +1,4 @@
-Инициатор {{ current_user.name }} ({{ order['paymentMethod'] }}) уведомляет, что заявка #{{ order['vendorOrderNumber'] }} исправлена и ожидает согласования.
+Инициатор {{ current_user.name }} ({{ order['refererId'] }}) уведомляет, что заявка #{{ order['vendorOrderNumber'] }} исправлена и ожидает согласования.
 
 Нажмите на ссылку для перехода в Личный Кабинет:
 {{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}

@@ -4,7 +4,18 @@ from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired, Length, ValidationError, Email, InputRequired, Optional
 from app.models import UserRoles
 from flask_login import current_user
+from app.models import Location
 
+
+class AddRemoveLocationForm(FlaskForm):
+	location_name = StringField('Площадка', validators = [DataRequired(message='Название площадки - обязательное поле.')])
+	submit1 = SubmitField('Добавить')
+	submit2 = SubmitField('Удалить')
+	
+class ChangeLocationForm(FlaskForm):
+	location_name = SelectField('Площадка', validators = [DataRequired(message='Название площадки - обязательное поле.')],
+						coerce=int)
+	submit = SubmitField('Сохранить')
 
 class AddStoreForm(FlaskForm):
 	name = StringField('Поставщик', validators = [DataRequired(message='Название поставщика - обязательное поле.')])

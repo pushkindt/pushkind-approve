@@ -20,12 +20,12 @@ class EventType(enum.IntEnum):
 	comment = 0
 	approved = 1
 	disapproved = 2
-	quantity = 3
+	modified = 3
 	duplicated = 4
 	vendor = 5
 
 	def __str__(self):
-		pretty = ['оставлен комментарий', 'согласовано', 'отклонено', 'количество изменено', 'заявка дублирована', 'отправлена поставщикам']
+		pretty = ['оставлен комментарий', 'согласовано', 'отклонено', 'изменено', 'заявка дублирована', 'отправлена поставщикам']
 		return pretty[self.value]
 	def color(self):
 		colors = ['warning', 'success', 'danger', 'primary', 'primary', 'info']

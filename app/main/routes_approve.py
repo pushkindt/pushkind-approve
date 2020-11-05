@@ -1,9 +1,9 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderApproval, EventLog, EventType, OrderStatus
+from app.models import User, UserRoles, Ecwid, OrderApproval, EventLog, EventType, OrderStatus, Location
 from flask import render_template, redirect, url_for, flash, jsonify, current_app, Response
-from app.main.forms import OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm
+from app.main.forms import OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm, ChangeLocationForm
 from datetime import datetime, timezone
 from app.ecwid import EcwidAPIException
 from app.main.utils import DATE_TIME_FORMAT, role_required, ecwid_required, PrepareOrder, GetProductApproval, role_required_ajax, ecwid_required_ajax, role_forbidden, role_forbidden_ajax, SendEmailNotification
@@ -64,8 +64,20 @@ def ShowOrder(order_id):
 	quantity_form = ChangeQuantityForm()
 	comment_form = OrderCommentsForm()
 	
+	location = Location.query.filter(Location.name.ilike(order['refererId'])).first()
+	locations = Location.query.order_by(Location.name).all()
+	location_form = ChangeLocationForm()
+	location_form.location_name.choices = [(l.id, l.name) for l in locations]
+	if location is None:
+		location_form.location_name.choices.append((0, ''))
+		location_form.location_name.default = 0
+	else:
+		location_form.location_name.default = location.id
+	location_form.process()
+	
 	return render_template('approve.html',
 							order = order,
+							location_form = location_form,
 							comment_form = comment_form,
 							approval_form = approval_form,
 							quantity_form = quantity_form)
@@ -87,6 +99,31 @@ def SaveComment(order_id):
 		else:
 			flash('Комментарий не может быть пустым')
 		db.session.commit()
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
+	
+@bp.route('/location/<int:order_id>', methods=['POST'])
+@login_required
+@role_required([UserRoles.initiative])
+def SaveLocation(order_id):
+	order = GetOrder(order_id)
+	if order is None:
+		return redirect(url_for('main.ShowIndex'))
+	locations = Location.query.order_by(Location.name).all()
+	form = ChangeLocationForm()
+	form.location_name.choices = [(l.id, l.name) for l in locations]
+	if form.validate_on_submit():
+		referer_id = dict(form.location_name.choices).get(form.location_name.data)
+		try:
+			response = current_user.hub.UpdateStoreOrder(order_id, {'refererId':referer_id})
+			message = 'площадка была "{}", стала "{}"'.format(order['refererId'], referer_id)
+			event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.modified, data=message, timestamp = datetime.now(tz = timezone.utc))
+			db.session.add(event)
+			db.session.commit()
+			flash('Площадка успешно изменена.')
+		except EcwidAPIException:
+			flash('Не удалось присвоить данную площадку.')
+	else:
+		flash('Невозможно присвоить данную площадку.')
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
 
 
@@ -115,7 +152,8 @@ def SaveApproval(order_id):
 					for product in order['items']:
 						product_approval = OrderApproval(order_id = order_id, product_id=product['id'], user_id = current_user.id)
 						db.session.add(product_approval)
-					SendEmailNotification('disapproved', order)
+					if order['status'] != OrderStatus.not_approved:
+						SendEmailNotification('disapproved', order)
 			else:
 				product_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == form.product_id.data).first()
 				if product_approval is not None:
@@ -129,7 +167,8 @@ def SaveApproval(order_id):
 					db.session.add(product_approval)
 					message = 'товар <span class="product-sku text-primary">{}</span>'.format(product_approval.product_sku)
 					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp = datetime.now(tz = timezone.utc))
-					SendEmailNotification('disapproved', order)
+					if order['status'] != OrderStatus.not_approved:
+						SendEmailNotification('disapproved', order)
 			db.session.add(event)
 			db.session.commit()
 		except EcwidAPIException as e:
@@ -203,7 +242,7 @@ def SaveQuantity(order_id):
 				if order['total'] < 0:
 					order['total'] = 0
 				new_total = '{:,.2f}'.format(order['total'])
-				message = '<span class="product-sku text-primary">{}</span> было {} стало {}'.format(product['sku'], product['quantity'], form.product_quantity.data)
+				message = '<span class="product-sku text-primary">{}</span> количество было {} стало {}'.format(product['sku'], product['quantity'], form.product_quantity.data)
 				product['quantity'] = form.product_quantity.data
 				index = i
 				break
@@ -231,7 +270,7 @@ def SaveQuantity(order_id):
 					order.pop(key, None)
 						
 				response = current_user.hub.UpdateStoreOrder(order_id, order)
-				event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.quantity, data=message, timestamp=datetime.now(tz = timezone.utc))
+				event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.modified, data=message, timestamp=datetime.now(tz = timezone.utc))
 				db.session.add(event)
 				flash('Количество {} было изменено'.format(product['sku']))
 			db.session.commit()
@@ -362,7 +401,7 @@ def GetExcelReport(order_id):
 			vendor = vendors[product['sku'][:dash]]
 		except (ValueError, KeyError):
 			vendor = ''
-		ws.cell(i, 3).value = order['paymentMethod']
+		ws.cell(i, 3).value = order['refererId']
 		ws.cell(i, 7).value = vendor
 		ws.cell(i, 8).value = product['quantity']
 		c1 = ws.cell(i, 8).coordinate
@@ -372,3 +411,6 @@ def GetExcelReport(order_id):
 		
 	data = save_virtual_workbook(wb)
 	return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=report.xlsx'})
+	
+	
+

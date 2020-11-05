@@ -1,4 +1,4 @@
-Инициатор {{ order['initiative'].name }} ({{ order['paymentMethod'] }}) создал заявку #{{ order['vendorOrderNumber'] }}.
+Инициатор {{ order['initiative'].name }} создал заявку #{{ order['vendorOrderNumber'] }}  для площадки "{{ order['refererId'] or 'ПЛОЩАДКА НЕ ВЫБРАНА!' }}".
 
 Нажмите на ссылку для перехода в Личный Кабинет:
 {{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}

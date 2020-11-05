@@ -53,7 +53,7 @@ int main(int argc, char* argv[]){
 	}
 	
 	check(ProcessCache(ecwid_id) == true, "Cannot process cache.");
-	check(ProcessLocations(ecwid_id) == true, "Cannot process locations.");
+	//check(ProcessLocations(ecwid_id) == true, "Cannot process locations.");
 	
 	result = 0;
 error:

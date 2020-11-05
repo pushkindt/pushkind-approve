@@ -1,14 +1,12 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, OrderStatus, CacheCategories, Location
+from app.models import UserRoles, OrderStatus, Location
 from flask import render_template, flash, request
-from sqlalchemy import distinct, func, or_
 from app.ecwid import EcwidAPIException
-from app.main.utils import DATE_TIME_FORMAT, role_required, ecwid_required, PrepareOrder, role_forbidden
+from app.main.utils import ecwid_required, PrepareOrder, role_forbidden
 from datetime import datetime, timedelta, timezone
-import json
-from json.decoder import JSONDecodeError
+
 
 '''
 ################################################################################
@@ -40,7 +38,13 @@ def ShowIndex():
 		
 	if filter_location is not None:
 		filter_location = filter_location.strip()
-	locations = Location.query.all()
+	if current_user.role not in [UserRoles.approver, UserRoles.validator]:
+		locations = [loc.name for loc in Location.query.order_by(Location.name).all()]
+	else:
+		try:
+			locations = current_user.data['locations']
+		except (TypeError,KeyError):
+			locations = []
 
 	orders = []
 	args = {}
@@ -48,7 +52,7 @@ def ShowIndex():
 		args['createdFrom'] = filter_from
 	if filter_location is not None:
 		filter_location = filter_location.strip()
-		args['paymentMethod'] = filter_location
+		args['refererId'] = filter_location
 	if current_user.role == UserRoles.initiative:
 		args['email'] = current_user.email
 	try:
@@ -76,4 +80,3 @@ def ShowIndex():
 							filter_approval = filter_approval,
 							filter_location = filter_location,
 							OrderStatus = OrderStatus)
-

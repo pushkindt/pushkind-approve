@@ -92,14 +92,18 @@ def PrepareOrder(order):
 	order['initiative'] = User.query.filter(User.email == order['email'], User.role == UserRoles.initiative).first()
 	if order['initiative'] is None:
 		return False
+	if not 'refererId' in order:
+		order['refererId'] = ''
 	try:
-		order['createDate'] = datetime.strptime(order['createDate'], DATE_TIME_FORMAT)
+		if isinstance(order['createDate'], datetime) is False:
+			order['createDate'] = datetime.strptime(order['createDate'], DATE_TIME_FORMAT)
 	except (ValueError, KeyError, TypeError):
-		order['createDate'] = datetime.now()
+		order['createDate'] = datetime.now(tz = timezone.utc)
 	try:
-		order['updateDate'] = datetime.strptime(order['updateDate'], DATE_TIME_FORMAT)
+		if isinstance(order['updateDate'], datetime) is False:
+			order['updateDate'] = datetime.strptime(order['updateDate'], DATE_TIME_FORMAT)
 	except (ValueError, KeyError, TypeError):
-		order['createDate'] = datetime.now()
+		order['updateDate'] = datetime.now(tz = timezone.utc)
 	if len(order['orderComments']) > 50:
 		order['orderComments'] = order['orderComments'][:50] + '...'
 		
@@ -125,7 +129,7 @@ def PrepareOrder(order):
 		categories = set([cat_id for cache in caches for cat_id in cache.children])
 		product_cats = set([product.get('categoryId', None) for product in order['items']])
 		check_categories = len(categories.intersection(product_cats)) > 0
-		check_locations = order['paymentMethod'].lower() in locations
+		check_locations = order['refererId'].lower() in locations
 		if	check_locations is True and check_categories is True:
 			reviewers[user] = GetProductApproval(order['orderNumber'], user)
 			
@@ -160,7 +164,7 @@ def SendEmailNotification(type, order):
 	recipients = [reviewer.email for reviewer in order['reviewers'] if getattr(reviewer, 'email_{}'.format(type), False) == True]
 	if getattr(order['initiative'], 'email_{}'.format(type), False) == True:
 		recipients.append(order['initiative'].email)
-	current_app.logger.info('"{}" email has been sent to {}'.format(type, recipients))
+	current_app.logger.info('"{}" email about order {} has been sent to {}'.format(type, order['vendorOrderNumber'], recipients))
 	if len(recipients) > 0:
 		SendEmail('Уведомление по заявке #{}'.format(order['vendorOrderNumber']),
 				   sender=current_app.config['MAIL_USERNAME'],

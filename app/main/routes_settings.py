@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from app.main import bp
 from app.models import User, UserRoles, Ecwid, OrderApproval, CacheCategories, EventLog, Location
 from flask import render_template, redirect, url_for, flash
-from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm
+from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, AddRemoveLocationForm
 from sqlalchemy import distinct, func, or_
 from app.ecwid import EcwidAPIException
 from sqlalchemy.exc import SQLAlchemyError
@@ -35,7 +35,7 @@ def ValidateUserData(userDataStr):
 @login_required
 @role_forbidden([UserRoles.default])
 def ShowSettings():
-	locations = Location.query.all()
+	locations = Location.query.order_by(Location.name).all()
 	categories = CacheCategories.query.all()
 	if current_user.role == UserRoles.admin:
 		if current_user.hub is None:
@@ -85,7 +85,9 @@ def ShowSettings():
 				flash('Данные успешно сохранены.')
 			else:
 				flash('Пользователь не найден.')
-		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, users = users, locations=locations, categories=categories)
+		location_form = AddRemoveLocationForm()
+		return render_template('settings.html', ecwid_form = ecwid_form, role_form = role_form, location_form = location_form,\
+								users = users, locations=locations, categories=categories)
 	else:
 		user_form = UserSettingsForm()
 		if user_form.validate_on_submit():
@@ -121,4 +123,32 @@ def RemoveUser(user_id):
 	db.session.delete(user)
 	db.session.commit()
 	flash('Пользователь успешно удалён.')
+	return redirect(url_for('main.ShowSettings'))
+	
+@bp.route('/location/', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin])
+def AddRemoveLocation():
+	form = AddRemoveLocationForm()
+	if form.validate_on_submit():
+		name = form.location_name.data.strip()
+		location = Location.query.filter(Location.ecwid_id == current_user.ecwid_id, Location.name.ilike(name)).first()
+		if form.submit1.data:
+			if location:
+				flash('Такая площадка уже существует')
+			else:
+				location = Location(name = name, ecwid_id = current_user.ecwid_id)
+				db.session.add(location)
+				db.session.commit()
+				flash('Площадка {} создана'.format(name))
+		elif form.submit2.data:
+			if location:
+				db.session.delete(location)
+				db.session.commit()
+				flash('Площадка {} удалена'.format(name))
+			else:
+				flash('Такой площадки не существует')
+	else:
+		for error in form.location_name.errors:
+					flash(error)
 	return redirect(url_for('main.ShowSettings'))

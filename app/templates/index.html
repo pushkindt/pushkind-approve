@@ -9,7 +9,15 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container my-2">
+	<div class="row">
+		<div class="col">
+			{% for d in dates %}
+				<a href="{{ url_for('main.ShowIndex', from = dates[d], approval = filter_approval, location = filter_location) }}" class="badge {%if filter_from == dates[d] %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">{{ d }}</a>
+			{% endfor %}
+			<a href="{{ url_for('main.ShowIndex', approval = filter_approval, location = filter_location) }}" class="badge {%if filter_from is none %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">все</a>
+		</div>
+	</div>
 	<div class="row">
 		<div class="col">
 		{% for status in OrderStatus %}
@@ -20,18 +28,10 @@
 	</div>
 	<div class="row">
 		<div class="col">
-			{% for d in dates %}
-				<a href="{{ url_for('main.ShowIndex', from = dates[d], approval = filter_approval, location = filter_location) }}" class="badge badge-dark text-white {%if filter_from == dates[d] %}text-uppercase{%endif%}">{{ d }}</a>
-			{% endfor %}
-			<a href="{{ url_for('main.ShowIndex', approval = filter_approval, location = filter_location) }}" class="badge badge-dark {%if filter_from is none %}text-uppercase{%endif%}">все</a>
-		</div>
-	</div>
-	<div class="row">
-		<div class="col">
 			{% for location in locations %}
-				<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = location.name) }}" class="badge badge-dark text-white {%if filter_location == location.name %}text-uppercase{%endif%}">{{ location.name }}</a>
+				<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = location) }}" class="badge {%if filter_location == location %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">{{ location }}</a>
 			{% endfor %}
-				<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}" class="badge badge-dark {%if filter_location is none %}text-uppercase{%endif%}">все</a>
+				<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}" class="badge {%if filter_location is none %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">все</a>
 		</div>
 	</div>
 </div>
@@ -54,7 +54,10 @@
 			Дата
 		</div>
 		<div class="col overflow-hidden">
-			Инициатор
+			Площадка
+		</div>
+		<div class="col overflow-hidden">
+			Комментарий
 		</div>
 		<div class="col overflow-hidden">
 			Сумма

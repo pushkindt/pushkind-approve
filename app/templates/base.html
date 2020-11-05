@@ -66,6 +66,11 @@
 										<li class="nav-item {% if request.endpoint == 'main.ShowSettings' %} active {% endif %}">
 											<a class="nav-link" href="{{ url_for('main.ShowSettings') }}">Настройки</a>
 										</li>
+										{% if current_user.role.name == "initiative" %}
+											<li class="nav-item {% if request.endpoint == 'main.ShowEcwid' %} active {% endif %}">
+												<a class="nav-link" href="{{ url_for('main.ShowEcwid') }}">Заказать</a>
+											</li>
+										{% endif %}
 									</ul>
 								</div>
 							</nav>

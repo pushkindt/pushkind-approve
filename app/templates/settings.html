@@ -2,7 +2,7 @@
 
 {% block content %}
 {% if current_user.role.name == "admin" %}
-	<div class="container">
+	<div class="container border-bottom">
 		<div class="row">
 			<div class="col text-right">
 				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#ecwidFormCollapse" aria-expanded="false" aria-controls="ecwidFormCollapse">
@@ -57,7 +57,37 @@
 			</form>
 		</div>
 	</div>
-	<div class="container">
+	<div class="container border-bottom">
+		<div class="row">
+			<div class="col text-right">
+				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#locationFormCollapse" aria-expanded="false" aria-controls="locationFormCollapse">
+					Управление площадками
+				</button>
+			</div>
+		</div>
+		<div class="collapse" id="locationFormCollapse">
+			<form method="post" action="{{ url_for('main.AddRemoveLocation') }}">
+				{{ location_form.csrf_token }}
+				<div class="form-group row">
+					<div class="col">
+						{{ location_form.location_name(class_ = 'form-control', list='locationsList', placeholder='Введите название площадки...') }}
+						<datalist id="locationsList">
+						{% for location in locations%}
+							<option>{{ location.name }}</option>
+						{% endfor %}
+						</datalist>
+					</div>
+				</div>
+				<div class="form-group row">
+					<div class="col">
+						{{ location_form.submit1(class_ = 'btn btn-primary') }}
+						{{ location_form.submit2(class_ = 'btn btn-danger') }}
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	<div class="container border-bottom">
 		<div class = "row my-2">
 			<div class="col">	
 				<span class="font-weight-bold">ПОЛЬЗОВАТЕЛИ</span>
@@ -169,7 +199,7 @@
 			</div>
 		</div>
 	</div>
-
+	
 {% else %}
 
 	<div class="container">

@@ -1,4 +1,4 @@
-<div class = "container border-bottom ecwidOrder" id="order{{order['orderNumber']}}">
+<div class = "container border-bottom ecwidOrder my-2" id="order{{order['orderNumber']}}">
 	<div class="row">
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Номер: </span>
@@ -9,12 +9,16 @@
 			{{ moment(order['createDate']).format() }}
 		</div>
 		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Площадка: </span>
+			{{ order['refererId'] }}<br>
 			<span class="d-sm-none font-weight-bold">Инициатор: </span>
-				{{ order['paymentMethod'] }}<br>
-				<sup class="small font-italic font-weight-light">
-					{{ order['initiative'].name }}<br>
-					{{ order['initiative'].email }}
-				</sup>
+			<span class="small font-italic font-weight-light">
+				{{ order['initiative'].name }}
+			</span>
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none font-weight-bold">Комментарий: </span>
+			{{ order['orderComments'] }}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none font-weight-bold">Сумма: </span>
@@ -26,12 +30,6 @@
 			{% if order['externalFulfillment'] is sameas true %}
 				<span class="badge badge-info"><img class="octicon" src="https://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена"></span>
 			{% endif%}
-		</div>
-	</div>
-	<div class="row">
-		<div class="col">
-			<span class="font-weight-bold">Комментарий: </span>
-			{{ order['orderComments'] }}
 		</div>
 	</div>
 	{% if current_user.role.name == "admin" %}
