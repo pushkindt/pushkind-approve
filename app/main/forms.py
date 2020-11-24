@@ -39,7 +39,7 @@ class UserSettings(Form):
 	email_new = BooleanField('Новые заявки')
 	email_modified = BooleanField('Заявка изменена')
 	email_disapproved = BooleanField('Заявка отклонена')
-	email_approved = BooleanField('Заяка согласована')
+	email_approved = BooleanField('Заявка согласована')
 
 class UserRolesForm(FlaskForm):
 	user_id = SelectField('Идентификатор пользователя',[DataRequired(message = 'Некорректный идентификатор пользователя')], coerce = int)

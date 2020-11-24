@@ -69,7 +69,7 @@ def ShowOrder(order_id):
 	location_form = ChangeLocationForm()
 	location_form.location_name.choices = [(l.id, l.name) for l in locations]
 	if location is None:
-		location_form.location_name.choices.append((0, ''))
+		location_form.location_name.choices.append((0, 'Выберите площадку...'))
 		location_form.location_name.default = 0
 	else:
 		location_form.location_name.default = location.id

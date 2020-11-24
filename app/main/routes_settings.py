@@ -44,7 +44,7 @@ def ShowSettings():
 		ecwid_form = EcwidSettingsForm()
 		role_form = UserRolesForm()
 		users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
-		role_form.user_id.choices = [(u.id, '{} ({})'.format(u.email, str(u.role))) for u in users if u.id != current_user.id]
+		role_form.user_id.choices = [(u.id, '{} ({}, "{}")'.format(u.email, str(u.role), u.position)) for u in users if u.id != current_user.id]
 		if ecwid_form.submit1.data and ecwid_form.validate_on_submit():
 			current_user.hub.partners_key = ecwid_form.partners_key.data
 			current_user.hub.client_id = ecwid_form.client_id.data

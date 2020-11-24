@@ -107,7 +107,7 @@
 			<div class="col">
 				<div class="row">
 					<div class="col">
-						Кем согласована:
+						<span class="font-weight-bold">Кем согласована: </span>
 						{% for reviewer,status in order['reviewers'].items() %}
 							{% if status|length > 0 %}
 								{% if status|select|list|first %}
@@ -119,27 +119,46 @@
 				</div>
 				<div class="row">
 					<div class="col">
+						<span class="font-weight-bold">Ждём согласования: </span>
+						{% for position,status in order['positions'].items() %}
+							{% if not status %}
+								<span class="font-italic">"{{ position }}"</span>,
+							{% endif %}
+						{% endfor %}
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<span class="font-weight-bold">Номер: </span>
 						#{{ order['vendorOrderNumber'] }}
 						{% if current_user.role.name == 'initiative' %}
 							<a class="badge badge-danger" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">&times;</a>
 						{% endif %}
-						от {{ moment(order['createDate']).format() }}
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<span class="font-weight-bold">Дата: </span>
+						{{ moment(order['createDate']).format() }}
 					</div>
 				</div>
 				<div class="row">
 					<div class="col">
 					{% if current_user.role.name == 'initiative' %}
 					<form action="{{ url_for('main.SaveLocation', order_id = order['orderNumber']) }}" id="locationForm" method="POST">
+						<span class="font-weight-bold">Площадка: </span>
 						{{location_form.csrf_token}}
 						{{location_form.location_name() }}
 					</form>
 					{% else %}
+						<span class="font-weight-bold">Площадка: </span>
 						{{ order['refererId'] }}
 					{% endif %}
 					</div>
 				</div>
 				<div class="row">
 					<div class="col">
+						<span class="font-weight-bold">Инициатор: </span>
 						{{ order['initiative'].name }}
 					</div>
 				</div>
@@ -155,19 +174,13 @@
 				</div>
 				<div class="row">
 					<div class="col">
+					<span class="font-weight-bold">Комментарий: </span>
 						{{ order['orderComments'] }}
 					</div>	
 				</div>
-				{% if current_user.role.name == "admin" %}
-					<div class="row">
-						<div class="col">
-							{{ order['positions'] }}
-						</div>	
-					</div>
-				{% endif%}
 				<div class="row">
 					<div class="col">
-						Всего позиций {{ order['items']|length }} на сумму
+						<span class="font-weight-bold">Всего позиций: </span>{{ order['items']|length }} на сумму
 						<span class="orderTotal">{{ '{:,.2f}'.format(order['total']) }}</span>
 					</div>	
 				</div>
@@ -270,7 +283,7 @@
 					<div class="row">
 						<div class="col">
 							<span class="badge badge-{{event.type.color()}}">
-								{{ event.user.name }}
+								{{ event.user.name }} ({{event.user.position}})
 							</span>
 							{{ moment(event.timestamp).format() }}
 						</div>

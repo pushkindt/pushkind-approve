@@ -1,4 +1,4 @@
-Уважаемый коллега, заявка #{{ order['vendorOrderNumber'] }} согласована и готова к передаче поставщику.
+Заявка #{{ order['vendorOrderNumber'] }} согласована и готова к передаче поставщику.
 
 Нажмите на ссылку для перехода в Личный Кабинет:
 {{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}

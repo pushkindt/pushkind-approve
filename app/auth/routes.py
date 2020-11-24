@@ -20,11 +20,11 @@ def PerformLogin():
 			flash('Некорректный логин или пароль')
 			return redirect(url_for('auth.PerformLogin'))
 		login_user(user, remember=form.remember_me.data)
-		next_page = request.args.get('next')
-		if not next_page or url_parse(next_page).netloc != '':
-			next_page = url_for('main.ShowIndex')
 		current_app.logger.info('{} logged'.format(user.email))
-		return redirect(next_page)
+		if current_user.role == UserRoles.initiative:
+			return redirect(url_for('main.ShowEcwid'))
+		else:
+			return redirect(url_for('main.ShowIndex'))
 	return render_template ('auth/login.html', form = form)
 
 @bp.route('/register/', methods = ['GET', 'POST'])
