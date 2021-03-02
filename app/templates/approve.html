@@ -161,7 +161,7 @@
 				<div class="row">
 					<div class="col">
 						<span class="font-weight-bold">Статья БДР: </span>
-						{%if order['orderComments']['object']|length == 0%}
+						{%if order['orderComments']['budget']|length == 0%}
 							<span class="text-danger">Не указано</span>
 						{%else%}
 							{{ order['orderComments']['budget'] }}
@@ -171,7 +171,7 @@
 				<div class="row">
 					<div class="col">
 						<span class="font-weight-bold">Статья БДДС: </span>
-						{%if order['orderComments']['object']|length == 0%}
+						{%if order['orderComments']['cashflow']|length == 0%}
 							<span class="text-danger">Не указано</span>
 						{%else%}
 							{{ order['orderComments']['cashflow'] }}
