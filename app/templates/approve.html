@@ -378,6 +378,9 @@
 							{%if order['orderComments']['object']|length == 0%}
 								<span class="text-danger">Статья БДДС не указана.</span>
 							{%endif%}
+							{%if order['has_units'] is sameas false %}
+								<span class="text-danger">ЕИ не указаны.</span>
+							{%endif%}
 						</div>
 						<div class="form-text text-info d-none" id="exportNotification">
 							Файл сохранён в папку загрузки и отправлен, если это было указано.

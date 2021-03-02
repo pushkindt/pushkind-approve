@@ -144,7 +144,9 @@ def PrepareOrder(order):
 		check_locations = order['refererId'].lower() in locations
 		if	check_locations is True and check_categories is True:
 			reviewers[user] = GetProductApproval(order['orderNumber'], user)
-			
+	
+	order['has_units'] = all(['selectedOptions' in product for product in order['items']])
+	
 	order['reviewers'] = reviewers
 	order['events'] = EventLog.query.join(User).filter(EventLog.order_id == order['orderNumber'], User.ecwid_id == order['initiative'].ecwid_id).order_by(EventLog.timestamp.desc()).all()
 	order['export1C'] = any([event.type == EventType.export1C for event in order['events']])
