@@ -1,16 +1,17 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderApproval, EventLog, EventType, OrderStatus, Location
+from app.models import User, UserRoles, Ecwid, OrderApproval, EventLog, EventType, OrderStatus, Location, CacheCategories
 from flask import render_template, redirect, url_for, flash, jsonify, current_app, Response
-from app.main.forms import OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm, ChangeLocationForm
+from app.main.forms import OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm, ChangeLocationForm, Export1CReport, BECForm, SiteForm, CFSForm
 from datetime import datetime, timezone
 from app.ecwid import EcwidAPIException
-from app.main.utils import DATE_TIME_FORMAT, role_required, ecwid_required, PrepareOrder, GetProductApproval, role_required_ajax, ecwid_required_ajax, role_forbidden, role_forbidden_ajax, SendEmailNotification
+from app.main.utils import DATE_TIME_FORMAT, role_required, ecwid_required, PrepareOrder, GetProductApproval, role_required_ajax, ecwid_required_ajax, role_forbidden, role_forbidden_ajax, SendEmailNotification, SendEmail1C
 
 from openpyxl import load_workbook
 from copy import copy
 from openpyxl.writer.excel import save_virtual_workbook
+import json
 
 '''
 ################################################################################
@@ -18,7 +19,7 @@ Consts
 ################################################################################
 '''
 _DISALLOWED_ORDERS_ITEM_FIELDS = ['productId', 'id', 'categoryId']
-_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'externalFulfillment', 'createDate', 'initiative', 'updateDate', 'reviewers', 'events', 'status', 'positions']
+_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'externalFulfillment', 'createDate', 'initiative', 'updateDate', 'reviewers', 'events', 'status', 'positions', 'export1C']
 
 '''
 ################################################################################
@@ -71,16 +72,25 @@ def ShowOrder(order_id):
 	if location is None:
 		location_form.location_name.choices.append((0, 'Выберите площадку...'))
 		location_form.location_name.default = 0
+		order['location'] = None
 	else:
 		location_form.location_name.default = location.id
+		order['location'] = location
 	location_form.process()
-	
+	export1C_form = Export1CReport()
+	bec_form = BECForm(bec = order['orderComments']['budget'])
+	site_form = SiteForm(object = order['orderComments']['object'])
+	cfs_form = CFSForm(cfs = order['orderComments']['cashflow'] )
 	return render_template('approve.html',
 							order = order,
 							location_form = location_form,
 							comment_form = comment_form,
 							approval_form = approval_form,
-							quantity_form = quantity_form)
+							quantity_form = quantity_form,
+							export1C_form = export1C_form,
+							bec_form = bec_form,
+							site_form = site_form,
+							cfs_form = cfs_form)
 
 @bp.route('/comment/<int:order_id>', methods=['POST'])
 @login_required
@@ -208,6 +218,7 @@ def DuplicateOrder(order_id):
 		return redirect(url_for('main.ShowIndex'))
 	for key in _DISALLOWED_ORDERS_FIELDS:
 		order.pop(key, None)
+	order['orderComments'] = json.dumps(order['orderComments'])
 	try:
 		response = current_user.hub.SetStoreOrder(order)
 		if 'id' not in response:
@@ -294,10 +305,11 @@ def ProcessHubOrder(order_id):
 		
 	for key in _DISALLOWED_ORDERS_FIELDS:
 		order.pop(key, None)
+	order.pop('orderComments', None)
 	for product in order['items']:
 		for key in _DISALLOWED_ORDERS_ITEM_FIELDS:
 			product.pop(key, None)
-
+	
 	stores = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
 	got_orders = {}
 	for store in stores:
@@ -343,6 +355,64 @@ def ProcessHubOrder(order_id):
 		flash('Не удалось перезаказать данные товары у зарегистрованных поставщиков')
 
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
+	
+@bp.route('/process1/')
+@login_required
+@role_required([UserRoles.admin])
+@ecwid_required
+def ProcessHubOrders():
+	order1 = GetOrder(244)
+	order2 = GetOrder(244) 
+	if order1 is None or order2 is None:
+		return redirect(url_for('main.ShowIndex'))
+		
+	for key in _DISALLOWED_ORDERS_FIELDS:
+		order1.pop(key, None)
+		order2.pop(key, None)
+	order1.pop('orderComments', None)
+	order2.pop('orderComments', None)
+	for product in order1['items'] + order2['items']:
+		for key in _DISALLOWED_ORDERS_ITEM_FIELDS:
+			product.pop(key, None)
+	
+	stores = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
+	got_orders = {}
+	for store in stores:
+		products = list()
+		total = 0
+		for product in order1['items'] + order2['items']:
+			try:
+				dash = product['sku'].index('-')
+			except ValueError:
+				continue
+			if product['sku'][:dash] == str(store.store_id):
+				product_new = product.copy()
+				product_new['sku'] = product_new['sku'][dash+1:]
+				products.append(product_new)
+				total += product_new['price'] * product_new['quantity']
+		if len(products) == 0:
+			continue
+		items = order1['items']
+		order1['items'] = products
+		order1['subtotal'] = total
+		order1['total'] = total
+		order1['email'] = current_user.email
+		try:
+			result = store.SetStoreOrder(order1)
+			got_orders[store.store_name] = result['id']
+		except EcwidAPIException as e:
+			flash('Не удалось перезаказать товары у {}'.format(store.store_name))
+		order1['items'] = items
+
+	if len(got_orders) > 0:
+		flash('Заявка была отправлена поставщикам: ')
+	else:
+		flash('Не удалось перезаказать данные товары у зарегистрованных поставщиков')
+
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
+	
+	
+
 	
 	
 @bp.route('/notify/<int:order_id>')
@@ -411,6 +481,163 @@ def GetExcelReport(order_id):
 		
 	data = save_virtual_workbook(wb)
 	return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=report.xlsx'})
-	
-	
 
+
+@bp.route('/report1C/<int:order_id>', methods=['POST'])
+@login_required
+@role_forbidden([UserRoles.default])
+@ecwid_required	
+def Get1CReport(order_id):
+	order = GetOrder(order_id)
+	if order is None:
+		return redirect(url_for('main.ShowIndex'))
+	form = Export1CReport()
+	if form.validate_on_submit():
+		data_len = len(order['items'])
+		if data_len > 0:
+			vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
+			vendors = {str(vendor.store_id):vendor.store_name for vendor in vendors}
+			categories = CacheCategories.query.filter(CacheCategories.ecwid_id == order['initiative'].ecwid_id).all()
+			starting_row = 3
+			wb = load_workbook(filename = 'template1C.xlsx')
+			ws = wb['Заявка']
+			for merged_cell in ws.merged_cells.ranges:
+				if merged_cell.bounds[1] >= starting_row:
+					merged_cell.shift(0, data_len)
+
+			ws.insert_rows(starting_row, data_len)
+			for k,i in enumerate(range(starting_row, starting_row+data_len)):
+				product = order['items'][k]
+				ws.row_dimensions[i].height = 50
+
+				for j in range(1, 32):
+					target_cell = ws.cell(row=i, column=j)
+					source_cell = ws.cell(row=starting_row + data_len, column=j)
+					target_cell._style = copy(source_cell._style)
+					target_cell.font = copy(source_cell.font)
+					target_cell.border = copy(source_cell.border)
+					target_cell.fill = copy(source_cell.fill)
+					target_cell.number_format = copy(source_cell.number_format)
+					target_cell.protection = copy(source_cell.protection)
+					target_cell.alignment = copy(source_cell.alignment)
+				
+				#Object
+				
+
+				ws.cell(i, 2).value = order['orderComments']['object']
+				#Initiative
+				
+				ws.cell(i, 5).value = order['initiative'].name
+				ws.cell(i, 6).value = 'Для собственных нужд'
+				
+				product_cat = product.get('categoryId', 0)
+				for cat in categories:
+					if product_cat in cat.children:
+						if cat.name == 'Канцтовары':
+							ws.cell(i, 10).value = 'Делопроизводство'
+							ws.cell(i, 24).value = 'Беседина Татьяна'
+						else:
+							ws.cell(i, 10).value = 'УХБО'
+							ws.cell(i, 24).value = 'Грунь Марина'
+						break
+				else:
+					ws.cell(i, 10).value = ''
+					
+				ws.cell(i, 11).value = order['orderComments']['budget']
+				ws.cell(i, 12).value = order['orderComments']['cashflow']
+				ws.cell(i, 15).value = 'Непроектные МТР и СИЗ'
+				
+				#Measurement
+				if 'selectedOptions' in product:
+					ws.cell(i, 19).value = product['selectedOptions'][0]['value']
+				#Product Name
+				ws.cell(i, 20).value = product.get('name', '')
+				#Quantity
+				ws.cell(i, 22).value = product.get('quantity', '')
+				ws.cell(i, 29).value = form.date.data
+				
+				ws.cell(i, 31).value = product.get('price', '')
+
+				try:
+					dash = product['sku'].index('-')
+					ws.cell(i, 30).value = vendors[product['sku'][:dash]]
+				except (ValueError, KeyError):
+					ws.cell(i, 30).value = ''
+			
+		data = save_virtual_workbook(wb)
+		
+		if form.send_email.data is True:
+			subject = '{}. {}/{} (pushkind_{})'.format(order['refererId'], order['orderComments']['object'], ws.cell(starting_row, 10).value, order['vendorOrderNumber'])
+			SendEmail1C(order, subject,('pushkind_{}.xlsx'.format(order['vendorOrderNumber']), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data))
+			message = 'отправлена на zayavka@velesstroy.com'
+		else:
+			message = 'выгружена в Excel-файл'
+		event = EventLog(user_id = current_user.id, order_id = order['orderNumber'], type=EventType.export1C, data=message, timestamp = datetime.now(tz = timezone.utc))
+		db.session.add(event)
+		db.session.commit()
+			
+		return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=pushkind_{}.xlsx'.format(order['vendorOrderNumber'])})
+	else:
+		for error in form.date.errors:
+			flash(error)
+	return redirect(url_for('main.ShowIndex'))
+	
+@bp.route('/budget/<int:order_id>', methods=['POST'])
+@login_required
+@role_forbidden([UserRoles.default])
+@ecwid_required	
+def SaveBEC(order_id):
+	order = GetOrder(order_id)
+	if order is None:
+		return redirect(url_for('main.ShowIndex'))
+	form = BECForm()
+	if form.validate_on_submit() is True:
+		try:
+			order['orderComments']['budget'] = form.bec.data
+			response = current_user.hub.UpdateStoreOrder(order_id, {'orderComments':json.dumps(order['orderComments'])})
+			flash('Статья БДР сохранена.')
+		except EcwidAPIException as e:
+			flash('Ошибка API: {}'.format(e))
+	else:
+		flash('Не удалось сохранить статью БДР.')
+	return redirect(url_for('main.ShowOrder', order_id = order_id))	
+	
+@bp.route('/cashflow/<int:order_id>', methods=['POST'])
+@login_required
+@role_forbidden([UserRoles.default])
+@ecwid_required	
+def SaveCFS(order_id):
+	order = GetOrder(order_id)
+	if order is None:
+		return redirect(url_for('main.ShowIndex'))
+	form = CFSForm()
+	if form.validate_on_submit() is True:
+		try:
+			order['orderComments']['cashflow'] = form.cfs.data
+			response = current_user.hub.UpdateStoreOrder(order_id, {'orderComments':json.dumps(order['orderComments'])})
+			flash('Статья БДДС сохранена.')
+		except EcwidAPIException as e:
+			flash('Ошибка API: {}'.format(e))
+	else:
+		flash('Не удалось сохранить статью БДДС.')
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
+	
+@bp.route('/site/<int:order_id>', methods=['POST'])
+@login_required
+@role_forbidden([UserRoles.default])
+@ecwid_required	
+def SaveSite(order_id):
+	order = GetOrder(order_id)
+	if order is None:
+		return redirect(url_for('main.ShowIndex'))
+	form = SiteForm()
+	if form.validate_on_submit() is True:
+		try:
+			order['orderComments']['object'] = form.object.data
+			response = current_user.hub.UpdateStoreOrder(order_id, {'orderComments':json.dumps(order['orderComments'])})
+			flash('Объект сохранен.')
+		except EcwidAPIException as e:
+			flash('Ошибка API: {}'.format(e))
+	else:
+		flash('Не удалось сохранить объектР.')
+	return redirect(url_for('main.ShowOrder', order_id = order_id))

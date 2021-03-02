@@ -26,12 +26,24 @@
 			{% if order['externalFulfillment'] is sameas true %}
 				<span class="badge badge-info"><img class="octicon" src="https://approvals.pushkind.com/static/octicons/mail.svg" alt="Отправлена"></span>
 			{% endif%}
+			{% if order['export1C'] is sameas true %}
+				<span class="badge badge-info">1C</span>
+			{% endif%}
 		</div>
 	</div>
 	<div class="row">
 		<div class="col">
-			<span class="font-weight-bold">Комментарий: </span>
-			{{ order['orderComments'] }}
+			<span class="font-weight-bold">Примечание: </span>
+			{% if order['orderComments']['comment']|length > 0 %}
+				<span class="font-italic">Комментарий инициатора: </span>
+				'{{ order['orderComments']['comment'] }}';
+			{% endif %}
+			<span class="font-italic">Объект: </span>
+			'{{ order['orderComments']['object'] }}';
+			<span class="font-italic">Статья БДР: </span>
+			'{{ order['orderComments']['budget'] }}';
+			<span class="font-italic">Статья БДДС: </span>
+			'{{ order['orderComments']['cashflow'] }}'
 		</div>
 	</div>
 </div>

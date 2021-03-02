@@ -5,10 +5,14 @@ from wtforms.validators import DataRequired, Length, ValidationError, Email, Inp
 from app.models import UserRoles
 from flask_login import current_user
 from app.models import Location
+from wtforms.fields.html5 import DateField
+from app.main.utils import DATE_FORMAT
+from datetime import date
 
 
 class AddRemoveLocationForm(FlaskForm):
 	location_name = StringField('Площадка', validators = [DataRequired(message='Название площадки - обязательное поле.')])
+	site_name = StringField('Объект', validators = [Optional()])
 	submit1 = SubmitField('Добавить')
 	submit2 = SubmitField('Удалить')
 	
@@ -68,3 +72,20 @@ class ChangeQuantityForm(FlaskForm):
 	def validate_product_quantity(self, product_quantity):
 		if product_quantity.data < 0:
 			raise ValidationError('Количество не может быть меньше нуля.')
+
+class Export1CReport(FlaskForm):
+	date = DateField('Дата поставки', [InputRequired(message = 'Дата поставки - обязательное поле.')], format=DATE_FORMAT, default = date.today())
+	send_email = BooleanField('Отправить на zayavka@velesstroy.com')
+	submit = SubmitField('Выгрузить')
+
+class BECForm(FlaskForm):
+	bec = StringField('Статья БДР', [InputRequired(message = 'Статья БДР - обязательное поле.')])
+	submit = SubmitField('Сохранить')
+	
+class CFSForm(FlaskForm):
+	cfs = StringField('Статья БДДС', [InputRequired(message = 'Статья БДДС - обязательное поле.')])
+	submit = SubmitField('Сохранить')
+	
+class SiteForm(FlaskForm):
+	object = StringField('Объект', [InputRequired(message = 'Название объекта - обязательное поле.')])
+	submit = SubmitField('Сохранить')

@@ -1,7 +1,7 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderApproval, CacheCategories, EventLog, Location
+from app.models import User, UserRoles, Ecwid, OrderApproval, CacheCategories, EventLog, Location, Site
 from flask import render_template, redirect, url_for, flash
 from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, AddRemoveLocationForm
 from sqlalchemy import distinct, func, or_
@@ -35,8 +35,8 @@ def ValidateUserData(userDataStr):
 @login_required
 @role_forbidden([UserRoles.default])
 def ShowSettings():
-	locations = Location.query.order_by(Location.name).all()
-	categories = CacheCategories.query.all()
+	locations = Location.query.filter(Location.ecwid_id == current_user.ecwid_id).order_by(Location.name).all()
+	categories = CacheCategories.query.filter(CacheCategories.ecwid_id == current_user.ecwid_id).all()
 	if current_user.role == UserRoles.admin:
 		if current_user.hub is None:
 			current_user.hub = Ecwid()
@@ -131,21 +131,48 @@ def RemoveUser(user_id):
 def AddRemoveLocation():
 	form = AddRemoveLocationForm()
 	if form.validate_on_submit():
-		name = form.location_name.data.strip()
-		location = Location.query.filter(Location.ecwid_id == current_user.ecwid_id, Location.name.ilike(name)).first()
-		if form.submit1.data:
-			if location:
-				flash('Такая площадка уже существует')
-			else:
-				location = Location(name = name, ecwid_id = current_user.ecwid_id)
+		location_name = form.location_name.data.strip()
+		site_name = form.site_name.data.strip()
+		location = Location.query.filter(Location.ecwid_id == current_user.ecwid_id, Location.name.ilike(location_name)).first()
+		if form.submit1.data is True:
+			if location is not None:
+				if len(site_name) > 0:
+					site = Site.query.filter(Site.loc_id == location.id, Site.name.ilike(site_name)).first()
+					if site is None:
+						site = Site(name = site_name, loc_id = location.id)
+						db.session.add(site)
+						db.session.commit()
+						flash('Объект {} создан'.format(site_name))
+					else:
+						flash('Такой объект уже существует')
+				else:
+					flash('Такая площадка уже существует')
+			else:	
+				location = Location(name = location_name, ecwid_id = current_user.ecwid_id)
 				db.session.add(location)
-				db.session.commit()
-				flash('Площадка {} создана'.format(name))
-		elif form.submit2.data:
-			if location:
-				db.session.delete(location)
-				db.session.commit()
-				flash('Площадка {} удалена'.format(name))
+				db.session.commit()		
+				flash('Площадка {} создана'.format(location_name))
+				if len(site_name) > 0:
+					site = Site(name = site_name, loc_id = location.id)
+					db.session.add(site)
+					db.session.commit()
+					flash('Объект {} создан'.format(location_name))
+		elif form.submit2.data is True:
+			if location is not None:
+				if len(site_name) == 0:
+					Site.query.filter(Site.loc_id == location.id).delete()
+					db.session.delete(location)
+					db.session.commit()
+					flash('Площадка {} удалена'.format(location_name))
+				else:
+					site = Site.query.filter(Site.loc_id == location.id, Site.name.ilike(site_name)).first()
+					if site is not None:
+						db.session.delete(site)
+						db.session.commit()
+						flash('Объект {} удален'.format(site_name))
+					else:
+						flash('Такой объект не существует')
+					
 			else:
 				flash('Такой площадки не существует')
 	else:

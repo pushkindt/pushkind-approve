@@ -19,7 +19,6 @@ mail = Mail()
 moment = Moment()
 db_collate = 'ru_RU.UTF-8'
 
-
 def load_extension(dbapi_conn, unused):
 	dbapi_conn.enable_load_extension(True)
 	dbapi_conn.load_extension(current_app.config['ICU_EXTENSION_PATH'])

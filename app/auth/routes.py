@@ -57,7 +57,8 @@ def RequestPaswordReset():
 		return redirect(url_for('main.ShowIndex'))
 	form = ResetPasswordRequestForm()
 	if form.validate_on_submit():
-		user = User.query.filter_by(email=form.email.data).first()
+		email = form.email.data.lower()
+		user = User.query.filter_by(email=email).first()
 		if user:
 			SendPasswordResetEmail(user)
 			flash('На вашу электронную почту отправлен запрос на сброс пароля.')

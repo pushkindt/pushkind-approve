@@ -1,11 +1,13 @@
 from flask_login import current_user
-from app.models import User, UserRoles, OrderApproval, OrderStatus, CacheCategories, EventLog
+from app.models import User, UserRoles, OrderApproval, OrderStatus, CacheCategories, EventLog, EventType
 from flask import render_template, flash, jsonify
 from functools import wraps
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import or_
 from app.email import SendEmail
 from flask import current_app
+import json
+from json.decoder import JSONDecodeError
 
 '''
 ################################################################################
@@ -13,7 +15,7 @@ Consts
 ################################################################################
 '''
 DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S %z'
-
+DATE_FORMAT = '%Y-%m-%d'
 '''
 ################################################################################
 Utilities
@@ -104,8 +106,18 @@ def PrepareOrder(order):
 			order['updateDate'] = datetime.strptime(order['updateDate'], DATE_TIME_FORMAT)
 	except (ValueError, KeyError, TypeError):
 		order['updateDate'] = datetime.now(tz = timezone.utc)
-	if len(order['orderComments']) > 50:
-		order['orderComments'] = order['orderComments'][:50] + '...'
+
+	if isinstance(order['orderComments'], dict) is False:
+		try:
+			order['orderComments'] = json.loads(order['orderComments'])
+			if not isinstance(order['orderComments'], dict):	
+				raise JSONDecodeError
+			else:
+				for k in ['comment', 'budget', 'object', 'cashflow']:
+					if not k in order['orderComments']:
+						order['orderComments'][k] = ''
+		except JSONDecodeError:	
+			order['orderComments'] = {'comment':order['orderComments'], 'budget':'', 'object':'', 'cashflow':''}
 		
 	users = User.query.filter(or_(User.role == UserRoles.approver,User.role == UserRoles.validator), User.ecwid_id == order['initiative'].ecwid_id).all()
 	reviewers = {}
@@ -135,6 +147,7 @@ def PrepareOrder(order):
 			
 	order['reviewers'] = reviewers
 	order['events'] = EventLog.query.join(User).filter(EventLog.order_id == order['orderNumber'], User.ecwid_id == order['initiative'].ecwid_id).order_by(EventLog.timestamp.desc()).all()
+	order['export1C'] = any([event.type == EventType.export1C for event in order['events']])
 	
 	approvals = {}
 	for reviewer,status in order['reviewers'].items():
@@ -171,3 +184,13 @@ def SendEmailNotification(type, order):
 				   recipients=recipients,
 				   text_body=render_template('email/{}.txt'.format(type), order=order),
 				   html_body=render_template('email/{}.html'.format(type), order=order))
+				   
+def SendEmail1C(order, subject, data):
+	recipients = ['zayavka@velesstroy.com']
+	current_app.logger.info('"export1C" email about order {} has been sent to {}'.format(order['vendorOrderNumber'], recipients))
+	SendEmail(subject,
+			   sender=current_app.config['MAIL_USERNAME'],
+			   recipients=recipients,
+			   text_body=render_template('email/export1C.txt', order=order),
+			   html_body=render_template('email/export1C.html', order=order),
+			   attachments = [data])

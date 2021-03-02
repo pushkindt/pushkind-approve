@@ -23,12 +23,13 @@ class EventType(enum.IntEnum):
 	modified = 3
 	duplicated = 4
 	vendor = 5
+	export1C = 6
 
 	def __str__(self):
-		pretty = ['оставлен комментарий', 'согласовано', 'отклонено', 'изменено', 'заявка дублирована', 'отправлена поставщикам']
+		pretty = ['оставлен комментарий', 'согласовано', 'отклонено', 'изменено', 'заявка дублирована', 'отправлена поставщикам', 'экспортирована в 1С']
 		return pretty[self.value]
 	def color(self):
-		colors = ['warning', 'success', 'danger', 'primary', 'primary', 'info']
+		colors = ['warning', 'success', 'danger', 'primary', 'primary', 'info', 'info']
 		return colors[self.value]
 
 class UserRoles(enum.IntEnum):
@@ -177,5 +178,22 @@ class Location(db.Model):
 	id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	name = db.Column(db.String(128), nullable=False, index=True)
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), index=True)
-	hub = db.relationship('Ecwid')	
+	hub = db.relationship('Ecwid')
+	sites = db.relationship('Site')
+
+	def __repr__(self):
+		return json.dumps(self.to_dict())
+
+	def to_dict(self):
+		data = {'id':self.id, 'name':self.name, 'sites':[site.to_dict() for site in self.sites]}
+		return data
 	
+class Site(db.Model):
+	id  = db.Column(db.Integer, primary_key = True, nullable=False)
+	name = db.Column(db.String(128), nullable=False, index=True)
+	loc_id = db.Column(db.Integer, db.ForeignKey('location.id'), index=True)
+	location = db.relationship('Location')
+	
+	def to_dict(self):
+		data = {'id':self.id, 'loc_id':self.loc_id, 'name':self.name}
+		return data

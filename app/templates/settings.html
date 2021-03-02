@@ -73,8 +73,15 @@
 						{{ location_form.location_name(class_ = 'form-control', list='locationsList', placeholder='Введите название площадки...') }}
 						<datalist id="locationsList">
 						{% for location in locations%}
-							<option>{{ location.name }}</option>
+							<option data-loc_id="{{location.id}}" >{{ location.name }}</option>
 						{% endfor %}
+						</datalist>
+					</div>
+				</div>
+				<div class="form-group row">
+					<div class="col">
+						{{ location_form.site_name(class_ = 'form-control', list='sitesList', placeholder='Введите название объекта...') }}
+						<datalist id="sitesList">
 						</datalist>
 					</div>
 				</div>
@@ -195,7 +202,8 @@
 		</div>
 		<div class="row">
 			<div class="col">
-				<a href="/static/app.log">Лог файл веб приложения</a>
+				<a href="/static/app.log">Лог файл веб приложения</a><br>
+				<a href="https://map.pushkind.com/static/app.log">Лог файл map.pushkind.com</a>
 			</div>
 		</div>
 	</div>
@@ -312,6 +320,31 @@
 							{{ user|safe }},
 						{% endfor %}
 						];
+						
+			var locations = [
+						{% for location in locations %}
+							{{ location|safe }},
+						{% endfor %}
+							];
+			
+			
+			$("#location_name").on('input', function () {
+				let val = this.value;
+				let sitesList = $("#sitesList");
+				sitesList.empty();
+				for(let i = 0, locLen=locations.length; i < locLen; i++) {
+					loc = locations[i];
+					if (loc["name"].toUpperCase() === val.toUpperCase()){
+						for (j = 0, siteLen = loc["sites"].length; j < siteLen; j++)
+						{
+							sitesList.append($("<option>").text(loc["sites"][j]["name"]));
+						}
+						break;
+					}
+				}
+			});
+			
+			
 			
 			function UserFieldsSettings(){
 				var user_id = Number($("#user_id").val());
