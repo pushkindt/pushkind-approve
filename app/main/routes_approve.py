@@ -412,9 +412,6 @@ def ProcessHubOrders():
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
 	
 	
-
-	
-	
 @bp.route('/notify/<int:order_id>')
 @login_required
 @role_required_ajax([UserRoles.initiative])
@@ -479,6 +476,40 @@ def GetExcelReport(order_id):
 		c2 = ws.cell(i, 10).coordinate
 		ws.cell(i, 12).value = f"={c1}*{c2}"
 		
+	data = save_virtual_workbook(wb)
+	return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=report.xlsx'})
+
+
+@bp.route('/report2/<int:order_id>')
+@login_required
+@role_forbidden([UserRoles.default])
+@ecwid_required
+def GetExcelReport2(order_id):
+	order = GetOrder(order_id)
+	if order is None:
+		return redirect(url_for('main.ShowIndex'))
+	
+	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
+	vendors = {str(vendor.store_id):vendor.store_name for vendor in vendors}
+	
+	data_len = len(order['items'])
+	starting_row = 2
+	wb = load_workbook(filename = 'template2.xlsx')
+	ws = wb.active
+	
+	ws.title = order['orderComments']['object'] if len(order['orderComments']['object']) > 0 else 'Объект не указан'
+	
+	i = starting_row
+	for product in order['items']:
+		ws.cell(i, 1).value = product['sku']
+		ws.cell(i, 2).value  = product['name']
+		if 'selectedOptions' in product:
+			ws.cell(i, 3).value = product['selectedOptions'][0]['value']
+		ws.cell(i, 4).value  = product['price']
+		ws.cell(i, 5).value  = product['quantity']
+		ws.cell(i, 6).value  = product['price'] * product['quantity']
+		i += 1
+	
 	data = save_virtual_workbook(wb)
 	return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=report.xlsx'})
 

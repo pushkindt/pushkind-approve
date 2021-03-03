@@ -217,7 +217,7 @@
 							Добавить:
 						</li>
 						<li class="nav-item">
-							<a href data-toggle="modal" data-target="#SiteModal" >название объекта</a>
+							<a href data-toggle="modal" data-target="#SiteModal" >объект</a>
 						</li>
 						<li class="nav-item">
 							<a href data-toggle="modal" data-target="#BECModal" >статья БДР</a>
@@ -245,6 +245,9 @@
 						{% endif %}
 						<li class="nav-item">
 							<a href="{{ url_for('main.GetExcelReport', order_id = order['orderNumber']) }}">на печать</a>
+						</li>
+						<li class="nav-item">
+							<a href="{{ url_for('main.GetExcelReport2', order_id = order['orderNumber']) }}">в Excel</a>
 						</li>
 						<li class="nav-item">
 							<a href data-toggle="modal" data-target="#report1CModal" >в 1С</a>
