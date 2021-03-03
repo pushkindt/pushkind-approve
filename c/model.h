@@ -35,3 +35,7 @@ extern int StoreCacheCategories(sqlite3 *pDB, TCacheCategories *cache);
 
 extern int DeleteLocations(sqlite3 *pDB, uint64_t ecwid_id);
 extern int StoreLocation(sqlite3 *pDB, TLocation *location);
+
+extern int BeginTransaction(sqlite3 *pDB);
+extern int CommitTransaction(sqlite3 *pDB);
+extern int RollbackTransaction(sqlite3 *pDB);

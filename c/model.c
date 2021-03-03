@@ -48,6 +48,35 @@ void FreeLocation(TLocation *location){
 	free(location);
 }
 
+
+int BeginTransaction(sqlite3 *pDB){
+	int result = -1;
+	result = sqlite3_exec(pDB, "BEGIN", 0, 0, 0);
+	check(result == SQLITE_OK, "Failed to start transaction.");
+	result = 0;
+error:
+	return result;
+}
+
+int CommitTransaction(sqlite3 *pDB){
+	int result = -1;
+	result = sqlite3_exec(pDB, "COMMIT", 0, 0, 0);
+	check(result == SQLITE_OK, "Failed to commit transaction.");
+	result = 0;
+error:
+	return result;
+}
+
+int RollbackTransaction(sqlite3 *pDB){
+	int result = -1;
+	result = sqlite3_exec(pDB, "ROLLBACK", 0, 0, 0);
+	check(result == SQLITE_OK, "Failed to rollback transaction.");
+	result = 0;
+error:
+	return result;
+}
+
+
 int DeleteCacheCategories(sqlite3 *pDB, uint64_t ecwid_id){
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;

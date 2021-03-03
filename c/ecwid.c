@@ -450,6 +450,14 @@ bool ProcessCache(uint64_t ecwid_id){
 	hub = GetHub(pDB, ecwid_id);
 	check(hub != NULL, "There is no such ecwid settings.");
 
+
+	/*****************************************************************************/
+	//	Starting database transaction
+	/*****************************************************************************/
+
+	check(BeginTransaction(pDB) == 0, "Failed to start database transaction.");	
+
+
 	/*****************************************************************************/
 	//	Delete obsolete cache
 	/*****************************************************************************/
@@ -500,8 +508,21 @@ bool ProcessCache(uint64_t ecwid_id){
 		cache = NULL;
 	}
 	
+	/*****************************************************************************/
+	//	Commiting database transaction
+	/*****************************************************************************/
+
+	CommitTransaction(pDB);	
+	
 	result = true;
 error:
+
+	/*****************************************************************************/
+	//	Rolling back database transaction
+	/*****************************************************************************/
+	if (result != true)
+		RollbackTransaction(pDB);	
+
 	/*****************************************************************************/
 	//	Clean everything up
 	/*****************************************************************************/
@@ -559,82 +580,6 @@ error:
 	/*****************************************************************************/
 	if (stores != NULL)
 		FreeStores(stores, stores_count);
-	if (hub != NULL)
-		FreeHub(hub);
-	if (pDB != NULL)
-		sqlite3_close_v2(pDB);
-	return result;
-}
-
-bool ProcessLocations(uint64_t ecwid_id){
-	
-	bool result = false;
-
-	sqlite3 *pDB = NULL;
-	TEcwid *hub = NULL;
-	struct json_object *json = NULL, *params = NULL;
-	struct json_object *locations = NULL;
-	TLocation *location = NULL;
-	struct json_object *tmp = NULL;
-
-	check(sqlite3_open_v2("app.db", &pDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_WAL, NULL) == SQLITE_OK, "Error while opening DB.");
-	hub = GetHub(pDB, ecwid_id);
-	check(hub != NULL, "There is no such ecwid settings.");
-
-	/*****************************************************************************/
-	//	Delete obsolete locations
-	/*****************************************************************************/
-
-	check(DeleteLocations(pDB, ecwid_id) == 0, "Error while deleting cache.");
-	
-	/*****************************************************************************/
-	//	Get store profile
-	/*****************************************************************************/
-	
-	params = json_object_new_object();
-	check_mem(params);
-	json_object_object_add(params, "token", json_object_new_string(hub->token));
-	json = RESTcall(hub->id, GET_PROFILE, params, NULL, 0);
-	check(json != NULL, "JSON is invalid.");
-	
-
-	json_object_object_get_ex(json,"payment", &tmp);
-	check(tmp != NULL, "Cannot retrieve store profile");
-	json_object_object_get_ex(tmp,"paymentOptions", &locations);
-	check(locations != NULL && json_object_get_type(locations) == json_type_array, "Cannot retrieve store profile");
-
-	
-	/*****************************************************************************/
-	//	Process locations
-	/*****************************************************************************/
-	
-	for (size_t i = 0; i < json_object_array_length(locations); i++) {
-		tmp = json_object_array_get_idx(locations, i);
-		struct json_object *loc_name = NULL;
-		
-		json_object_object_get_ex(tmp, "checkoutTitle", &loc_name);
-		check_mem(loc_name);
-		location = calloc(sizeof(TLocation), 1);
-		check_mem(location);
-		location->name = (char *)json_object_get_string(loc_name);
-		location->ecwid_id = ecwid_id;
-
-		check(StoreLocation(pDB, location) == 0, "Error while saving cache.");
-		free(location);
-		location = NULL;
-	}
-	
-	result = true;
-error:
-	/*****************************************************************************/
-	//	Clean everything up
-	/*****************************************************************************/
-	if (location != NULL)
-		FreeLocation(location);
-	if (json != NULL)
-		json_object_put(json);
-	if (params != NULL)
-		json_object_put(params);
 	if (hub != NULL)
 		FreeHub(hub);
 	if (pDB != NULL)
