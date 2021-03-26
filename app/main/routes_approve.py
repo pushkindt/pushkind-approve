@@ -113,7 +113,7 @@ def SaveComment(order_id):
 	
 @bp.route('/location/<int:order_id>', methods=['POST'])
 @login_required
-@role_required([UserRoles.initiative])
+@role_required([UserRoles.initiative, UserRoles.approver])
 def SaveLocation(order_id):
 	order = GetOrder(order_id)
 	if order is None:
@@ -188,7 +188,7 @@ def SaveApproval(order_id):
 
 @bp.route('/delete/<int:order_id>')
 @login_required
-@role_required([UserRoles.initiative])
+@role_required([UserRoles.initiative, UserRoles.approver])
 @ecwid_required
 def DeleteOrder(order_id):
 	order = GetOrder(order_id)
@@ -210,7 +210,7 @@ def DeleteOrder(order_id):
 	
 @bp.route('/duplicate/<int:order_id>')
 @login_required
-@role_required([UserRoles.initiative])
+@role_required([UserRoles.initiative, UserRoles.approver])
 @ecwid_required
 def DuplicateOrder(order_id):
 	order = GetOrder(order_id)
@@ -238,7 +238,7 @@ def DuplicateOrder(order_id):
 
 @bp.route('/quantity/<int:order_id>', methods=['POST'])
 @login_required
-@role_required([UserRoles.initiative])
+@role_required([UserRoles.initiative, UserRoles.approver])
 @ecwid_required
 def SaveQuantity(order_id):
 	new_total = ''
@@ -264,6 +264,7 @@ def SaveQuantity(order_id):
 		approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
 		for approval in approvals:
 			db.session.delete(approval)
+			
 		if form.product_quantity.data == 0:
 			order['items'].pop(index)
 		try:
@@ -276,10 +277,7 @@ def SaveQuantity(order_id):
 				db.session.commit()
 				return redirect(url_for('main.ShowIndex'))
 			else:
-			
-				for key in _DISALLOWED_ORDERS_FIELDS:
-					order.pop(key, None)
-						
+				order = {'total':order['total'], 'items':order['items']}
 				response = current_user.hub.UpdateStoreOrder(order_id, order)
 				event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.modified, data=message, timestamp=datetime.now(tz = timezone.utc))
 				db.session.add(event)
@@ -356,65 +354,9 @@ def ProcessHubOrder(order_id):
 
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
 	
-@bp.route('/process1/')
-@login_required
-@role_required([UserRoles.admin])
-@ecwid_required
-def ProcessHubOrders():
-	order1 = GetOrder(244)
-	order2 = GetOrder(244) 
-	if order1 is None or order2 is None:
-		return redirect(url_for('main.ShowIndex'))
-		
-	for key in _DISALLOWED_ORDERS_FIELDS:
-		order1.pop(key, None)
-		order2.pop(key, None)
-	order1.pop('orderComments', None)
-	order2.pop('orderComments', None)
-	for product in order1['items'] + order2['items']:
-		for key in _DISALLOWED_ORDERS_ITEM_FIELDS:
-			product.pop(key, None)
-	
-	stores = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
-	got_orders = {}
-	for store in stores:
-		products = list()
-		total = 0
-		for product in order1['items'] + order2['items']:
-			try:
-				dash = product['sku'].index('-')
-			except ValueError:
-				continue
-			if product['sku'][:dash] == str(store.store_id):
-				product_new = product.copy()
-				product_new['sku'] = product_new['sku'][dash+1:]
-				products.append(product_new)
-				total += product_new['price'] * product_new['quantity']
-		if len(products) == 0:
-			continue
-		items = order1['items']
-		order1['items'] = products
-		order1['subtotal'] = total
-		order1['total'] = total
-		order1['email'] = current_user.email
-		try:
-			result = store.SetStoreOrder(order1)
-			got_orders[store.store_name] = result['id']
-		except EcwidAPIException as e:
-			flash('Не удалось перезаказать товары у {}'.format(store.store_name))
-		order1['items'] = items
-
-	if len(got_orders) > 0:
-		flash('Заявка была отправлена поставщикам: ')
-	else:
-		flash('Не удалось перезаказать данные товары у зарегистрованных поставщиков')
-
-	return redirect(url_for('main.ShowOrder', order_id = order_id))
-	
-	
 @bp.route('/notify/<int:order_id>')
 @login_required
-@role_required_ajax([UserRoles.initiative])
+@role_required_ajax([UserRoles.initiative, UserRoles.approver])
 @ecwid_required_ajax
 def NotifyApprovers(order_id):
 	order = GetOrder(order_id)

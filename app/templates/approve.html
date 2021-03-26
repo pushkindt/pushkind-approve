@@ -85,12 +85,15 @@
 						{{ approval_form.csrf_token }}
 						#{{ order['vendorOrderNumber'] }}
 						от {{ moment(order['createDate']).format() }}
+						{% if current_user.email == order['initiative'].email %}
+							<a class="badge badge-danger" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">&times;</a>
+						{% endif %}
 					</div>
 					<div class="col text-right">
 						<label class="toggle-label">
 							<input type="checkbox" {% if not order['reviewers'][current_user]|select|list|first  %}checked{% endif %} onChange="this.form.submit()">
 							<span class="back">
-								<span class="toggle"></span>
+								<span class="toggle" {% if order['reviewers'][current_user]|length == 0  %}style="background:#343a40"{% endif %}></span>
 								<span class="label on">согласен</span>
 								<span class="label off">НЕ согласен</span>
 							</span>
@@ -104,7 +107,7 @@
 					<span class="font-weight-bold">ЗАЯВКА</span>
 					#{{ order['vendorOrderNumber'] }}
 					от {{ moment(order['createDate']).format() }}
-					{% if current_user.role.name == 'initiative' %}
+					{% if current_user.email == order['initiative'].email %}
 						<a class="badge badge-danger" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">&times;</a>
 					{% endif %}
 				</div>
@@ -112,6 +115,12 @@
 		{% endif %}
 		<div class="row">
 			<div class="col">
+				<div class="row">
+					<div class="col">
+						<span class="font-weight-bold">Статус: </span>
+						<span class="badge badge-{{order['status'].color() }}">{{ order['status'] }}</span>
+					</div>
+				</div>				
 				<div class="row">
 					<div class="col">
 						<span class="font-weight-bold">Кем согласована: </span>
@@ -136,7 +145,7 @@
 				</div>
 				<div class="row">
 					<div class="col">
-					{% if current_user.role.name == 'initiative' %}
+					{% if current_user.email == order['initiative'].email %}
 					<form action="{{ url_for('main.SaveLocation', order_id = order['orderNumber']) }}" id="locationForm" method="POST">
 						<span class="font-weight-bold">Площадка: </span>
 						{{location_form.csrf_token}}
@@ -231,14 +240,15 @@
 						<li class="nav-item">
 							Отправить:
 						</li>
-						{% if current_user.role.name == 'initiative' %}
+						{% if current_user.email == order['initiative'].email %}
 						<li class="nav-item">
 							<a href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Клонировать заявку?')">клонировать</a>
 						</li>
 						<li class="nav-item">
 							<a href="{{ url_for('main.NotifyApprovers', order_id = order['orderNumber']) }}" onclick="return confirm('Отправить уведомление согласующим?')">уведомить</a>
 						</li>
-						{% elif current_user.role.name == 'approver' %}
+						{% endif %}
+						{% if current_user.role.name == 'approver' %}
 						<li class="nav-item">
 							<a href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>поставщику</a>
 						</li>
@@ -511,7 +521,7 @@
 			setTimeout(() => $("#exportNotification").removeClass("d-none"), 1000);
 		});
 		
-		{% if current_user.role.name == 'initiative' %}
+		{% if current_user.email == order['initiative'].email %}
 			var oldQuantity = 0;
 			$('.productQuantity').focus(function() {
 				$(this).removeClass('form-control-plaintext');

@@ -3,12 +3,9 @@ from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAre
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired, Length, ValidationError, Email, InputRequired, Optional
 from app.models import UserRoles
-from flask_login import current_user
-from app.models import Location
 from wtforms.fields.html5 import DateField
 from app.main.utils import DATE_FORMAT
 from datetime import date
-
 
 class AddRemoveLocationForm(FlaskForm):
 	location_name = StringField('Площадка', validators = [DataRequired(message='Название площадки - обязательное поле.')])
@@ -89,3 +86,7 @@ class CFSForm(FlaskForm):
 class SiteForm(FlaskForm):
 	object = StringField('Объект', [InputRequired(message = 'Название объекта - обязательное поле.')])
 	submit = SubmitField('Сохранить')
+	
+class MergeOrdersForm(FlaskForm):
+	orders = StringField('orders', [InputRequired(message = 'Список заявок не может быть пустым.')])
+	submit = SubmitField('Объединить')

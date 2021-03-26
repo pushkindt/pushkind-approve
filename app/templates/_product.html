@@ -22,7 +22,7 @@
 	</div>
 	<div class="col-sm overflow-hidden">
 		<span class="d-sm-none font-weight-bold">Кол-во:</span>
-		{% if current_user.role.name == 'initiative' %}
+		{% if current_user.email == order['initiative'].email %}
 			<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order['orderNumber']) }}" method="POST">
 				<div class="form-row">
 					<div class="col">

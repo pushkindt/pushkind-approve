@@ -16,6 +16,9 @@ Consts
 '''
 DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S %z'
 DATE_FORMAT = '%Y-%m-%d'
+
+ORDER_COMMENTS_FIELDS = ['comment', 'budget', 'object', 'cashflow']
+
 '''
 ################################################################################
 Utilities
@@ -90,8 +93,24 @@ def GetProductApproval(order_id, user):
 	return OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == user.id).all()
 
 
+def ProcessOrderComments(comment):
+
+	if isinstance(comment, dict) is False:
+		try:
+			comment = json.loads(comment)
+			if not isinstance(comment, dict):	
+				raise JSONDecodeError
+		except JSONDecodeError:	
+			comment = {'comment':comment, 'budget':'', 'object':'', 'cashflow':''}
+
+	for k in ORDER_COMMENTS_FIELDS:
+		if not k in comment:
+			comment[k] = ''
+	return comment
+
+
 def PrepareOrder(order):
-	order['initiative'] = User.query.filter(User.email == order['email'], User.role == UserRoles.initiative).first()
+	order['initiative'] = User.query.filter(User.email == order['email'], or_(User.role == UserRoles.initiative, User.role == UserRoles.approver)).first()
 	if order['initiative'] is None:
 		return False
 	if not 'refererId' in order:
@@ -107,17 +126,7 @@ def PrepareOrder(order):
 	except (ValueError, KeyError, TypeError):
 		order['updateDate'] = datetime.now(tz = timezone.utc)
 
-	if isinstance(order['orderComments'], dict) is False:
-		try:
-			order['orderComments'] = json.loads(order['orderComments'])
-			if not isinstance(order['orderComments'], dict):	
-				raise JSONDecodeError
-			else:
-				for k in ['comment', 'budget', 'object', 'cashflow']:
-					if not k in order['orderComments']:
-						order['orderComments'][k] = ''
-		except JSONDecodeError:	
-			order['orderComments'] = {'comment':order['orderComments'], 'budget':'', 'object':'', 'cashflow':''}
+	order['orderComments'] = ProcessOrderComments(order.get('orderComments', ''))
 		
 	users = User.query.filter(or_(User.role == UserRoles.approver,User.role == UserRoles.validator), User.ecwid_id == order['initiative'].ecwid_id).all()
 	reviewers = {}
