@@ -26,7 +26,7 @@ MarkupSafe==1.1.1
 moment==0.10
 openpyxl==3.0.5
 pkg-resources==0.0.0
-Pygments==2.6.1
+Pygments==2.7.4
 PyJWT==1.7.1
 python-dateutil==2.8.1
 python-dotenv==0.14.0
