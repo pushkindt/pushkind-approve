@@ -197,3 +197,4 @@ class Site(db.Model):
 	def to_dict(self):
 		data = {'id':self.id, 'loc_id':self.loc_id, 'name':self.name}
 		return data
+	

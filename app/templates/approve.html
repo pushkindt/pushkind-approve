@@ -71,7 +71,11 @@
   color: #fff;
 }
 
-
+{% if current_user.role.name in ['initiative'] %}
+	.productPrice{display: none}
+	.orderTotal{display: none}
+{% endif %}
+		
 </style>
 {% endblock%}
 
@@ -214,8 +218,8 @@
 				</div>
 				<div class="row">
 					<div class="col">
-						<span class="font-weight-bold">Всего позиций: </span>{{ order['items']|length }} на сумму
-						<span class="orderTotal">{{ '{:,.2f}'.format(order['total']) }}</span>
+						<span class="font-weight-bold">Всего позиций: </span>{{ order['items']|length }}
+						<span class="orderTotal"> на сумму {{ '{:,.2f}'.format(order['total']) }}</span>
 					</div>	
 				</div>
 			</div>

@@ -5,6 +5,9 @@
 		.ecwidOrder{
 			cursor: pointer;
 		}
+		{% if current_user.role.name in ['initiative'] %}
+			.orderTotal{display: none}
+		{% endif %}
 	</style>
 {% endblock %}
 

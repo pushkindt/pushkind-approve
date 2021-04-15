@@ -18,7 +18,9 @@
 	</div>		
 	<div class="col-sm overflow-hidden">
 		<span class="d-sm-none font-weight-bold">Цена:</span>
-		{{ '{:,.2f}'.format(product['price'])  }}
+		<span class="productPrice">
+			{{ '{:,.2f}'.format(product['price'])  }}
+		</span>
 	</div>
 	<div class="col-sm overflow-hidden">
 		<span class="d-sm-none font-weight-bold">Кол-во:</span>
