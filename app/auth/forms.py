@@ -17,7 +17,7 @@ class RegistrationForm(FlaskForm):
 	submit = SubmitField('Регистрация')
 	
 	def validate_email(self, email):
-		user = User.query.filter_by(email=self.email.data).first()
+		user = User.query.filter_by(email=self.email.data.lower()).first()
 		if user is not None:
 			raise ValidationError('Этот адрес электронной почты уже занят.')
 			

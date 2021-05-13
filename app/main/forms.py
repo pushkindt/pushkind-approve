@@ -8,13 +8,13 @@ from app.main.utils import DATE_FORMAT
 from datetime import date
 
 class AddRemoveLocationForm(FlaskForm):
-	location_name = StringField('Площадка', validators = [DataRequired(message='Название площадки - обязательное поле.')])
+	location_name = StringField('Проект', validators = [DataRequired(message='Название проекта - обязательное поле.')])
 	site_name = StringField('Объект', validators = [Optional()])
 	submit1 = SubmitField('Добавить')
 	submit2 = SubmitField('Удалить')
 	
 class ChangeLocationForm(FlaskForm):
-	location_name = SelectField('Площадка', validators = [DataRequired(message='Название площадки - обязательное поле.')],
+	location_name = SelectField('Проект', validators = [DataRequired(message='Название проекта - обязательное поле.')],
 						coerce=int)
 	submit = SubmitField('Сохранить')
 

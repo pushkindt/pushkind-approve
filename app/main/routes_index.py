@@ -32,13 +32,13 @@ def GetDateTimestamps():
 @ecwid_required
 def ShowIndex():
 	dates = GetDateTimestamps()
-	filter_from = request.args.get('from', default = None, type = int)
+	filter_from = request.args.get('from', default = dates['месяц'], type = int)
 	filter_approval = request.args.get('approval', default = None, type = str)
 	filter_location = request.args.get('location', default=None, type=str)
 
 	if filter_approval not in [status.name for status in OrderStatus]:
 		filter_approval = None
-		
+
 	if filter_location is not None:
 		filter_location = filter_location.strip()
 	if current_user.role not in [UserRoles.approver, UserRoles.validator]:
@@ -51,7 +51,7 @@ def ShowIndex():
 
 	orders = []
 	args = {}
-	if filter_from is not None:
+	if filter_from != 0:
 		args['createdFrom'] = filter_from
 	if filter_location is not None:
 		filter_location = filter_location.strip()
@@ -75,7 +75,7 @@ def ShowIndex():
 		if filter_approval and order['status'].name != filter_approval:
 			continue
 		new_orders.append(order)
-	
+
 	orders = new_orders
 	form = MergeOrdersForm()
 	return render_template('index.html',
@@ -113,7 +113,7 @@ def MergeOrders():
 				order['orderComments'] = ProcessOrderComments(order.get('orderComments', ''))
 				orders.append(order)
 				if order.get('refererId', '') != orders[0].get('refererId', ''):
-					raise EcwidAPIException('Нельзя объединять заявки от разных площадок.')
+					raise EcwidAPIException('Нельзя объединять заявки от разных проектов.')
 					
 				if all([order['orderComments'][k] == orders[0]['orderComments'][k] for k in ORDER_COMMENTS_FIELDS[1:]]) is False:
 					raise EcwidAPIException('Нельзя объединять заявки с разными полями БДР, БДДС, Объект.')

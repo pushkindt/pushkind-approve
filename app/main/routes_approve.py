@@ -70,7 +70,7 @@ def ShowOrder(order_id):
 	location_form = ChangeLocationForm()
 	location_form.location_name.choices = [(l.id, l.name) for l in locations]
 	if location is None:
-		location_form.location_name.choices.append((0, 'Выберите площадку...'))
+		location_form.location_name.choices.append((0, 'Выберите проект...'))
 		location_form.location_name.default = 0
 		order['location'] = None
 	else:
@@ -125,15 +125,15 @@ def SaveLocation(order_id):
 		referer_id = dict(form.location_name.choices).get(form.location_name.data)
 		try:
 			response = current_user.hub.UpdateStoreOrder(order_id, {'refererId':referer_id})
-			message = 'площадка была "{}", стала "{}"'.format(order['refererId'], referer_id)
+			message = 'проект был "{}", стал "{}"'.format(order['refererId'], referer_id)
 			event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.modified, data=message, timestamp = datetime.now(tz = timezone.utc))
 			db.session.add(event)
 			db.session.commit()
-			flash('Площадка успешно изменена.')
+			flash('Проект успешно изменен.')
 		except EcwidAPIException:
-			flash('Не удалось присвоить данную площадку.')
+			flash('Не удалось присвоить данный проект.')
 	else:
-		flash('Невозможно присвоить данную площадку.')
+		flash('Невозможно присвоить данный проект.')
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
 
 

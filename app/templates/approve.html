@@ -151,12 +151,12 @@
 					<div class="col">
 					{% if current_user.email == order['initiative'].email %}
 					<form action="{{ url_for('main.SaveLocation', order_id = order['orderNumber']) }}" id="locationForm" method="POST">
-						<span class="font-weight-bold">Площадка: </span>
+						<span class="font-weight-bold">Проект: </span>
 						{{location_form.csrf_token}}
 						{{location_form.location_name() }}
 					</form>
 					{% else %}
-						<span class="font-weight-bold">Площадка: </span>
+						<span class="font-weight-bold">Проект: </span>
 						{{ order['refererId'] }}
 					{% endif %}
 					</div>
@@ -375,7 +375,7 @@
 				<form method="POST" action="{{ url_for('main.Get1CReport', order_id = order['orderNumber']) }}">
 					<div class="modal-body">
 						<h6>Заявка #{{ order['vendorOrderNumber'] }} от {{ moment(order['createDate']).format() }}</h6>
-						<h6>Площадка {{ order['refererId'] }}</h6>
+						<h6>Проект {{ order['refererId'] }}</h6>
 						{{ export1C_form.csrf_token }}
 						<div class="form-group">
 							{{ export1C_form.date.label }}

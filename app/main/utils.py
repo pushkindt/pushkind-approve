@@ -185,9 +185,12 @@ def PrepareOrder(order):
 	return True
 	
 def SendEmailNotification(type, order):
-	recipients = [reviewer.email for reviewer in order['reviewers'] if getattr(reviewer, 'email_{}'.format(type), False) == True]
-	if getattr(order['initiative'], 'email_{}'.format(type), False) == True:
-		recipients.append(order['initiative'].email)
+	if type != 'nonexistent':
+		recipients = [reviewer.email for reviewer in order['reviewers'] if getattr(reviewer, 'email_{}'.format(type), False) == True]
+		if getattr(order['initiative'], 'email_{}'.format(type), False) == True:
+			recipients.append(order['initiative'].email)
+	else:
+		recipients = [order['email'], current_app.config['ADMIN_EMAIL']]
 	current_app.logger.info('"{}" email about order {} has been sent to {}'.format(type, order['vendorOrderNumber'], recipients))
 	if len(recipients) > 0:
 		SendEmail('Уведомление по заявке #{}'.format(order['vendorOrderNumber']),

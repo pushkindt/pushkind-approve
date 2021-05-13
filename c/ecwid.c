@@ -4,9 +4,12 @@
 #include "model.h"
 #include "http.h"
 
+/*
 static const char *_DISALLOWED_PRODUCTS_FIELDS[] = {"id", "categories", "defaultCategoryId", "relatedProducts",
 													"combinations", "url", "productClassId", "defaultCombinationId", "categoryIds",
 													"tax", "galleryImages", "media", "files", "sku", "showOnFrontpage"};
+*/											
+static const char *_ALLOWED_PRODUCTS_FIELDS[] = {"name", "price", "enabled", "options", "description"};													
 
 #define ARRAY_SIZE(arr)     (sizeof(arr) / sizeof((arr)[0]))
 
@@ -14,8 +17,7 @@ static const char *_DISALLOWED_PRODUCTS_FIELDS[] = {"id", "categories", "default
 void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products, char *vendor);
 void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products, char *vendor);
 
-char *TrimWhiteSpaces (char *str)
-{
+char *TrimWhiteSpaces (char *str){
 	char *end = NULL;
 
 	if (str == NULL)
@@ -32,12 +34,29 @@ char *TrimWhiteSpaces (char *str)
 void FilterProductFields(struct json_object *product){
 	if (product == NULL)
 		return;
+	
+	{
+		json_object_object_foreach(product, key, val){
+			
+			bool found = false;
+			for (size_t i = 0; i < ARRAY_SIZE(_ALLOWED_PRODUCTS_FIELDS); i++){
+				if (strcmp(key, _ALLOWED_PRODUCTS_FIELDS[i]) == 0){
+					found = true;
+					break;
+				}
+			}
+			if (found == false)
+				json_object_object_del(product, key);
+		}
+	}
+/*	
 	for (size_t i = 0; i < ARRAY_SIZE(_DISALLOWED_PRODUCTS_FIELDS); i++){
 		struct json_object *product_field = NULL;
 		json_object_object_get_ex(product, _DISALLOWED_PRODUCTS_FIELDS[i], &product_field);
 		if (product_field != NULL)
 			json_object_object_del(product, _DISALLOWED_PRODUCTS_FIELDS[i]);
 	}
+*/
 }
 
 bool SetHubProductImage(TEcwid store, uint64_t product_id, char *img_url){

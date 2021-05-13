@@ -21,13 +21,13 @@
 		<div class="modal-dialog" role="document">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="siteLocationModalLabel">Площадка и объект</h5>
+					<h5 class="modal-title" id="siteLocationModalLabel">Проект и объект</h5>
 				</div>
 				<div class="modal-body">
 					<div class="row my-1">
 						<div class="col">
 							<select class="form-control border-danger" id="locationSelect">
-								<option value="" disabled selected>Выберите площадку...</option>
+								<option value="" disabled selected>Выберите проект...</option>
 								{% for location in locations %}
 									<option>{{ location.name }}</option>
 								{% endfor %}

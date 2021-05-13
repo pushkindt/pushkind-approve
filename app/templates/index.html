@@ -18,7 +18,7 @@
 			{% for d in dates %}
 				<a href="{{ url_for('main.ShowIndex', from = dates[d], approval = filter_approval, location = filter_location) }}" class="badge {%if filter_from == dates[d] %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">{{ d }}</a>
 			{% endfor %}
-			<a href="{{ url_for('main.ShowIndex', approval = filter_approval, location = filter_location) }}" class="badge {%if filter_from is none %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">все</a>
+			<a href="{{ url_for('main.ShowIndex', from = 0, approval = filter_approval, location = filter_location) }}" class="badge {%if filter_from == 0 %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">все</a>
 		</div>
 	</div>
 	<div class="row">
@@ -31,10 +31,12 @@
 	</div>
 	<div class="row">
 		<div class="col">
-			{% for location in locations %}
-				<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = location) }}" class="badge {%if filter_location == location %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">{{ location }}</a>
-			{% endfor %}
-				<a href="{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}" class="badge {%if filter_location is none %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">все</a>
+			<select class="form-control" id="locationSelect">
+				<option value="" {%if filter_location not in locations %}selected disabled{%endif%}>Выберите проект...</option>
+				{% for location in locations %}
+					<option {%if filter_location == location %}selected{%endif%}>{{ location }}</option>
+				{% endfor %}
+			</select>
 		</div>
 	</div>
 </div>
@@ -62,7 +64,7 @@
 			Дата
 		</div>
 		<div class="col overflow-hidden">
-			Площадка
+			Проект
 		</div>
 		<div class="col overflow-hidden">
 			Сумма
@@ -104,6 +106,13 @@
 	$(document).ready(function(){
 	
 		var isMerging = false;
+		
+		$("#locationSelect").change(function(){
+			if ($(this).val() != 'Выберите проект...')
+				document.location.href = "{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = 'replace_me') }}".replace('replace_me', $(this).val());
+			else
+				document.location.href = "{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}"
+		});
 
 	{% if current_user.role.name in ['initiative', 'approver'] %}
 	

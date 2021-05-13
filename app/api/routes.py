@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from app.models import User, UserRoles, ApiData, CacheCategories
 from app.ecwid import EcwidAPIException
 from app.main.utils import PrepareOrder, SendEmailNotification
+from sqlalchemy import func, or_
 
 
 @bp.route('/orders/', methods=['GET'])
@@ -23,7 +24,7 @@ def NotifyNewOrders():
 		json = user.hub.GetStoreOrders(createdFrom=int(api_data.timestamp.timestamp()))
 		orders = json.get('items', [])
 	except EcwidAPIException as e:
-		return ErrorResponse(503)
+		return ErrorResponse(500)
 	api_data.timestamp = datetime.now(tz = timezone.utc)
 	db.session.commit()
 	
@@ -31,6 +32,37 @@ def NotifyNewOrders():
 	initiatives = {k.email:k for k in initiatives}
 	for order in orders:
 		if not PrepareOrder(order):
+			SendEmailNotification('nonexistent', order)
 			continue
 		SendEmailNotification('new', order)
 	return jsonify({'result':'success'})
+	
+	
+@bp.route('/waiting/', methods=['GET'])
+@basic_auth.login_required
+def NotifyWaitingOrders():
+	user = User.query.get_or_404(g.user_id)
+	if user.role != UserRoles.admin:
+		return ErrorResponse(403)
+	try:
+		json = user.hub.GetStoreOrders(createdFrom=int((datetime.now(tz = timezone.utc) - timedelta(days = 30)).timestamp()))
+		orders = json.get('items', [])
+	except EcwidAPIException as e:
+		return ErrorResponse(500)
+
+	recipients = {}
+	
+	for order in orders:
+		if not PrepareOrder(order):
+			continue
+		for position,status in order['positions'].items():
+			if status is False:
+				users = User.query.filter(User.ecwid_id == user.ecwid_id, func.lower(User.position) == position, or_(User.role == UserRoles.approver,User.role == UserRoles.validator)).all()
+				for u in users:
+					if not u.email in recipients:
+						recipients[u.email] = list()
+					recipients[u.email].append(order['orderNumber'])
+
+	return jsonify(recipients)
+	#return jsonify({'result':'success'})
+		

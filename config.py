@@ -5,6 +5,8 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env'))
 
 class Config(object):
+	APPLICATION_TITLE = os.environ.get('APPLICATION_TITLE') or 'Application Title'
+	ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL') or 'admin@pushkind.com'
 	SECRET_KEY = os.environ.get('SECRET_KEY') or 'PushkindDotCom'
 	ICU_EXTENSION_PATH = os.path.join(basedir, 'libsqliteicu.so')
 	SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///' + os.path.join(basedir, 'app.db')

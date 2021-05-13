@@ -43,8 +43,8 @@ def ShowSettings():
 			db.session.commit()
 		ecwid_form = EcwidSettingsForm()
 		role_form = UserRolesForm()
-		users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).all()
-		role_form.user_id.choices = [(u.id, '{} ({}, "{}")'.format(u.email, str(u.role), u.position)) for u in users if u.id != current_user.id]
+		users = User.query.filter(or_(User.role == UserRoles.default, User.ecwid_id == current_user.ecwid_id)).order_by(User.name, User.email).all()
+		role_form.user_id.choices = [(u.id, '"{}" {}({}, "{}")'.format(u.name, u.email, str(u.role), u.position)) for u in users if u.id != current_user.id]
 		if ecwid_form.submit1.data and ecwid_form.validate_on_submit():
 			current_user.hub.partners_key = ecwid_form.partners_key.data
 			current_user.hub.client_id = ecwid_form.client_id.data
@@ -146,12 +146,12 @@ def AddRemoveLocation():
 					else:
 						flash('Такой объект уже существует')
 				else:
-					flash('Такая площадка уже существует')
+					flash('Такой проект уже существует')
 			else:	
 				location = Location(name = location_name, ecwid_id = current_user.ecwid_id)
 				db.session.add(location)
 				db.session.commit()		
-				flash('Площадка {} создана'.format(location_name))
+				flash('Проект {} создан'.format(location_name))
 				if len(site_name) > 0:
 					site = Site(name = site_name, loc_id = location.id)
 					db.session.add(site)
@@ -163,7 +163,7 @@ def AddRemoveLocation():
 					Site.query.filter(Site.loc_id == location.id).delete()
 					db.session.delete(location)
 					db.session.commit()
-					flash('Площадка {} удалена'.format(location_name))
+					flash('Проект {} удален'.format(location_name))
 				else:
 					site = Site.query.filter(Site.loc_id == location.id, Site.name.ilike(site_name)).first()
 					if site is not None:
@@ -174,7 +174,7 @@ def AddRemoveLocation():
 						flash('Такой объект не существует')
 					
 			else:
-				flash('Такой площадки не существует')
+				flash('Такого проекта не существует')
 	else:
 		for error in form.location_name.errors:
 					flash(error)

@@ -4,7 +4,7 @@
 		<!-- Required meta tags -->
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-		<title>Согласование заявок</title>
+		<title>{{ config['APPLICATION_TITLE'] }}</title>
 		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 		<style>
 			.alert-fixed {
@@ -45,35 +45,13 @@
 						<div class="col overflow-hidden">
 							<h3>
 								<!--<a href="/index"><img src="/static/logo.png" alt="Logo"></a>-->
-								Личный&nbsp;кабинет
+								{{ config['APPLICATION_TITLE'] }}
 							</h3>						
 						</div>
 					</div>
 					<div class = "row bg-light">
 						<div class = "col">
-							<nav class="navbar navbar-expand-md navbar-primary">
-								<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-									<span class="navbar-toggler-icon"></span>
-								</button>
-								<div class="collapse navbar-collapse" id="navbarSupportedContent">
-									<ul class="navbar-nav mr-auto">
-										<li class="nav-item {% if request.endpoint == 'main.ShowIndex' %} active {% endif %}">
-											<a class="nav-link" href="{{ url_for('main.ShowIndex') }}">Главная</a>
-										</li>										
-										<li class="nav-item {% if request.endpoint == 'main.ShowStores' %} active {% endif %}">
-											<a class="nav-link" href="{{ url_for('main.ShowStores') }}">Поставщики</a>
-										</li>
-										<li class="nav-item {% if request.endpoint == 'main.ShowSettings' %} active {% endif %}">
-											<a class="nav-link" href="{{ url_for('main.ShowSettings') }}">Настройки</a>
-										</li>
-										{% if current_user.role.name == "initiative" %}
-											<li class="nav-item {% if request.endpoint == 'main.ShowEcwid' %} active {% endif %}">
-												<a class="nav-link" href="{{ url_for('main.ShowEcwid') }}">Заказать</a>
-											</li>
-										{% endif %}
-									</ul>
-								</div>
-							</nav>
+							{% include 'navigation.html' %}
 						</div>
 						<div class="col text-right">
 							{{ current_user.role }} <a href="{{ url_for('auth.PerformLogout') }}">выйти</a><br>
@@ -85,7 +63,7 @@
 						<div class="col text-center overflow-hidden">
 							<h3>
 								<!--<a href="/index"><img src="/static/logo.png" alt="Logo"></a>-->
-								Личный&nbsp;кабинет
+								{{ config['APPLICATION_TITLE'] }}
 							</h3>						
 						</div>
 					</div>
