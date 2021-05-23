@@ -9,7 +9,7 @@ static const char *_DISALLOWED_PRODUCTS_FIELDS[] = {"id", "categories", "default
 													"combinations", "url", "productClassId", "defaultCombinationId", "categoryIds",
 													"tax", "galleryImages", "media", "files", "sku", "showOnFrontpage"};
 */											
-static const char *_ALLOWED_PRODUCTS_FIELDS[] = {"name", "price", "enabled", "options", "description"};													
+static const char *_ALLOWED_PRODUCTS_FIELDS[] = {"name", "price", "enabled", "options", "description", "imageUrl"};													
 
 #define ARRAY_SIZE(arr)     (sizeof(arr) / sizeof((arr)[0]))
 
@@ -272,12 +272,18 @@ void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, ui
 				json_object_object_get_ex(hub_product,"id", &hub_product_id);
 				if (hub_product_id == NULL)
 					continue;
+				if (hub_product_id != NULL && image_url != NULL){
+					if (SetHubProductImage(hub, (int64_t)json_object_get_int64(hub_product_id), (char *)json_object_get_string(image_url)) != true){
+						log_err("Setting product %ld image failed", (int64_t)json_object_get_int64(hub_product_id));
+					}
+				}
 				json_object_object_add(params, "productId", json_object_get(hub_product_id));
 				const char *buffer = json_object_to_json_string(store_product);
 				json = RESTcall(hub.id, PUT_PRODUCT, params, (uint8_t *)buffer, strlen(buffer));
 				if (json == NULL){
 					log_err("Setting product %s failed", hub_sku);
 				} else {
+					
 					json_object_put(json);
 					json = NULL;
 				}

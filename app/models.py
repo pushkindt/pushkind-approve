@@ -38,9 +38,10 @@ class UserRoles(enum.IntEnum):
 	validator = 2
 	approver = 3
 	admin = 4
+	supervisor = 5
 	
 	def __str__(self):
-		pretty = ['Без роли', 'Инициатор', 'Валидатор', 'Закупщик', 'Администратор']
+		pretty = ['Без роли', 'Инициатор', 'Валидатор', 'Закупщик', 'Администратор', 'Наблюдатель']
 		return pretty[self.value]
 		
 class OrderStatus(enum.IntEnum):
@@ -91,6 +92,7 @@ class User(UserMixin, db.Model):
 	name = db.Column(db.String(128), nullable=False, default='', server_default='')
 	phone = db.Column(db.String(128), nullable=False, default='', server_default='')
 	position = db.Column(db.String(128), nullable=False, default='', server_default='')
+	place = db.Column(db.String(128), nullable=True)
 	data = db.Column(JsonType())
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=True, index=True)
 	hub = db.relationship('Ecwid')
@@ -98,6 +100,7 @@ class User(UserMixin, db.Model):
 	email_modified = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
 	email_disapproved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
 	email_approved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+	last_logon = db.Column(db.DateTime, nullable=True)
 	
 	def __hash__(self):
 		return self.id
@@ -123,7 +126,7 @@ class User(UserMixin, db.Model):
 				'data':self.data, 'role': self.role.name,'role_id':int(self.role),\
 				'name':self.name, 'ecwid_id':self.ecwid_id, 'position':self.position,\
 				'email_new':self.email_new, 'email_modified':self.email_modified,\
-				'email_disapproved':self.email_disapproved, 'email_approved':self.email_approved}
+				'email_disapproved':self.email_disapproved, 'email_approved':self.email_approved, 'place':self.place}
 		return data
 		
 	def GetPasswordResetToken(self, expires_in=600):
@@ -163,6 +166,8 @@ class ApiData(db.Model):
 	id  = db.Column(db.Integer, primary_key = True, nullable=False)
 	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
 	ecwid_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False, index=True, unique=True)
+	notify_1C = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+	email_1C =  db.Column(db.String(128), nullable=True)
 	hub = db.relationship('Ecwid')
 
 class EventLog(db.Model):

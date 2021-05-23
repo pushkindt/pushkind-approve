@@ -3,12 +3,6 @@
 {% block styles%}
 	<style>
 		.ec-radiogroup, .ec-cart__next, .ec-form--comments, .ec-header-h5 {display:none}
-		.ec-price-item,
-		.ec-cart-summary__total,
-		.ec-cart-summary__price,
-		.ec-cart-item__price,
-		.ec-cart-item__price-inner,
-		.grid-product__price-amount {display:none !important}
 	</style>
 {% endblock %}
 
@@ -29,7 +23,7 @@
 							<select class="form-control border-danger" id="locationSelect">
 								<option value="" disabled selected>Выберите проект...</option>
 								{% for location in locations %}
-									<option>{{ location.name }}</option>
+									<option value="{{ location.id }}" >{{ location.name }}</option>
 								{% endfor %}
 							</select>
 						</div>
@@ -68,8 +62,8 @@
 			
 			$("#locationSelect").change(function(){
 				ec.order = ec.order || {};
-				let val = $(this).val();
-				ec.order.referer_id = val;
+				let val = Number($(this).val());
+				ec.order.referer_id = decodeEntities($("#locationSelect option:selected").text());
 				$(this).removeClass("border-danger");
 				$("#siteLocationDismiss").prop("disabled", true);
 				let sitesList = $("#siteSelect");
@@ -80,8 +74,8 @@
 				sitesList.append(defaultSite);
 				
 				for(let i = 0; i < locations.length; i++) {
-					loc = locations[i];
-					if (loc["name"].toUpperCase() === val.toUpperCase()){
+					loc = locations[i];					
+					if (loc["id"] === val){
 						for (j = 0; j < loc["sites"].length; j++)
 						{
 							sitesList.append($("<option>").text(loc["sites"][j]["name"]));
@@ -98,6 +92,30 @@
 				$("#siteLocationDismiss").prop("disabled", false);
 			});
 		});
+		
+		
+	var decodeEntities = (function () {
+        var doc = document.implementation.createHTMLDocument("");
+        var element = doc.createElement('div');
+        function getText(str) {
+            element.innerHTML = str;
+            str = element.textContent;
+            element.textContent = '';
+            return str;
+        }
+        function decodeHTMLEntities(str) {
+            if (str && typeof str === 'string') {
+                var x = getText(str);
+                while (str !== x) {
+                    str = x;
+                    x = getText(x);
+                }
+                return x;
+            }
+        }
+        return decodeHTMLEntities;
+    })();
+		
 		
 	});
 </script>

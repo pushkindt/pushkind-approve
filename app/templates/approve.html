@@ -71,11 +71,6 @@
   color: #fff;
 }
 
-{% if current_user.role.name in ['initiative'] %}
-	.productPrice{display: none}
-	.orderTotal{display: none}
-{% endif %}
-		
 </style>
 {% endblock%}
 
@@ -111,7 +106,7 @@
 					<span class="font-weight-bold">ЗАЯВКА</span>
 					#{{ order['vendorOrderNumber'] }}
 					от {{ moment(order['createDate']).format() }}
-					{% if current_user.email == order['initiative'].email %}
+					{% if current_user.email == order['initiative'].email or current_user.role.name == 'admin' %}
 						<a class="badge badge-danger" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">&times;</a>
 					{% endif %}
 				</div>
@@ -149,7 +144,7 @@
 				</div>
 				<div class="row">
 					<div class="col">
-					{% if current_user.email == order['initiative'].email %}
+					{% if current_user.email == order['initiative'].email or current_user.role.name == 'admin' %}
 					<form action="{{ url_for('main.SaveLocation', order_id = order['orderNumber']) }}" id="locationForm" method="POST">
 						<span class="font-weight-bold">Проект: </span>
 						{{location_form.csrf_token}}
@@ -223,7 +218,7 @@
 					</div>	
 				</div>
 			</div>
-			{% if current_user.role.name not in ['admin','default'] %}
+			{% if current_user.role.name != 'supervisor' %}
 				<div class="col-xs-auto">
 					<ul class="nav text-right flex-column bg-light p-2">
 						<li class="nav-item">
@@ -244,7 +239,7 @@
 						<li class="nav-item">
 							Отправить:
 						</li>
-						{% if current_user.email == order['initiative'].email %}
+						{% if current_user.email == order['initiative'].email or current_user.role.name == 'admin' %}
 						<li class="nav-item">
 							<a href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Клонировать заявку?')">клонировать</a>
 						</li>
@@ -297,7 +292,7 @@
 		{% endfor %}
 	</div>
 	
-	{% if current_user.role.name not in ['admin','default'] %}
+	{% if current_user.role.name != 'supervisor' %}
 		<div class="container mt-2">
 			<div class="collapse" id="commentFormCollapse">
 				{% set errorsList = comment_form.comment.errors %}
@@ -362,141 +357,141 @@
 			
 		</div>
 	</div>
-	
-	<div class="modal fade" id="report1CModal" tabindex="-1" role="dialog" aria-labelledby="report1CModalLabel" aria-hidden="true">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="report1CModalLabel">Экспорт в 1С</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
+	{% if current_user.role.name != 'supervisor' %}
+		<div class="modal fade" id="report1CModal" tabindex="-1" role="dialog" aria-labelledby="report1CModalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="report1CModalLabel">Экспорт в 1С</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<form method="POST" action="{{ url_for('main.Get1CReport', order_id = order['orderNumber']) }}">
+						<div class="modal-body">
+							<h6>Заявка #{{ order['vendorOrderNumber'] }} от {{ moment(order['createDate']).format() }}</h6>
+							<h6>Проект {{ order['refererId'] }}</h6>
+							{{ export1C_form.csrf_token }}
+							<div class="form-group">
+								{{ export1C_form.date.label }}
+								{{ export1C_form.date(class_ = 'form-control') }}
+							</div>
+							<div class="form-check">
+								{{ export1C_form.send_email(class_ = 'form-check-input') }}
+								{{ export1C_form.send_email.label(class_='form-check-label') }}
+							</div>
+							<div class="form-text text-info">
+								{%if order['orderComments']['object']|length == 0%}
+									<span class="text-danger">Объект не указан.</span>
+								{%endif%}
+								{%if order['orderComments']['object']|length == 0%}
+									<span class="text-danger">Статья БДР не указана.</span>
+								{%endif%}
+								{%if order['orderComments']['object']|length == 0%}
+									<span class="text-danger">Статья БДДС не указана.</span>
+								{%endif%}
+								{%if order['has_units'] is sameas false %}
+									<span class="text-danger">ЕИ не указаны.</span>
+								{%endif%}
+							</div>
+							<div class="form-text text-info d-none" id="exportNotification">
+								Файл сохранён в папку загрузки и отправлен, если это было указано.
+							</div>
+						</div>
+						<div class="modal-footer">
+							{{ export1C_form.submit(class_ = 'btn btn-primary', id="exportSubmit") }}
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+						</div>
+					</form>
 				</div>
-				<form method="POST" action="{{ url_for('main.Get1CReport', order_id = order['orderNumber']) }}">
-					<div class="modal-body">
-						<h6>Заявка #{{ order['vendorOrderNumber'] }} от {{ moment(order['createDate']).format() }}</h6>
-						<h6>Проект {{ order['refererId'] }}</h6>
-						{{ export1C_form.csrf_token }}
-						<div class="form-group">
-							{{ export1C_form.date.label }}
-							{{ export1C_form.date(class_ = 'form-control') }}
-						</div>
-						<div class="form-check">
-							{{ export1C_form.send_email(class_ = 'form-check-input') }}
-							{{ export1C_form.send_email.label(class_='form-check-label') }}
-						</div>
-						<div class="form-text text-info">
-							{%if order['orderComments']['object']|length == 0%}
-								<span class="text-danger">Объект не указан.</span>
-							{%endif%}
-							{%if order['orderComments']['object']|length == 0%}
-								<span class="text-danger">Статья БДР не указана.</span>
-							{%endif%}
-							{%if order['orderComments']['object']|length == 0%}
-								<span class="text-danger">Статья БДДС не указана.</span>
-							{%endif%}
-							{%if order['has_units'] is sameas false %}
-								<span class="text-danger">ЕИ не указаны.</span>
-							{%endif%}
-						</div>
-						<div class="form-text text-info d-none" id="exportNotification">
-							Файл сохранён в папку загрузки и отправлен, если это было указано.
-						</div>
-					</div>
-					<div class="modal-footer">
-						{{ export1C_form.submit(class_ = 'btn btn-primary', id="exportSubmit") }}
-						<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
-					</div>
-				</form>
 			</div>
 		</div>
-	</div>
 
-	<div class="modal fade" id="BECModal" tabindex="-1" role="dialog" aria-labelledby="BECModalLabel" aria-hidden="true">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="BECModalLabel">Статья БДР</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
-				<form method="POST" action="{{ url_for('main.SaveBEC', order_id = order['orderNumber']) }}">
-					<div class="modal-body">
-						{{ bec_form.csrf_token }}
-						<div class="form-group">
-							{{ bec_form.bec.label }}
-							{{ bec_form.bec(class_ = 'form-control', placeholder='Введите статью БДР...') }}
+		<div class="modal fade" id="BECModal" tabindex="-1" role="dialog" aria-labelledby="BECModalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="BECModalLabel">Статья БДР</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<form method="POST" action="{{ url_for('main.SaveBEC', order_id = order['orderNumber']) }}">
+						<div class="modal-body">
+							{{ bec_form.csrf_token }}
+							<div class="form-group">
+								{{ bec_form.bec.label }}
+								{{ bec_form.bec(class_ = 'form-control', placeholder='Введите статью БДР...') }}
+							</div>
 						</div>
-					</div>
-					<div class="modal-footer">
-						{{ bec_form.submit(class_ = 'btn btn-primary') }}
-						<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
-					</div>
-				</form>
+						<div class="modal-footer">
+							{{ bec_form.submit(class_ = 'btn btn-primary') }}
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+						</div>
+					</form>
+				</div>
 			</div>
 		</div>
-	</div>
-	
-	<div class="modal fade" id="CFSModal" tabindex="-1" role="dialog" aria-labelledby="CFSModalLabel" aria-hidden="true">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="BECModalLabel">Статья БДДС</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
-				<form method="POST" action="{{ url_for('main.SaveCFS', order_id = order['orderNumber']) }}">
-					<div class="modal-body">
-						{{ cfs_form.csrf_token }}
-						<div class="form-group">
-							{{ cfs_form.cfs.label }}
-							{{ cfs_form.cfs(class_ = 'form-control', placeholder='Введите статью БДДС...') }}
+		
+		<div class="modal fade" id="CFSModal" tabindex="-1" role="dialog" aria-labelledby="CFSModalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="BECModalLabel">Статья БДДС</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<form method="POST" action="{{ url_for('main.SaveCFS', order_id = order['orderNumber']) }}">
+						<div class="modal-body">
+							{{ cfs_form.csrf_token }}
+							<div class="form-group">
+								{{ cfs_form.cfs.label }}
+								{{ cfs_form.cfs(class_ = 'form-control', placeholder='Введите статью БДДС...') }}
+							</div>
 						</div>
+						<div class="modal-footer">
+							{{ cfs_form.submit(class_ = 'btn btn-primary') }}
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>	
+		
+		<div class="modal fade" id="SiteModal" tabindex="-1" role="dialog" aria-labelledby="SiteModalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="SiteModalLabel">Объект</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
 					</div>
-					<div class="modal-footer">
-						{{ cfs_form.submit(class_ = 'btn btn-primary') }}
-						<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
-					</div>
-				</form>
+					<form method="POST" action="{{ url_for('main.SaveSite', order_id = order['orderNumber']) }}">
+						<div class="modal-body">
+							{{ site_form.csrf_token }}
+							<div class="form-group">
+								{{ site_form.object.label }}
+								{{ site_form.object(class_ = 'form-control', list='sitesList', placeholder='Введите название объекта...') }}
+								{% if order['location'] %}
+									<datalist id="sitesList">
+									{% for site in order['location']['sites']%}
+										<option>{{ site.name }}</option>
+									{% endfor %}
+									</datalist>
+								{% endif %}
+							</div>
+						</div>
+						<div class="modal-footer">
+							{{ site_form.submit(class_ = 'btn btn-primary') }}
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+						</div>
+					</form>
+				</div>
 			</div>
 		</div>
-	</div>	
-	
-	<div class="modal fade" id="SiteModal" tabindex="-1" role="dialog" aria-labelledby="SiteModalLabel" aria-hidden="true">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="SiteModalLabel">Объект</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
-				<form method="POST" action="{{ url_for('main.SaveSite', order_id = order['orderNumber']) }}">
-					<div class="modal-body">
-						{{ site_form.csrf_token }}
-						<div class="form-group">
-							{{ site_form.object.label }}
-							{{ site_form.object(class_ = 'form-control', list='sitesList', placeholder='Введите название объекта...') }}
-							{% if order['location'] %}
-								<datalist id="sitesList">
-								{% for site in order['location']['sites']%}
-									<option>{{ site.name }}</option>
-								{% endfor %}
-								</datalist>
-							{% endif %}
-						</div>
-					</div>
-					<div class="modal-footer">
-						{{ site_form.submit(class_ = 'btn btn-primary') }}
-						<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>
-
+	{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -525,7 +520,7 @@
 			setTimeout(() => $("#exportNotification").removeClass("d-none"), 1000);
 		});
 		
-		{% if current_user.email == order['initiative'].email %}
+		{% if current_user.email == order['initiative'].email or current_user.role.name == 'admin' %}
 			var oldQuantity = 0;
 			$('.productQuantity').focus(function() {
 				$(this).removeClass('form-control-plaintext');

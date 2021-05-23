@@ -8,6 +8,7 @@ from app.models import User, UserRoles, ApiData, CacheCategories
 from app.ecwid import EcwidAPIException
 from app.main.utils import PrepareOrder, SendEmailNotification
 from sqlalchemy import func, or_
+from app.email import SendEmail
 
 
 @bp.route('/orders/', methods=['GET'])
@@ -61,8 +62,14 @@ def NotifyWaitingOrders():
 				for u in users:
 					if not u.email in recipients:
 						recipients[u.email] = list()
-					recipients[u.email].append(order['orderNumber'])
+					recipients[u.email].append(order['vendorOrderNumber'])
 
-	return jsonify(recipients)
-	#return jsonify({'result':'success'})
+	for recipient, orders in recipients.items():
+		current_app.logger.info('"wating" email about orders {} has been sent to {}'.format(orders, recipient))
+		SendEmail('Заявки ожидают согласования',
+				   sender=current_app.config['MAIL_USERNAME'],
+				   recipients=[recipient],
+				   text_body=render_template('email/waiting.txt', orders=orders),
+				   html_body=render_template('email/waiting.html', orders=orders))
+	return jsonify({'result':'success'})
 		

@@ -7,6 +7,12 @@ from wtforms.fields.html5 import DateField
 from app.main.utils import DATE_FORMAT
 from datetime import date
 
+
+class Notify1CSettingsForm(FlaskForm):
+	email = EmailField('Электронная почта')
+	enable = BooleanField('Включить рассылку 1С')
+	submit = SubmitField('Сохранить')
+
 class AddRemoveLocationForm(FlaskForm):
 	location_name = StringField('Проект', validators = [DataRequired(message='Название проекта - обязательное поле.')])
 	site_name = StringField('Объект', validators = [Optional()])
@@ -37,13 +43,14 @@ class UserSettings(Form):
 	phone = StringField('Телефон')
 	user_data = StringField('Параметры')
 	position = StringField('Роль')
+	place = StringField('Площадка')
 	email_new = BooleanField('Новые заявки')
 	email_modified = BooleanField('Заявка изменена')
 	email_disapproved = BooleanField('Заявка отклонена')
 	email_approved = BooleanField('Заявка согласована')
 
 class UserRolesForm(FlaskForm):
-	user_id = SelectField('Идентификатор пользователя',[DataRequired(message = 'Некорректный идентификатор пользователя')], coerce = int)
+	user_id = IntegerField('Идентификатор пользователя', render_kw={'hidden': ''})
 	role = SelectField('Права доступа',[InputRequired(message = 'Некорректные права доступа пользователя')], coerce = int,
 						choices = [(int(role), str(role)) for role in UserRoles])
 	about_user = FormField(UserSettings, [DataRequired()])
@@ -72,7 +79,7 @@ class ChangeQuantityForm(FlaskForm):
 
 class Export1CReport(FlaskForm):
 	date = DateField('Дата поставки', [InputRequired(message = 'Дата поставки - обязательное поле.')], format=DATE_FORMAT, default = date.today())
-	send_email = BooleanField('Отправить на zayavka@velesstroy.com')
+	send_email = BooleanField('Отправить на электронную почту для заявок.')
 	submit = SubmitField('Выгрузить')
 
 class BECForm(FlaskForm):

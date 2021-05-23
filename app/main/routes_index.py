@@ -48,13 +48,12 @@ def ShowIndex():
 			locations = current_user.data['locations']
 		except (TypeError,KeyError):
 			locations = []
-
+			
 	orders = []
 	args = {}
 	if filter_from != 0:
 		args['createdFrom'] = filter_from
 	if filter_location is not None:
-		filter_location = filter_location.strip()
 		args['refererId'] = filter_location
 	if current_user.role == UserRoles.initiative:
 		args['email'] = current_user.email
@@ -89,7 +88,7 @@ def ShowIndex():
 
 @bp.route('/merge/', methods=['POST'])
 @login_required
-@role_forbidden([UserRoles.default])
+@role_forbidden([UserRoles.default, UserRoles.supervisor])
 @ecwid_required
 def MergeOrders():
 	form = MergeOrdersForm()

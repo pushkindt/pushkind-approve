@@ -5,9 +5,6 @@
 		.ecwidOrder{
 			cursor: pointer;
 		}
-		{% if current_user.role.name in ['initiative'] %}
-			.orderTotal{display: none}
-		{% endif %}
 	</style>
 {% endblock %}
 
@@ -45,7 +42,7 @@
 		<div class="col">
 			<span class="font-weight-bold">ЗАЯВКИ</span>
 		</div>
-		{% if current_user.role.name in ['initiative', 'approver'] %}
+		{% if current_user.role.name in ['initiative', 'approver', 'admin'] %}
 			<div class="col text-right">
 				<a href="#" id="startMerging">Объединить</a>
 			</div>
@@ -79,7 +76,7 @@
 </div>
 
 
-{% if current_user.role.name in ['initiative', 'approver'] %}
+{% if current_user.role.name in ['initiative', 'approver', 'admin'] %}
 	<form id="mergeForm" class="d-none" method="POST" action="{{ url_for('main.MergeOrders') }}">
 		<div class="fixed-top">
 			<div class="container">
@@ -109,12 +106,12 @@
 		
 		$("#locationSelect").change(function(){
 			if ($(this).val() != 'Выберите проект...')
-				document.location.href = "{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from, location = 'replace_me') }}".replace('replace_me', $(this).val());
+				document.location.href = '{{ url_for("main.ShowIndex", location = "replace_me") }}'.replace('replace_me', $(this).val());
 			else
-				document.location.href = "{{ url_for('main.ShowIndex', approval = filter_approval, from = filter_from) }}"
+				document.location.href = '{{ url_for("main.ShowIndex") }}'
 		});
 
-	{% if current_user.role.name in ['initiative', 'approver'] %}
+	{% if current_user.role.name in ['initiative', 'approver', 'admin'] %}
 	
 		var mergeOrders = [];
 
@@ -129,6 +126,7 @@
 			isMerging = false;
 			$("#mergeForm").addClass("d-none");
 			$("#startMerging").show();
+			$(".ecwidOrder.bg-secondary.text-white").removeClass("bg-secondary text-white");
 		});
 	
 	{% endif %}

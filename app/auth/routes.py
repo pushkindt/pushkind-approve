@@ -5,8 +5,10 @@ from flask_login import login_user, logout_user, current_user
 from werkzeug.urls import url_parse
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.models import User, UserRoles
-from app.auth.email import SendPasswordResetEmail
+from app.auth.email import SendPasswordResetEmail, SendUserRegisteredEmail
 from flask import current_app
+
+from datetime import datetime, timezone
 
 @bp.route('/login/', methods = ['GET', 'POST'])
 def PerformLogin():
@@ -21,6 +23,8 @@ def PerformLogin():
 			return redirect(url_for('auth.PerformLogin'))
 		login_user(user, remember=form.remember_me.data)
 		current_app.logger.info('{} logged'.format(user.email))
+		user.last_logon = datetime.now(tz = timezone.utc)
+		db.session.commit()
 		if current_user.role == UserRoles.initiative:
 			return redirect(url_for('main.ShowEcwid'))
 		else:
@@ -38,6 +42,7 @@ def PerformRegistration():
 		user.SetPassword(form.password.data)
 		db.session.add(user)
 		db.session.commit()
+		SendUserRegisteredEmail(user)
 		flash ('Теперь пользователь может войти.')
 		current_app.logger.info('{} registered'.format(user.email))
 		if current_user.is_authenticated and current_user.role == UserRoles.admin:

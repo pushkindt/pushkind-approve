@@ -6,6 +6,8 @@ typedef struct {
 	char *client_id;
 	char *client_secret;
 	char *partners_key;
+	char *store_name;
+	char *store_email;
 } TEcwid;
 
 typedef struct {

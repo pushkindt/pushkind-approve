@@ -199,8 +199,7 @@ def SendEmailNotification(type, order):
 				   text_body=render_template('email/{}.txt'.format(type), order=order),
 				   html_body=render_template('email/{}.html'.format(type), order=order))
 				   
-def SendEmail1C(order, subject, data):
-	recipients = ['zayavka@velesstroy.com']
+def SendEmail1C(recipients, order, subject, data):
 	current_app.logger.info('"export1C" email about order {} has been sent to {}'.format(order['vendorOrderNumber'], recipients))
 	SendEmail(subject,
 			   sender=current_app.config['MAIL_USERNAME'],
