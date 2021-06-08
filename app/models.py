@@ -294,7 +294,7 @@ class Order(db.Model):
 	@classmethod
 	def UpdateOrdersPositions(cls, hub_id, order_id = None):
 	
-		orders = Order.query.filter_by(hub_id = hub_id)
+		orders = Order.query.filter(Order.hub_id == hub_id, Order.status != OrderStatus.approved)
 		if order_id is not None:
 			orders = orders.filter_by(id = order_id)
 	

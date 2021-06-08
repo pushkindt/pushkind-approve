@@ -30,7 +30,7 @@ def GetDateTimestamps():
 def ShowIndex():
 
 	dates = GetDateTimestamps()
-	filter_from = request.args.get('from', default = 0, type = int)
+	filter_from = request.args.get('from', default = dates['недавно'], type = int)
 	filter_approval = request.args.get('approval', default = None, type = str)
 	filter_project = request.args.get('project', default=None, type=int)
 	filter_category = request.args.get('category', default=None, type=int)
