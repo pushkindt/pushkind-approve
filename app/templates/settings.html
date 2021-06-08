@@ -23,7 +23,7 @@
 					</div>
 				</div>
 			{% endif %}
-			<form method="post" class="my-2 border-bottom">
+			<form method="post" class="my-2 border-bottom" action="{{ url_for('main.ConfigureEcwid') }}">
 				{{ ecwid_form.csrf_token }}
 				<div class="form-group row">
 					{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
@@ -46,73 +46,82 @@
 				<div class="form-group row">
 					{{ ecwid_form.store_id.label(class_ = "col-md-2 col-form-label") }} 
 					<div class="col-md-10">
-						{{  ecwid_form.store_id(class_ = 'form-control', value = current_user.hub.store_id if current_user.hub.store_id is not none else '') }}
+						{{  ecwid_form.store_id(class_ = 'form-control', value = current_user.hub.id if current_user.hub.id is not none else '') }}
 					</div>
 				</div>
 				<div class="form-group row">
 					<div class="col">
-						{{ ecwid_form.submit1(class_ = 'btn btn-primary') }}
+						{{ ecwid_form.submit(class_ = 'btn btn-primary') }}
 					</div>
 				</div>
 			</form>
-			<form method="POST" action="{{ url_for('main.Notify1CSettings') }}" class="my-2">
-					<div class = "row my-2">
-						<div class="col">	
-							<span class="font-weight-bold">НАСТРОЙКИ 1С РАССЫЛКИ</span>
-						</div>
-					</div>
-					<div class="form-row align-items-center">
-						<div class="col-md-6">
-							{{ notify1C_form.csrf_token }}
-							{{ notify1C_form.email(class_ = 'form-control', placeholder = 'Электронная почта') }}
-						</div>
-						<div class="col-md">
-							<div class="form-check">
-								{{ notify1C_form.enable(class_ = 'form-check-input') }}
-								{{ notify1C_form.enable.label(class_ = 'form-check-label') }}
-							</div>
-						</div>
-					</div>
-					<div class="form-group row my-1">
-						<div class="col">
-							{{ notify1C_form.submit(class_ = 'btn btn-primary') }}
-						</div>
-					</div>
-			</form>
 		</div>
 	</div>
+	
 	<div class="container border-bottom">
 		<div class="row">
 			<div class="col text-right">
-				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#locationFormCollapse" aria-expanded="false" aria-controls="locationFormCollapse">
+				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#notify1CFormCollapse" aria-expanded="false" aria-controls="notify1CFormCollapse">
+					Настроить рассылку 1С
+				</button>
+			</div>
+		</div>
+		<div class="collapse" id="notify1CFormCollapse">	
+			<form method="POST" action="{{ url_for('main.Notify1CSettings') }}" class="my-2">
+				<div class="form-row align-items-center">
+					<div class="col-md-6">
+						{{ notify1C_form.csrf_token }}
+						{{ notify1C_form.email(class_ = 'form-control', placeholder = 'Электронная почта') }}
+					</div>
+					<div class="col-md">
+						<div class="form-check">
+							{{ notify1C_form.enable(class_ = 'form-check-input') }}
+							{{ notify1C_form.enable.label(class_ = 'form-check-label') }}
+						</div>
+					</div>
+				</div>
+				<div class="form-group row my-1">
+					<div class="col">
+						{{ notify1C_form.submit(class_ = 'btn btn-primary') }}
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>	
+	
+	
+	<div class="container border-bottom">
+		<div class="row">
+			<div class="col text-right">
+				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#projectFormCollapse" aria-expanded="false" aria-controls="projectFormCollapse">
 					Управление проектами
 				</button>
 			</div>
 		</div>
-		<div class="collapse" id="locationFormCollapse">
-			<form method="post" action="{{ url_for('main.AddRemoveLocation') }}">
-				{{ location_form.csrf_token }}
+		<div class="collapse" id="projectFormCollapse">
+			<form method="post" action="{{ url_for('main.AddRemoveProject') }}">
+				{{ project_form.csrf_token }}
 				<div class="form-group row">
 					<div class="col">
-						{{ location_form.location_name(class_ = 'form-control', list='locationsList', placeholder='Введите название проекта...') }}
-						<datalist id="locationsList">
-						{% for location in locations%}
-							<option data-loc_id="{{location.id}}" >{{ location.name }}</option>
+						{{ project_form.project_name(class_ = 'form-control', list='projectsList', placeholder='Введите название проекта...') }}
+						<datalist id="projectsList">
+						{% for project in projects%}
+							<option data-loc_id="{{project.id}}" >{{ project.name }}</option>
 						{% endfor %}
 						</datalist>
 					</div>
 				</div>
 				<div class="form-group row">
 					<div class="col">
-						{{ location_form.site_name(class_ = 'form-control', list='sitesList', placeholder='Введите название объекта...') }}
+						{{ project_form.site_name(class_ = 'form-control', list='sitesList', placeholder='Введите название объекта...') }}
 						<datalist id="sitesList">
 						</datalist>
 					</div>
 				</div>
 				<div class="form-group row">
 					<div class="col">
-						{{ location_form.submit1(class_ = 'btn btn-primary') }}
-						{{ location_form.submit2(class_ = 'btn btn-danger') }}
+						{{ project_form.submit1(class_ = 'btn btn-primary') }}
+						{{ project_form.submit2(class_ = 'btn btn-danger') }}
 					</div>
 				</div>
 			</form>
@@ -124,10 +133,7 @@
 				<a href="{{ url_for('auth.PerformRegistration') }}">Создание нового пользователя</a>
 			</div>			
 			<div class="col">
-				<a href="/static/app.log">Лог файл веб приложения</a>
-			</div>
-			<div class="col">			
-				<a href="https://map.pushkind.com/static/app.log">Лог файл map.pushkind.com</a>
+				<a href="{{ url_for('static', filename = 'app.log') }}">Лог файл веб приложения</a>
 			</div>
 		</div>	
 		<div class = "row my-2">
@@ -140,51 +146,39 @@
 				<input class="form-control" id="usersFilter" type="text" placeholder="Фильтр..">
 			</div>
 		</div>
-		<table class="table table-striped table-responsive table-sm">
-			<thead>
-				<tr>
-					<th scope="col">#</th>
-					<th scope="col">ФИО</th>
-					<th scope="col">Телефон</th>
-					<th scope="col">Email</th>
-					<th scope="col">Роль</th>
-					<th scope="col">Площадка</th>
-					<th scope="col">Права</th>
-					<th scope="col">Вход</th>
-					
-				</tr>
-			</thead>
-			<tbody id="usersTable">
-				{% for user in users %}
-					<tr class="showUserModal" data-id = "{{ user.id }}">
-						<th scope="row">
-							{{ user.id }}
-						</th>
-						<td>
-							{{ user.name }}
-						</td>
-						<td>
-							{{ user.phone }}
-						</td>
-						<td>
-							{{ user.email }}
-						</td>
-						<td>
-							{{ user.position }}
-						</td>
-						<td>
-							{{ user.place or '' }}
-						</td>
-						<td>
-							{{ user.role }}
-						</td>
-						<td>
-							{{ moment(user.last_logon).format() if user.last_logon is not none }}
-						</td>
-					</tr>
-				{% endfor %}
-			</tbody>
-		</table>
+		
+		<div class="row d-none d-sm-flex font-weight-bold px-3">
+			<div class="col-auto overflow-hidden">
+				#
+			</div>
+			<div class="col overflow-hidden">
+				ФИО
+			</div>
+			<div class="col overflow-hidden">
+				Телефон
+			</div>
+			<div class="col overflow-hidden">
+				Email
+			</div>
+			<div class="col overflow-hidden">
+				Роль
+			</div>
+			<div class="col overflow-hidden">
+				Площадка
+			</div>
+			<div class="col overflow-hidden">
+				Права
+			</div>
+			<div class="col overflow-hidden">
+				Заметка
+			</div>
+			<div class="col overflow-hidden">
+				Активность
+			</div>
+		</div>
+		{% for user in users %}
+			{% include '_user.html' %}
+		{% endfor %}
 	</div>
 
 	<div class="modal fade" id="userModal" tabindex="-1" role="dialog" aria-labelledby="userModalLabel" aria-hidden="true">
@@ -196,92 +190,7 @@
 						<span aria-hidden="true">&times;</span>
 					</button>
 				</div>
-				<form method="POST" action="{{ url_for('main.ShowSettings') }}">
-					<div class="modal-body">
-						{{ role_form.csrf_token }}
-						{{ role_form.user_id }}
-						<div class="form-group row">
-							{{ role_form.about_user.full_name.label(class_ = "col-md-2 col-form-label") }}
-							<div class="col-md-10">
-								{{ role_form.about_user.full_name(class_ = 'form-control') }}
-							</div>
-						</div>
-						<div class="form-group row">
-							{{ role_form.about_user.phone.label(class_ = "col-md-2 col-form-label") }} 
-							<div class="col-md-10">
-								{{ role_form.about_user.phone(class_ = 'form-control') }}
-							</div>
-						</div>
-						<div class="form-group row">
-							{{ role_form.about_user.position.label(class_ = "col-md-2 col-form-label") }} 
-							<div class="col-md-10">
-								{{ role_form.about_user.position(class_ = 'form-control') }}
-							</div>
-						</div>
-						<div class="form-group row">
-							{{ role_form.about_user.place.label(class_ = "col-md-2 col-form-label") }} 
-							<div class="col-md-10">
-								{{ role_form.about_user.place(class_ = 'form-control') }}
-							</div>
-						</div>
-						<div class="form-group row">
-							{{ role_form.role.label(class_ = "col-md-2 col-form-label") }} 
-							<div class="col-md-10">
-								{{ role_form.role(class_ = 'form-control') }}
-							</div>
-						</div>
-						<p class="text-muted"><small>После смены роли необходимо сохранить, прежде чем настраивать проекты и категории.</small></p>
-						<div class="form-group row">
-							<div class="col-md-2">Оповещения</div>
-							<div class="col-md-10">
-								<div class="form-check form-check-inline">
-									{{ role_form.about_user.email_new(class_="form-check-input") }}
-									{{ role_form.about_user.email_new.label(class_="form-check-label") }}
-								</div>
-								<div class="form-check form-check-inline">
-									{{ role_form.about_user.email_modified(class_="form-check-input") }}
-									{{ role_form.about_user.email_modified.label(class_="form-check-label") }}
-								</div>
-								<div class="form-check form-check-inline">
-									{{ role_form.about_user.email_disapproved(class_="form-check-input") }}
-									{{ role_form.about_user.email_disapproved.label(class_="form-check-label") }}
-								</div>
-								<div class="form-check form-check-inline">
-									{{ role_form.about_user.email_approved(class_="form-check-input") }}
-									{{ role_form.about_user.email_approved.label(class_="form-check-label") }}
-								</div>
-							</div>
-						</div>
-						<div class="row my-1" id="userDataWrapper">
-							{{ role_form.about_user.user_data(class_='form-control d-none', hidden='') }}
-							<div class="col">
-								<p class="font-weight-bold">Проекты</p>
-								{% for location in locations %}
-									<div class="form-check">
-										<label class="form-check-label">
-											<input type="checkbox" class="form-check-input locationCheck" value="{{ location.name }}"><span class="text-capitalize">{{ location.name }}</span>
-										</label>
-									</div>
-								{% endfor %}
-							</div>
-							<div class="col">
-								<p class="font-weight-bold">Категории</p>
-								{% for category in categories %}
-									<div class="form-check">
-										<label class="form-check-label">
-											<input type="checkbox" class="form-check-input categoryCheck" value="{{ category.name }}">{{ category.name }}
-										</label>
-									</div>
-								{% endfor %}
-							</div>
-						</div>
-					</div>
-					<div class="modal-footer">
-						{{ role_form.submit2(class_ = 'btn btn-primary') }}
-						<a href="" id="removeUserButton" class="btn btn-danger" onclick="return confirm('Удалить пользователя?')">Удалить</a>
-						<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
-					</div>
-				</form>
+				{% include '_user.settings.form.html' %}
 			</div>
 		</div>
 	</div>
@@ -294,84 +203,7 @@
 				<span class="font-weight-bold">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ</span>
 			</div>
 		</div>				
-		<form method="post">
-			{{ user_form.csrf_token }}
-			<div class="form-group row">
-				{{ user_form.about_user.full_name.label(class_ = "col-md-2 col-form-label") }}
-				<div class="col-md-10">
-					{{ user_form.about_user.full_name(class_ = 'form-control', autofocus = '', value = current_user.name) }}
-				</div>
-			</div>
-			<div class="form-group row">
-				{{ user_form.about_user.phone.label(class_ = "col-md-2 col-form-label") }} 
-				<div class="col-md-10">
-					{{ user_form.about_user.phone(class_ = 'form-control', value = current_user.phone) }}
-				</div>
-			</div>
-			<div class="form-group row">
-				{{ user_form.about_user.position.label(class_ = "col-md-2 col-form-label") }} 
-				<div class="col-md-10">
-					{{ user_form.about_user.position(class_ = 'form-control', value = current_user.position) }}
-				</div>
-			</div>
-			<div class="form-group row">
-				{{ user_form.about_user.place.label(class_ = "col-md-2 col-form-label") }} 
-				<div class="col-md-10">
-					{{ user_form.about_user.place(class_ = 'form-control', value = current_user.place) }}
-				</div>
-			</div>
-			<div class="form-group row">
-				<div class="col-md-2">Оповещения</div>
-				<div class="col-md-10">
-					<div class="form-check form-check-inline">
-						{{ user_form.about_user.email_new(class_="form-check-input", checked=current_user.email_new) }}
-						{{ user_form.about_user.email_new.label(class_="form-check-label") }}
-					</div>
-					<div class="form-check form-check-inline">
-						{{ user_form.about_user.email_modified(class_="form-check-input", checked=current_user.email_modified) }}
-						{{ user_form.about_user.email_modified.label(class_="form-check-label") }}
-					</div>
-					<div class="form-check form-check-inline">
-						{{ user_form.about_user.email_disapproved(class_="form-check-input", checked=current_user.email_disapproved) }}
-						{{ user_form.about_user.email_disapproved.label(class_="form-check-label") }}
-					</div>
-					<div class="form-check form-check-inline">
-						{{ user_form.about_user.email_approved(class_="form-check-input", checked=current_user.email_approved) }}
-						{{ user_form.about_user.email_approved.label(class_="form-check-label") }}
-					</div>
-				</div>
-			</div>
-			{% if current_user.role.name in ['validator', 'approver'] %}
-				<div class="row">
-					{{ user_form.about_user.user_data(class_='form-control d-none', hidden='') }}
-					<div class="col">
-						<p class="font-weight-bold">Проекты</p>
-						{% for location in locations %}
-							<div class="form-check">
-								<label class="form-check-label">
-									<input type="checkbox" class="form-check-input locationCheck" value="{{ location.name }}"><span class="text-capitalize">{{ location.name }}</span>
-								</label>
-							</div>
-						{% endfor %}
-					</div>
-					<div class="col">
-						<p class="font-weight-bold">Категории</p>
-						{% for category in categories %}
-							<div class="form-check">
-								<label class="form-check-label">
-									<input type="checkbox" class="form-check-input categoryCheck" value="{{ category.name }}">{{ category.name }}
-								</label>
-							</div>
-						{% endfor %}
-					</div>
-				</div>
-			{% endif %}
-			<div class="form-group row">
-				<div class="col">
-					{{ user_form.submit3(class_ = 'btn btn-primary') }}
-				</div>
-			</div>
-		</form>
+		{% include '_user.settings.form.html' %}
 	</div>
 {% endif %}
 
@@ -382,8 +214,13 @@
 <script>
 	$(document).ready(function(){
 		//Scripts
-		{% if current_user.role.name in ['validator', 'admin', 'approver'] %}
-			var userData = $("#about_user-user_data");
+		{% if current_user.role.name in ['validator', 'admin', 'purchaser'] %}
+			var categoriesData = $("#about_user-categories");
+			var projectsData = $("#about_user-projects");
+			
+			categoriesData.val({{current_user.categories_list}});
+			projectsData.val({{current_user.projects_list}});
+			
 		{% endif %}
 		
 		{% if current_user.role.name == 'admin' %}
@@ -393,17 +230,25 @@
 						{% endfor %}
 						];
 						
-			var locations = [
-						{% for location in locations %}
-							{{ location|safe }},
+			var projects = [
+						{% for project in projects %}
+							{{ project|safe }},
 						{% endfor %}
 							];
 
 
+			function HideUserData(){
+				projectsData.val('');
+				categoriesData.val('');
+				projectsData.removeAttr('value');
+				categoriesData.removeAttr('value');
+				$("#userDataWrapper").hide();
+			}
+
 
 			$("#usersFilter").on("keyup", function() {
 				let value = $(this).val().toLowerCase();
-				$("#usersTable tr").filter(function() {
+				$(".showUserModal").filter(function() {
 					$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
 				});
 			});
@@ -412,38 +257,38 @@
 				$('#userModal').modal();
 				let user_id = Number($(this).attr('data-id'));
 				$("#user_id").val(user_id);
-				users.forEach(function(user){
+				users.some(function(user){
 					if (user["id"] == user_id){
 						$("#about_user-phone").val(user["phone"]);
 						$("#about_user-position").val(user["position"]);
-						$("#about_user-place").val(user["place"]);
+						$("#about_user-location").val(user["location"]);
 						$("#about_user-full_name").val(user["name"]);
 						$("#about_user-email_new").prop("checked", user["email_new"]);
 						$("#about_user-email_modified").prop("checked", user["email_modified"]);
 						$("#about_user-email_disapproved").prop("checked", user["email_disapproved"]);
 						$("#about_user-email_approved").prop("checked", user["email_approved"]);
 						$("#role").val(user["role_id"]);
-						$("#removeUserButton").attr('href','/remove/'+user_id);
-						if (user["role"] == "validator" || user["role"] == "approver"){
+						$("#note").val(user["note"]);
+						$("#removeUserButton").attr("href","{{ url_for('main.RemoveUser', user_id='0') }}".replace("0", user_id));
+						if (user["role"] == "validator" || user["role"] == "purchaser"){
 							$("#userDataWrapper").show();
-							MakeUserDataCheckboxes(user["data"]);
-							MakeUserData();
+							categoriesData.val(user["categories"]);
+							projectsData.val(user["projects"]);
 						}
 						else{
-							$("#userDataWrapper").hide();
-							userData.val('');
-							userData.removeAttr('value');
+							HideUserData();
 						}
+						return true;
 					}
 				});
 			});
 
-			$("#location_name").on('input', function () {
+			$("#project_name").on('input', function () {
 				let val = this.value;
 				let sitesList = $("#sitesList");
 				sitesList.empty();
-				for(let i = 0, locLen=locations.length; i < locLen; i++) {
-					loc = locations[i];
+				for(let i = 0, locLen=projects.length; i < locLen; i++) {
+					loc = projects[i];
 					if (loc["name"].toUpperCase() === val.toUpperCase()){
 						for (j = 0, siteLen = loc["sites"].length; j < siteLen; j++)
 						{
@@ -453,46 +298,7 @@
 					}
 				}
 			});
-			$("#role").change(function(){				
-				userData.val('');
-				userData.removeAttr('value');
-				$(".locationCheck,.categoryCheck").prop("checked", false);
-				$("#userDataWrapper").hide();
-			});
-		{% endif %}
-		{% if current_user.role.name in ['validator', 'admin', 'approver'] %}	
-			function MakeUserData(){
-				var locations = [];
-				var categories = [];
-				$.each($(".locationCheck:checked"), function(){
-					locations.push($(this).val());
-				});
-				$.each($(".categoryCheck:checked"), function(){
-					categories.push($(this).val());
-				});
-				var jObj = {locations:locations, categories:categories};
-				userData.val(JSON.stringify(jObj));
-			}
-			
-			function MakeUserDataCheckboxes(jObj){
-				$(".locationCheck,.categoryCheck").prop("checked", false);
-				jObj["locations"].forEach(function(loc){
-					var selector = ".locationCheck[value='"+loc+"']";
-					$(selector).prop("checked", true);
-				});
-				jObj["categories"].forEach(function(cat){
-					var selector = ".categoryCheck[value='"+cat+"']";
-					$(selector).prop("checked", true);
-				});
-			}
-			$('.locationCheck, .categoryCheck').on('change', MakeUserData);
-		{% endif %}
-		{% if current_user.role.name in ['validator', 'approver'] %}
-			{% if current_user.data %}
-				var jObj = {{ current_user.data|tojson|safe }};
-				MakeUserDataCheckboxes(jObj);
-				MakeUserData();
-			{% endif %}
+			$("#role").change(HideUserData);
 		{% endif %}
 	});
 </script>

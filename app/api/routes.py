@@ -4,13 +4,13 @@ from app.api.auth import basic_auth
 from app import db
 from app.api.errors import BadRequest, ErrorResponse
 from datetime import datetime, timedelta, timezone
-from app.models import User, UserRoles, ApiData, CacheCategories
+from app.models import User, UserRoles
 from app.ecwid import EcwidAPIException
-from app.main.utils import PrepareOrder, SendEmailNotification
+from app.main.utils import SendEmailNotification
 from sqlalchemy import func, or_
 from app.email import SendEmail
 
-
+'''
 @bp.route('/orders/', methods=['GET'])
 @basic_auth.login_required
 def NotifyNewOrders():
@@ -71,5 +71,5 @@ def NotifyWaitingOrders():
 				   recipients=[recipient],
 				   text_body=render_template('email/waiting.txt', orders=orders),
 				   html_body=render_template('email/waiting.html', orders=orders))
-	return jsonify({'result':'success'})
+	return jsonify({'result':'success'})'''
 		

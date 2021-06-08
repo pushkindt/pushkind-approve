@@ -1,25 +1,18 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderApproval, EventLog, EventType, OrderStatus, Location, CacheCategories
+from app.models import User, UserRoles, Ecwid, OrderApproval, OrderEvent, EventType, OrderStatus, Project, Category, Order, OrderCategory, Site, AppSettings, OrderPosition
 from flask import render_template, redirect, url_for, flash, jsonify, current_app, Response
-from app.main.forms import OrderCommentsForm, OrderApprovalForm, ChangeQuantityForm, ChangeLocationForm, Export1CReport, BECForm, SiteForm, CFSForm
+from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, Export1CReport, InitiativeForm, ApproverForm
 from datetime import datetime, timezone, date
 from app.ecwid import EcwidAPIException
-from app.main.utils import DATE_TIME_FORMAT, role_required, ecwid_required, PrepareOrder, GetProductApproval, role_required_ajax, ecwid_required_ajax, role_forbidden, role_forbidden_ajax, SendEmailNotification, SendEmail1C
+from app.main.utils import role_required, ecwid_required, role_required_ajax, ecwid_required_ajax, role_forbidden, role_forbidden_ajax, SendEmailNotification, SendEmail1C
 
 from openpyxl import load_workbook
 from copy import copy
 from openpyxl.writer.excel import save_virtual_workbook
 import json
-
-'''
-################################################################################
-Consts
-################################################################################
-'''
-_DISALLOWED_ORDERS_ITEM_FIELDS = ['productId', 'id', 'categoryId']
-_DISALLOWED_ORDERS_FIELDS = ['vendorOrderNumber', 'customerId', 'externalFulfillment', 'createDate', 'initiative', 'updateDate', 'reviewers', 'events', 'status', 'positions', 'export1C', 'has_units']
+from sqlalchemy.orm.attributes import flag_modified
 
 '''
 ################################################################################
@@ -28,378 +21,177 @@ Approve page
 '''
 
 def GetOrder(order_id):
-	try:
-		response = current_user.hub.GetStoreOrders(orderNumber = order_id)
-		if 'items' not in response or len(response['items']) == 0:
-			raise EcwidAPIException('Такой заявки не существует')
-		order = response['items'][0]
-		if PrepareOrder(order) is False:
-			raise EcwidAPIException('Заявка не принадлежит ни одному из инициаторов')
-		if current_user.role == UserRoles.initiative and order['email'] != current_user.email:
-			raise EcwidAPIException('Вы не являетесь владельцем этой заявки')
-	except EcwidAPIException as e:
-		flash('Ошибка API: {}'.format(e))
-		order = None
+	order = Order.query.filter_by(id = order_id, hub_id = current_user.hub_id)
+	if current_user.role == UserRoles.initiative:
+		order = order.filter_by(initiative_id = current_user.id)
+	elif current_user.role in [UserRoles.purchaser, UserRoles.validator]:
+		order = order.join(OrderCategory).filter(OrderCategory.category_id.in_([cat.id for cat in current_user.categories]))
+		order = order.join(Site).filter(Site.project_id.in_([p.id for p in current_user.projects]))
+	order = order.first()
 	return order
 	
-@bp.route('/order/<int:order_id>')
+@bp.route('/orders/<order_id>')
 @login_required
 @role_forbidden([UserRoles.default])
 @ecwid_required
 def ShowOrder(order_id):
+	
 	order = GetOrder(order_id)
 	if order is None:
+		flash('Заявка с таким номером не найдена.')
 		return redirect(url_for('main.ShowIndex'))
-	
-	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
-	vendors = {str(vendor.store_id):vendor.store_name for vendor in vendors}
-	
-	for product in order['items']:
-		try:
-			dash = product['sku'].index('-')
-			product['vendor'] = vendors[product['sku'][:dash]]
-		except (ValueError, KeyError):
-			product['vendor'] = ''
-		
+
 	approval_form = OrderApprovalForm()
 	quantity_form = ChangeQuantityForm()
-	comment_form = OrderCommentsForm()
-	
-	location = Location.query.filter(Location.name.ilike(order['refererId'])).first()
-	locations = Location.query.order_by(Location.name).all()
-	location_form = ChangeLocationForm()
-	location_form.location_name.choices = [(l.id, l.name) for l in locations]
-	if location is None:
-		location_form.location_name.choices.append((0, 'Выберите проект...'))
-		location_form.location_name.default = 0
-		order['location'] = None
-	else:
-		location_form.location_name.default = location.id
-		order['location'] = location
-	location_form.process()
+	comment_form = LeaveCommentForm()
 	export1C_form = Export1CReport()
-	bec_form = BECForm(bec = order['orderComments']['budget'])
-	site_form = SiteForm(object = order['orderComments']['object'])
-	cfs_form = CFSForm(cfs = order['orderComments']['cashflow'] )
+	initiative_form = InitiativeForm()
+	approver_form = ApproverForm(income_statement = order.income_statement, cash_flow_statement = order.cash_flow_statement)
+	
+	projects = Project.query.filter(Project.hub_id == current_user.hub_id).order_by(Project.name).all()
+	categories = Category.query.filter(Category.hub_id == current_user.hub_id).all()
+	
+	initiative_form.categories.choices = [(c.id, c.name) for c in categories]
+	initiative_form.categories.default = order.categories_list
+
+	initiative_form.project.choices = [(p.id, p.name) for p in projects]
+	if order.site is None:
+		initiative_form.project.choices.append((0, 'Выберите проект...'))
+		initiative_form.project.default = 0
+		initiative_form.site.choices=[(0, 'Выберите объект...')]
+		initiative_form.site.default = 0
+	else:
+		initiative_form.project.default = order.site.project_id
+		initiative_form.site.choices = [(s.id, s.name) for s in order.site.project.sites]
+		initiative_form.site.default = order.site_id
+	initiative_form.process()
+	
+	if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
+		approvals = [approval.product_id for approval in current_user.approvals.filter_by(order_id = order.id).all()]
+	else:
+		approvals = None
+	
 	return render_template('approve.html',
 							order = order,
-							location_form = location_form,
+							approvals = approvals,
+							projects = projects,
 							comment_form = comment_form,
 							approval_form = approval_form,
 							quantity_form = quantity_form,
 							export1C_form = export1C_form,
-							bec_form = bec_form,
-							site_form = site_form,
-							cfs_form = cfs_form)
-
-@bp.route('/comment/<int:order_id>', methods=['POST'])
-@login_required
-@role_forbidden([UserRoles.default, UserRoles.supervisor])
-def SaveComment(order_id):
-	order = GetOrder(order_id)
-	if order is None:
-		return redirect(url_for('main.ShowIndex'))
-	form = OrderCommentsForm()
-	if form.validate_on_submit():
-		stripped = form.comment.data.strip()
-		if len(stripped) > 0:
-			comment = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.comment, data=stripped, timestamp = datetime.now(tz = timezone.utc))
-			db.session.add(comment)
-			flash('Комментарий успешно добавлен')
-		else:
-			flash('Комментарий не может быть пустым')
-		db.session.commit()
-	return redirect(url_for('main.ShowOrder', order_id = order_id))
-	
-@bp.route('/location/<int:order_id>', methods=['POST'])
-@login_required
-@role_required([UserRoles.initiative, UserRoles.approver, UserRoles.admin])
-def SaveLocation(order_id):
-	order = GetOrder(order_id)
-	if order is None:
-		return redirect(url_for('main.ShowIndex'))
-	locations = Location.query.order_by(Location.name).all()
-	form = ChangeLocationForm()
-	form.location_name.choices = [(l.id, l.name) for l in locations]
-	if form.validate_on_submit():
-		referer_id = dict(form.location_name.choices).get(form.location_name.data)
-		try:
-			response = current_user.hub.UpdateStoreOrder(order_id, {'refererId':referer_id})
-			message = 'проект был "{}", стал "{}"'.format(order['refererId'], referer_id)
-			event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.modified, data=message, timestamp = datetime.now(tz = timezone.utc))
-			db.session.add(event)
-			db.session.commit()
-			flash('Проект успешно изменен.')
-		except EcwidAPIException:
-			flash('Не удалось присвоить данный проект.')
-	else:
-		flash('Невозможно присвоить данный проект.')
-	return redirect(url_for('main.ShowOrder', order_id = order_id))
+							initiative_form = initiative_form,
+							approver_form = approver_form)
 
 
-@bp.route('/approval/<int:order_id>', methods=['POST'])
+@bp.route('/orders/duplicate/<order_id>')
 @login_required
-@role_required([UserRoles.validator, UserRoles.approver])
-def SaveApproval(order_id):
-	order = GetOrder(order_id)
-	if order is None:
-		return redirect(url_for('main.ShowIndex'))
-	form = OrderApprovalForm()
-	if form.validate_on_submit():
-		try:
-			order_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == None).first()
-			if form.product_id.data is None:
-				OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id).delete()
-				if order_approval is None:
-					order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
-					db.session.add(order_approval)
-					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.approved, data='заявка', timestamp = datetime.now(tz = timezone.utc))
-					if PrepareOrder(order):
-						if order['status'] == OrderStatus.approved:
-							SendEmailNotification('approved', order)
-							
-							api_data = ApiData.query.filter_by(ecwid_id == current_user.ecwid_id).first()
-							if api_data is not None and api_data.email_1C is not None and api_data.notify_1C is True:
-								data = Prepare1CReport(data, date.today())
-								if data is not None:
-									subject = '{}. {} (pushkind_{})'.format(order['refererId'], order['orderComments']['object'], order['vendorOrderNumber'])
-									SendEmail1C([api_data.email_1C], order, subject,('pushkind_{}.xlsx'.format(order['vendorOrderNumber']), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data))
-							
-							
-				else:
-					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data='согласованная ранее заявка', timestamp = datetime.now(tz = timezone.utc))
-					for product in order['items']:
-						product_approval = OrderApproval(order_id = order_id, product_id=product['id'], user_id = current_user.id)
-						db.session.add(product_approval)
-					if order['status'] != OrderStatus.not_approved:
-						SendEmailNotification('disapproved', order)
-			else:
-				product_approval = OrderApproval.query.filter(OrderApproval.order_id == order_id, OrderApproval.user_id == current_user.id, OrderApproval.product_id == form.product_id.data).first()
-				if product_approval is not None:
-					db.session.delete(product_approval)
-					message = 'товар <span class="product-sku text-primary">{}</span>'.format(product_approval.product_sku)
-					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message, timestamp = datetime.now(tz = timezone.utc))
-				else:
-					if order_approval is not None:
-						db.session.delete(order_approval)
-					product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id, product_sku = form.product_sku.data.strip())
-					db.session.add(product_approval)
-					message = 'товар <span class="product-sku text-primary">{}</span>'.format(product_approval.product_sku)
-					event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp = datetime.now(tz = timezone.utc))
-					if order['status'] != OrderStatus.not_approved:
-						SendEmailNotification('disapproved', order)
-			db.session.add(event)
-			db.session.commit()
-		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
-	return redirect(url_for('main.ShowOrder', order_id = order_id))
-
-
-@bp.route('/delete/<int:order_id>')
-@login_required
-@role_required([UserRoles.initiative, UserRoles.approver, UserRoles.admin])
-@ecwid_required
-def DeleteOrder(order_id):
-	order = GetOrder(order_id)
-	if order is None:
-		return redirect(url_for('main.ShowIndex'))
-	try:
-		response = current_user.hub.DeleteStoreOrder(order_id = order_id)
-		events = EventLog.query.join(User).filter(EventLog.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-		approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-		for approval in approvals:
-			db.session.delete(approval)
-		for event in events:
-			db.session.delete(event)
-		db.session.commit()
-		flash('Заявка успешно удалена')
-	except EcwidAPIException as e:
-		flash('Ошибка API: {}'.format(e))
-	return redirect(url_for('main.ShowIndex'))
-	
-@bp.route('/duplicate/<int:order_id>')
-@login_required
-@role_required([UserRoles.initiative, UserRoles.approver, UserRoles.admin])
+@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
 @ecwid_required
 def DuplicateOrder(order_id):
 	order = GetOrder(order_id)
 	if order is None:
+		flash('Заявка с таким номером не найдена.')
 		return redirect(url_for('main.ShowIndex'))
-	for key in _DISALLOWED_ORDERS_FIELDS:
-		order.pop(key, None)
-	order['orderComments'] = json.dumps(order['orderComments'])
-	try:
-		response = current_user.hub.SetStoreOrder(order)
-		if 'id' not in response:
-			raise EcwidAPIException('Не удалось дулировать заявку')
-		message = 'Заявка дублирована с внутренним номером <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = response['id']), response['id'])
-		event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.duplicated, data=message, timestamp = datetime.now(tz = timezone.utc))
-		db.session.add(event)
-		message = 'Заявка дублирована из заявки <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = order_id), order_id)
-		event = EventLog(user_id = current_user.id, order_id = response['id'], type=EventType.duplicated, data=message, timestamp = datetime.now(tz = timezone.utc))
-		db.session.add(event)
-		db.session.commit()
-		flash('Заявка успешно дублирована')
-	except EcwidAPIException as e:
-		flash('Ошибка API: {}'.format(e))
+
+	new_order = Order()
+	new_order.initiative = current_user
+
+	now = datetime.now(tz = timezone.utc)
+
+	new_order.products = order.products
+	new_order.total = order.total
+	new_order.income_statement = order.income_statement
+	new_order.cash_flow_statement = order.cash_flow_statement
+	new_order.site = order.site
+	new_order.status = OrderStatus.new
+	new_order.create_timestamp = int(now.timestamp())
+
+	new_order.id = now.strftime('_%y%j%H%M%S')
+	new_order.hub_id = current_user.hub_id
+	new_order.categories = order.categories
+	
+	db.session.add(new_order)
+
+	message = 'Заявка дублирована с номером <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = new_order.id), new_order.id)
+	event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.duplicated, data=message, timestamp = datetime.now(tz = timezone.utc))
+	db.session.add(event)
+	message = 'Заявка дублирована из заявки <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = order_id), order_id)
+	event = OrderEvent(user_id = current_user.id, order_id = new_order.id, type=EventType.duplicated, data=message, timestamp = datetime.now(tz = timezone.utc))
+	db.session.add(event)
+	db.session.commit()
+	flash('Заявка успешно дублирована.')
+
+	Order.UpdateOrdersPositions(current_user.hub_id)
+
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
 
 
-@bp.route('/quantity/<int:order_id>', methods=['POST'])
+@bp.route('/orders/quantity/<order_id>', methods=['POST'])
 @login_required
-@role_required([UserRoles.initiative, UserRoles.approver, UserRoles.admin])
+@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
 @ecwid_required
 def SaveQuantity(order_id):
-	new_total = ''
-	form = ChangeQuantityForm()
+	
 	order = GetOrder(order_id)
 	if order is None:
+		flash('Заявка с таким номером не найдена.')
 		return redirect(url_for('main.ShowIndex'))
+	
+	if order.status == OrderStatus.approved:
+		flash('Нельзя модифицировать согласованную заявку.')
+		return redirect(url_for('main.ShowIndex'))
+
+	form = ChangeQuantityForm()	
 	if form.validate_on_submit():
-		for i, product in enumerate(order['items']):
+		for i, product in enumerate(order.products):
 			if form.product_id.data == product['id']:
-				order['total'] += (form.product_quantity.data - product['quantity'])*product['price']
-				if order['total'] < 0:
-					order['total'] = 0
-				new_total = '{:,.2f}'.format(order['total'])
 				message = '<span class="product-sku text-primary">{}</span> количество было {} стало {}'.format(product['sku'], product['quantity'], form.product_quantity.data)
 				product['quantity'] = form.product_quantity.data
 				index = i
 				break
 		else:
-			flash('Указанный товар не найден в заявке')
+			flash('Указанный товар не найден в заявке.')
 			return redirect(url_for('main.ShowOrder', order_id = order_id))
 
-		approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
+		approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.hub_id == current_user.hub_id).all()
 		for approval in approvals:
 			db.session.delete(approval)
 			
-		if form.product_quantity.data == 0:
-			order['items'].pop(index)
-		try:
-			if len(order['items']) == 0:
-				response = current_user.hub.DeleteStoreOrder(order_id = order_id)
-				events = EventLog.query.join(User).filter(EventLog.order_id == order_id, User.ecwid_id == current_user.ecwid_id).all()
-				for event in events:
-					db.session.delete(event)
-				flash('Заявка удалена, вернитесь на главную страницу')
-				db.session.commit()
-				return redirect(url_for('main.ShowIndex'))
-			else:
-				order = {'total':order['total'], 'items':order['items']}
-				response = current_user.hub.UpdateStoreOrder(order_id, order)
-				event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.modified, data=message, timestamp=datetime.now(tz = timezone.utc))
-				db.session.add(event)
-				flash('Количество {} было изменено'.format(product['sku']))
-			db.session.commit()
-		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
-			db.session.rollback()
+		order.total = sum([p['quantity']*p['price'] for p in order.products])
+		order.status = OrderStatus.modified
+		
+		flag_modified(order, 'products')
+		
+		flash('Количество {} было изменено.'.format(product['sku']))
+		db.session.commit()
 	else:
 		for error in form.product_id.errors + form.product_quantity.errors:
 			flash(error)
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
 
-	
-@bp.route('/process/<int:order_id>')
+
+@bp.route('/orders/excel1/<order_id>')
 @login_required
-@role_required([UserRoles.approver])
+@role_forbidden([UserRoles.default])
 @ecwid_required
-def ProcessHubOrder(order_id):
+def GetExcelReport1(order_id):
 	order = GetOrder(order_id)
 	if order is None:
-		return redirect(url_for('main.ShowIndex'))
-		
-	for key in _DISALLOWED_ORDERS_FIELDS:
-		order.pop(key, None)
-	order.pop('orderComments', None)
-	for product in order['items']:
-		for key in _DISALLOWED_ORDERS_ITEM_FIELDS:
-			product.pop(key, None)
-	
-	stores = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
-	got_orders = {}
-	for store in stores:
-		products = list()
-		total = 0
-		for product in order['items']:
-			try:
-				dash = product['sku'].index('-')
-			except ValueError:
-				continue
-			if product['sku'][:dash] == str(store.store_id):
-				product_new = product.copy()
-				product_new['sku'] = product_new['sku'][dash+1:]
-				products.append(product_new)
-				total += product_new['price'] * product_new['quantity']
-		if len(products) == 0:
-			continue
-		items = order['items']
-		order['items'] = products
-		order['subtotal'] = total
-		order['total'] = total
-		order['email'] = current_user.email
-		try:
-			result = store.SetStoreOrder(order)
-			got_orders[store.store_name] = result['id']
-		except EcwidAPIException as e:
-			flash('Не удалось перезаказать товары у {}'.format(store.store_name))
-		order['items'] = items
-
-	if len(got_orders) > 0:
-		message = ', '.join(f'{vendor} (#{order})' for vendor,order in got_orders.items())
-		try:
-			referer = current_user.name if current_user.name else current_user.email
-			current_user.hub.UpdateStoreOrder(order_id, {'externalFulfillment':True})
-			event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.vendor, data=message, timestamp=datetime.now(tz = timezone.utc))
-			db.session.add(event)
-			db.session.commit()
-		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
-			flash('Не удалось сохранить информацию о передаче поставщикам')
-		flash('Заявка была отправлена поставщикам: {}'.format(message))
-	else:
-		flash('Не удалось перезаказать данные товары у зарегистрованных поставщиков')
-
-	return redirect(url_for('main.ShowOrder', order_id = order_id))
-	
-@bp.route('/notify/<int:order_id>')
-@login_required
-@role_required_ajax([UserRoles.initiative, UserRoles.approver, UserRoles.admin])
-@ecwid_required_ajax
-def NotifyApprovers(order_id):
-	order = GetOrder(order_id)
-	if order is None:
-		return redirect(url_for('main.ShowIndex'))
-	SendEmailNotification('modified', order)
-	flash('Уведомление успешно выслано')
-	return redirect(url_for('main.ShowOrder', order_id = order_id))
-	
-
-@bp.route('/report/<int:order_id>')
-@login_required
-@role_forbidden([UserRoles.default, UserRoles.supervisor])
-@ecwid_required
-def GetExcelReport(order_id):
-	order = GetOrder(order_id)
-	if order is None:
+		flash('Заявка с таким номером не найдена.')
 		return redirect(url_for('main.ShowIndex'))
 	
-	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
-	vendors = {str(vendor.store_id):vendor.store_name for vendor in vendors}
-	
-	data_len = len(order['items'])
+	data_len = len(order.products)
 	starting_row = 11
 	wb = load_workbook(filename = 'template.xlsx')
 	ws = wb.active
-	ws['P17'] = order['initiative'].name
+	ws['P17'] = order.initiative.name
 	if data_len > 1:
 		for merged_cell in ws.merged_cells.ranges:
 			if merged_cell.bounds[1] >= starting_row:
 				merged_cell.shift(0, data_len)
 		ws.insert_rows(starting_row, data_len-1)
 	for k,i in enumerate(range(starting_row, starting_row+data_len)):
-		product = order['items'][k]
+		product = order.products[k]
 		ws.row_dimensions[i].height = 50
 		if data_len > 1:
 			for j in range(1, 20):
@@ -414,13 +206,8 @@ def GetExcelReport(order_id):
 				target_cell.alignment = copy(source_cell.alignment)
 		ws.cell(i, 1).value = k + 1
 		ws.cell(i, 5).value = product['name']
-		try:
-			dash = product['sku'].index('-')
-			vendor = vendors[product['sku'][:dash]]
-		except (ValueError, KeyError):
-			vendor = ''
-		ws.cell(i, 3).value = order['refererId']
-		ws.cell(i, 7).value = vendor
+		ws.cell(i, 3).value = order.site.project.name if order.site is not None else ''
+		ws.cell(i, 7).value = product.get('vendor', '')
 		ws.cell(i, 8).value = product['quantity']
 		c1 = ws.cell(i, 8).coordinate
 		ws.cell(i, 10).value = product['price']
@@ -431,27 +218,25 @@ def GetExcelReport(order_id):
 	return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=report.xlsx'})
 
 
-@bp.route('/report2/<int:order_id>')
+@bp.route('/orders/excel2/<order_id>')
 @login_required
-@role_forbidden([UserRoles.default, UserRoles.supervisor])
+@role_forbidden([UserRoles.default])
 @ecwid_required
 def GetExcelReport2(order_id):
 	order = GetOrder(order_id)
 	if order is None:
+		flash('Заявка с таким номером не найдена.')
 		return redirect(url_for('main.ShowIndex'))
 	
-	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
-	vendors = {str(vendor.store_id):vendor.store_name for vendor in vendors}
-	
-	data_len = len(order['items'])
+	data_len = len(order.products)
 	starting_row = 2
 	wb = load_workbook(filename = 'template2.xlsx')
 	ws = wb.active
 	
-	ws.title = order['orderComments']['object'] if len(order['orderComments']['object']) > 0 else 'Объект не указан'
+	ws.title = order.site.name if order.site is not None else 'Объект не указан'
 	
 	i = starting_row
-	for product in order['items']:
+	for product in order.products:
 		ws.cell(i, 1).value = product['sku']
 		ws.cell(i, 2).value  = product['name']
 		if 'selectedOptions' in product:
@@ -464,13 +249,23 @@ def GetExcelReport2(order_id):
 	data = save_virtual_workbook(wb)
 	return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=report.xlsx'})
 
-
+@bp.route('/orders/notify/<order_id>')
+@login_required
+@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
+@ecwid_required
+def NotifyApprovers(order_id):
+	order = GetOrder(order_id)
+	if order is None:
+		flash('Заявка с таким номером не найдена.')
+		return redirect(url_for('main.ShowIndex'))
+	#SendEmailNotification('modified', order)
+	flash('Уведомление успешно выслано.')
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
+	
 def Prepare1CReport(order, date):
-	data_len = len(order['items'])
+	data_len = len(order.products)
 	if data_len > 0:
-		vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
-		vendors = {str(vendor.store_id):vendor.store_name for vendor in vendors}
-		categories = CacheCategories.query.filter(CacheCategories.ecwid_id == order['initiative'].ecwid_id).all()
+		categories = Category.query.filter(Category.hub_id == order.initiative.hub_id).all()
 		starting_row = 3
 		wb = load_workbook(filename = 'template1C.xlsx')
 		ws = wb['Заявка']
@@ -480,7 +275,7 @@ def Prepare1CReport(order, date):
 
 		ws.insert_rows(starting_row, data_len)
 		for k,i in enumerate(range(starting_row, starting_row+data_len)):
-			product = order['items'][k]
+			product = order.products[k]
 			ws.row_dimensions[i].height = 50
 
 			for j in range(1, 32):
@@ -495,12 +290,11 @@ def Prepare1CReport(order, date):
 				target_cell.alignment = copy(source_cell.alignment)
 			
 			#Object
-			
 
-			ws.cell(i, 2).value = order['orderComments']['object']
+			ws.cell(i, 2).value = order.site.name if order.site is not None else ''
 			#Initiative
 			
-			ws.cell(i, 5).value = order['initiative'].name
+			ws.cell(i, 5).value = order.initiative.name
 			ws.cell(i, 6).value = 'Для собственных нужд'
 			
 			product_cat = product.get('categoryId', 0)
@@ -516,8 +310,8 @@ def Prepare1CReport(order, date):
 			else:
 				ws.cell(i, 10).value = ''
 				
-			ws.cell(i, 11).value = order['orderComments']['budget']
-			ws.cell(i, 12).value = order['orderComments']['cashflow']
+			ws.cell(i, 11).value = order.income_statement
+			ws.cell(i, 12).value = order.cash_flow_statement
 			ws.cell(i, 15).value = 'Непроектные МТР и СИЗ'
 			
 			#Measurement
@@ -531,106 +325,265 @@ def Prepare1CReport(order, date):
 			
 			ws.cell(i, 31).value = product.get('price', '')
 
-			try:
-				dash = product['sku'].index('-')
-				ws.cell(i, 30).value = vendors[product['sku'][:dash]]
-			except (ValueError, KeyError):
-				ws.cell(i, 30).value = ''
+			ws.cell(i, 30).value = product.get('vendor', '')
 		data = save_virtual_workbook(wb)
 		return data
 	else:
 		return None
 
 
-@bp.route('/report1C/<int:order_id>', methods=['POST'])
+@bp.route('/orders/excel1C/<order_id>', methods=['POST'])
 @login_required
-@role_forbidden([UserRoles.default, UserRoles.supervisor])
+@role_required([UserRoles.admin, UserRoles.validator, UserRoles.purchaser])
 @ecwid_required	
-def Get1CReport(order_id):
+def GetExcelReport1C(order_id):
 	order = GetOrder(order_id)
 	if order is None:
+		flash('Заявка с таким номером не найдена.')
 		return redirect(url_for('main.ShowIndex'))
 	form = Export1CReport()
 	if form.validate_on_submit():
 		data = Prepare1CReport(order, form.date.data)
 		if data is not None:
 			if form.send_email.data is True:
-				api_data = ApiData.query.filter_by(ecwid_id == current_user.ecwid_id).first()
-				if api_data is not None and api_data.email_1C is not None:
-					subject = '{}. {} (pushkind_{})'.format(order['refererId'], order['orderComments']['object'], order['vendorOrderNumber'])
-					SendEmail1C([api_data.email_1C], order, subject,('pushkind_{}.xlsx'.format(order['vendorOrderNumber']), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data))
-					message = f'отправлена на {api_data.email_1C}'
+				app_data = AppSettings.query.filter_by(hub_id == current_user.hub_id).first()
+				if app_data is not None and app_data.email_1C is not None:
+					if order.site is not None:
+						subject = '{}. {} (pushkind_{})'.format(order.site.project.name, order.site.name, order.id)
+					else:
+						subject = 'pushkind_{}'.format(order.id)
+					SendEmail1C([app_data.email_1C], order, subject,('pushkind_{}.xlsx'.format(order.id), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data))
+					message = f'отправлена на {app_data.email_1C}'
 				else:
-					message = 'email для отправки в 1С не настроен администратором'
+					flash('Email для отправки в 1С не настроен администратором.')
 			else:
 				message = 'выгружена в Excel-файл'
-			event = EventLog(user_id = current_user.id, order_id = order['orderNumber'], type=EventType.export1C, data=message, timestamp = datetime.now(tz = timezone.utc))
+			event = OrderEvent(user_id = current_user.id, order_id = order.id, type=EventType.export1C, data=message, timestamp = datetime.now(tz = timezone.utc))
 			db.session.add(event)
+			order.exported = True
 			db.session.commit()	
-			return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=pushkind_{}.xlsx'.format(order['vendorOrderNumber'])})
+			return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=pushkind_{}.xlsx'.format(order.id)})
 		else:
 			flash('Не удалось сгенерировать файл.')
 	else:
 		for error in form.date.errors:
 			flash(error)
 	return redirect(url_for('main.ShowIndex'))
-	
-@bp.route('/budget/<int:order_id>', methods=['POST'])
+
+
+@bp.route('/orders/approval/<order_id>', methods=['POST'])
 @login_required
-@role_forbidden([UserRoles.default, UserRoles.supervisor])
-@ecwid_required	
-def SaveBEC(order_id):
+@role_required([UserRoles.validator, UserRoles.purchaser])
+def SaveApproval(order_id):
 	order = GetOrder(order_id)
 	if order is None:
+		flash('Заявка с таким номером не найдена.')
 		return redirect(url_for('main.ShowIndex'))
-	form = BECForm()
-	if form.validate_on_submit() is True:
-		try:
-			order['orderComments']['budget'] = form.bec.data
-			response = current_user.hub.UpdateStoreOrder(order_id, {'orderComments':json.dumps(order['orderComments'])})
-			flash('Статья БДР сохранена.')
-		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
+	form = OrderApprovalForm()
+	if form.validate_on_submit():
+		order_approval = OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id, product_id = None).first()
+		position_approval = OrderPosition.query.filter_by(order_id = order_id, position_id = current_user.position_id).first()
+		if form.comment.data != '':
+			message = f'с комментарием \"{form.comment.data}\"'
+		else:
+			message = 'без комментария'
+		if form.product_id.data is None:
+			OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id).delete()
+			if order_approval is None:
+				order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
+				db.session.add(order_approval)
+				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message, timestamp = datetime.now(tz = timezone.utc))
+				if position_approval is not None:
+					position_approval.approved = True
+			else:
+				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp = datetime.now(tz = timezone.utc))
+				for product in order.products:
+					product_approval = OrderApproval(order_id = order_id, product_id=product['id'], user_id = current_user.id)
+					db.session.add(product_approval)
+				if position_approval is not None:
+					position_approval.approved = False
+		else:
+			for product in order.products:
+				if form.product_id.data == product['id']:
+					break
+			else:
+				flash('Указанный товар не найден в заявке.')
+				return redirect(url_for('main.ShowOrder', order_id = order_id))
+
+			product_approval = OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id, product_id = form.product_id.data).first()
+			if product_approval is not None:
+				db.session.delete(product_approval)
+				message = 'товар "{}" '.format(product['name']) + message
+				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message, timestamp = datetime.now(tz = timezone.utc))
+			else:
+				if order_approval is not None:
+					db.session.delete(order_approval)
+				product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id)
+				db.session.add(product_approval)
+				message = 'товар "{}" '.format(product['name']) + message
+				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp = datetime.now(tz = timezone.utc))
+				if position_approval is not None:
+					position_approval.approved = False
+		db.session.add(event)		
+		order.UpdateOrderStatus()
+		db.session.commit()
+		flash('Согласование сохранено.')
 	else:
-		flash('Не удалось сохранить статью БДР.')
+		for error in form.product_id.errors + form.comment.errors:
+			flash(error)
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
+
+'''
+if order.status == OrderStatus.approved:
+	#SendEmailNotification('approved', order)
+	app_data = AppSettings.query.filter_by(hub_id = current_user.hub_id).first()
+	if app_data is not None and app_data.email_1C is not None and app_data.notify_1C is True:
+		data = Prepare1CReport(data, date.today())
+		if data is not None:
+			if order.site is not None:
+				subject = '{}. {} (pushkind_{})'.format(order.site.project.name, order.site.name, order.id)
+			else:
+				subject = 'pushkind_{}'.format(order.id)
+			SendEmail1C([app_data.email_1C], order, subject,('pushkind_{}.xlsx'.format(order['vendorOrderNumber']), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data))
+			
+	#if order.status != OrderStatus.not_approved:
+	#	SendEmailNotification('disapproved', order)
+	
+	#if order.status != OrderStatus.not_approved:
+	#	SendEmailNotification('disapproved', order)
+
+'''
+
+@bp.route('/orders/statements/<order_id>', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin, UserRoles.purchaser])
+@ecwid_required	
+def SaveStatements(order_id):
+	order = GetOrder(order_id)
+	if order is None:
+		flash('Заявка с таким номером не найдена.')
+		return redirect(url_for('main.ShowIndex'))
+	form = ApproverForm()
+	if form.validate_on_submit() is True:
+		order.income_statement = form.income_statement.data.strip()
+		order.cash_flow_statement = form.cash_flow_statement.data.strip()
+		db.session.commit()
+		flash('Статьи БДДР и БДДС успешно сохранены.')
+	else:
+		for error in form.income_statement.errors + form.cash_flow_statement.errors:
+			flash(error)
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
+
+
+@bp.route('/orders/parameters/<order_id>', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
+@ecwid_required	
+def SaveParameters(order_id):
+	order = GetOrder(order_id)
+	if order is None:
+		flash('Заявка с таким номером не найдена.')
+		return redirect(url_for('main.ShowIndex'))
+	form = InitiativeForm()
+	
+	projects = Project.query.filter(Project.hub_id == current_user.hub_id).order_by(Project.name).all()
+	categories = Category.query.filter(Category.hub_id == current_user.hub_id).all()
+	
+	form.categories.choices = [(c.id, c.name) for c in categories]
+	form.project.choices = [(p.id, p.name) for p in projects]
+	
+
+	project = Project.query.filter_by(id = form.project.data, hub_id = current_user.hub_id).first()
+	if project is not None:
+		form.site.choices = [(s.id, s.name) for s in project.sites]
+	else:
+		form.site.choices = []
+	
+	if form.validate_on_submit() is True:
+		order.site = Site.query.filter_by(id = form.site.data, project_id = form.project.data).first()
+		order.categories = Category.query.filter(Category.id.in_(form.categories.data), Category.hub_id == current_user.hub_id).all()	
+		db.session.commit()
+		Order.UpdateOrdersPositions(current_user.hub_id, order_id)
+		flash('Параметры заявки успешно сохранены.')
+	else:
+		for error in form.project.errors + form.site.errors + form.categories.errors:
+			flash(error)
 	return redirect(url_for('main.ShowOrder', order_id = order_id))	
 	
-@bp.route('/cashflow/<int:order_id>', methods=['POST'])
-@login_required
-@role_forbidden([UserRoles.default, UserRoles.supervisor])
-@ecwid_required	
-def SaveCFS(order_id):
-	order = GetOrder(order_id)
-	if order is None:
-		return redirect(url_for('main.ShowIndex'))
-	form = CFSForm()
-	if form.validate_on_submit() is True:
-		try:
-			order['orderComments']['cashflow'] = form.cfs.data
-			response = current_user.hub.UpdateStoreOrder(order_id, {'orderComments':json.dumps(order['orderComments'])})
-			flash('Статья БДДС сохранена.')
-		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
-	else:
-		flash('Не удалось сохранить статью БДДС.')
-	return redirect(url_for('main.ShowOrder', order_id = order_id))
 	
-@bp.route('/site/<int:order_id>', methods=['POST'])
+@bp.route('/orders/comment/<order_id>', methods=['POST'])
 @login_required
-@role_forbidden([UserRoles.default, UserRoles.supervisor])
-@ecwid_required	
-def SaveSite(order_id):
+@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.validator, UserRoles.purchaser])
+def LeaveComment(order_id):
 	order = GetOrder(order_id)
 	if order is None:
+		flash('Заявка с таким номером не найдена.')
 		return redirect(url_for('main.ShowIndex'))
-	form = SiteForm()
-	if form.validate_on_submit() is True:
+	form = LeaveCommentForm()
+	if form.validate_on_submit():
+		stripped = form.comment.data.strip()
+		if len(stripped) > 0:
+			comment = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.comment, data=stripped, timestamp = datetime.now(tz = timezone.utc))
+			db.session.add(comment)
+			flash('Комментарий успешно добавлен.')
+		else:
+			flash('Комментарий не может быть пустым.')
+		db.session.commit()
+	return redirect(url_for('main.ShowOrder', order_id = order_id))
+
+@bp.route('/orders/process/<order_id>')
+@login_required
+@role_required([UserRoles.admin, UserRoles.purchaser])
+@ecwid_required
+def ProcessHubOrder(order_id):
+	order = GetOrder(order_id)
+	if order is None:
+		flash('Заявка с таким номером не найдена.')
+		return redirect(url_for('main.ShowIndex'))
+		
+	template = order.to_ecwid()
+	template['email'] = current_user.email
+	stores = Ecwid.query.filter(Ecwid.hub_id == current_user.hub_id).all()
+	got_orders = {}
+	for store in stores:
+		products = list()
+		total = 0
+		for product in template['items']:
+			try:
+				dash = product['sku'].index('-')
+			except ValueError:
+				continue
+			if product['sku'][:dash] == str(store.id):
+				product_new = product.copy()
+				product_new['sku'] = product_new['sku'][dash+1:]
+				products.append(product_new)
+				total += product_new['price'] * product_new['quantity']
+		if len(products) == 0:
+			continue
+		items = template['items']
+		template['items'] = products
+		template['total'] = total
+		
 		try:
-			order['orderComments']['object'] = form.object.data
-			response = current_user.hub.UpdateStoreOrder(order_id, {'orderComments':json.dumps(order['orderComments'])})
-			flash('Объект сохранен.')
+			result = store.SetStoreOrder(template)
+			got_orders[store.name] = result['id']
 		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
+			flash('Не удалось перезаказать товары у {}.'.format(store.name))
+		template['items'] = items
+
+	if len(got_orders) > 0:
+		message = ', '.join(f'{vendor} (#{order_id})' for vendor,order_id in got_orders.items())
+
+		referer = current_user.name if current_user.name else current_user.email
+		event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.vendor, data=message, timestamp=datetime.now(tz = timezone.utc))
+		
+		order.purchased = True
+		
+		db.session.add(event)
+		db.session.commit()
+
+		flash('Заявка была отправлена поставщикам: {}'.format(message))
 	else:
-		flash('Не удалось сохранить объектР.')
+		flash('Не удалось перезаказать данные товары у зарегистрованных поставщиков.')
+
 	return redirect(url_for('main.ShowOrder', order_id = order_id))

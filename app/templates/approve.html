@@ -1,269 +1,164 @@
 {% extends "base.html" %}
 
-{% block styles %}
-<style>
-/*switch on-off */
-.toggle-label {
-  position: relative;
-  width: 200px;
-  height: 30px;
-  margin-top: 10px;
-}
-.toggle-label input[type=checkbox] { 
-    opacity: 0;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    left: 0;
-    top: 0;
-}
-.toggle-label input[type=checkbox]+.back {
-    position: absolute;
-    width: 100%;
-    height: 30px;
-    left: 0;
-    top: 0;
-    border-radius: 50px;
-    border: 1px solid #000;
-    transition: background 150ms linear;
-	background: #6c757d;
-}
-.toggle-label input[type=checkbox]:checked+.back {
-    border: 1px solid #000;
-    cursor: pointer;
-}
-
-.toggle-label input[type=checkbox]+.back .toggle {
-  display: block;
-  position: absolute;
-  content: ' ';
-  background: #28a745;
-  width: 50%; 
-  height: 100%;
-  transition: margin 150ms linear,  background 150ms linear;
-  border: 1px solid #808080;
-  border-radius: 50px;
-}
-.toggle-label input[type=checkbox]:checked+.back .toggle {
-  margin-left: 100px;
-  background: #dc3545;
-}
-.toggle-label .label {
-  display: block;
-  position: absolute;
-  width: 50%;
-  color: #fff;
-  line-height: 24px;
-  text-align: center;
-  font-size: 14px;
-}
-.toggle-label .label.on { left: 0px; }
-.toggle-label .label.off { right: 0px; }
-
-.toggle-label input[type=checkbox]:checked+.back .label.on {
-  color: #fff;
-}
-.toggle-label input[type=checkbox]+.back .label.off {
-  color: #fff;
-  cursor: pointer;
-}
-.toggle-label input[type=checkbox]:checked+.back .label.off {
-  color: #fff;
-}
-
-</style>
-{% endblock%}
+{% set glob={} %}
 
 {% block content %}
 	<div class="container">
-		{% if current_user in order['reviewers'] %}
-			<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
-				<div class="row">
-					<div class="col-5">
-						<span class="font-weight-bold">ЗАЯВКА</span>
-						{{ approval_form.csrf_token }}
-						#{{ order['vendorOrderNumber'] }}
-						от {{ moment(order['createDate']).format() }}
-						{% if current_user.email == order['initiative'].email %}
-							<a class="badge badge-danger" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">&times;</a>
-						{% endif %}
-					</div>
-					<div class="col text-right">
-						<label class="toggle-label">
-							<input type="checkbox" {% if not order['reviewers'][current_user]|select|list|first  %}checked{% endif %} onChange="this.form.submit()">
-							<span class="back">
-								<span class="toggle" {% if order['reviewers'][current_user]|length == 0  %}style="background:#343a40"{% endif %}></span>
-								<span class="label on">согласен</span>
-								<span class="label off">НЕ согласен</span>
-							</span>
-						</label>
-					</div>
-				</div>
-			</form>
-		{% else %}
-			<div class="row my-2">
-				<div class="col">
-					<span class="font-weight-bold">ЗАЯВКА</span>
-					#{{ order['vendorOrderNumber'] }}
-					от {{ moment(order['createDate']).format() }}
-					{% if current_user.email == order['initiative'].email or current_user.role.name == 'admin' %}
-						<a class="badge badge-danger" href="{{ url_for('main.DeleteOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Удалить заявку?')">&times;</a>
+		<div class="row my-2">
+			<div class="col">
+				<span class="font-weight-bold">ЗАЯВКА</span>
+				#{{ order.id }}
+				от {{ moment(order.create_date).format() }}
+			</div>
+			{% if current_user.role.name in ['validator', 'purchaser'] %}
+				<div class="col text-right">
+					{% if none in approvals %}
+						<button type="button" class="btn btn-success approveButton" data-approved="true" data-target="order">Согласована</button>
+					{% elif approvals | length > 0 %}
+						<button type="button" class="btn btn-danger approveButton" data-approved="false" data-target="order">Отклонена</button>
+					{% else %}
+						<button type="button" class="btn btn-secondary approveButton" data-approved="false" data-target="order">Согласовать</button>
 					{% endif %}
 				</div>
-			</div>
-		{% endif %}
+			{% endif %}
+		</div>
 		<div class="row">
 			<div class="col">
 				<div class="row">
 					<div class="col">
-						<span class="font-weight-bold">Статус: </span>
-						<span class="badge badge-{{order['status'].color() }}">{{ order['status'] }}</span>
-					</div>
-				</div>				
-				<div class="row">
-					<div class="col">
-						<span class="font-weight-bold">Кем согласована: </span>
-						{% for reviewer,status in order['reviewers'].items() %}
-							{% if status|length > 0 %}
-								{% if status|select|list|first %}
-									<span class="font-italic">{{reviewer.name}} {% if reviewer.position %}({{reviewer.position}}){% endif %}</span>,
-								{% endif %}
-							{% endif %}
-						{% endfor %}
+						<span class="font-weight-bold">Статус:</span>
+						<span class="badge badge-{{order.status.color() }}">{{ order.status }}</span>
+						{% if order.purchased is sameas true %}
+							<span class="badge badge-info"><img class="octicon" src="{{ url_for('static', filename='octicons/mail.svg') }}" alt="Отправлена"></span>
+						{% endif%}
+						{% if order.exported is sameas true %}
+							<span class="badge badge-info"><img class="octicon" src="{{ url_for('static', filename='1C.png') }}" alt="Экспортирована"></span>
+						{% endif%}
 					</div>
 				</div>
-				<div class="row mb-3">
+				<div class="row">
 					<div class="col">
-						<span class="font-weight-bold">Ждём согласования: </span>
-						{% for position,status in order['positions'].items() %}
-							{% if not status %}
-								<span class="font-italic">"{{ position }}"</span>,
+						<span class="font-weight-bold">Кем согласована:</span>
+						{% for appr in order.approvals %}
+							{% if appr.approved is sameas true %}
+								{{ appr.position.name }}<br>
 							{% endif %}
 						{% endfor %}
 					</div>
 				</div>
 				<div class="row">
 					<div class="col">
-					{% if current_user.email == order['initiative'].email or current_user.role.name == 'admin' %}
-					<form action="{{ url_for('main.SaveLocation', order_id = order['orderNumber']) }}" id="locationForm" method="POST">
-						<span class="font-weight-bold">Проект: </span>
-						{{location_form.csrf_token}}
-						{{location_form.location_name() }}
-					</form>
-					{% else %}
-						<span class="font-weight-bold">Проект: </span>
-						{{ order['refererId'] }}
-					{% endif %}
+						<span class="font-weight-bold">Ожидаем:</span>
+						{% for appr in order.approvals %}
+							{% if appr.approved is sameas false %}
+								{{ appr.position.name }}<br>
+							{% endif %}
+						{% endfor %}
 					</div>
 				</div>
 				<div class="row">
 					<div class="col">
-						<span class="font-weight-bold">Объект: </span>
-						{%if order['orderComments']['object']|length == 0%}
-							<span class="text-danger">Не указано</span>
-						{%else%}
-							{{ order['orderComments']['object'] }}
-						{%endif%}
-					</div>
-				</div>	
-				<div class="row">
-					<div class="col">
-						<span class="font-weight-bold">Статья БДР: </span>
-						{%if order['orderComments']['budget']|length == 0%}
-							<span class="text-danger">Не указано</span>
-						{%else%}
-							{{ order['orderComments']['budget'] }}
-						{%endif%}
-					</div>
-				</div>	
-				<div class="row">
-					<div class="col">
-						<span class="font-weight-bold">Статья БДДС: </span>
-						{%if order['orderComments']['cashflow']|length == 0%}
-							<span class="text-danger">Не указано</span>
-						{%else%}
-							{{ order['orderComments']['cashflow'] }}
-						{%endif%}
-					</div>
-				</div>					
-				<div class="row">
-					<div class="col">
-						<span class="font-weight-bold">Инициатор: </span>
-						{{ order['initiative'].name }}
-					</div>
-				</div>
-				<div class="row">
-					<div class="col">
-						{{ order['initiative'].email }}
-					</div>
-				</div>
-				<div class="row">
-					<div class="col">
-						{{ order['initiative'].phone }}
-					</div>
-				</div>
-				<div class="row">
-					<div class="col">
-						<span class="font-weight-bold">Примечание: </span>
-						{% if order['orderComments']['comment']|length > 0 %}
-							<span class="font-italic">Комментарий инициатора: </span>
-							'{{ order['orderComments']['comment'] }}';
+						{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
+							{% if order.site %}
+								<span class="font-weight-bold">Проект:</span>
+								<a class="text-dark" href="#" data-toggle="modal" data-target="#initiativeSettingsModal">{{ order.site.project.name }}</a><br>
+								<span class="font-weight-bold">Объект:</span>
+								<a class="text-dark" href="#" data-toggle="modal" data-target="#initiativeSettingsModal">{{ order.site.name }}</a>
+							{%else%}
+								<span class="font-weight-bold">Проект:</span>
+								<a href="#" data-toggle="modal" data-target="#initiativeSettingsModal">указать</a><br>
+								<span class="font-weight-bold">Объект:</span>
+								<a href="#" data-toggle="modal" data-target="#initiativeSettingsModal">указать</a>
+							{%endif%}
+						{% else %}
+								<span class="font-weight-bold">Проект:</span>
+								{{ order.site.project.name or 'не указан' }}
+								<span class="font-weight-bold">Объект:</span>
+								{{ order.site.project.name or 'не указан' }}
 						{% endif %}
-					</div>	
+					</div>
 				</div>
 				<div class="row">
 					<div class="col">
-						<span class="font-weight-bold">Всего позиций: </span>{{ order['items']|length }}
-						<span class="orderTotal"> на сумму {{ '{:,.2f}'.format(order['total']) }}</span>
+						{% if current_user.role.name in ['admin', 'purchaser'] %}
+							{%if order.income_statement %}
+								<span class="font-weight-bold">Статья БДР:</span>
+								<a class="text-dark" href="#" data-toggle="modal" data-target="#approverSettingsModal">
+									{{ order.income_statement }}
+								</a>
+							{% else %}
+								<span class="font-weight-bold">Статья БДР:</span>
+								<a href="#" data-toggle="modal" data-target="#approverSettingsModal">
+									указать
+								</a>
+							{% endif %}
+							<br>
+							{% if order.cash_flow_statement %}
+								<span class="font-weight-bold">Статья БДДС:</span>
+								<a class="text-dark" href="#" data-toggle="modal" data-target="#approverSettingsModal">
+									{{ order.cash_flow_statement }}
+								</a>
+							{% else %}
+								<span class="font-weight-bold">Статья БДР:</span>
+								<a href="#" data-toggle="modal" data-target="#approverSettingsModal">
+									указать
+								</a>
+							{% endif %}
+						{% else %}
+								<span class="font-weight-bold">Статья БДР:</span>
+								{{ order.income_statement or 'не указана' }}
+								<span class="font-weight-bold">Статья БДДС:</span>
+								{{ order.cash_flow_statement or 'не указана' }}
+						{% endif %}
+					</div>
+				</div>			
+				<div class="row">
+					<div class="col">
+						<span class="font-weight-bold">Инициатор:</span>
+						{{ order.initiative.name }}<br>
+						{{ order.initiative.email }}<br>
+						{{ order.initiative.phone }}
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<span class="font-weight-bold">Всего позиций: </span>{{ order.products|length }}
+						<span class="orderTotal"> на сумму {{ '{:,.2f}'.format(order.total) }}</span>
 					</div>	
 				</div>
 			</div>
-			{% if current_user.role.name != 'supervisor' %}
-				<div class="col-xs-auto">
-					<ul class="nav text-right flex-column bg-light p-2">
+			<div class="col-xs-auto">
+				<ul class="nav text-right flex-column bg-light p-2">
+					{% if current_user.role.name in ['admin', 'inititative', 'validator', 'purchaser'] %}
 						<li class="nav-item">
-							Добавить:
+							<a href="#" data-toggle="modal" data-target="#leaveCommentModal">Комментировать</a>
 						</li>
+					{% endif %}
+					{% if current_user.role.name in ['admin', 'inititative', 'purchaser'] %}
 						<li class="nav-item">
-							<a href data-toggle="modal" data-target="#SiteModal" >объект</a>
+							<a href="{{ url_for('main.DuplicateOrder', order_id = order.id) }}" onclick="return confirm('Клонировать заявку?')">Клонировать</a>
 						</li>
+					{% endif %}
+					{% if current_user.role.name in ['admin', 'inititative', 'purchaser'] %}
 						<li class="nav-item">
-							<a href data-toggle="modal" data-target="#BECModal" >статья БДР</a>
+							<a href="{{ url_for('main.NotifyApprovers', order_id = order.id) }}" onclick="return confirm('Отправить уведомление согласующим?')">Уведомить</a>
 						</li>
+					{% endif %}
+					{% if current_user.role.name in ['admin', 'purchaser'] %}
 						<li class="nav-item">
-							<a href data-toggle="modal" data-target="#CFSModal" >статья БДДС</a>
+							<a href="{{ url_for('main.ProcessHubOrder', order_id = order.id) }}" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>Поставщику</a>
 						</li>
+					{% endif %}
+					<li class="nav-item">
+						<a href="#" data-toggle="modal" data-target="#excelModal">Excel</a>
+					</li>
+					{% if current_user.role.name in ['admin', 'purchaser'] %}
 						<li class="nav-item">
-							<a href data-toggle="collapse" data-target="#commentFormCollapse" aria-expanded="false" aria-controls="commentFormCollapse">комментарий</a>
+							<a href="#" data-toggle="modal" data-target="#export1CModal">В 1С</a>
 						</li>
-						<li class="nav-item">
-							Отправить:
-						</li>
-						{% if current_user.email == order['initiative'].email or current_user.role.name == 'admin' %}
-						<li class="nav-item">
-							<a href="{{ url_for('main.DuplicateOrder', order_id = order['orderNumber']) }}" onclick="return confirm('Клонировать заявку?')">клонировать</a>
-						</li>
-						<li class="nav-item">
-							<a href="{{ url_for('main.NotifyApprovers', order_id = order['orderNumber']) }}" onclick="return confirm('Отправить уведомление согласующим?')">уведомить</a>
-						</li>
-						{% endif %}
-						{% if current_user.role.name == 'approver' %}
-						<li class="nav-item">
-							<a href="{{ url_for('main.ProcessHubOrder', order_id = order['orderNumber']) }}" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>поставщику</a>
-						</li>
-						{% endif %}
-						<li class="nav-item">
-							<a href="{{ url_for('main.GetExcelReport', order_id = order['orderNumber']) }}">на печать</a>
-						</li>
-						<li class="nav-item">
-							<a href="{{ url_for('main.GetExcelReport2', order_id = order['orderNumber']) }}">в Excel</a>
-						</li>
-						<li class="nav-item">
-							<a href data-toggle="modal" data-target="#report1CModal" >в 1С</a>
-						</li>	
-					</ul>
-				</div>
-			{% endif %}
+					{% endif %}
+				</ul>
+			</div>
 		</div>
 	</div>
 	<div class="container mt-5">
@@ -286,45 +181,16 @@
 			<div class="col overflow-hidden">
 				Кол-во
 			</div>
+			{% if current_user.role.name in ['validator','purchaser'] %}
+				<div class="col overflow-hidden">
+					&nbsp;
+				</div>
+			{% endif %}	
 		</div>
-		{% for product in order['items'] %}
+		{% for product in order.products %}
 			{% include '_product.html' %}
 		{% endfor %}
 	</div>
-	
-	{% if current_user.role.name != 'supervisor' %}
-		<div class="container mt-2">
-			<div class="collapse" id="commentFormCollapse">
-				{% set errorsList = comment_form.comment.errors %}
-				{% if errorsList|length > 0 %}
-					<div class = "row">
-						<div class="col">
-							<div class="alert alert-danger" role="alert">
-								{% for error in  errorsList %}
-									{{ error }}<br>
-								{% endfor %}
-							</div>
-						</div>
-					</div>
-				{% endif %}
-				<form action="{{ url_for('main.SaveComment', order_id = order['orderNumber']) }}" method="post">
-					{{ comment_form.csrf_token }}
-					<div class="form-group row">
-						{{ comment_form.comment.label(class_ = "col-md-2 col-form-label") }}
-						<div class="col-md-10">
-							{{ comment_form.comment(class_ = 'form-control') }}
-							<small class="form-text text-muted">Максимальная длина комментария 256 символов.</small>
-						</div>
-					</div>
-					<div class="form-group row">
-						<div class="col">
-							{{ comment_form.submit1(class_ = 'btn btn-primary') }}							
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	{% endif %}
 	<div class="container">
 		<div class="row my-2">
 			<div class="col">
@@ -337,12 +203,12 @@
 			</div>
 		</div>
 		<div id="actionsSection">
-			{% for event in order['events'] %}	
+			{% for event in order.events|reverse %}	
 				<div class="action" data-datetime="{{ event.timestamp.timestamp() }}">
 					<div class="row">
 						<div class="col">
 							<span class="badge badge-{{event.type.color()}}">
-								{{ event.user.name }} ({{event.user.position}})
+								{{ event.user.name }} ({{event.user.position.name}})
 							</span>
 							{{ moment(event.timestamp).format() }}
 						</div>
@@ -354,24 +220,122 @@
 					</div>
 				</div>
 			{% endfor %}
-			
 		</div>
 	</div>
-	{% if current_user.role.name != 'supervisor' %}
-		<div class="modal fade" id="report1CModal" tabindex="-1" role="dialog" aria-labelledby="report1CModalLabel" aria-hidden="true">
+	
+	{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
+	
+		<div class="modal fade" id="initiativeSettingsModal" tabindex="-1" role="dialog" aria-labelledby="initiativeSettingsModalLabel" aria-hidden="true">
 			<div class="modal-dialog" role="document">
 				<div class="modal-content">
 					<div class="modal-header">
-						<h5 class="modal-title" id="report1CModalLabel">Экспорт в 1С</h5>
+						<h5 class="modal-title" id="initiativeSettingsModalLabel">ПАРАМЕТРЫ ЗАЯВКИ</h5>
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 							<span aria-hidden="true">&times;</span>
 						</button>
 					</div>
-					<form method="POST" action="{{ url_for('main.Get1CReport', order_id = order['orderNumber']) }}">
+					<form method="post" action="{{ url_for('main.SaveParameters', order_id = order.id) }}">
 						<div class="modal-body">
-							<h6>Заявка #{{ order['vendorOrderNumber'] }} от {{ moment(order['createDate']).format() }}</h6>
-							<h6>Проект {{ order['refererId'] }}</h6>
-							{{ export1C_form.csrf_token }}
+							{{ initiative_form.csrf_token }}
+							<div class="form-group">
+								{{ initiative_form.project.label(class_ = 'col-form-label') }}
+								{{ initiative_form.project(class_ = 'form-control') }}
+							</div>
+							<div class="form-group">
+								{{ initiative_form.site.label(class_ = 'col-form-label') }}
+								{{ initiative_form.site(class_ = 'form-control') }}
+							</div>
+							<div class="form-group">
+								{{ initiative_form.categories.label(class_ = 'col-form-label') }}
+								{{ initiative_form.categories(class_ = 'form-control') }}
+							</div>
+						</div>
+						<div class="modal-footer">
+							{{ initiative_form.submit(class_ = 'btn btn-primary', id=False) }}
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	
+	{% endif %}
+	
+	{% if current_user.role.name in ['admin', 'purchaser'] %}
+	
+		<div class="modal fade" id="approverSettingsModal" tabindex="-1" role="dialog" aria-labelledby="approverSettingsModalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="approverSettingsModalLabel">ПАРАМЕТРЫ ЗАЯВКИ</h5>
+					</div>
+					<form method="post" action="{{ url_for('main.SaveStatements', order_id = order.id) }}">
+						<div class="modal-body">
+							{{ approver_form.csrf_token }}
+							<div class="form-group">
+								{{ approver_form.income_statement.label(class_ = 'col-form-label') }}
+								{{ approver_form.income_statement(class_ = 'form-control') }}
+							</div>
+							<div class="form-group">
+								{{ approver_form.cash_flow_statement.label(class_ = 'col-form-label') }}
+								{{ approver_form.cash_flow_statement(class_ = 'form-control') }}
+							</div>
+						</div>
+						<div class="modal-footer">
+							{{ approver_form.submit(class_ = 'btn btn-primary', id=False) }}
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	
+	{% endif %}
+	
+	{% if current_user.role.name in ['admin', 'inititative', 'validator', 'purchaser'] %}
+	
+		<div class="modal fade" id="leaveCommentModal" tabindex="-1" role="dialog" aria-labelledby="leaveCommentModalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="leaveCommentModalLabel">ОСТАВИТЬ КОММЕНТАРИЙ</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<form method="post" action="{{ url_for('main.LeaveComment', order_id = order.id) }}">
+						<div class="modal-body">
+							{{ comment_form.csrf_token(id=False) }}
+							<div class="form-group">
+								{{ comment_form.comment.label(class_ = 'col-form-label') }}
+								{{ comment_form.comment(class_ = 'form-control') }}
+							</div>
+						</div>
+						<div class="modal-footer">
+							{{ comment_form.submit(class_ = 'btn btn-primary', id=False) }}
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	
+	{% endif %}
+	
+	{% if current_user.role.name in ['admin', 'validator', 'purchaser'] %}
+	
+		<div class="modal fade" id="export1CModal" tabindex="-1" role="dialog" aria-labelledby="export1CModalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="export1CModalLabel">ВЫГРУЗИТЬ В 1С</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<form method="POST" action="{{ url_for('main.GetExcelReport1C', order_id = order.id) }}">
+						<div class="modal-body">
+							{{ export1C_form.csrf_token(id=False) }}
 							<div class="form-group">
 								{{ export1C_form.date.label }}
 								{{ export1C_form.date(class_ = 'form-control') }}
@@ -380,18 +344,18 @@
 								{{ export1C_form.send_email(class_ = 'form-check-input') }}
 								{{ export1C_form.send_email.label(class_='form-check-label') }}
 							</div>
-							<div class="form-text text-info">
-								{%if order['orderComments']['object']|length == 0%}
-									<span class="text-danger">Объект не указан.</span>
+							<div class="form-text text-danger">
+								{%if order.site is sameas none %}
+									<span>Объект не указан.</span>
 								{%endif%}
-								{%if order['orderComments']['object']|length == 0%}
-									<span class="text-danger">Статья БДР не указана.</span>
+								{%if order.income_statement is sameas none %}
+									<span>Статья БДР не указана.</span>
 								{%endif%}
-								{%if order['orderComments']['object']|length == 0%}
-									<span class="text-danger">Статья БДДС не указана.</span>
+								{%if order.cash_flow_statement is sameas none %}
+									<span>Статья БДДС не указана.</span>
 								{%endif%}
-								{%if order['has_units'] is sameas false %}
-									<span class="text-danger">ЕИ не указаны.</span>
+								{%if 'no_measurements' in glob %}
+									<span>Единицы измерения не указаны.</span>
 								{%endif%}
 							</div>
 							<div class="form-text text-info d-none" id="exportNotification">
@@ -406,92 +370,71 @@
 				</div>
 			</div>
 		</div>
-
-		<div class="modal fade" id="BECModal" tabindex="-1" role="dialog" aria-labelledby="BECModalLabel" aria-hidden="true">
+	
+	{% endif %}
+	
+	{% if current_user.role.name in ['validator', 'purchaser'] %}
+	
+		<div class="modal fade" id="approveModal" tabindex="-1" role="dialog" aria-labelledby="approveModalLabel" aria-hidden="true">
 			<div class="modal-dialog" role="document">
 				<div class="modal-content">
 					<div class="modal-header">
-						<h5 class="modal-title" id="BECModalLabel">Статья БДР</h5>
+						<h5 class="modal-title" id="approveModalLabel">СОГЛАСОВАНИЕ</h5>
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 							<span aria-hidden="true">&times;</span>
 						</button>
 					</div>
-					<form method="POST" action="{{ url_for('main.SaveBEC', order_id = order['orderNumber']) }}">
+					<form method="post" action="{{ url_for('main.SaveApproval', order_id = order.id) }}">
 						<div class="modal-body">
-							{{ bec_form.csrf_token }}
+							<p id="approvalHint">
+							</p>
+							{{ approval_form.csrf_token(id=False) }}
+							{{ approval_form.product_id }}
 							<div class="form-group">
-								{{ bec_form.bec.label }}
-								{{ bec_form.bec(class_ = 'form-control', placeholder='Введите статью БДР...') }}
+								{{ approval_form.comment.label(class_ = 'col-form-label', id=False) }}
+								{{ approval_form.comment(class_ = 'form-control', id=False) }}
+								<small class="form-text text-muted">Прокомментируйте свои действия.</small>
 							</div>
 						</div>
 						<div class="modal-footer">
-							{{ bec_form.submit(class_ = 'btn btn-primary') }}
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-		
-		<div class="modal fade" id="CFSModal" tabindex="-1" role="dialog" aria-labelledby="CFSModalLabel" aria-hidden="true">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="BECModalLabel">Статья БДДС</h5>
-						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-							<span aria-hidden="true">&times;</span>
-						</button>
-					</div>
-					<form method="POST" action="{{ url_for('main.SaveCFS', order_id = order['orderNumber']) }}">
-						<div class="modal-body">
-							{{ cfs_form.csrf_token }}
-							<div class="form-group">
-								{{ cfs_form.cfs.label }}
-								{{ cfs_form.cfs(class_ = 'form-control', placeholder='Введите статью БДДС...') }}
-							</div>
-						</div>
-						<div class="modal-footer">
-							{{ cfs_form.submit(class_ = 'btn btn-primary') }}
+							{{ approval_form.submit(class_ = 'btn btn-primary', id=False) }}
 							<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
 						</div>
 					</form>
 				</div>
 			</div>
 		</div>	
-		
-		<div class="modal fade" id="SiteModal" tabindex="-1" role="dialog" aria-labelledby="SiteModalLabel" aria-hidden="true">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="SiteModalLabel">Объект</h5>
-						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-							<span aria-hidden="true">&times;</span>
-						</button>
+	
+	{% endif %}
+	
+	<div class="modal fade" id="excelModal" tabindex="-1" role="dialog" aria-labelledby="excelModalLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="approveModalLabel">ВЫГРУЗИТЬ В EXCEL</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="form-group">
+						<select class="form-control" id="getExcelReportSelect">
+							<option selected disabled value="0">Выбор формата...</option>
+							<option value="2">простая таблица</option>
+							<option value="1">инвест заявка</option>
+						</select>
+						<div class="form-text text-info d-none" id="excelNotification">
+							Файл сохранён в папку загрузки.
+						</div>
 					</div>
-					<form method="POST" action="{{ url_for('main.SaveSite', order_id = order['orderNumber']) }}">
-						<div class="modal-body">
-							{{ site_form.csrf_token }}
-							<div class="form-group">
-								{{ site_form.object.label }}
-								{{ site_form.object(class_ = 'form-control', list='sitesList', placeholder='Введите название объекта...') }}
-								{% if order['location'] %}
-									<datalist id="sitesList">
-									{% for site in order['location']['sites']%}
-										<option>{{ site.name }}</option>
-									{% endfor %}
-									</datalist>
-								{% endif %}
-							</div>
-						</div>
-						<div class="modal-footer">
-							{{ site_form.submit(class_ = 'btn btn-primary') }}
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
-						</div>
-					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
 				</div>
 			</div>
 		</div>
-	{% endif %}
+	</div>
+	
 {% endblock %}
 
 {% block scripts %}
@@ -499,28 +442,55 @@
 <script>	
 	$(document).ready(function(){
 	
-		$("#actionsSection").find(".action").sort(function(a, b){return +$(b).data("datetime") - +$(a).data("datetime")}).appendTo("#actionsSection");
+		var projects = [
+			{% for project in projects %}
+				{{ project|safe }},
+			{% endfor %}
+				];
 	
-		$("#actionsFilter").on("keyup", function() {
-			var value = $(this).val().toLowerCase();
-			$(".action").filter(function() {
-				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+			$("#project option[value='0']").prop( "disabled", true );
+			$("#site option[value='0']").prop( "disabled", true );
+			
+			$("#exportSubmit").click(function(){
+				setTimeout(() => $("#exportNotification").removeClass("d-none"), 1000);
 			});
+	
+			$("#project").change(function(){
+				let val = Number($(this).val());
+				$(this).removeClass("border-danger");
+				let sitesList = $("#site");
+				sitesList.empty();
+				let defaultSite = $("<option>").text("Выберите объект...");
+				defaultSite.prop("disabled", true);
+				defaultSite.prop("selected", true);
+				defaultSite.val(0);
+				sitesList.append(defaultSite);
+				
+				for(let i = 0; i < projects.length; i++) {
+					let proj = projects[i];					
+					if (proj["id"] === val){
+						for (j = 0; j < proj["sites"].length; j++)
+						{
+							let siteOption = $("<option>").text(proj["sites"][j]["name"])
+							siteOption.val(proj["sites"][j]["id"]);
+							sitesList.append(siteOption);
+						}
+						break;
+					}
+				}
+				
+			});
+
+		$("#getExcelReportSelect").change(function(){
+			if ($(this).val() == 1)
+				window.location.href = "{{ url_for('main.GetExcelReport1', order_id = order.id) }}";
+			else if ($(this).val() == 2)
+				window.location.href = "{{ url_for('main.GetExcelReport2', order_id = order.id) }}";
+			setTimeout(() => $("#excelNotification").removeClass("d-none"), 1000);
 		});
-		
-		$(".product-sku").click(
-		   function(){ var val= '#'+$(this).text(); $(val).addClass("alert-warning") },
-		);
-		
-		$("#commentFormCollapse").on("shown.bs.collapse", function() {
-		  this.scrollIntoView();
-		});
-		
-		$("#exportSubmit").click(function(){
-			setTimeout(() => $("#exportNotification").removeClass("d-none"), 1000);
-		});
-		
-		{% if current_user.email == order['initiative'].email or current_user.role.name == 'admin' %}
+	
+	
+		{% if current_user.id == order.initiative_id %}
 			var oldQuantity = 0;
 			$('.productQuantity').focus(function() {
 				$(this).removeClass('form-control-plaintext');
@@ -529,26 +499,59 @@
 			});
 			$('.productQuantity').focusout(function() {
 				if ($(this).val() != oldQuantity){
-					var agreed = true;
-					if ($(this).val() == 0){
-						if ($(".ecwidOrderProduct").length == 1){
-							agreed = window.confirm("Заявка будет удалена.");
-						} else {
-							agreed = window.confirm("Товар будет удален.");
-						}
-					}
-					if (agreed == true){
+					if (window.confirm("Изменить количество?") == true){
 						$(this).closest("form").submit();
 					} else {
-						alert("Заявка не будет изменена.");
 						$(this).val(oldQuantity);
 					}
 				}
 				$(this).removeClass ('form-control');
 				$(this).addClass('form-control-plaintext');
 			});
-			$('#location_name').change(function(){
-				$(this).closest("form").submit();
+		{% endif %}
+		
+		{% if current_user.role.name in ['purchaser', 'validator'] %}
+			$(".approveButton").click(function(){
+				
+				let target = $(this).data("target");
+				let approved = $(this).data("approved");
+				
+				if (target == "order"){
+					$("#product_id").prop("disabled", true);
+					$("#product_id").val(null);
+					if (approved == true){
+						$("#approvalHint").text("Вы собираетесь ОТКЛОНИТЬ заявку с номером {{ order.id }}. Вы можете прокомментировать свои действия.");
+						$("#approvalHint").removeClass("text-success");
+						$("#approvalHint").addClass("text-danger");
+						$('#approveModal').modal({});
+					}
+					else if (approved == false){
+						$("#approvalHint").text("Вы собираетесь СОГЛАСОВАТЬ заявку с номером {{ order.id }}. Вы можете прокомментировать свои действия.");
+						$("#approvalHint").removeClass("text-danger");
+						$("#approvalHint").addClass("text-success");
+						$('#approveModal').modal({});
+					}
+					
+				}
+				else if (target == "product"){
+					let value = $(this).data("id");
+					let sku = $(this).data("sku");
+					$("#product_id").prop("disabled", false);
+					$("#product_id").val(value);
+					if (approved == true){
+						$("#approvalHint").text("Вы собираетесь ОТКЛОНИТЬ товар с артикулом "+ sku +". Вы можете прокомментировать свои действия.");
+						$("#approvalHint").removeClass("text-success");
+						$("#approvalHint").addClass("text-danger");
+						$('#approveModal').modal({});
+					}
+					else if (approved == false){
+						$("#approvalHint").text("Вы собираетесь СОГЛАСОВАТЬ товар с артикулом "+ sku +". Вы можете прокомментировать свои действия.");
+						$("#approvalHint").removeClass("text-danger");
+						$("#approvalHint").addClass("text-success");
+						$('#approveModal').modal({});
+					}
+				}
+				
 			});
 		{% endif %}
 	});

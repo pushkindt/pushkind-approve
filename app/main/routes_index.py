@@ -1,14 +1,11 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import UserRoles, OrderStatus, Location, EventLog, EventType
+from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory
 from flask import render_template, flash, request, redirect, url_for
-from app.ecwid import EcwidAPIException
-from app.main.utils import ecwid_required, PrepareOrder, role_forbidden, ProcessOrderComments, ORDER_COMMENTS_FIELDS
+from app.main.utils import ecwid_required, role_forbidden, role_required
 from datetime import datetime, timedelta, timezone
 from app.main.forms import MergeOrdersForm
-import json
-from json.decoder import JSONDecodeError
 
 '''
 ################################################################################
@@ -16,13 +13,13 @@ Index page
 ################################################################################
 '''
 
-
 def GetDateTimestamps():
 	now = datetime.now(tz = timezone.utc)
 	today = datetime(now.year, now.month, now.day)
 	week = today - timedelta(days = today.weekday())
 	month = datetime(now.year, now.month, 1)
-	dates = {'сегодня':int(today.timestamp()), 'неделя':int(week.timestamp()), 'месяц':int(month.timestamp())}
+	recently = today - timedelta(days = 42)
+	dates = {'сегодня':int(today.timestamp()), 'неделя':int(week.timestamp()), 'месяц':int(month.timestamp()), 'недавно':int(recently.timestamp())}
 	return dates
 
 @bp.route('/')
@@ -31,146 +28,146 @@ def GetDateTimestamps():
 @role_forbidden([UserRoles.default])
 @ecwid_required
 def ShowIndex():
+
 	dates = GetDateTimestamps()
-	filter_from = request.args.get('from', default = dates['месяц'], type = int)
+	filter_from = request.args.get('from', default = 0, type = int)
 	filter_approval = request.args.get('approval', default = None, type = str)
-	filter_location = request.args.get('location', default=None, type=str)
+	filter_project = request.args.get('project', default=None, type=int)
+	filter_category = request.args.get('category', default=None, type=int)
 
 	if filter_approval not in [status.name for status in OrderStatus]:
 		filter_approval = None
 
-	if filter_location is not None:
-		filter_location = filter_location.strip()
-	if current_user.role not in [UserRoles.approver, UserRoles.validator]:
-		locations = [loc.name for loc in Location.query.order_by(Location.name).all()]
-	else:
-		try:
-			locations = current_user.data['locations']
-		except (TypeError,KeyError):
-			locations = []
-			
-	orders = []
-	args = {}
-	if filter_from != 0:
-		args['createdFrom'] = filter_from
-	if filter_location is not None:
-		args['refererId'] = filter_location
+	orders = Order.query
+
 	if current_user.role == UserRoles.initiative:
-		args['email'] = current_user.email
-	try:
-		orders = current_user.hub.GetStoreOrders(**args)
-		orders = orders.get('items', [])
-	except EcwidAPIException as e:
-		flash('Ошибка API: {}'.format(e))
+		orders = orders.filter(Order.initiative_id == current_user.id)
 
-	new_orders = []
-	for order in orders:
-		if not PrepareOrder(order):
-			continue
-		reviewers = [rev.id for rev in order['reviewers']]
-		if current_user.role in [UserRoles.validator, UserRoles.approver]:
-			if current_user.id not in reviewers:
-				continue
-		if filter_approval and order['status'].name != filter_approval:
-			continue
-		new_orders.append(order)
+	if filter_approval is not None:
+		orders = orders.filter(Order.status == filter_approval)
 
-	orders = new_orders
+	if filter_from > 0:
+		orders = orders.filter(Order.create_timestamp > filter_from)
+
+	if filter_category is not None or current_user.role in [UserRoles.purchaser, UserRoles.validator]:
+		orders = orders.join(OrderCategory)
+		if filter_category is not None:
+			orders = orders.filter(OrderCategory.category_id == filter_category)
+		if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
+			orders = orders.filter(OrderCategory.category_id.in_([cat.id for cat in current_user.categories]))
+
+	if filter_project is not None or current_user.role in [UserRoles.purchaser, UserRoles.validator]:
+		orders = orders.join(Site)
+		if filter_project is not None:
+			orders = orders.filter(Site.project_id == filter_project)
+		if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
+			orders = orders.filter(Site.project_id.in_([p.id for p in current_user.projects]))
+
+	orders = orders.order_by(Order.create_timestamp.desc()).all()
+	projects = Project.query.filter_by(hub_id = current_user.hub.id).all()
+	categories = Category.query.filter_by(hub_id = current_user.hub.id).all()
 	form = MergeOrdersForm()
 	return render_template('index.html',
-							orders = orders, dates = dates, locations = locations,
+							orders = orders, dates = dates, projects = projects,categories = categories,
 							filter_from = filter_from,
 							filter_approval = filter_approval,
-							filter_location = filter_location,
+							filter_project = filter_project,
+							filter_category = filter_category,
 							OrderStatus = OrderStatus,
 							form = form)
 
 
-@bp.route('/merge/', methods=['POST'])
+@bp.route('/orders/merge/', methods=['POST'])
 @login_required
-@role_forbidden([UserRoles.default, UserRoles.supervisor])
+@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
 @ecwid_required
 def MergeOrders():
 	form = MergeOrdersForm()
 	if form.validate_on_submit():
-		try:
-			orders_list = json.loads(form.orders.data)
-			if not isinstance(orders_list, list) or len(orders_list) == 0:	
-				raise ValueError
-		except (JSONDecodeError, ValueError):
+		orders_list = form.orders.data
+		if not isinstance(orders_list, list) or len(orders_list) < 2:	
 			flash('Некорректный список заявок.')
 			return redirect(url_for('main.ShowIndex'))
 			
 		orders = list()
-		try:
-			for order_id in orders_list:
-				response = current_user.hub.GetStoreOrders(orderNumber = order_id)
-				if 'items' not in response or len(response['items']) != 1:
-					raise EcwidAPIException(f'Заявка {order_id} не найдена.')
-				order = response['items'][0]
-				
-				order['orderComments'] = ProcessOrderComments(order.get('orderComments', ''))
-				orders.append(order)
-				if order.get('refererId', '') != orders[0].get('refererId', ''):
-					raise EcwidAPIException('Нельзя объединять заявки от разных проектов.')
-					
-				if all([order['orderComments'][k] == orders[0]['orderComments'][k] for k in ORDER_COMMENTS_FIELDS[1:]]) is False:
-					raise EcwidAPIException('Нельзя объединять заявки с разными полями БДР, БДДС, Объект.')
-					
-		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
+
+		orders = Order.query.filter(Order.id.in_(orders_list), Order.hub_id == current_user.hub_id)
+		if current_user.role == UserRoles.initiative:
+			orders = orders.filter(Order.initiative_id == current_user.id)
+			
+		orders = orders.all()
+		
+		if len(orders) < 2:
+			flash('Некорректный список заявок.')
 			return redirect(url_for('main.ShowIndex'))
 		
+		for order in orders[1:]:
+			if  order.site_id != orders[0].site_id or \
+				order.income_statement != orders[0].income_statement or \
+				order.cash_flow_statement != orders[0].cash_flow_statement:
+					flash('Нельзя объединять заявки с разными объектами, БДДР или БДДС.')
+					return redirect(url_for('main.ShowIndex'))
+					
 		products = dict()
+		categories = list()
 		for order in orders:
-			for product in order['items']:
-				if len(product['selectedOptions']) > 1:
+			categories += [cat.id for cat in order.categories]
+			for product in order.products:
+				if 'selectedOptions' in product and len(product['selectedOptions']) > 1:
 					product_id = product['sku'] + ''.join(sorted([k['value'] for k in product['selectedOptions']]))
 				else:
 					product_id = product['sku']
 				if product_id not in products:
 					products[product_id] = dict()
 					products[product_id]['sku'] = product['sku']
+					products[product_id]['id'] = abs(hash(product_id))
 					products[product_id]['name'] = product['name']
 					products[product_id]['price'] = product['price']
 					products[product_id]['quantity'] = product['quantity']
-					products[product_id]['productPrice'] = product['productPrice']
-					products[product_id]['selectedOptions'] = product['selectedOptions']
+					if 'selectedOptions' in product:
+						products[product_id]['selectedOptions'] = product['selectedOptions']
 					products[product_id]['categoryId'] = product['categoryId']
+					products[product_id]['imageUrl'] = product['imageUrl']
+					if 'vendor' in product:
+						products[product_id]['vendor'] = product['vendor']
 				else:
 					products[product_id]['quantity'] += product['quantity']
-					products[product_id]['price'] += product['price']
-		order = dict()
-		order['email'] = current_user.email
-		order['items'] = [products[sku] for sku in products.keys()]
-		order['paymentStatus'] = 'AWAITING_PAYMENT'
-		order['fulfillmentStatus'] = 'AWAITING_PROCESSING'
-		order['total'] = sum([product['quantity']*product['price'] for product in order['items']])
-		order['refererId'] = orders[0].get('refererId', '')
-		order['orderComments'] = json.dumps(orders[0]['orderComments'])
-
-		try:
-			response = current_user.hub.SetStoreOrder(order)
-			if 'id' not in response:
-				raise EcwidAPIException('Не удалось создать заявку.')
-		except EcwidAPIException:
-			flash('Ошибка API: {}'.format(e))
-			return redirect(url_for('main.ShowIndex'))
+		order = Order()
+		order.initiative = current_user
+	
+		now = datetime.now(tz = timezone.utc)
+	
+		order.products = [products[sku] for sku in products.keys()]
+		order.total = sum([product['quantity']*product['price'] for product in order.products])
+		order.income_statement = orders[0].income_statement
+		order.cash_flow_statement = orders[0].cash_flow_statement
+		order.site = orders[0].site
+		order.status = OrderStatus.new
+		order.create_timestamp = int(now.timestamp())
 		
+		order.id = now.strftime('_%y%j%H%M%S')
+		order.hub_id = current_user.hub_id
+		order.categories = Category.query.filter(Category.id.in_(categories), Category.hub_id == current_user.hub_id).all()
+		
+		db.session.add(order)
 		
 		message = 'Заявка объединена из заявок'
-		for order_id in orders_list:
-			message += ' <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = order_id), order_id)
-			message2 = 'Заявка объединена в заявку <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = response['id']), response['id'])
-			event = EventLog(user_id = current_user.id, order_id = order_id, type=EventType.duplicated, data=message2, timestamp = datetime.now(tz = timezone.utc))
+		
+		for o in orders:
+			message += ' <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = o.id), o.id)
+			message2 = 'Заявка объединена в заявку <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = order.id), order.id)
+			event = OrderEvent(user_id = current_user.id, order_id = o.id, type=EventType.duplicated, data=message2, timestamp = datetime.now(tz = timezone.utc))
 			db.session.add(event)
 			
-		event = EventLog(user_id = current_user.id, order_id = response['id'], type=EventType.duplicated, data=message, timestamp = datetime.now(tz = timezone.utc))
+		event = OrderEvent(user_id = current_user.id, order_id = order.id, type=EventType.duplicated, data=message, timestamp = datetime.now(tz = timezone.utc))
 		db.session.add(event)
 		
 		db.session.commit()
 		
-		flash(f'Объединено заявок: {len(orders)}. Идентификатор новой заявки {response["id"]}')
+		Order.UpdateOrdersPositions(current_user.hub_id)
+		
+		flash(f'Объединено заявок: {len(orders)}. Идентификатор новой заявки {order.id}')		
+
 	else:
 		for error in form.orders.errors:
 			flash(error)

@@ -3,6 +3,7 @@
 #include "rest.h"
 #include "model.h"
 #include "http.h"
+#include "util.h"
 
 /*
 static const char *_DISALLOWED_PRODUCTS_FIELDS[] = {"id", "categories", "defaultCategoryId", "relatedProducts",
@@ -14,24 +15,10 @@ static const char *_ALLOWED_PRODUCTS_FIELDS[] = {"name", "price", "enabled", "op
 #define ARRAY_SIZE(arr)     (sizeof(arr) / sizeof((arr)[0]))
 
 
-void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products, char *vendor);
-void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products, char *vendor);
+static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products);
+static void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products);
 
-char *TrimWhiteSpaces (char *str){
-	char *end = NULL;
-
-	if (str == NULL)
-		return NULL;
-	while (isspace (*str)) str++;
-	if (*str == 0)
-		return NULL;
-	end = str + strlen (str) - 1;
-	while (end > str && isspace (*end)) end--;
-	*(end + 1) = 0;
-	return str;
-}
-
-void FilterProductFields(struct json_object *product){
+static void FilterProductFields(struct json_object *product){
 	if (product == NULL)
 		return;
 	
@@ -59,7 +46,7 @@ void FilterProductFields(struct json_object *product){
 */
 }
 
-bool SetHubProductImage(TEcwid store, uint64_t product_id, char *img_url){
+static bool SetHubProductImage(TEcwid store, uint64_t product_id, char *img_url){
 	uint8_t *response = NULL;
 	bool result = false;
 	struct json_object *json = NULL, *params = NULL;
@@ -88,7 +75,7 @@ error:
 	return result;
 }
 
-int64_t CreateCategory(TEcwid store, uint64_t parent_id, char *name){
+static int64_t CreateCategory(TEcwid store, uint64_t parent_id, char *name){
 	struct json_object *payload = NULL, *json = NULL, *tmp = NULL, *params = NULL;
 	int64_t result = -1;
 	
@@ -98,7 +85,7 @@ int64_t CreateCategory(TEcwid store, uint64_t parent_id, char *name){
 	check_mem(params);
 	json_object_object_add(params, "parent", json_object_new_int64(parent_id));
 	json_object_object_add(params, "token", json_object_new_string(store.token));
-	
+	json_object_object_add(params, "hidden_categories", json_object_new_boolean(true));
 	json = RESTcall(store.id, GET_CATEGORIES, params, NULL, 0);
 	check_mem(json);
 	json_object_object_get_ex(json, "items", &tmp);
@@ -121,6 +108,8 @@ int64_t CreateCategory(TEcwid store, uint64_t parent_id, char *name){
 		json_object_object_add(payload, "parentId", json_object_new_int64(parent_id));
 		json_object_object_add(payload, "name", json_object_new_string(name));
 		const char *buffer = json_object_to_json_string(payload);
+		if (json != NULL)
+			json_object_put(json);
 		json = RESTcall(store.id, POST_CATEGORY, params, (uint8_t *)buffer, strlen(buffer));
 		check_mem(json);
 		struct json_object *category_id = NULL;
@@ -138,11 +127,10 @@ error:
 	return result;
 }
 
-void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products, char *vendor){
+static void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products){
 	struct json_object *store_json= NULL, *params = NULL;
 	struct json_object *store_categories = NULL;
 	
-	check(vendor != NULL && strlen(vendor) > 0, "Invalid function inputs.");
 	check(hub_products != NULL, "Invalid function inputs.");
 	
 	/*****************************************************************************/
@@ -151,8 +139,9 @@ void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t
 	
 	params = json_object_new_object();
 	check_mem(params);
+	
 	json_object_object_add(params, "token", json_object_new_string(store.token));
-	json_object_object_add(params, "parent", json_object_new_int64(store_category));	
+	json_object_object_add(params, "parent", json_object_new_int64(store_category));
 	store_json = RESTcall(store.id, GET_CATEGORIES, params, NULL, 0);
 	check(store_json != NULL, "JSON is invalid.");
 	json_object_object_get_ex(store_json, "items", &store_categories);
@@ -172,7 +161,7 @@ void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t
 			log_err("Cannot create hub category.");
 			continue;
 		}
-		ProcessCategoryProducts(hub, store, next_hub_category, next_store_category, hub_products, vendor);
+		ProcessCategoryProducts(hub, store, next_hub_category, next_store_category, hub_products);
 	}
 	
 error:
@@ -182,14 +171,13 @@ error:
 		json_object_put(store_json);
 }
 
-void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products, char *vendor){
+static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products){
 	
 	struct json_object *store_json= NULL, *params = NULL, *json = NULL;
 	struct json_object *store_products = NULL;
 	char *hub_sku = NULL;
 	uint64_t hub_vendor_category = 0;
 	
-	check(vendor != NULL && strlen(vendor) > 0, "Invalid function inputs.");
 	check(hub_products != NULL, "Invalid function inputs.");
 	
 	/*****************************************************************************/
@@ -214,7 +202,7 @@ void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, ui
 	/*****************************************************************************/
 	
 	if (json_object_array_length(store_products) > 0){
-		hub_vendor_category = CreateCategory(hub, hub_category, vendor);
+		hub_vendor_category = CreateCategory(hub, hub_category, store.name);
 		check(hub_vendor_category > 0, "Cannot create vendor category.");
 	}
 	
@@ -322,7 +310,7 @@ void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, ui
 	//	Process nested categories
 	/*****************************************************************************/
 	
-	ProcessCategories(hub, store, hub_category, store_category, hub_products, vendor);	
+	ProcessCategories(hub, store, hub_category, store_category, hub_products);	
 
 error:
 	if (json != NULL)
@@ -337,33 +325,11 @@ error:
 }
 
 
-bool ProcessStore(TEcwid hub, TEcwid store){
+static bool ProcessStoreProducts(TEcwid hub, TEcwid store){
 	bool result = false;
 	struct json_object *json = NULL, *params = NULL;
 	struct json_object *hub_products = NULL;
 	char *search_sku = NULL;
-	char *vendor = NULL;
-
-	/*****************************************************************************/
-	//	Get vendor account name and create corresponding hub root category
-	/*****************************************************************************/
-	params = json_object_new_object();
-	check_mem(params);
-	json_object_object_add(params, "token", json_object_new_string(store.token));
-	json = RESTcall(store.id, GET_PROFILE, params, NULL, 0);
-	check(json != NULL, "Cannot retrieve store profile.");
-	struct json_object *tmp = NULL;
-	json_object_object_get_ex(json,"account", &tmp);
-	check(tmp != NULL, "Cannot retrieve store profile");
-	json_object_object_get_ex(tmp,"accountName", &tmp);
-	check(tmp != NULL, "Cannot retrieve store profile");
-	vendor = strdup(TrimWhiteSpaces((char *)json_object_get_string(tmp)));
-	check(vendor != NULL, "Cannot retrieve store profile");
-	json_object_put(json);
-	json = NULL;
-	json_object_put(params);
-	params = NULL;
-	tmp = NULL;
 	
 	/*****************************************************************************/
 	//	Get hub products
@@ -385,7 +351,7 @@ bool ProcessStore(TEcwid hub, TEcwid store){
 	//	Process store category products
 	/*****************************************************************************/
 	//ProcessCategoryProducts(hub, store, 0, 0, hub_products, vendor);
-	ProcessCategories(hub, store, 0, 0, hub_products, vendor);
+	ProcessCategories(hub, store, 0, 0, hub_products);
 	
 	/*****************************************************************************/
 	//	Remove excess hub products
@@ -400,6 +366,7 @@ bool ProcessStore(TEcwid hub, TEcwid store){
 			continue;
 		if (hub_product_processed == NULL){
 			json_object_object_add(params, "productId", json_object_get(hub_product_id));
+			struct json_object *tmp = NULL;
 			tmp = RESTcall(hub.id, DELETE_PRODUCT, params, NULL, 0);
 			if (tmp != NULL)
 			{
@@ -421,180 +388,39 @@ error:
 		json_object_put(params);
 	if (search_sku != NULL)
 		free(search_sku);	
-	if (vendor != NULL)
-		free(vendor);	
 	return result;
 }
 
-bool ProcessCategoriesTree(TEcwid hub, uint64_t root_id, struct json_object *children){
-	
-	struct json_object *json = NULL, *params = NULL;
-	struct json_object *categories = NULL;
-	bool result = false;
-	check(children != NULL && root_id != 0, "Invalid function inputs.");
-	
-	params = json_object_new_object();
-	check_mem(params);
-	json_object_object_add(params, "token", json_object_new_string(hub.token));
-	json_object_object_add(params, "parent", json_object_new_int64(root_id));	
-	json = RESTcall(hub.id, GET_CATEGORIES, params, NULL, 0);
-	check(json != NULL, "JSON is invalid.");
-	json_object_object_get_ex(json, "items", &categories);
-	check(categories != NULL && json_object_get_type(categories) == json_type_array, "JSON is invalid.");
-	
-	for (size_t i = 0; i < json_object_array_length(categories); i++) {
-		struct json_object *category = json_object_array_get_idx(categories, i);
-		struct json_object *cat_id = NULL;
-		check_mem(category);
-		json_object_object_get_ex(category, "id", &cat_id);
-		check_mem(cat_id);
-		json_object_array_add(children, json_object_get(cat_id));
-		check(ProcessCategoriesTree(hub, (int64_t)json_object_get_int64(cat_id), children) == true, "Error while processing categories tree.");
-	}
-	result = true;
-error:
-	if (json != NULL)
-		json_object_put(json);
-	if (params != NULL)
-		json_object_put(params);
-	return result;
-}
-
-bool ProcessCache(uint64_t ecwid_id){
+bool ProcessProducts(uint64_t hub_id, uint64_t store_id){
 	
 	bool result = false;
-
-	sqlite3 *pDB = NULL;
-	TEcwid *hub = NULL;
-	struct json_object *json = NULL, *params = NULL;
-	struct json_object *categories = NULL;
-	struct json_object *children = NULL;
-	TCacheCategories *cache = NULL;
-
-	check(sqlite3_open_v2("app.db", &pDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_WAL, NULL) == SQLITE_OK, "Error while opening DB.");
-	hub = GetHub(pDB, ecwid_id);
-	check(hub != NULL, "There is no such ecwid settings.");
-
-
-	/*****************************************************************************/
-	//	Starting database transaction
-	/*****************************************************************************/
-
-	check(BeginTransaction(pDB) == 0, "Failed to start database transaction.");	
-
-
-	/*****************************************************************************/
-	//	Delete obsolete cache
-	/*****************************************************************************/
-
-	check(DeleteCacheCategories(pDB, ecwid_id) == 0, "Error while deleting cache.");
-	
-	/*****************************************************************************/
-	//	Get root categories
-	/*****************************************************************************/
-	
-	params = json_object_new_object();
-	check_mem(params);
-	json_object_object_add(params, "token", json_object_new_string(hub->token));
-	json_object_object_add(params, "parent", json_object_new_int64(0));	
-	json = RESTcall(hub->id, GET_CATEGORIES, params, NULL, 0);
-	check(json != NULL, "JSON is invalid.");
-	json_object_object_get_ex(json, "items", &categories);
-	check(categories != NULL && json_object_get_type(categories) == json_type_array, "JSON is invalid.");
-	
-	/*****************************************************************************/
-	//	Process categories tree
-	/*****************************************************************************/
-	
-	for (size_t i = 0; i < json_object_array_length(categories); i++) {
-		struct json_object *category = json_object_array_get_idx(categories, i);
-		struct json_object *cat_id = NULL, *cat_name = NULL;
-		children = json_object_new_array();
-		check_mem(children);
-		check_mem(category);
-		json_object_object_get_ex(category,"id", &cat_id);
-		check_mem(cat_id);
-		json_object_object_get_ex(category,"name", &cat_name);
-		check_mem(cat_name);
-		cache = calloc(sizeof(TCacheCategories), 1);
-		check_mem(cache);
-		cache->name = (char *)json_object_get_string(cat_name);
-		cache->ecwid_id = ecwid_id;
-		
-		json_object_array_add(children, json_object_get(cat_id));
-		ProcessCategoriesTree(*hub, (int64_t)json_object_get_int64(cat_id), children);		
-		
-		cache->children = (char *)json_object_to_json_string(children);
-		check(StoreCacheCategories(pDB, cache) == 0, "Error while saving cache.");
-		
-		json_object_put(children);
-		children = NULL;
-		free(cache);
-		cache = NULL;
-	}
-	
-	/*****************************************************************************/
-	//	Commiting database transaction
-	/*****************************************************************************/
-
-	CommitTransaction(pDB);	
-	
-	result = true;
-error:
-
-	/*****************************************************************************/
-	//	Rolling back database transaction
-	/*****************************************************************************/
-	if (result != true)
-		RollbackTransaction(pDB);	
-
-	/*****************************************************************************/
-	//	Clean everything up
-	/*****************************************************************************/
-	if (children != NULL)
-		json_object_put(children);
-	if (cache != NULL)
-		FreeCacheCategories(cache);
-	if (json != NULL)
-		json_object_put(json);
-	if (params != NULL)
-		json_object_put(params);
-	if (hub != NULL)
-		FreeHub(hub);
-	if (pDB != NULL)
-		sqlite3_close_v2(pDB);
-	return result;
-}
-
-bool ProcessHub(uint64_t ecwid_id, uint64_t store_id){
-	
-	bool result = false;
-	sqlite3 *pDB = NULL;
+	TDatabase *pDB = NULL;
 	TEcwid *hub = NULL;
 	TEcwid *stores = NULL;
 	size_t stores_count = 0;
+	size_t hub_count = 0;
 
 	/*****************************************************************************/
 	//	Open database, get hub and stores
 	/*****************************************************************************/
 
-	check(sqlite3_open_v2("app.db", &pDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_WAL, NULL) == SQLITE_OK, "Error while opening DB.");
-	hub = GetHub(pDB, ecwid_id);
-	check(hub != NULL, "There is no such ecwid settings.");
+	check(OpenDatabaseConnection(&pDB) == true, "Error while opening DB.");
+	hub = GetStores(pDB, 0, &hub_count, hub_id);
+	check(hub != NULL && hub_count == 1, "There is no such ecwid settings.");
+	check(hub[0].token != NULL, "Hub token is NULL.");
 	
-	if (store_id == 0)
-		stores = GetStores(pDB, ecwid_id, &stores_count);
-	else {
-		stores_count = 1;
-		stores = GetStore(pDB, ecwid_id, store_id);
-	}
+	stores = GetStores(pDB, hub_id, &stores_count, store_id);
 	check(stores != NULL && stores_count > 0, "There are no registered stores.");
 
 	/*****************************************************************************/
 	//	Process stores' products
 	/*****************************************************************************/
 	for (size_t i = 0; i < stores_count; i++){
-		if (ProcessStore(*hub, stores[i]) != true){
+		if (stores[i].token == NULL || stores[i].name == NULL){
+			log_err("Token is NULL or name is NULL for store %lu.", stores[i].id);
+			continue;
+		}
+		if (ProcessStoreProducts(hub[0], stores[i]) != true){
 			log_err("Failed to process store %lu", stores[i].id);
 		}
 	}
@@ -606,8 +432,8 @@ error:
 	if (stores != NULL)
 		FreeStores(stores, stores_count);
 	if (hub != NULL)
-		FreeHub(hub);
+		FreeStores(hub, hub_count);
 	if (pDB != NULL)
-		sqlite3_close_v2(pDB);
+		CloseDatabaseConnection(pDB);
 	return result;
 }

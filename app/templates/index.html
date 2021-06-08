@@ -13,45 +13,51 @@
 	<div class="row">
 		<div class="col">
 			{% for d in dates %}
-				<a href="{{ url_for('main.ShowIndex', from = dates[d], approval = filter_approval, location = filter_location) }}" class="badge {%if filter_from == dates[d] %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">{{ d }}</a>
+				<a href="{{ url_for('main.ShowIndex', from = dates[d], approval = filter_approval, project = filter_project, category = filter_category) }}" class="badge {%if filter_from == dates[d] %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">{{ d }}</a>
 			{% endfor %}
-			<a href="{{ url_for('main.ShowIndex', from = 0, approval = filter_approval, location = filter_location) }}" class="badge {%if filter_from == 0 %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">все</a>
+			<a href="{{ url_for('main.ShowIndex', from = 0, approval = filter_approval, project = filter_project, category = filter_category) }}" class="badge {%if filter_from == 0 %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">все</a>
 		</div>
 	</div>
 	<div class="row">
 		<div class="col">
 		{% for status in OrderStatus %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = status.name, location = filter_location) }}" class="badge badge-{{status.color()}} {%if filter_approval == status.name %}text-uppercase{%endif%}">{{ status }}</a>
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = status.name, project = filter_project, category = filter_category) }}" class="badge badge-{{status.color()}} {%if filter_approval == status.name %}text-uppercase{%endif%}">{{ status }}</a>
 		{% endfor %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, location = filter_location) }}" class="badge badge-dark {%if filter_approval is none %}text-uppercase{%endif%}">все</a>
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, project = filter_project, category = filter_category) }}" class="badge badge-dark {%if filter_approval is none %}text-uppercase{%endif%}">все</a>
 		</div>
 	</div>
 	<div class="row">
 		<div class="col">
-			<select class="form-control" id="locationSelect">
-				<option value="" {%if filter_location not in locations %}selected disabled{%endif%}>Выберите проект...</option>
-				{% for location in locations %}
-					<option {%if filter_location == location %}selected{%endif%}>{{ location }}</option>
+			<select class="form-control" id="projectSelect">
+				<option value="0" {%if filter_project is sameas none %}selected disabled{%endif%}>Проект...</option>
+				{% for project in projects %}
+					<option {%if filter_project == project.id %}selected{%endif%} value="{{ project.id }}">{{ project.name }}</option>
 				{% endfor %}
 			</select>
+		</div>
+		<div class="col">
+			<select class="form-control" id="categorySelect">
+				<option value="0" {%if filter_category is sameas none %}selected disabled{%endif%}>Категория...</option>
+				{% for category in categories %}
+					<option {%if filter_category == category.id %}selected{%endif%} value="{{ category.id }}">{{ category.name }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="col">
+			<input class="form-control" id="orderFilter" type="text" placeholder="Фильтр..">
 		</div>
 	</div>
 </div>
 <div class="container">
 	<div class="row my-2">
 		<div class="col">
-			<span class="font-weight-bold">ЗАЯВКИ</span>
+			<span class="font-weight-bold">Показано <span id="orderCount">{{ orders|length }}</span> заявок</span>
 		</div>
-		{% if current_user.role.name in ['initiative', 'approver', 'admin'] %}
+		{% if current_user.role.name in ['admin', 'inititative', 'purchaser'] %}
 			<div class="col text-right">
 				<a href="#" id="startMerging">Объединить</a>
 			</div>
 		{% endif %}
-	</div>	
-	<div class="row">
-		<div class="col">
-			<input class="form-control" id="orderFilter" type="text" placeholder="Фильтр..">
-		</div>
 	</div>
 	<div class="row d-none d-sm-flex font-weight-bold px-3">
 		<div class="col overflow-hidden">
@@ -64,7 +70,19 @@
 			Проект
 		</div>
 		<div class="col overflow-hidden">
+			Объект
+		</div>
+		<div class="col overflow-hidden">
+			Категория
+		</div>
+		<div class="col overflow-hidden">
 			Сумма
+		</div>
+		<div class="col overflow-hidden">
+			Кем согласована
+		</div>
+		<div class="col overflow-hidden">
+			Ожидаем
 		</div>
 		<div class="col overflow-hidden">
 			Статус
@@ -76,7 +94,7 @@
 </div>
 
 
-{% if current_user.role.name in ['initiative', 'approver', 'admin'] %}
+{% if current_user.role.name in ['admin', 'inititative', 'purchaser'] %}
 	<form id="mergeForm" class="d-none" method="POST" action="{{ url_for('main.MergeOrders') }}">
 		<div class="fixed-top">
 			<div class="container">
@@ -86,7 +104,7 @@
 					</div>
 					<div class="col text-right">
 						{{ form.csrf_token }}
-						{{ form.orders(id="mergeOrders", class_="d-none", readonly=True) }}
+						{{ form.orders(id='mergeOrders', class_='d-none', readonly=True) }}
 						{{ form.submit(class_ = 'btn btn-primary') }}
 					</div>
 				</div>
@@ -104,14 +122,21 @@
 	
 		var isMerging = false;
 		
-		$("#locationSelect").change(function(){
-			if ($(this).val() != 'Выберите проект...')
-				document.location.href = '{{ url_for("main.ShowIndex", location = "replace_me") }}'.replace('replace_me', $(this).val());
+		$("#projectSelect").change(function(){
+			if ($(this).val() != 0)
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category, project = 'replace_me') }}".replaceAll("&amp;", "&").replace("replace_me", $(this).val());
 			else
-				document.location.href = '{{ url_for("main.ShowIndex") }}'
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category) }}".replaceAll("&amp;", "&")
+		});
+		
+		$("#categorySelect").change(function(){
+			if ($(this).val() != 0)
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, project = filter_project, category = 'replace_me') }}".replaceAll("&amp;", "&").replace("replace_me", $(this).val());
+			else
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, project = filter_project) }}".replaceAll("&amp;", "&")
 		});
 
-	{% if current_user.role.name in ['initiative', 'approver', 'admin'] %}
+	{% if current_user.role.name in ['admin', 'inititative', 'purchaser'] %}
 	
 		var mergeOrders = [];
 
@@ -127,6 +152,7 @@
 			$("#mergeForm").addClass("d-none");
 			$("#startMerging").show();
 			$(".ecwidOrder.bg-secondary.text-white").removeClass("bg-secondary text-white");
+			$(".ecwidOrder").addClass("bg-light");
 		});
 	
 	{% endif %}
@@ -136,25 +162,26 @@
 			$(".ecwidOrder").filter(function() {
 				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
 			});
+			$("#orderCount").text($(".ecwidOrder:visible").length);
 		});
 		
 		$(".ecwidOrder").click(function(event){
-			var orderId = Number($(this).attr('id').replace('order', ''));
-			if (!isNaN(orderId)){
-				if (isMerging == false){
-					document.location.href = '/order/' + orderId;
-				}else{
-					if (mergeOrders.includes(orderId)){
-						$(this).removeClass("bg-secondary text-white");
-						let index = mergeOrders.indexOf(orderId);
-						mergeOrders.splice(index, 1);
-					} else {
-						mergeOrders.push(orderId);
-						$(this).addClass("bg-secondary text-white");
-					}
-					console.log(JSON.stringify(mergeOrders));
-					$("#mergeOrders").val(JSON.stringify(mergeOrders));
+			var orderId = $(this).attr('data-id');
+			if (isMerging == false){
+				document.location.href = "{{ url_for('main.ShowOrder', order_id = 'replace_me') }}".replace("replace_me", orderId);
+			}else{
+				if (mergeOrders.includes(orderId)){
+					$(this).removeClass("bg-secondary text-white");
+					$(this).addClass("bg-light");
+					let index = mergeOrders.indexOf(orderId);
+					mergeOrders.splice(index, 1);
+				} else {
+					mergeOrders.push(orderId);
+					$(this).removeClass("bg-light");
+					$(this).addClass("bg-secondary text-white");
 				}
+				console.log(JSON.stringify(mergeOrders));
+				$("#mergeOrders").val(JSON.stringify(mergeOrders));
 			}
 		});
 	});

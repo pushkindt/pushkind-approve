@@ -6,18 +6,21 @@
 		<ul class="navbar-nav mr-auto">
 			<li class="nav-item {% if request.endpoint == 'main.ShowIndex' %} active {% endif %}">
 				<a class="nav-link" href="{{ url_for('main.ShowIndex') }}">Главная</a>
-			</li>										
+			</li>
 			<li class="nav-item {% if request.endpoint == 'main.ShowStores' %} active {% endif %}">
 				<a class="nav-link" href="{{ url_for('main.ShowStores') }}">Поставщики</a>
-			</li>
+			</li>			
 			<li class="nav-item {% if request.endpoint == 'main.ShowSettings' %} active {% endif %}">
 				<a class="nav-link" href="{{ url_for('main.ShowSettings') }}">Настройки</a>
 			</li>
-			{% if current_user.role.name in ["initiative", "admin"] %}
+			{% if current_user.role.name in ['admin', 'inititative', 'purchaser'] %}
 				<li class="nav-item {% if request.endpoint == 'main.ShowEcwid' %} active {% endif %}">
 					<a class="nav-link" href="{{ url_for('main.ShowEcwid') }}">Заказать</a>
 				</li>
 			{% endif %}
+			<li class="nav-item {% if request.endpoint == 'main.ShowResponsibility' %} active {% endif %}">
+				<a class="nav-link" href="{{ url_for('main.ShowResponsibility') }}">Ответственность</a>
+			</li>
 		</ul>
 	</div>
 </nav>

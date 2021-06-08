@@ -1,4 +1,4 @@
-<div class="row ecwidOrderProduct" id="{{ product['sku'] }}">
+<div class="row my-2 ecwidOrderProduct border rounded" data-id = "{{ product.id }}">
 	<div class="col-sm overflow-hidden">
 		{% if product.imageUrl is defined %}
 			<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
@@ -24,17 +24,19 @@
 	</div>
 	<div class="col-sm overflow-hidden">
 		<span class="d-sm-none font-weight-bold">Кол-во:</span>
-		{% if current_user.email == order['initiative'].email or current_user.role.name == 'admin' %}
-			<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order['orderNumber']) }}" method="POST">
+		{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
+			<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order.id) }}" method="POST">
 				<div class="form-row">
 					<div class="col">
-						{{ quantity_form.csrf_token }}
-						{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['id']) }}
-						{{ quantity_form.product_quantity(class_ = 'productQuantity text-primary form-control-plaintext', value = product['quantity']) }}
+						{{ quantity_form.csrf_token(id=False) }}
+						{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['id'], id=False) }}
+						{{ quantity_form.product_quantity(class_ = 'productQuantity text-primary form-control-plaintext', value = product['quantity'], id=False) }}
 					</div>
 					<div class="col pt-1">
 						{% if 'selectedOptions' in product %}
 							{{ product['selectedOptions'][0]['value'] }}
+						{%else%}
+							{% set _ = glob.update({'no_measurements':True}) %}
 						{% endif %}
 					</div>
 				</div>
@@ -43,38 +45,18 @@
 			{{ product['quantity'] }}
 			{% if 'selectedOptions' in product %}
 				{{ product['selectedOptions'][0]['value'] }}
+			{%else%}
+				{% set _ = glob.update({'no_measurements':True}) %}
 			{% endif %}
 		{% endif %}
 	</div>
-
+	{% if current_user.role.name in ['validator','purchaser'] %}
+		<div class="col text-right overflow-hidden">
+			{% if product['id'] in approvals %}
+				<button type="button" class="btn btn-danger approveButton" data-approved="false" data-id="{{ product['id'] }}" data-sku="{{ product[sku] }}" data-target="product">Отклонено</button>
+			{% else %}
+				<button type="button" class="btn btn-success approveButton" data-approved="true" data-id="{{ product['id'] }}" data-sku="{{ product['sku'] }}" data-target="product">Согласовано</button>
+			{% endif %}
+		</div>
+	{% endif %}
 </div>
-{% if current_user.role.name in ['validator','approver'] %}
-<div class="row border-bottom">
-	<div class="col-sm text-right">
-			<form action="{{ url_for('main.SaveApproval', order_id = order['orderNumber']) }}" method="POST">
-				{{ approval_form.csrf_token }}
-				{{ approval_form.product_id(class_ = 'd-none', hidden = '', value = product['id']) }}
-				{{ approval_form.product_sku(class_ = 'd-none', hidden = '', value = product['sku']) }}
-				{% if order['reviewers'][current_user]|selectattr('product_id','equalto', product['id'])|list|length > 0 %}
-					<label class="toggle-label">
-						<input type="checkbox" checked onChange="this.form.submit()">
-						<span class="back">
-							<span class="toggle"></span>
-							<span class="label on">согласен</span>
-							<span class="label off">НЕ согласен</span>
-						</span>
-					</label>
-				{% else %}
-					<label class="toggle-label">
-						<input type="checkbox" onChange="this.form.submit()">
-						<span class="back">
-							<span class="toggle"></span>
-							<span class="label on">согласен</span>
-							<span class="label off">НЕ согласен</span>
-						</span>
-					</label>
-				{% endif %}
-			</form>
-	</div>
-</div>
-{% endif %}

@@ -1,8 +1,8 @@
 TARGET = ecwid-api
 PREFIX ?= 
-SRCS = ecwid-api.c model.c http.c rest.c ecwid.c
+SRCS = model.c http.c rest.c ecwid.products.c ecwid.orders.c ecwid.profiles.c ecwid.categories.c util.c ecwid-api.c
 OBJS = $(SRCS:.c=.o)
-CFLAGS_LOCAL =  -g -O0 -Wall -Wextra -include allheaders.h `curl-config --cflags` $(shell pkg-config --cflags json-c)
+CFLAGS_LOCAL =  -std=c17 -g -O0 -Wall -Wextra -include allheaders.h `curl-config --cflags` $(shell pkg-config --cflags json-c)
 LDFLAGS_LOCAL = -g -O0 -lsqlite3 `curl-config --libs` -lm $(shell pkg-config --libs json-c)
 CC = clang
 

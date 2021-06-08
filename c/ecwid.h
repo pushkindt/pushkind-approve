@@ -1,2 +1,4 @@
-extern bool ProcessHub(uint64_t ecwid_id, uint64_t store_id);
-extern bool ProcessCache(uint64_t ecwid_id);
+extern bool ProcessProducts(uint64_t hub_id, uint64_t store_id);
+extern bool ProcessCategories(uint64_t hub_id);
+extern bool ProcessProfiles(uint64_t hub_id, uint64_t store_id);
+extern bool ProcessOrders(uint64_t hub_id, char *store_id);

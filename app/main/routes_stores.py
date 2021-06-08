@@ -2,17 +2,19 @@ from app import db
 from flask_login import current_user, login_required
 from app.main import bp
 from app.models import User, UserRoles, Ecwid
-from flask import render_template, redirect, url_for, flash
+from flask import render_template, redirect, url_for, flash, jsonify, request
 from app.main.forms import AddStoreForm
 from app.ecwid import EcwidAPIException
 import subprocess
-from app.main.utils import role_required, ecwid_required, role_forbidden
+from app.main.utils import role_required, ecwid_required, role_forbidden, role_forbidden_ajax, ecwid_required_ajax, role_required_ajax
+from datetime import datetime
 
 '''
 ################################################################################
 Stores page
 ################################################################################
 '''
+
 @bp.route('/stores/', methods=['GET', 'POST'])
 @login_required
 @role_forbidden([UserRoles.default])
@@ -26,8 +28,9 @@ def ShowStores():
 				store_email = store_form.email.data.strip().lower()
 				store_id = current_user.hub.CreateStore(name = store_name, email = store_email, password = store_form.password.data, plan = store_form.plan.data,
 																defaultlanguage='ru')
-				store = Ecwid(store_id = store_id, ecwid_id = current_user.ecwid_id, partners_key = current_user.hub.partners_key,
-								client_id = current_user.hub.client_id, client_secret = current_user.hub.client_secret)
+				store = Ecwid(id = store_id, hub_id = current_user.hub_id, partners_key = current_user.hub.partners_key,
+								client_id = current_user.hub.client_id, client_secret = current_user.hub.client_secret,
+								name = store_name, email = store_email)
 				db.session.add(store)
 				store.GetStoreToken()
 				store.UpdateStoreProfile({'settings':{'storeName':store_name}, 'company':{'companyName':store_name, 'city':'Москва', 'countryCode':'RU'}})
@@ -37,24 +40,20 @@ def ShowStores():
 				db.session.rollback()
 				flash('Ошибка API или магазин уже используется.')
 				flash('Возможно неверные настройки?')
-	vendors = Ecwid.query.filter(Ecwid.ecwid_id == current_user.ecwid_id).all()
-	stores = list()
-	for vendor in vendors:
-		try:
-			stores.append(vendor.GetStoreProfile())
-		except EcwidAPIException as e:
-			flash('Ошибка API: {}'.format(e))
+			return redirect(url_for('main.ShowStores'))
+	
+	stores = Ecwid.query.filter(Ecwid.hub_id == current_user.hub_id).all()
 	if len(stores) == 0:
 		flash('Ни один поставщик не зарегистрован в системе.')
 	return render_template('stores.html', store_form = store_form, stores = stores)
 	
 	
-@bp.route('/withdraw/<int:store_id>')
+@bp.route('/stores/remove/<int:store_id>')
 @login_required
 @role_required([UserRoles.admin])
 @ecwid_required
-def WithdrawStore(store_id):
-	store = Ecwid.query.filter(Ecwid.store_id == store_id, Ecwid.ecwid_id == current_user.ecwid_id).first()
+def RemoveStore(store_id):
+	store = Ecwid.query.filter(Ecwid.id == store_id, Ecwid.hub_id == current_user.hub_id).first()
 	if store is not None:
 		try:
 			store.DeleteStore()
@@ -81,16 +80,16 @@ def WithdrawStore(store_id):
 		flash('Этот поставщик не зарегистрован в системе.')
 	return redirect(url_for('main.ShowStores'))
 	
-@bp.route('/sync/', defaults={'store_id': None})
-@bp.route('/sync/<int:store_id>')
+@bp.route('/stores/sync/products/', defaults={'store_id': None})
+@bp.route('/stores/sync/products/<int:store_id>')
 @login_required
-@role_required([UserRoles.admin, UserRoles.approver])
+@role_required([UserRoles.admin, UserRoles.purchaser])
 @ecwid_required
-def SyncStores(store_id):
+def SyncStoreProducts(store_id):
 	if store_id is None:
-		args = ("c/ecwid-api", str(current_user.ecwid_id))
+		args = ('c/ecwid-api', 'products', str(current_user.hub_id))
 	else:
-		args = ("c/ecwid-api", str(current_user.ecwid_id), str(store_id))
+		args = ('c/ecwid-api', 'products', str(current_user.hub_id), '-s', str(store_id))
 	popen = subprocess.Popen(args, stderr=subprocess.PIPE)
 	popen.wait()
 	output = popen.stderr.read()
@@ -99,4 +98,27 @@ def SyncStores(store_id):
 			flash(s)
 	else:
 		flash('Синхронизация успешно завершена.')
-	return redirect(url_for('main.ShowStores'))
+	return redirect(url_for('main.ShowStores'))	
+	
+@bp.route('/stores/sync/orders/')
+@login_required
+@role_forbidden_ajax([UserRoles.default, UserRoles.supervisor, UserRoles.validator])
+@ecwid_required_ajax
+def SyncStoreOrders():
+	order_id = request.args.get('id', default = None, type = str)
+	if order_id is None:
+		args = ('c/ecwid-api', 'orders', str(current_user.hub_id))
+	else:
+		args = ('c/ecwid-api', 'orders', str(current_user.hub_id), '-o', order_id)
+	popen = subprocess.Popen(args, stderr=subprocess.PIPE)
+	popen.wait()
+	output = popen.stderr.read()
+	messages = []
+	if output is not None and len(output) > 0:
+		for s in output.decode('utf-8').strip().split('\n'):
+			messages.append(s)
+		status = False
+	else:
+		messages.append('Синхронизация успешно завершена.')
+		status = True
+	return jsonify({'status':status, 'flash':messages})
