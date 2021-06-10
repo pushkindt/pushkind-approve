@@ -16,4 +16,4 @@ from app.main import routes_approve
 from app.main import routes_settings
 from app.main import routes_stores
 from app.main import routes_buyer
-from app.main import routes_responsibility
+from app.main import routes_help

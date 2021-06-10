@@ -23,7 +23,7 @@
 					</div>
 				</div>
 			{% endif %}
-			<form method="post" class="my-2 border-bottom" action="{{ url_for('main.ConfigureEcwid') }}">
+			<form method="post" class="my-2" action="{{ url_for('main.ConfigureEcwid') }}">
 				{{ ecwid_form.csrf_token }}
 				<div class="form-group row">
 					{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
@@ -90,7 +90,7 @@
 	</div>	
 	
 	
-	<div class="container border-bottom">
+	<div class="container">
 		<div class="row">
 			<div class="col text-right">
 				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#projectFormCollapse" aria-expanded="false" aria-controls="projectFormCollapse">
@@ -127,7 +127,7 @@
 			</form>
 		</div>
 	</div>
-	<div class="container border-bottom">
+	<div class="container border bg-white rounded">
 		<div class="row">
 			<div class="col">
 				<a href="{{ url_for('auth.PerformRegistration') }}">Создание нового пользователя</a>

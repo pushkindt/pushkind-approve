@@ -6,12 +6,11 @@ from flask import render_template, redirect, url_for, flash, jsonify, current_ap
 from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, Export1CReport, InitiativeForm, ApproverForm
 from datetime import datetime, timezone, date
 from app.ecwid import EcwidAPIException
-from app.main.utils import role_required, ecwid_required, role_required_ajax, ecwid_required_ajax, role_forbidden, role_forbidden_ajax, SendEmailNotification, SendEmail1C
+from app.main.utils import role_required, ecwid_required, role_forbidden, SendEmailNotification, SendEmail1C
 
 from openpyxl import load_workbook
 from copy import copy
 from openpyxl.writer.excel import save_virtual_workbook
-import json
 from sqlalchemy.orm.attributes import flag_modified
 
 '''
@@ -381,7 +380,6 @@ def SaveApproval(order_id):
 		return redirect(url_for('main.ShowIndex'))
 	form = OrderApprovalForm()
 	if form.validate_on_submit():
-		order_approval = OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id, product_id = None).first()
 		position_approval = OrderPosition.query.filter_by(order_id = order_id, position_id = current_user.position_id).first()
 		if form.comment.data != '':
 			message = f'с комментарием \"{form.comment.data}\"'
@@ -389,41 +387,70 @@ def SaveApproval(order_id):
 			message = 'без комментария'
 		if form.product_id.data is None:
 			OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id).delete()
-			if order_approval is None:
-				order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
-				db.session.add(order_approval)
-				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message, timestamp = datetime.now(tz = timezone.utc))
-				if position_approval is not None:
-					position_approval.approved = True
-			else:
+			order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
+			db.session.add(order_approval)
+			event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message, timestamp = datetime.now(tz = timezone.utc))
+			if position_approval is not None:
+				position_approval.approved = True
+				position_approval.user = current_user
+				position_approval.timestamp = datetime.utcnow()
+		else:
+			if form.product_id.data == 0:
+				OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id).delete()
 				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp = datetime.now(tz = timezone.utc))
 				for product in order.products:
 					product_approval = OrderApproval(order_id = order_id, product_id=product['id'], user_id = current_user.id)
 					db.session.add(product_approval)
 				if position_approval is not None:
 					position_approval.approved = False
-		else:
-			for product in order.products:
-				if form.product_id.data == product['id']:
-					break
+					position_approval.user = current_user
+					position_approval.timestamp = datetime.utcnow()
 			else:
-				flash('Указанный товар не найден в заявке.')
-				return redirect(url_for('main.ShowOrder', order_id = order_id))
-
-			product_approval = OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id, product_id = form.product_id.data).first()
-			if product_approval is not None:
-				db.session.delete(product_approval)
-				message = 'товар "{}" '.format(product['name']) + message
-				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message, timestamp = datetime.now(tz = timezone.utc))
-			else:
-				if order_approval is not None:
-					db.session.delete(order_approval)
-				product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id)
-				db.session.add(product_approval)
-				message = 'товар "{}" '.format(product['name']) + message
-				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp = datetime.now(tz = timezone.utc))
-				if position_approval is not None:
-					position_approval.approved = False
+				for product in order.products:
+					if form.product_id.data == product['id']:
+						break
+				else:
+					flash('Указанный товар не найден в заявке.')
+					return redirect(url_for('main.ShowOrder', order_id = order_id))
+				product_approval = OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id, product_id = form.product_id.data).first()
+				if product_approval is not None:
+					db.session.delete(product_approval)
+					message = 'товар "{}" '.format(product['name']) + message
+					event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message, timestamp = datetime.now(tz = timezone.utc))
+					
+					if len(order.products) == 1:
+						db.session.add(event)
+						order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
+						db.session.add(order_approval)
+						event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message, timestamp = datetime.now(tz = timezone.utc))
+						if position_approval is not None:
+							position_approval.approved = True
+							position_approval.user = current_user
+							position_approval.timestamp = datetime.utcnow()
+					else:
+						#Reset position approval for user position
+						
+						approvals = OrderApproval.query.filter(OrderApproval.order_id == order_id).join(User).filter(User.position_id == current_user.position_id).order_by(OrderApproval.id.desc()).first()
+						
+						if approvals is None:
+							position_approval.approved = False
+							position_approval.user = None
+							position_approval.timestamp = datetime.utcnow()
+						else:
+							position_approval.approved = (approvals.product_id == None)
+							position_approval.user = approvals.user
+							position_approval.timestamp = datetime.utcnow()
+				
+				else:
+					OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id, product_id = None).delete()
+					product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id)
+					db.session.add(product_approval)
+					message = 'товар "{}" '.format(product['name']) + message
+					event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp = datetime.now(tz = timezone.utc))
+					if position_approval is not None:
+						position_approval.approved = False
+						position_approval.user = current_user
+						position_approval.timestamp = datetime.utcnow()
 		db.session.add(event)		
 		order.UpdateOrderStatus()
 		db.session.commit()

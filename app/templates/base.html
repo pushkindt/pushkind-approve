@@ -7,6 +7,17 @@
 		<title>{{ config['APPLICATION_TITLE'] }}</title>
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
 		<style>
+			.logo{
+				width:64px;
+				height:64px;
+			}
+			.disapprovedIcon {
+				width:32px;
+				height:32px;
+			}
+			.nav-item.active {
+				border-bottom: 1px solid #007bff;
+			}
 			.alert-fixed {
 				position:fixed; 
 				top: 0px; 
@@ -23,7 +34,7 @@
 		{{ moment.include_moment(sri=False) }}
 		{{ moment.locale("ru") }}
 	</head>
-	<body>
+	<body class="bg-light">
 		<header id="header" class="header">
 			<div class = "container">
 				{% with messages = get_flashed_messages() %}
@@ -41,28 +52,28 @@
 					{% endif %}
 				{% endwith %}
 				{% if not current_user.is_anonymous %}
-					<div class="row">
-						<div class="col overflow-hidden">
-							<h3>
-								<!--<a href="/index"><img src="/static/logo.png" alt="Logo"></a>-->
-								{{ config['APPLICATION_TITLE'] }}
-							</h3>						
-						</div>
-					</div>
-					<div class = "row bg-light">
-						<div class = "col">
+
+					<nav class="navbar navbar-expand-md navbar-light">
+						<a class="navbar-brand" href="{{ url_for('main.ShowIndex') }}">
+							<img class="logo" src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+						</a>
+						<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+							<span class="navbar-toggler-icon"></span>
+						</button>
+						<div class="collapse navbar-collapse" id="navbarSupportedContent">
 							{% include 'navigation.html' %}
+							<span class="navbar-text">
+								<span class="font-weight-bold">{{ current_user.name or current_user.email }}</span><br>
+								{{ current_user.role }} <a href="{{ url_for('auth.PerformLogout') }}" class="text-primary">выйти</a>
+							</span>
 						</div>
-						<div class="col text-right">
-							{{ current_user.role }} <a href="{{ url_for('auth.PerformLogout') }}">выйти</a><br>
-							{{ current_user.email }}
-						</div>
-					</div>
+					</nav>
+
 				{% else %}
 					<div class="row">
 						<div class="col text-center overflow-hidden">
 							<h3>
-								<!--<a href="/index"><img src="/static/logo.png" alt="Logo"></a>-->
+								<!--<a href="/index"><img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"></a>-->
 								{{ config['APPLICATION_TITLE'] }}
 							</h3>						
 						</div>

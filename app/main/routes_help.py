@@ -11,11 +11,11 @@ Responibility page
 ################################################################################
 '''
 
-@bp.route('/responsibility/', methods=['GET', 'POST'])
+@bp.route('/help/', methods=['GET', 'POST'])
 @login_required
 @role_forbidden([UserRoles.default])
 @ecwid_required
-def ShowResponsibility():
+def ShowHelp():
 	positions = Position.query.filter_by(hub_id = current_user.hub_id).join(User).filter_by(role = UserRoles.validator).all()
 
 	responsibilities = dict()
@@ -27,5 +27,5 @@ def ShowResponsibility():
 				responsibilities[position.name]['categories'].add(category.name)
 			for project in user.projects:
 				responsibilities[position.name]['projects'].add(project.name)
-	return render_template('responsibility.html', responsibilities = responsibilities)
+	return render_template('help.html', responsibilities = responsibilities)
 

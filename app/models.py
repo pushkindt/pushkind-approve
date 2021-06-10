@@ -340,6 +340,9 @@ class OrderPosition(db.Model):
 	position_id = db.Column(db.Integer, db.ForeignKey('position.id', ondelete='CASCADE'), primary_key = True)
 	approved = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
 	position = db.relationship('Position')
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+	user = db.relationship(User)
+	timestamp = db.Column(db.DateTime, nullable=True)
 
 class UserCategory(db.Model):
 	__tablename__ = 'user_category'

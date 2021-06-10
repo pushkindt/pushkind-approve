@@ -1,4 +1,4 @@
-<div class="row ecwidOrder my-2 bg-light" data-id = "{{ order.id }}">
+<div class="row ecwidOrder my-1 bg-white border rounded" data-id = "{{ order.id }}">
 	<div class="col-sm overflow-hidden">
 		<span class="d-sm-none font-weight-bold">Номер:</span>
 		<a href="{{ url_for('main.ShowOrder', order_id=order.id) }}">#{{ order.id }}</a>

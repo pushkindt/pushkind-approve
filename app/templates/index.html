@@ -151,8 +151,8 @@
 			isMerging = false;
 			$("#mergeForm").addClass("d-none");
 			$("#startMerging").show();
-			$(".ecwidOrder.bg-secondary.text-white").removeClass("bg-secondary text-white");
-			$(".ecwidOrder").addClass("bg-light");
+			$(".ecwidOrder.bg-dark.text-white").removeClass("bg-dark text-white");
+			$(".ecwidOrder").addClass("bg-white");
 		});
 	
 	{% endif %}
@@ -171,14 +171,14 @@
 				document.location.href = "{{ url_for('main.ShowOrder', order_id = 'replace_me') }}".replace("replace_me", orderId);
 			}else{
 				if (mergeOrders.includes(orderId)){
-					$(this).removeClass("bg-secondary text-white");
-					$(this).addClass("bg-light");
+					$(this).removeClass("bg-dark text-white");
+					$(this).addClass("bg-white");
 					let index = mergeOrders.indexOf(orderId);
 					mergeOrders.splice(index, 1);
 				} else {
 					mergeOrders.push(orderId);
-					$(this).removeClass("bg-light");
-					$(this).addClass("bg-secondary text-white");
+					$(this).removeClass("bg-white");
+					$(this).addClass("bg-dark text-white");
 				}
 				console.log(JSON.stringify(mergeOrders));
 				$("#mergeOrders").val(JSON.stringify(mergeOrders));
