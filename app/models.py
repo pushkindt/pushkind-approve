@@ -25,7 +25,7 @@ class EventType(enum.IntEnum):
 	export1C = 6
 
 	def __str__(self):
-		pretty = ['оставлен комментарий', 'согласовано', 'отклонено', 'изменено', 'заявка дублирована', 'отправлена поставщикам', 'экспортирована в 1С']
+		pretty = ['комментарий', 'согласовано', 'отклонено', 'изменено', 'заявка дублирована', 'отправлена поставщикам', 'экспортирована в 1С']
 		return pretty[self.value]
 	def color(self):
 		colors = ['warning', 'success', 'danger', 'primary', 'primary', 'info', 'info']

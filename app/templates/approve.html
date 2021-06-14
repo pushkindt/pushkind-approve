@@ -4,23 +4,25 @@
 
 {% block content %}
 	<div class="container bg-white border rounded">
-		<div class="row my-2">
-			<div class="col">
-				<span class="font-weight-bold">ЗАЯВКА
-					#{{ order.id }}
-				</span>
-				от {{ moment(order.create_date).format('DD.MM.YYYY') }}
-				<span class="badge badge-{{order.status.color() }}">{{ order.status }}</span>
-				{% if order.purchased is sameas true %}
-					<span class="badge badge-info"><img class="octicon" src="{{ url_for('static', filename='octicons/mail.svg') }}" alt="Отправлена"></span>
-				{% endif%}
-				{% if order.exported is sameas true %}
-					<span class="badge badge-info"><img class="octicon" src="{{ url_for('static', filename='1C.png') }}" alt="Экспортирована"></span>
-				{% endif%}
-			</div>
-		</div>
 		<div class="row">
 			<div class="col">
+			
+				<div class="row my-2">
+					<div class="col">
+						<span class="font-weight-bold">ЗАЯВКА
+							#{{ order.id }}
+						</span>
+						от {{ moment(order.create_date).format('DD.MM.YYYY') }}
+						<span class="badge badge-{{order.status.color() }}">{{ order.status }}</span>
+						{% if order.purchased is sameas true %}
+							<span class="badge badge-info"><img class="octicon" src="{{ url_for('static', filename='octicons/mail.svg') }}" alt="Отправлена"></span>
+						{% endif%}
+						{% if order.exported is sameas true %}
+							<span class="badge badge-info"><img class="octicon" src="{{ url_for('static', filename='1C.png') }}" alt="Экспортирована"></span>
+						{% endif%}
+					</div>
+				</div>
+			
 				<div class="row">
 					<div class="col">
 						{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
@@ -80,8 +82,8 @@
 				<div class="row">
 					<div class="col">
 						<span class="font-weight-bold">Инициатор:</span>
-						{{ order.initiative.position.name if order.initiative.position else 'должность не указана' }}
-						({{ order.initiative.name }})
+						{% set user = order.initiative %}
+						{% include '_user.popover.html' %}
 					</div>
 				</div>
 			</div>
@@ -89,21 +91,21 @@
 				<span class="font-weight-bold">Действия с заявкой</span>
 				<ul class="nav flex-column bg-white">
 					<li class="nav-item">
-						{% if current_user.role.name in ['admin', 'inititative', 'validator', 'purchaser'] %}
+						{% if current_user.role.name in ['admin', 'initiative', 'validator', 'purchaser'] %}
 							<a href="#" data-toggle="modal" data-target="#leaveCommentModal">Комментировать</a>
 						{% else %}
 							<span class="text-secondary">Комментировать</span>
 						{% endif %}
 					</li>
 					<li class="nav-item">
-						{% if current_user.role.name in ['admin', 'inititative', 'purchaser'] %}
+						{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
 							<a href="{{ url_for('main.DuplicateOrder', order_id = order.id) }}" onclick="return confirm('Клонировать заявку?')">Клонировать</a>
 						{% else %}
 							<span class="text-secondary">Клонировать</span>
 						{% endif %}
 					</li>
 					<li class="nav-item">
-						{% if current_user.role.name in ['admin', 'inititative', 'purchaser'] %}
+						{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
 							<a href="{{ url_for('main.NotifyApprovers', order_id = order.id) }}" onclick="return confirm('Отправить уведомление согласующим?')">Уведомить</a>
 						{% else %}
 							<span class="text-secondary">Уведомить</span>
@@ -131,25 +133,45 @@
 		</div>
 		<div class="row">
 			<div class="col">
+				<span class="font-weight-bold">Комментарии: </span>
+				<ul>
+				{% for event in order.events|reverse %}
+					{% if event.type.name == 'comment'%}
+						<li class="text-warning">
+							{% set user = event.user %}
+							{{ moment(event.timestamp).format('DD.MM.YYYY') }} {% include '_user.popover.html' %}: {{ event.data|safe }}
+						</li>
+					{% endif %}
+				{% endfor %}
+				</ul>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col">
 				<span class="font-weight-bold">Согласующие:</span><br>
 				<ul>
 				{% for appr in order.approvals %}
 					{% if appr.approved is sameas true %}
 						<li class="text-success">
-							{{ appr.position.name }}
-							({{ appr.user.name }})
 							{{ moment(appr.timestamp).format('DD.MM.YYYY') }}
+							{% set user = appr.user %}
+							{% include '_user.popover.html' %}
+							({{ appr.position.name }})
 						</li>
 					{% else %}
 						{% if appr.user is sameas none %}
 							<li>
 								{{ appr.position.name }}
+								({%for user in appr.position.users%}
+								{% include '_user.popover.html' %}
+								{%endfor%})
 							</li>
 						{% else %}
 							<li class="text-danger">
-								{{ appr.position.name }}
-								({{ appr.user.name }})
 								{{ moment(appr.timestamp).format('DD.MM.YYYY') }}
+								{% set user = appr.user %}
+								{% include '_user.popover.html' %}
+								{{ appr.position.name }}
 							</li>
 						{% endif %}
 					{% endif %}
@@ -190,14 +212,13 @@
 				<div class="action" data-datetime="{{ event.timestamp.timestamp() }}">
 					<div class="row">
 						<div class="col">
-							<span class="badge badge-{{event.type.color()}}">
-								{{ event.user.name }} ({{event.user.position.name}})
-							</span>
+							{% set user = event.user %}
+							{% include '_user.popover.html' %}
 							{{ moment(event.timestamp).format() }}
 						</div>
 					</div>
 					<div class="row">
-						<div class="col px-5 overflow-hidden">
+						<div class="col px-5 overflow-hidden text-{{event.type.color()}}">
 							&boxur; <span class="font-weight-bold">{{event.type}}</span>: {{ event.data|safe }}
 						</div>
 					</div>
@@ -219,7 +240,7 @@
 					</div>
 					<form method="post" action="{{ url_for('main.SaveParameters', order_id = order.id) }}">
 						<div class="modal-body">
-							{{ initiative_form.csrf_token }}
+							{{ initiative_form.csrf_token(id=False) }}
 							<div class="form-group">
 								{{ initiative_form.project.label(class_ = 'col-form-label') }}
 								{{ initiative_form.project(class_ = 'form-control') }}
@@ -254,7 +275,7 @@
 					</div>
 					<form method="post" action="{{ url_for('main.SaveStatements', order_id = order.id) }}">
 						<div class="modal-body">
-							{{ approver_form.csrf_token }}
+							{{ approver_form.csrf_token(id=False) }}
 							<div class="form-group">
 								{{ approver_form.income_statement.label(class_ = 'col-form-label') }}
 								{{ approver_form.income_statement(class_ = 'form-control') }}
@@ -275,7 +296,7 @@
 	
 	{% endif %}
 	
-	{% if current_user.role.name in ['admin', 'inititative', 'validator', 'purchaser'] %}
+	{% if current_user.role.name in ['admin', 'initiative', 'validator', 'purchaser'] %}
 	
 		<div class="modal fade" id="leaveCommentModal" tabindex="-1" role="dialog" aria-labelledby="leaveCommentModalLabel" aria-hidden="true">
 			<div class="modal-dialog" role="document">
@@ -431,6 +452,7 @@
 			{% endfor %}
 				];
 	
+			$('[data-toggle="tooltip"]').tooltip()
 			$("#project option[value='0']").prop( "disabled", true );
 			$("#site option[value='0']").prop( "disabled", true );
 			

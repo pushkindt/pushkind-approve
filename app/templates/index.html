@@ -53,7 +53,7 @@
 		<div class="col">
 			<span class="font-weight-bold">Показано <span id="orderCount">{{ orders|length }}</span> заявок</span>
 		</div>
-		{% if current_user.role.name in ['admin', 'inititative', 'purchaser'] %}
+		{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
 			<div class="col text-right">
 				<a href="#" id="startMerging">Объединить</a>
 			</div>
@@ -94,7 +94,7 @@
 </div>
 
 
-{% if current_user.role.name in ['admin', 'inititative', 'purchaser'] %}
+{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
 	<form id="mergeForm" class="d-none" method="POST" action="{{ url_for('main.MergeOrders') }}">
 		<div class="fixed-top">
 			<div class="container">
@@ -136,7 +136,7 @@
 				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, project = filter_project) }}".replaceAll("&amp;", "&")
 		});
 
-	{% if current_user.role.name in ['admin', 'inititative', 'purchaser'] %}
+	{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
 	
 		var mergeOrders = [];
 
