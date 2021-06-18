@@ -64,7 +64,8 @@
 							{% include 'navigation.html' %}
 							<span class="navbar-text">
 								<span class="font-weight-bold">{{ current_user.name or current_user.email }}</span><br>
-								{{ current_user.role }} <a href="{{ url_for('auth.PerformLogout') }}" class="text-primary">выйти</a>
+								{{ current_user.role }} <a href="{{ url_for('auth.PerformLogout') }}" class="text-primary">выйти</a><br>
+								<small>{{ current_user.email }}</small>
 							</span>
 						</div>
 					</nav>
@@ -107,6 +108,9 @@
 				});
 				$('body').append(ajaxAlert);
 			}
+			$(document).ready(function(){
+				$('[data-toggle="tooltip"]').tooltip();
+			});
 		</script>
 		{% block scripts %}{% endblock %}
 		<div class="d-none" id="templates">

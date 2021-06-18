@@ -13,17 +13,17 @@
 	<div class="row">
 		<div class="col">
 			{% for d in dates %}
-				<a href="{{ url_for('main.ShowIndex', from = dates[d], approval = filter_approval, project = filter_project, category = filter_category) }}" class="badge {%if filter_from == dates[d] %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">{{ d }}</a>
+				<a href="{{ url_for('main.ShowIndex', from = dates[d], approval = filter_approval, project = filter_project, category = filter_category, attention=filter_attention) }}" class="badge {%if filter_from == dates[d] %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">{{ d }}</a>
 			{% endfor %}
-			<a href="{{ url_for('main.ShowIndex', from = 0, approval = filter_approval, project = filter_project, category = filter_category) }}" class="badge {%if filter_from == 0 %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">все</a>
+			<a href="{{ url_for('main.ShowIndex', from = 0, approval = filter_approval, project = filter_project, category = filter_category, attention=filter_attention) }}" class="badge {%if filter_from == 0 %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">все</a>
 		</div>
 	</div>
 	<div class="row">
 		<div class="col">
 		{% for status in OrderStatus %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = status.name, project = filter_project, category = filter_category) }}" class="badge badge-{{status.color()}} {%if filter_approval == status.name %}text-uppercase{%endif%}">{{ status }}</a>
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = status.name, project = filter_project, category = filter_category, attention=filter_attention) }}" class="badge badge-{{status.color()}} {%if filter_approval == status.name %}text-uppercase{%endif%}">{{ status }}</a>
 		{% endfor %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, project = filter_project, category = filter_category) }}" class="badge badge-dark {%if filter_approval is none %}text-uppercase{%endif%}">все</a>
+			<a href="{{ url_for('main.ShowIndex', from = filter_from, project = filter_project, category = filter_category, attention=filter_attention) }}" class="badge badge-dark {%if filter_approval is none %}text-uppercase{%endif%}">все</a>
 		</div>
 	</div>
 	<div class="row">
@@ -51,7 +51,14 @@
 <div class="container">
 	<div class="row my-2">
 		<div class="col">
-			<span class="font-weight-bold">Показано <span id="orderCount">{{ orders|length }}</span> заявок</span><br>
+			<span class="font-weight-bold">Показано <span id="orderCount">{{ orders|length }}</span> заявок</span>
+			{% if current_user.role.name in ['validator', 'purchaser'] %}
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="checkbox" id="filterAttention" {%if filter_attention%}checked{%endif%}>
+					<label class="form-check-label" for="filterAttention">Показывать только заявки, которые я должен согласовать.</label>
+				</div>
+			{% endif %}
+			<br>
 			<small><a href="#" id="saveOrdersButton">сохранить</a></small>
 		</div>
 		{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
@@ -128,22 +135,32 @@
 	
 		var isMerging = false;
 		
+		
+		$("#filterAttention").change(function(){
+			if (this.checked)
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category, project = filter_project) }}".replaceAll("&amp;", "&");
+			else
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category, attention=False, project = filter_project) }}".replaceAll("&amp;", "&");
+		});
+		
+		
+		
 		$("#saveOrdersButton").click(function(){
 			$("#saveForm").submit()
 		});
 		
 		$("#projectSelect").change(function(){
 			if ($(this).val() != 0)
-				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category, project = 'replace_me') }}".replaceAll("&amp;", "&").replace("replace_me", $(this).val());
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category, attention=filter_attention, project = 'replace_me') }}".replaceAll("&amp;", "&").replace("replace_me", $(this).val());
 			else
-				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category) }}".replaceAll("&amp;", "&")
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category, attention=filter_attention) }}".replaceAll("&amp;", "&")
 		});
 		
 		$("#categorySelect").change(function(){
 			if ($(this).val() != 0)
-				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, project = filter_project, category = 'replace_me') }}".replaceAll("&amp;", "&").replace("replace_me", $(this).val());
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, project = filter_project, attention=filter_attention, category = 'replace_me') }}".replaceAll("&amp;", "&").replace("replace_me", $(this).val());
 			else
-				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, project = filter_project) }}".replaceAll("&amp;", "&")
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, project = filter_project, attention=filter_attention) }}".replaceAll("&amp;", "&")
 		});
 
 	{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}

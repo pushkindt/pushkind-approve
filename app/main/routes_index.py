@@ -1,13 +1,14 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory
+from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval
 from flask import render_template, flash, request, redirect, url_for, Response
 from app.main.utils import ecwid_required, role_forbidden, role_required
 from datetime import datetime, timedelta, timezone
 from app.main.forms import MergeOrdersForm, SaveOrdersForm
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
+from sqlalchemy import or_, and_
 
 '''
 ################################################################################
@@ -36,6 +37,11 @@ def ShowIndex():
 	filter_approval = request.args.get('approval', default = None, type = str)
 	filter_project = request.args.get('project', default=None, type=int)
 	filter_category = request.args.get('category', default=None, type=int)
+	
+	if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
+		filter_attention = 'attention' not in request.args
+	else:
+		filter_attention = None
 
 	if filter_approval not in [status.name for status in OrderStatus]:
 		filter_approval = None
@@ -65,6 +71,10 @@ def ShowIndex():
 		if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
 			orders = orders.filter(Site.project_id.in_([p.id for p in current_user.projects]))
 
+	if filter_attention is True:
+		orders = orders.join(OrderApproval, isouter=True)
+		orders = orders.filter(or_(OrderApproval.id == None, and_(OrderApproval.user_id == current_user.id, OrderApproval.product_id != None)))
+
 	orders = orders.order_by(Order.create_timestamp.desc()).all()
 	projects = Project.query.filter_by(hub_id = current_user.hub.id).all()
 	categories = Category.query.filter_by(hub_id = current_user.hub.id).all()
@@ -76,6 +86,7 @@ def ShowIndex():
 							filter_approval = filter_approval,
 							filter_project = filter_project,
 							filter_category = filter_category,
+							filter_attention = filter_attention,
 							OrderStatus = OrderStatus,
 							merge_form = merge_form,
 							save_form = save_form)
