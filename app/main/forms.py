@@ -145,3 +145,6 @@ Index page
 class MergeOrdersForm(FlaskForm):
 	orders = JSONField('orders', [InputRequired(message = 'Список заявок не может быть пустым.')])
 	submit = SubmitField('Объединить')
+	
+class SaveOrdersForm(FlaskForm):
+	orders = JSONField('orders', [InputRequired(message = 'Список заявок не может быть пустым.')])

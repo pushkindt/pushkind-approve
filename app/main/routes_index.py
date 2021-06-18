@@ -2,10 +2,12 @@ from app import db
 from flask_login import current_user, login_required
 from app.main import bp
 from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory
-from flask import render_template, flash, request, redirect, url_for
+from flask import render_template, flash, request, redirect, url_for, Response
 from app.main.utils import ecwid_required, role_forbidden, role_required
 from datetime import datetime, timedelta, timezone
-from app.main.forms import MergeOrdersForm
+from app.main.forms import MergeOrdersForm, SaveOrdersForm
+from openpyxl import Workbook
+from openpyxl.writer.excel import save_virtual_workbook
 
 '''
 ################################################################################
@@ -66,7 +68,8 @@ def ShowIndex():
 	orders = orders.order_by(Order.create_timestamp.desc()).all()
 	projects = Project.query.filter_by(hub_id = current_user.hub.id).all()
 	categories = Category.query.filter_by(hub_id = current_user.hub.id).all()
-	form = MergeOrdersForm()
+	merge_form = MergeOrdersForm()
+	save_form = SaveOrdersForm(orders = [order.id for order in orders])
 	return render_template('index.html',
 							orders = orders, dates = dates, projects = projects,categories = categories,
 							filter_from = filter_from,
@@ -74,7 +77,8 @@ def ShowIndex():
 							filter_project = filter_project,
 							filter_category = filter_category,
 							OrderStatus = OrderStatus,
-							form = form)
+							merge_form = merge_form,
+							save_form = save_form)
 
 
 @bp.route('/orders/merge/', methods=['POST'])
@@ -168,6 +172,67 @@ def MergeOrders():
 		
 		flash(f'Объединено заявок: {len(orders)}. Идентификатор новой заявки {order.id}')		
 
+	else:
+		for error in form.orders.errors:
+			flash(error)
+	return redirect(url_for('main.ShowIndex'))
+
+
+@bp.route('/orders/save/', methods=['POST'])
+@login_required
+@role_forbidden([UserRoles.default])
+@ecwid_required
+def SaveOrders():
+	form = SaveOrdersForm()
+	if form.validate_on_submit():
+		orders_list = form.orders.data
+		if not isinstance(orders_list, list):	
+			flash('Некорректный список заявок.')
+			return redirect(url_for('main.ShowIndex'))
+			
+		orders = list()
+
+		orders = Order.query.filter(Order.id.in_(orders_list), Order.hub_id == current_user.hub_id)
+		if current_user.role == UserRoles.initiative:
+			orders = orders.filter(Order.initiative_id == current_user.id)
+			
+		orders = orders.all()
+		
+		wb = Workbook()
+		
+		ws = wb.active
+		
+		ws['A1'] = 'Номер'
+		ws['B1'] = 'Дата'
+		ws['C1'] = 'Проект'
+		ws['D1'] = 'Объект'
+		ws['E1'] = 'Сумма'
+		ws['F1'] = 'Статус'
+		ws['G1'] = 'Инициатор'
+		ws['H1'] = 'Статья БДР'
+		ws['I1'] = 'Статья БДДС'
+		ws['J1'] = 'Кем согласована'
+		ws['K1'] = 'Ждём согласования'
+		
+		
+		
+		for i, order in enumerate(orders, start = 2):
+			ws.cell(row=i, column=1, value=order.id)
+			ws.cell(row=i, column=2, value=datetime.fromtimestamp(order.create_timestamp))
+			if order.site is not None:
+				ws.cell(row=i, column=3, value=order.site.project.name )
+				ws.cell(row=i, column=4, value=order.site.name)
+			ws.cell(row=i, column=5, value=order.total)
+			ws.cell(row=i, column=6, value=str(order.status))
+			ws.cell(row=i, column=7, value=order.initiative.name)
+			ws.cell(row=i, column=8, value=order.income_statement)
+			ws.cell(row=i, column=9, value=order.cash_flow_statement)
+			
+			ws.cell(row=i, column=10, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is True]))
+			ws.cell(row=i, column=11, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is False]))
+			
+		data = save_virtual_workbook(wb)
+		return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=export.xlsx'})
 	else:
 		for error in form.orders.errors:
 			flash(error)

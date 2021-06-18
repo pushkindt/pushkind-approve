@@ -51,7 +51,8 @@
 <div class="container">
 	<div class="row my-2">
 		<div class="col">
-			<span class="font-weight-bold">Показано <span id="orderCount">{{ orders|length }}</span> заявок</span>
+			<span class="font-weight-bold">Показано <span id="orderCount">{{ orders|length }}</span> заявок</span><br>
+			<small><a href="#" id="saveOrdersButton">сохранить</a></small>
 		</div>
 		{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
 			<div class="col text-right">
@@ -103,15 +104,20 @@
 						<button id="cancelMerging" type="button" class="btn btn-danger">Отменить</button>
 					</div>
 					<div class="col text-right">
-						{{ form.csrf_token }}
-						{{ form.orders(id='mergeOrders', class_='d-none', readonly=True) }}
-						{{ form.submit(class_ = 'btn btn-primary') }}
+						{{ merge_form.csrf_token(id=False) }}
+						{{ merge_form.orders(id='mergeOrders', class_='d-none', readonly=True) }}
+						{{ merge_form.submit(id=False, class_ = 'btn btn-primary') }}
 					</div>
 				</div>
 			</div>
 		</div>
 	</form>
 {% endif %}
+
+<form id="saveForm" class="d-none" method="POST" action="{{ url_for('main.SaveOrders') }}">
+	{{ save_form.csrf_token(id=False) }}
+	{{ save_form.orders(id="saveOrders", class_="d-none") }}
+</form>
 
 {% endblock %}
 
@@ -121,6 +127,10 @@
 	$(document).ready(function(){
 	
 		var isMerging = false;
+		
+		$("#saveOrdersButton").click(function(){
+			$("#saveForm").submit()
+		});
 		
 		$("#projectSelect").change(function(){
 			if ($(this).val() != 0)
@@ -158,15 +168,21 @@
 	{% endif %}
 	
 		$("#orderFilter").on("keyup", function() {
-			var value = $(this).val().toLowerCase();
+			let value = $(this).val().toLowerCase();
+			let order_list = [];
 			$(".ecwidOrder").filter(function() {
-				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+				let show = $(this).text().toLowerCase().indexOf(value) > -1;
+				$(this).toggle(show);
+				if (show){
+					order_list.push($(this).data("id"));
+				}
 			});
-			$("#orderCount").text($(".ecwidOrder:visible").length);
+			$("#orderCount").text(order_list.length);
+			$("#saveOrders").val(JSON.stringify(order_list));
 		});
 		
 		$(".ecwidOrder").click(function(event){
-			var orderId = $(this).attr('data-id');
+			let orderId = $(this).attr('data-id');
 			if (isMerging == false){
 				document.location.href = "{{ url_for('main.ShowOrder', order_id = 'replace_me') }}".replace("replace_me", orderId);
 			}else{
