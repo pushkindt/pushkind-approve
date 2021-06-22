@@ -52,7 +52,7 @@ class ApproverForm(FlaskForm):
 	submit = SubmitField('Сохранить')
 
 class LeaveCommentForm(FlaskForm):
-	comment  = TextAreaField('Комментарий', [InputRequired(message = 'Комментарий не может быть пустым'), Length(max = 256, message = 'Слишком длинный комментарий')])
+	comment  = TextAreaField('Комментарий', [InputRequired(message = 'Комментарий не может быть пустым'), Length(max = 256, message = 'Слишком длинный комментарий.')])
 	submit = SubmitField('Сохранить')
 	
 class OrderApprovalForm(FlaskForm):
@@ -61,8 +61,10 @@ class OrderApprovalForm(FlaskForm):
 	submit = SubmitField('Сохранить')
 	
 class ChangeQuantityForm(FlaskForm):
-	product_id    = IntegerField('Идентификатор товара', [DataRequired(message = 'ID товара - обязательное поле')], render_kw={'hidden': ''})
+	product_id    = IntegerField('Идентификатор товара', [DataRequired(message = 'ID товара - обязательное поле.')], render_kw={'hidden': ''})
 	product_quantity   = IntegerField('Количество товара', [InputRequired(message = 'Невозможное значение количества')], render_kw={'type': 'number', 'step' : 1, 'min' : 0})
+	product_measurement = StringField('Единица измерения', [Length(max = 10, message = 'Единицы измерения должны быть аббревиатурой.')])
+	submit = SubmitField('Сохранить')
 	
 	def validate_product_quantity(self, product_quantity):
 		if product_quantity.data < 0:

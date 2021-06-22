@@ -144,8 +144,13 @@ def SaveQuantity(order_id):
 	if form.validate_on_submit():
 		for i, product in enumerate(order.products):
 			if form.product_id.data == product['id']:
-				message = '<span class="product-sku text-primary">{}</span> количество было {} стало {}'.format(product['sku'], product['quantity'], form.product_quantity.data)
+				message = '<span class="product-sku text-primary">{}</span> количество было {} стало {} {}'.format(product['sku'], product['quantity'], form.product_quantity.data, form.product_measurement.data)
 				product['quantity'] = form.product_quantity.data
+				if 'selectedOptions' in product:
+					product['selectedOptions'][0]['value'] = form.product_measurement.data
+					product['selectedOptions'][0]['name'] = 'Единица измерения'
+				else:
+					product['selectedOptions'] = [{'name':'Единица измерения','value':form.product_measurement.data}]
 				index = i
 				break
 		else:
@@ -167,7 +172,7 @@ def SaveQuantity(order_id):
 		flash('Количество {} было изменено.'.format(product['sku']))
 		db.session.commit()
 	else:
-		for error in form.product_id.errors + form.product_quantity.errors:
+		for error in form.product_id.errors + form.product_quantity.errors + form.product_measurement.errors:
 			flash(error)
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
 

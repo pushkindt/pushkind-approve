@@ -32,12 +32,18 @@
 						{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['id'], id=False) }}
 						{{ quantity_form.product_quantity(class_ = 'productQuantity text-primary form-control-plaintext  mt-sm-2', value = product['quantity'], id=False) }}
 					</div>
-					<div class="col mt-sm-3">
+					<div class="col">
 						{% if 'selectedOptions' in product %}
-							{{ product['selectedOptions'][0]['value'] }}
+							{{ quantity_form.product_measurement(class_ = 'productQuantity text-primary form-control-plaintext  mt-sm-2', value = product['selectedOptions'][0]['value'], id=False) }}
 						{%else%}
+							{{ quantity_form.product_measurement(class_ = 'productQuantity text-primary form-control-plaintext  mt-sm-2 border', id=False) }}
 							{% set _ = glob.update({'no_measurements':True}) %}
 						{% endif %}
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						{{ quantity_form.submit(id=False, class_='d-none btn btn-primary w-100 my-1') }}
 					</div>
 				</div>
 			</form>

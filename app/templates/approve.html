@@ -482,23 +482,15 @@
 		});
 	
 	
-		{% if current_user.id == order.initiative_id %}
-			var oldQuantity = 0;
-			$('.productQuantity').focus(function() {
-				$(this).removeClass('form-control-plaintext');
-				$(this).addClass ('form-control');
-				oldQuantity = $(this).val();
+		{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
+			$(".productQuantity").focus(function() {
+				$(this).closest("form").find(":submit").removeClass("d-none");
 			});
-			$('.productQuantity').focusout(function() {
-				if ($(this).val() != oldQuantity){
-					if (window.confirm("Изменить количество?") == true){
-						$(this).closest("form").submit();
-					} else {
-						$(this).val(oldQuantity);
-					}
-				}
-				$(this).removeClass ('form-control');
-				$(this).addClass('form-control-plaintext');
+			$(".productQuantity").focusout(function() {
+				setTimeout(()=>
+					$(this).closest("form").find(":submit").addClass("d-none"),
+					500
+				);
 			});
 		{% endif %}
 		
