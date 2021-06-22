@@ -2,7 +2,7 @@
 
 {% block content %}
 
-	<div class="container border bg-white rounded">
+	<div class="container border rounded">
 		<h6>Права на выполнение действий</h6>
 		<table class="table table-striped table-responsive-md">
 			<caption>*Все означает "все зарегистрированные заявки", *Только свои означает "только заявки, для которых пользователь является инициатором"</caption>
@@ -44,8 +44,8 @@
 				<tr>
 					<th scope="row">Указать статьи БДР и БДДС</th>
 					<td class="text-success">Все</td>
-					<td class="text-danger">Нет</td>
-					<td class="text-danger">Нет</td>
+					<td class="text-warning">Только свои</td>
+					<td class="text-success">Все</td>
 					<td class="text-success">Все</td>
 					<td class="text-danger">Нет</td>
 				</tr>
@@ -116,7 +116,7 @@
 			</tbody>
 		</table>
 	</div>
-	<div class="container border bg-white rounded my-1">
+	<div class="container border rounded my-1">
 		<h6>Ответственность по согласованию</h6>
 		<table class="table table-striped table-responsive-md">
 			<thead>
@@ -143,7 +143,7 @@
 						</td>
 						<td>
 							{% for user in responsibilities[position]['users'] %}
-								{{ user.name }}({{user.email}})<br>
+								{% include '_user.popover.html' %}<br>
 							{% endfor %}
 						</td>
 					</tr>

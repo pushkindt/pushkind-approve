@@ -4,8 +4,8 @@
 {% if current_user.role.name == "admin" %}
 	<div class="container border-bottom">
 		<div class="row">
-			<div class="col text-right">
-				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#ecwidFormCollapse" aria-expanded="false" aria-controls="ecwidFormCollapse">
+			<div class="col text-end">
+				<button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#ecwidFormCollapse" aria-expanded="false" aria-controls="ecwidFormCollapse">
 					Настроить API
 				</button>
 			</div>
@@ -24,34 +24,34 @@
 				</div>
 			{% endif %}
 			<form method="post" class="my-2" action="{{ url_for('main.ConfigureEcwid') }}">
-				{{ ecwid_form.csrf_token }}
-				<div class="form-group row">
+				{{ ecwid_form.csrf_token(id=False) }}
+				<div class="row mb-3">
 					{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
 					<div class="col-md-10">
 						{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '', value = current_user.hub.partners_key if current_user.hub.partners_key is not none else '') }}
 					</div>
 				</div>
-				<div class="form-group row">
+				<div class="row mb-3">
 					{{ ecwid_form.client_id.label(class_ = "col-md-2 col-form-label") }} 
 					<div class="col-md-10">
 						{{ ecwid_form.client_id(class_ = 'form-control', value = current_user.hub.client_id if current_user.hub.client_id is not none else '') }}
 					</div>
 				</div>
-				<div class="form-group row">
+				<div class="row mb-3">
 					{{ ecwid_form.client_secret.label(class_ = "col-md-2 col-form-label") }} 
 					<div class="col-md-10">
 						{{ ecwid_form.client_secret(class_ = 'form-control', value = current_user.hub.client_secret if current_user.hub.client_secret is not none else '') }}
 					</div>
 				</div>
-				<div class="form-group row">
+				<div class="row mb-3">
 					{{ ecwid_form.store_id.label(class_ = "col-md-2 col-form-label") }} 
 					<div class="col-md-10">
 						{{  ecwid_form.store_id(class_ = 'form-control', value = current_user.hub.id if current_user.hub.id is not none else '') }}
 					</div>
 				</div>
-				<div class="form-group row">
+				<div class="row mb-3">
 					<div class="col">
-						{{ ecwid_form.submit(class_ = 'btn btn-primary') }}
+						{{ ecwid_form.submit(id=False, class_ = 'btn btn-primary') }}
 					</div>
 				</div>
 			</form>
@@ -60,48 +60,50 @@
 	
 	<div class="container border-bottom">
 		<div class="row">
-			<div class="col text-right">
-				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#notify1CFormCollapse" aria-expanded="false" aria-controls="notify1CFormCollapse">
+			<div class="col text-end">
+				<button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#notify1CFormCollapse" aria-expanded="false" aria-controls="notify1CFormCollapse">
 					Настроить рассылку 1С
 				</button>
 			</div>
 		</div>
 		<div class="collapse" id="notify1CFormCollapse">	
-			<form method="POST" action="{{ url_for('main.Notify1CSettings') }}" class="my-2">
-				<div class="form-row align-items-center">
-					<div class="col-md-6">
-						{{ notify1C_form.csrf_token }}
-						{{ notify1C_form.email(class_ = 'form-control', placeholder = 'Электронная почта') }}
+			<form method="POST" action="{{ url_for('main.Notify1CSettings') }}">
+				<div class="row mb-3">
+					{{ notify1C_form.csrf_token(id=False) }}
+					{{ notify1C_form.email.label(class_ = 'col-md-2 form-label') }}
+					<div class="col-md-10">
+						{{ notify1C_form.email(class_ = 'form-control') }}
 					</div>
-					<div class="col-md">
+				</div>	
+				<div class="row mb-3">
+					<div class="col-md-10 offset-md-2">
 						<div class="form-check">
 							{{ notify1C_form.enable(class_ = 'form-check-input') }}
 							{{ notify1C_form.enable.label(class_ = 'form-check-label') }}
 						</div>
 					</div>
 				</div>
-				<div class="form-group row my-1">
+				<div class="row mb-3">
 					<div class="col">
-						{{ notify1C_form.submit(class_ = 'btn btn-primary') }}
+						{{ notify1C_form.submit(id=False, class_ = 'btn btn-primary') }}
 					</div>
 				</div>
 			</form>
 		</div>
 	</div>	
 	
-	
 	<div class="container">
 		<div class="row">
-			<div class="col text-right">
-				<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#projectFormCollapse" aria-expanded="false" aria-controls="projectFormCollapse">
+			<div class="col text-end">
+				<button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#projectFormCollapse" aria-expanded="false" aria-controls="projectFormCollapse">
 					Управление проектами
 				</button>
 			</div>
 		</div>
 		<div class="collapse" id="projectFormCollapse">
 			<form method="post" action="{{ url_for('main.AddRemoveProject') }}">
-				{{ project_form.csrf_token }}
-				<div class="form-group row">
+				{{ project_form.csrf_token(id=False) }}
+				<div class="row mb-3">
 					<div class="col">
 						{{ project_form.project_name(class_ = 'form-control', list='projectsList', placeholder='Введите название проекта...') }}
 						<datalist id="projectsList">
@@ -111,17 +113,17 @@
 						</datalist>
 					</div>
 				</div>
-				<div class="form-group row">
+				<div class="row mb-3">
 					<div class="col">
 						{{ project_form.site_name(class_ = 'form-control', list='sitesList', placeholder='Введите название объекта...') }}
 						<datalist id="sitesList">
 						</datalist>
 					</div>
 				</div>
-				<div class="form-group row">
+				<div class="row mb-3">
 					<div class="col">
-						{{ project_form.submit1(class_ = 'btn btn-primary') }}
-						{{ project_form.submit2(class_ = 'btn btn-danger') }}
+						{{ project_form.submit1(id=False, class_ = 'btn btn-primary') }}
+						{{ project_form.submit2(id=False, class_ = 'btn btn-danger') }}
 					</div>
 				</div>
 			</form>
@@ -132,13 +134,13 @@
 			<div class="col">
 				<a href="{{ url_for('auth.PerformRegistration') }}">Создание нового пользователя</a>
 			</div>			
-			<div class="col">
+			<div class="col text-end">
 				<a href="{{ url_for('static', filename = 'app.log') }}">Лог файл веб приложения</a>
 			</div>
 		</div>	
 		<div class = "row my-2">
 			<div class="col">	
-				<span class="font-weight-bold">ПОЛЬЗОВАТЕЛИ</span>
+				<span class="fw-bold">ПОЛЬЗОВАТЕЛИ</span>
 			</div>
 		</div>		
 		<div class="row">
@@ -147,7 +149,7 @@
 			</div>
 		</div>
 		
-		<div class="row d-none d-sm-flex font-weight-bold px-3">
+		<div class="row d-none d-sm-flex fw-bold px-3">
 			<div class="col-auto overflow-hidden">
 				#
 			</div>
@@ -181,14 +183,12 @@
 		{% endfor %}
 	</div>
 
-	<div class="modal fade" id="userModal" tabindex="-1" role="dialog" aria-labelledby="userModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-lg" role="document">
+	<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title" id="userModalLabel">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				{% include '_user.settings.form.html' %}
 			</div>
@@ -200,7 +200,7 @@
 	<div class="container">
 		<div class="row my-2">
 			<div class="col">	
-				<span class="font-weight-bold">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ</span>
+				<span class="fw-bold">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ</span>
 			</div>
 		</div>				
 		{% include '_user.settings.form.html' %}
@@ -254,7 +254,9 @@
 			});
 
 			$(".showUserModal").click(function(){
-				$('#userModal').modal();
+								
+				var userModal = new bootstrap.Modal(document.getElementById('userModal'), {});
+				
 				let user_id = Number($(this).attr('data-id'));
 				$("#user_id").val(user_id);
 				users.some(function(user){
@@ -281,6 +283,7 @@
 						return true;
 					}
 				});
+				userModal.show();
 			});
 
 			$("#project_name").on('input', function () {

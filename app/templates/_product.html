@@ -1,38 +1,38 @@
 <div class="row m-1 ecwidOrderProduct border rounded bg-white" data-id = "{{ product.id }}">
-	<div class="col-sm overflow-hidden">
+	<div class="col-sm-auto overflow-hidden">
 		{% if product.imageUrl is defined %}
 			<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
 		{% endif %}
 	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Артикул:</span>
+	<div class="col-sm overflow-hidden mt-sm-3">
+		<span class="d-sm-none fw-bold">Артикул:</span>
 		{{ product['sku'] }}
 	</div>
-	<div class="col-sm-3 overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Название:</span>
-		<span class="font-weight-bold">{{ product['name'] }}</span>
+	<div class="col-sm-4 overflow-hidden mt-sm-3">
+		<span class="d-sm-none fw-bold">Название:</span>
+		<span class="fw-bold">{{ product['name'] }}</span>
 	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Поставщик:</span>
+	<div class="col-sm overflow-hidden mt-sm-3">
+		<span class="d-sm-none fw-bold">Поставщик:</span>
 		{{ product['vendor'] }}
 	</div>		
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Цена:</span>
+	<div class="col-sm overflow-hidden mt-sm-3">
+		<span class="d-sm-none fw-bold">Цена:</span>
 		<span class="productPrice">
 			{{ '{:,.2f}'.format(product['price'])  }}
 		</span>
 	</div>
 	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Кол-во:</span>
+		<span class="d-sm-none fw-bold">Кол-во:</span>
 		{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
 			<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order.id) }}" method="POST">
-				<div class="form-row">
+				<div class="row">
 					<div class="col">
 						{{ quantity_form.csrf_token(id=False) }}
 						{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['id'], id=False) }}
-						{{ quantity_form.product_quantity(class_ = 'productQuantity text-primary form-control-plaintext', value = product['quantity'], id=False) }}
+						{{ quantity_form.product_quantity(class_ = 'productQuantity text-primary form-control-plaintext  mt-sm-2', value = product['quantity'], id=False) }}
 					</div>
-					<div class="col pt-1">
+					<div class="col mt-sm-3">
 						{% if 'selectedOptions' in product %}
 							{{ product['selectedOptions'][0]['value'] }}
 						{%else%}
@@ -42,22 +42,24 @@
 				</div>
 			</form>
 		{% else %}
-			{{ product['quantity'] }}
-			{% if 'selectedOptions' in product %}
-				{{ product['selectedOptions'][0]['value'] }}
-			{%else%}
-				{% set _ = glob.update({'no_measurements':True}) %}
-			{% endif %}
+			<div class="mt-sm-3">
+				{{ product['quantity'] }}
+				{% if 'selectedOptions' in product %}
+					{{ product['selectedOptions'][0]['value'] }}
+				{%else%}
+					{% set _ = glob.update({'no_measurements':True}) %}
+				{% endif %}
+			</div>
 		{% endif %}
 	</div>
 	{% if current_user.role.name in ['validator','purchaser'] %}
-		<div class="col text-center overflow-hidden">
+		<div class="col text-center overflow-hidden my-3">
 			{% if product['id'] in approvals %}
-				<a class="approveButton" data-approved="false" data-id="{{ product['id'] }}" data-sku="{{ product[sku] }}" data-target="product">
-					<img class="my-3 disapprovedIcon" src="{{ url_for('static', filename='disapproved.png') }}" alt="Disapproved">
+				<a class="approveButton" data-approved="false" data-id="{{ product['id'] }}" data-sku="{{ product[sku] }}" data-bs-target="product">
+					<img class="disapprovedIcon" src="{{ url_for('static', filename='disapproved.png') }}" alt="Disapproved">
 				</a>
 			{% else %}
-				<button type="button" class="btn btn-outline-primary btn-sm approveButton my-3" data-approved="true" data-id="{{ product['id'] }}" data-sku="{{ product['sku'] }}" data-target="product">не согласен</button>
+				<button type="button" class="btn btn-outline-primary btn-sm approveButton" data-approved="true" data-id="{{ product['id'] }}" data-sku="{{ product['sku'] }}" data-bs-target="product">не согласен</button>
 			{% endif %}
 		</div>
 	{% endif %}

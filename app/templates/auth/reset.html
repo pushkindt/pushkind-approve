@@ -6,28 +6,33 @@
 	<div class="row justify-content-center">
 		<div class="col-md-8">
 			<div class="card">
-				<h6 class="card-header text-secondary">Сброс пароля</h6>
+				<div class="card-header text-muted fw-bold">
+					Сброс пароля
+				</div>
 				<div class="card-body">
 					<form method="post">
 						{{ form.csrf_token }}
-						<div class="form-group row">
+						<div class="row mb-3">
 							{{ form.password.label (class_ = "col-md-4 col-form-label text-md-right") }} 
 							<div class="col-md-6">
 								{{ form.password(class_ = 'form-control') }}
 							</div>
 						</div>
-						<div class="form-group row">
+						<div class="row mb-3">
 							{{ form.password2.label (class_ = "col-md-4 col-form-label text-md-right") }} 
 							<div class="col-md-6">
 								{{ form.password2(class_ = 'form-control') }}
 							</div>
 						</div>
-						<div class="form-group row">
+						<div class="row mb-3">
 							<div class="col-md-6 offset-md-4">
-								{{ form.submit(class_ = 'btn btn-primary mb-1') }}
+								{{ form.submit(class_ = 'btn btn-primary') }}
 							</div>
 						</div>
 					</form>
+				</div>
+				<div class="card-footer">
+					<a href="{{ url_for('auth.PerformLogin') }}">Вернуться</a>
 				</div>
 			</div>
 		</div>

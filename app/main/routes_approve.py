@@ -159,6 +159,9 @@ def SaveQuantity(order_id):
 		order.total = sum([p['quantity']*p['price'] for p in order.products])
 		order.status = OrderStatus.modified
 		
+		event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.modified, data=message, timestamp=datetime.now(tz = timezone.utc))
+		db.session.add(event)
+		
 		flag_modified(order, 'products')
 		
 		flash('Количество {} было изменено.'.format(product['sku']))

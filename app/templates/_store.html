@@ -1,7 +1,7 @@
 <div class="container border-bottom" data-id = "{{ store.id }}">
 	<div class="row">
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Номер: </span>
+			<span class="d-sm-none fw-bold">Номер: </span>
 			{% if store.url %}
 				<a href="{{ store.url }}" target="blank">{{ store.id }}</a>
 			{% else %}
@@ -9,11 +9,11 @@
 			{% endif %}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Название: </span>
+			<span class="d-sm-none fw-bold">Название: </span>
 			{{ store.name or '' }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Электронная почта: </span>
+			<span class="d-sm-none fw-bold">Электронная почта: </span>
 			{{ store.email or '' }}
 		</div>
 		<div class="col-sm overflow-hidden">

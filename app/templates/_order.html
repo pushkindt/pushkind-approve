@@ -1,32 +1,28 @@
-<div class="row ecwidOrder my-1 bg-white border rounded" data-id = "{{ order.id }}">
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Номер:</span>
+<div class="row ecwidOrder border" data-id="{{ order.id }}">
+	<div class="col-sm-2 overflow-hidden">
+		<span class="d-sm-none fw-bold">Заявка:</span>
 		<a href="{{ url_for('main.ShowOrder', order_id=order.id) }}">#{{ order.id }}</a>
+		<br>
+		<span class="text-muted">
+			{{ moment(order.create_date).format() }}
+		</span>
+		<span class="d-none">
+			{{ order.site.project.name if order.site }}
+			{% for cat in order.categories %}
+				{{ cat.name }}
+			{% endfor %}
+		</span>
 	</div>
 	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Дата:</span>
-		{{ moment(order.create_date).format() }}
+		<span class="d-sm-none fw-bold">Инициатор:</span>
+		<span class="fw-bold">
+			{{ order.initiative.name }}
+		</span>
+		<br>
+		{{ order.site.name if order.site else 'объект не указан' }}
 	</div>
 	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Проект:</span>
-		{{ order.site.project.name if order.site }}
-	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Объект:</span>
-		{{ order.site.name }}
-	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Категория:</span>
-		{% for cat in order.categories %}
-			{{ cat.name }}<br>
-		{% endfor %}
-	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Сумма: </span>
-		{{ '{:,.2f}'.format(order.total) }}
-	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Кем согласована</span>
+		<span class="d-sm-none fw-bold">Согласен:</span>
 		{% for appr in order.approvals %}
 			{% if appr.approved is sameas true %}
 				{{ appr.position.name }}<br>
@@ -34,21 +30,35 @@
 		{% endfor %}
 	</div>
 	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Ожидаем</span>
-		{% for appr in order.approvals %}
-			{% if appr.approved is sameas false %}
-				{{ appr.position.name }}<br>
-			{% endif %}
-		{% endfor %}
+		<span class="d-sm-none fw-bold">Не согласен:</span>
+		<span class="text-danger">
+			{% for appr in order.user_approvals %}
+				{% if appr.product_id %}
+					{{ appr.user.position.name }}<br>
+				{% endif %}
+			{% endfor %}
+		</span>
 	</div>
 	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none font-weight-bold">Статус:</span>
-		<span class="badge badge-{{order['status'].color() }}">{{ order.status }}</span>
+		<span class="d-sm-none fw-bold">Ожидаем:</span>
+		{% if order['status'].name == 'not_approved' %}
+			Изменение заявки
+		{% else %}
+			{% for appr in order.approvals %}
+				{% if appr.approved is sameas false %}
+					{{ appr.position.name }}<br>
+				{% endif %}
+			{% endfor %}
+		{% endif %}
+	</div>
+	<div class="col-sm-2 overflow-hidden">
+		<span class="d-sm-none">Статус:</span>
+		{% include '_order.status.html' %}
 		{% if order.purchased is sameas true %}
-			<span class="badge badge-info"><img class="octicon" src="{{ url_for('static', filename='octicons/mail.svg') }}" alt="Отправлена"></span>
+			<span class="badge bg-info"><img class="octicon" src="{{ url_for('static', filename='octicons/mail.svg') }}" alt="Отправлена"></span>
 		{% endif%}
 		{% if order.exported is sameas true %}
-			<span class="badge badge-info"><img class="octicon" src="{{ url_for('static', filename='1C.png') }}" alt="Экспортирована"></span>
+			<span class="badge bg-info"><img class="octicon" src="{{ url_for('static', filename='1C.png') }}" alt="Экспортирована"></span>
 		{% endif%}
 	</div>
 </div>

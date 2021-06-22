@@ -1,39 +1,39 @@
 <form method="POST" action="{{ url_for('main.ShowSettings') }}">
 	<div {% if current_user.role.name == "admin" %}class="modal-body" {% endif %}>
-		{{ user_form.csrf_token }}
+		{{ user_form.csrf_token(id=False) }}
 		{{ user_form.user_id or '' }}
-		<div class="form-group row">
+		<div class="row mb-3">
 			{{ user_form.about_user.full_name.label(class_ = 'col-md-2 col-form-label') }}
 			<div class="col-md-10">
 				{{ user_form.about_user.full_name(class_ = 'form-control', value = current_user.name) }}
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="row mb-3">
 			{{ user_form.about_user.phone.label(class_ = 'col-md-2 col-form-label') }} 
 			<div class="col-md-10">
 				{{ user_form.about_user.phone(class_ = 'form-control', value = current_user.phone) }}
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="row mb-3">
 			{{ user_form.about_user.position.label(class_ = 'col-md-2 col-form-label') }} 
 			<div class="col-md-10">
 				{{ user_form.about_user.position(class_ = 'form-control', value = current_user.position.name if current_user.position) }}
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="row mb-3">
 			{{ user_form.about_user.location.label(class_ = 'col-md-2 col-form-label') }} 
 			<div class="col-md-10">
 				{{ user_form.about_user.location(class_ = 'form-control', value = current_user.location) }}
 			</div>
 		</div>
 		{% if current_user.role.name == 'admin' %}
-			<div class="form-group row">
+			<div class="row mb-3">
 				{{ user_form.note.label(class_ = 'col-md-2 col-form-label') }} 
 				<div class="col-md-10">
 					{{ user_form.note(class_ = 'form-control') }}
 				</div>
 			</div>
-			<div class="form-group row">
+			<div class="row mb-3">
 				{{ user_form.role.label(class_ = 'col-md-2 col-form-label') }} 
 				<div class="col-md-10">
 					{{ user_form.role(class_ = 'form-control') }}
@@ -41,7 +41,7 @@
 			</div>
 			<p class="text-muted"><small>После смены роли необходимо сохранить, прежде чем настраивать проекты и категории.</small></p>
 		{% endif %}
-		<div class="form-group row">
+		<div class="row mb-3">
 			<div class="col-md-2">Оповещения</div>
 			<div class="col-md-10">
 				<div class="form-check form-check-inline">
@@ -63,27 +63,30 @@
 			</div>
 		</div>
 		{% if current_user.role.name in ['validator', 'purchaser', 'admin'] %}
-			<div class="row my-1" id="userDataWrapper">
+			<div class="row mb-3" id="userDataWrapper">
 				<div class="col">
-					<div class="form-group">
-						{{ user_form.about_user.projects.label() }} 
-						{{ user_form.about_user.projects(class_ = 'form-control') }}
-					</div>
+					{{ user_form.about_user.projects.label() }} 
+					{{ user_form.about_user.projects(class_ = 'form-control') }}
 				</div>
 				<div class="col">
-					<div class="form-group">
-						{{ user_form.about_user.categories.label() }} 
-						{{ user_form.about_user.categories(class_ = 'form-control') }}
-					</div>
+					{{ user_form.about_user.categories.label() }} 
+					{{ user_form.about_user.categories(class_ = 'form-control') }}
 				</div>
 			</div>
 		{% endif %}
 	</div>
-	<div {% if current_user.role.name == "admin" %}class="modal-footer"{% endif %}>
-		{{ user_form.submit(class_ = 'btn btn-primary') }}
-		{% if current_user.role.name == 'admin' %}
+	{% if current_user.role.name == 'admin' %}
+		<div class="modal-footer">
+			{{ user_form.submit(class_ = 'btn btn-primary') }}
 			<a href="" id="removeUserButton" class="btn btn-danger" onclick="return confirm('Удалить пользователя?')">Удалить</a>
-			<button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
-		{% endif %}
-	</div>
+			<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+		</div>
+	{% else %}
+		<div class="row mb-3">
+			<div class="col">
+				{{ user_form.submit(class_ = 'btn btn-primary') }}
+			</div>
+		</div>
+	{% endif %}
+
 </form>

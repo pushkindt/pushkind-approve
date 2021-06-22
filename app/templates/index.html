@@ -10,89 +10,57 @@
 
 {% block content %}
 <div class="container my-2">
-	<div class="row">
-		<div class="col">
-			{% for d in dates %}
-				<a href="{{ url_for('main.ShowIndex', from = dates[d], approval = filter_approval, project = filter_project, category = filter_category, attention=filter_attention) }}" class="badge {%if filter_from == dates[d] %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">{{ d }}</a>
-			{% endfor %}
-			<a href="{{ url_for('main.ShowIndex', from = 0, approval = filter_approval, project = filter_project, category = filter_category, attention=filter_attention) }}" class="badge {%if filter_from == 0 %}badge-dark text-uppercase{%else%}badge-light border border-dark{%endif%}">все</a>
-		</div>
-	</div>
-	<div class="row">
-		<div class="col">
-		{% for status in OrderStatus %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, approval = status.name, project = filter_project, category = filter_category, attention=filter_attention) }}" class="badge badge-{{status.color()}} {%if filter_approval == status.name %}text-uppercase{%endif%}">{{ status }}</a>
-		{% endfor %}
-			<a href="{{ url_for('main.ShowIndex', from = filter_from, project = filter_project, category = filter_category, attention=filter_attention) }}" class="badge badge-dark {%if filter_approval is none %}text-uppercase{%endif%}">все</a>
-		</div>
-	</div>
-	<div class="row">
-		<div class="col">
-			<select class="form-control" id="projectSelect">
-				<option value="0" {%if filter_project is sameas none %}selected disabled{%endif%}>Проект...</option>
-				{% for project in projects %}
-					<option {%if filter_project == project.id %}selected{%endif%} value="{{ project.id }}">{{ project.name }}</option>
-				{% endfor %}
-			</select>
-		</div>
-		<div class="col">
-			<select class="form-control" id="categorySelect">
-				<option value="0" {%if filter_category is sameas none %}selected disabled{%endif%}>Категория...</option>
-				{% for category in categories %}
-					<option {%if filter_category == category.id %}selected{%endif%} value="{{ category.id }}">{{ category.name }}</option>
-				{% endfor %}
-			</select>
-		</div>
-		<div class="col">
+	<div class="row justify-content-center">
+		<div class="col-md-8">
 			<input class="form-control" id="orderFilter" type="text" placeholder="Фильтр..">
+		</div>
+	</div>
+	<div class="row justify-content-center">
+		<div class="col-md-8">
+			{% for d in dates %}
+				<a href="{{ url_for('main.ShowIndex', from = dates[d], focus=filter_focus) }}" class="text-decoration-none badge {%if filter_from == dates[d] %}bg-primary{%else%}bg-secondary{%endif%}">{{ d }}</a>
+			{% endfor %}
+			<a href="{{ url_for('main.ShowIndex', from = 0, focus=filter_focus) }}" class="text-decoration-none badge {%if filter_from == 0 %}bg-primary{%else%}bg-secondary{%endif%}">все</a>
 		</div>
 	</div>
 </div>
 <div class="container">
 	<div class="row my-2">
 		<div class="col">
-			<span class="font-weight-bold">Показано <span id="orderCount">{{ orders|length }}</span> заявок</span>
+			Показано <span id="orderCount">{{ orders|length }}</span> заявок
 			{% if current_user.role.name in ['validator', 'purchaser'] %}
+				<br>
 				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="filterAttention" {%if filter_attention%}checked{%endif%}>
-					<label class="form-check-label" for="filterAttention">Показывать только заявки, которые я должен согласовать.</label>
+					<input class="form-check-input" type="checkbox" id="filterFocus" {%if filter_focus%}checked{%endif%}>
+					<label class="form-check-label" for="filterFocus">Показывать только заявки, которые я должен согласовать.</label>
 				</div>
 			{% endif %}
-			<br>
-			<small><a href="#" id="saveOrdersButton">сохранить</a></small>
 		</div>
-		{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
-			<div class="col text-right">
-				<a href="#" id="startMerging">Объединить</a>
-			</div>
-		{% endif %}
+		<div class="col text-end">
+			<a href="#" id="saveOrdersButton">скачать</a><br>
+			{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}			
+				<a href="#" id="startMerging">объединить</a>
+			{% endif %}				
+		</div>
+
 	</div>
-	<div class="row d-none d-sm-flex font-weight-bold px-3">
-		<div class="col overflow-hidden">
-			Номер
+	<div class="row bg-light d-none d-sm-flex border">
+		<div class="col-2 overflow-hidden">
+			Заявка
 		</div>
 		<div class="col overflow-hidden">
-			Дата
+			Инициатор
 		</div>
 		<div class="col overflow-hidden">
-			Проект
+			Согласен
 		</div>
 		<div class="col overflow-hidden">
-			Объект
-		</div>
-		<div class="col overflow-hidden">
-			Категория
-		</div>
-		<div class="col overflow-hidden">
-			Сумма
-		</div>
-		<div class="col overflow-hidden">
-			Кем согласована
+			Не&nbsp;согласен
 		</div>
 		<div class="col overflow-hidden">
 			Ожидаем
 		</div>
-		<div class="col overflow-hidden">
+		<div class="col-2 overflow-hidden">
 			Статус
 		</div>
 	</div>
@@ -110,7 +78,7 @@
 					<div class="col">
 						<button id="cancelMerging" type="button" class="btn btn-danger">Отменить</button>
 					</div>
-					<div class="col text-right">
+					<div class="col text-end">
 						{{ merge_form.csrf_token(id=False) }}
 						{{ merge_form.orders(id='mergeOrders', class_='d-none', readonly=True) }}
 						{{ merge_form.submit(id=False, class_ = 'btn btn-primary') }}
@@ -136,31 +104,15 @@
 		var isMerging = false;
 		
 		
-		$("#filterAttention").change(function(){
+		$("#filterFocus").change(function(){
 			if (this.checked)
-				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category, project = filter_project) }}".replaceAll("&amp;", "&");
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from) }}".replaceAll("&amp;", "&");
 			else
-				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category, attention=False, project = filter_project) }}".replaceAll("&amp;", "&");
+				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, focus=False) }}".replaceAll("&amp;", "&");
 		});
-		
-		
 		
 		$("#saveOrdersButton").click(function(){
 			$("#saveForm").submit()
-		});
-		
-		$("#projectSelect").change(function(){
-			if ($(this).val() != 0)
-				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category, attention=filter_attention, project = 'replace_me') }}".replaceAll("&amp;", "&").replace("replace_me", $(this).val());
-			else
-				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, category = filter_category, attention=filter_attention) }}".replaceAll("&amp;", "&")
-		});
-		
-		$("#categorySelect").change(function(){
-			if ($(this).val() != 0)
-				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, project = filter_project, attention=filter_attention, category = 'replace_me') }}".replaceAll("&amp;", "&").replace("replace_me", $(this).val());
-			else
-				document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, approval = filter_approval, project = filter_project, attention=filter_attention) }}".replaceAll("&amp;", "&")
 		});
 
 	{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}

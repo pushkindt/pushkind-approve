@@ -1,39 +1,39 @@
 <div class = "container border-bottom showUserModal my-2" id="user{{user.id}}" data-id = "{{ user.id }}">
 	<div class="row">
 		<div class="col-sm-auto overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Номер:</span>
+			<span class="d-sm-none fw-bold">Номер:</span>
 			{{ user.id }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">ФИО:</span>
+			<span class="d-sm-none fw-bold">ФИО:</span>
 			{{ user.name or '' }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Телефон:</span>
+			<span class="d-sm-none fw-bold">Телефон:</span>
 			{{ user.phone or '' }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Email:</span>
+			<span class="d-sm-none fw-bold">Email:</span>
 			{{ user.email }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Роль:</span>
+			<span class="d-sm-none fw-bold">Роль:</span>
 			{{ user.position.name }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Площадка:</span>
+			<span class="d-sm-none fw-bold">Площадка:</span>
 			{{ user.location or '' }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Права:</span>
+			<span class="d-sm-none fw-bold">Права:</span>
 			{{ user.role }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Заметка:</span>
+			<span class="d-sm-none fw-bold">Заметка:</span>
 			{{ user.note or '' }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none font-weight-bold">Активность:</span>
+			<span class="d-sm-none fw-bold">Активность:</span>
 			{{ moment(user.last_seen).format() if user.last_seen is not none }}
 		</div>
 	</div>

@@ -1,0 +1,11 @@
+{% if order['status'].name == 'new' %}
+	<span class="badge bg-white text-secondary border }}">{{ order.status }}</span>
+{% elif order['status'].name == 'partly_approved' %}
+	<span class="badge bg-{{order['status'].color() }}">
+		{{ order.approvals|selectattr('approved')|list|length }}
+		из
+		{{ order.approvals|length }}
+	</span>
+{% else %}
+	<span class="badge bg-{{order['status'].color() }}">{{ order.status }}</span>
+{% endif %}

@@ -25,6 +25,9 @@ def PerformLogin():
 		current_app.logger.info('{} logged'.format(user.email))
 		db.session.commit()
 		return redirect(url_for('main.ShowIndex'))
+	else:
+		for error in form.email.errors + form.password.errors + form.remember_me.errors:
+			flash(error)
 	return render_template ('auth/login.html', form = form)
 
 @bp.route('/register/', methods = ['GET', 'POST'])
@@ -45,6 +48,9 @@ def PerformRegistration():
 			return redirect(url_for('main.ShowSettings'))
 		else:
 			return redirect(url_for('auth.PerformLogin'))
+	else:
+		for error in form.email.errors + form.password.errors + form.password2.errors:
+			flash(error)
 	return render_template ('auth/register.html', form = form)
 
 @bp.route('/logout/')
@@ -66,7 +72,11 @@ def RequestPaswordReset():
 			return redirect(url_for('auth.PerformLogin'))
 		else:
 			flash('Такой пользователь не обнаружен.')
+	else:
+		for error in form.email.errors:
+			flash(error)
 	return render_template('auth/request.html', form = form)
+
 	
 @bp.route('/reset/<token>', methods=['GET', 'POST'])
 def ResetPassword(token):
@@ -81,4 +91,7 @@ def ResetPassword(token):
 		db.session.commit()
 		flash('Ваш пароль был изменён.')
 		return redirect(url_for('auth.PerformLogin'))
+	else:
+		for error in form.password.errors + form.password2.errors:
+			flash(error)
 	return render_template('auth/reset.html', form=form)

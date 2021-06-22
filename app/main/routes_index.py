@@ -34,46 +34,32 @@ def ShowIndex():
 
 	dates = GetDateTimestamps()
 	filter_from = request.args.get('from', default = dates['недавно'], type = int)
-	filter_approval = request.args.get('approval', default = None, type = str)
+
 	filter_project = request.args.get('project', default=None, type=int)
 	filter_category = request.args.get('category', default=None, type=int)
 	
 	if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
-		filter_attention = 'attention' not in request.args
+		filter_focus = 'focus' not in request.args
 	else:
-		filter_attention = None
-
-	if filter_approval not in [status.name for status in OrderStatus]:
-		filter_approval = None
+		filter_focus = None
 
 	orders = Order.query
 
 	if current_user.role == UserRoles.initiative:
 		orders = orders.filter(Order.initiative_id == current_user.id)
 
-	if filter_approval is not None:
-		orders = orders.filter(Order.status == filter_approval)
-
 	if filter_from > 0:
 		orders = orders.filter(Order.create_timestamp > filter_from)
 
-	if filter_category is not None or current_user.role in [UserRoles.purchaser, UserRoles.validator]:
+	if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
 		orders = orders.join(OrderCategory)
-		if filter_category is not None:
-			orders = orders.filter(OrderCategory.category_id == filter_category)
-		if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
-			orders = orders.filter(OrderCategory.category_id.in_([cat.id for cat in current_user.categories]))
-
-	if filter_project is not None or current_user.role in [UserRoles.purchaser, UserRoles.validator]:
+		orders = orders.filter(OrderCategory.category_id.in_([cat.id for cat in current_user.categories]))
 		orders = orders.join(Site)
-		if filter_project is not None:
-			orders = orders.filter(Site.project_id == filter_project)
-		if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
-			orders = orders.filter(Site.project_id.in_([p.id for p in current_user.projects]))
+		orders = orders.filter(Site.project_id.in_([p.id for p in current_user.projects]))
 
-	if filter_attention is True:
+	if filter_focus is True:
 		orders = orders.join(OrderApproval, isouter=True)
-		orders = orders.filter(or_(OrderApproval.id == None, and_(OrderApproval.user_id == current_user.id, OrderApproval.product_id != None)))
+		orders = orders.filter(or_(OrderApproval.id == None, OrderApproval.user_id != current_user.id))
 
 	orders = orders.order_by(Order.create_timestamp.desc()).all()
 	projects = Project.query.filter_by(hub_id = current_user.hub.id).all()
@@ -83,10 +69,7 @@ def ShowIndex():
 	return render_template('index.html',
 							orders = orders, dates = dates, projects = projects,categories = categories,
 							filter_from = filter_from,
-							filter_approval = filter_approval,
-							filter_project = filter_project,
-							filter_category = filter_category,
-							filter_attention = filter_attention,
+							filter_focus = filter_focus,
 							OrderStatus = OrderStatus,
 							merge_form = merge_form,
 							save_form = save_form)
@@ -218,14 +201,13 @@ def SaveOrders():
 		ws['C1'] = 'Проект'
 		ws['D1'] = 'Объект'
 		ws['E1'] = 'Сумма'
-		ws['F1'] = 'Статус'
-		ws['G1'] = 'Инициатор'
-		ws['H1'] = 'Статья БДР'
-		ws['I1'] = 'Статья БДДС'
-		ws['J1'] = 'Кем согласована'
-		ws['K1'] = 'Ждём согласования'
-		
-		
+		ws['F1'] = 'Позиций'
+		ws['G1'] = 'Статус'
+		ws['H1'] = 'Инициатор'
+		ws['I1'] = 'Статья БДР'
+		ws['J1'] = 'Статья БДДС'
+		ws['K1'] = 'Кем согласована'
+		ws['L1'] = 'Ждём согласования'
 		
 		for i, order in enumerate(orders, start = 2):
 			ws.cell(row=i, column=1, value=order.id)
@@ -234,13 +216,13 @@ def SaveOrders():
 				ws.cell(row=i, column=3, value=order.site.project.name )
 				ws.cell(row=i, column=4, value=order.site.name)
 			ws.cell(row=i, column=5, value=order.total)
-			ws.cell(row=i, column=6, value=str(order.status))
-			ws.cell(row=i, column=7, value=order.initiative.name)
-			ws.cell(row=i, column=8, value=order.income_statement)
-			ws.cell(row=i, column=9, value=order.cash_flow_statement)
-			
-			ws.cell(row=i, column=10, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is True]))
-			ws.cell(row=i, column=11, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is False]))
+			ws.cell(row=i, column=6, value=len(order.products))
+			ws.cell(row=i, column=7, value=str(order.status))
+			ws.cell(row=i, column=8, value=order.initiative.name)
+			ws.cell(row=i, column=9, value=order.income_statement)
+			ws.cell(row=i, column=10, value=order.cash_flow_statement)
+			ws.cell(row=i, column=11, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is True]))
+			ws.cell(row=i, column=12, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is False]))
 			
 		data = save_virtual_workbook(wb)
 		return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=export.xlsx'})

@@ -53,11 +53,11 @@ class OrderStatus(enum.IntEnum):
 	modified = 4
 	
 	def __str__(self):
-		pretty = ['Новая', 'Не согласована', 'В работе', 'Согласована', 'Исправлена']
+		pretty = ['Новая', 'Отклонена', 'В работе', 'Согласована', 'Исправлена']
 		return pretty[self.value]
 		
 	def color(self):
-		colors = ['secondary', 'danger', 'warning', 'success', 'primary']
+		colors = ['white', 'danger', 'warning', 'success', 'secondary']
 		return colors[self.value]
 
 
@@ -269,6 +269,7 @@ class Order(db.Model):
 	exported = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
 	positions = db.relationship('Position', secondary = 'order_position')
 	approvals = db.relationship('OrderPosition')
+	user_approvals = db.relationship('OrderApproval')
 
 	def UpdateOrderStatus(self):
 		disapproved = OrderApproval.query.filter(OrderApproval.order_id == self.id, OrderApproval.product_id != None).all()

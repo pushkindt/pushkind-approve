@@ -1,21 +1,21 @@
-<ul class="navbar-nav mr-auto">
-	<li class="nav-item {% if request.endpoint == 'main.ShowIndex'%} active {% endif %}">
-		<a class="nav-link" href="{{ url_for('main.ShowIndex') }}">Главная</a>
-	</li>
-	{% if current_user.role.name in ['admin', 'purchaser'] %}
-		<li class="nav-item {% if request.endpoint == 'main.ShowStores' %} active {% endif %}">
-			<a class="nav-link" href="{{ url_for('main.ShowStores') }}">Поставщики</a>
-		</li>
-	{% endif %}	
-	<li class="nav-item {% if request.endpoint == 'main.ShowSettings' %} active {% endif %}">
-		<a class="nav-link" href="{{ url_for('main.ShowSettings') }}">Настройки</a>
+<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+	<li class="nav-item">
+		<a class="nav-link {% if request.endpoint == 'main.ShowIndex'%} active {% endif %}" href="{{ url_for('main.ShowIndex') }}">Главная</a>
 	</li>
 	{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
-		<li class="nav-item {% if request.endpoint == 'main.ShowEcwid' %} active {% endif %}">
-			<a class="nav-link" href="{{ url_for('main.ShowEcwid') }}">Заказать</a>
+		<li class="nav-item">
+			<a class="nav-link {% if request.endpoint == 'main.ShowEcwid' %} active {% endif %}" href="{{ url_for('main.ShowEcwid') }}">Заказать</a>
 		</li>
 	{% endif %}
-	<li class="nav-item {% if request.endpoint == 'main.ShowHelp' %} active {% endif %}">
-		<a class="nav-link" href="{{ url_for('main.ShowHelp') }}">Справка</a>
+	{% if current_user.role.name in ['admin', 'purchaser'] %}
+		<li class="nav-item">
+			<a class="nav-link {% if request.endpoint == 'main.ShowStores' %} active {% endif %}" href="{{ url_for('main.ShowStores') }}">Поставщики</a>
+		</li>
+	{% endif %}
+	<li class="nav-item">
+		<a class="nav-link {% if request.endpoint == 'main.ShowSettings' %} active {% endif %}" href="{{ url_for('main.ShowSettings') }}">Настройки</a>
+	</li>
+	<li class="nav-item">
+		<a class="nav-link {% if request.endpoint == 'main.ShowHelp' %} active {% endif %}" href="{{ url_for('main.ShowHelp') }}">Справка</a>
 	</li>
 </ul>
