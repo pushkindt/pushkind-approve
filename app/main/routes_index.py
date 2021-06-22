@@ -147,6 +147,8 @@ def MergeOrders():
 		order.hub_id = current_user.hub_id
 		order.categories = Category.query.filter(Category.id.in_(categories), Category.hub_id == current_user.hub_id).all()
 		
+		order.parents = orders
+		
 		db.session.add(order)
 		
 		message = 'Заявка объединена из заявок'

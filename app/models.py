@@ -249,6 +249,7 @@ class Site(db.Model):
 		return data
 
 
+
 class Order(db.Model):
 	id  = db.Column(db.String(128), primary_key = True, nullable=False)
 	initiative_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -270,6 +271,15 @@ class Order(db.Model):
 	positions = db.relationship('Position', secondary = 'order_position')
 	approvals = db.relationship('OrderPosition')
 	user_approvals = db.relationship('OrderApproval')
+	positions = db.relationship('Position', secondary = 'order_position')
+	
+	parents = db.relationship(
+		'Order',
+		secondary='order_relationship',
+		primaryjoin='Order.id == OrderRelationship.child_id',
+		secondaryjoin='Order.id == OrderRelationship.parent_id',
+		backref=db.backref('children')
+	)
 
 	def UpdateOrderStatus(self):
 		disapproved = OrderApproval.query.filter(OrderApproval.order_id == self.id, OrderApproval.product_id != None).all()
@@ -333,6 +343,11 @@ class OrderCategory(db.Model):
 	__tablename__ = 'order_category'
 	order_id = db.Column(db.String(128), db.ForeignKey('order.id', ondelete='CASCADE'), primary_key = True)
 	category_id = db.Column(db.Integer, db.ForeignKey('category.id', ondelete='CASCADE'), primary_key = True)
+	
+class OrderRelationship(db.Model):
+	__tablename__ = 'order_relationship'
+	parent_id = db.Column(db.String(128), db.ForeignKey('order.id', ondelete='CASCADE'), primary_key = True)
+	child_id = db.Column(db.String(128), db.ForeignKey('order.id', ondelete='CASCADE'), primary_key = True)
 	
 class OrderPosition(db.Model):
 	__tablename__ = 'order_position'

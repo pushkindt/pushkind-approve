@@ -1,4 +1,19 @@
-<div class="row ecwidOrder border" data-id="{{ order.id }}">
+{% if order.children | length > 0%}
+<div class="border bg-light" data-id="{{ order.id }}">
+	<div class="row">
+		<div class="col">
+			<span class="fw-bold">Объединена -></span>
+			{% for child in order.children %}
+				<a href="{{ url_for('main.ShowOrder', order_id = child.id) }}">
+					{{ child.id }}
+				</a>
+			{% endfor %}
+		</div>
+	</div>
+{% else %}
+<div class="ecwidOrder border" data-id="{{ order.id }}">
+{% endif %}
+<div class="row">
 	<div class="col-sm-2 overflow-hidden">
 		<span class="d-sm-none fw-bold">Заявка:</span>
 		<a href="{{ url_for('main.ShowOrder', order_id=order.id) }}">#{{ order.id }}</a>
@@ -61,4 +76,5 @@
 			<span class="badge bg-info"><img class="octicon" src="{{ url_for('static', filename='1C.png') }}" alt="Экспортирована"></span>
 		{% endif%}
 	</div>
+</div>
 </div>
