@@ -51,6 +51,9 @@ def ShowIndex():
 	if filter_from > 0:
 		orders = orders.filter(Order.create_timestamp > filter_from)
 
+	if filter_focus is True and current_user.role == UserRoles.validator:
+		orders = orders.filter(Order.status != OrderStatus.approved)
+
 	if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
 		orders = orders.join(OrderCategory)
 		orders = orders.filter(OrderCategory.category_id.in_([cat.id for cat in current_user.categories]))
