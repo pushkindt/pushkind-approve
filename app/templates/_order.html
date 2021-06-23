@@ -2,7 +2,7 @@
 <div class="border bg-light" data-id="{{ order.id }}">
 	<div class="row">
 		<div class="col">
-			<span class="fw-bold">Объединена -></span>
+			<span class="fw-bold">Объединена &rarr;</span>
 			{% for child in order.children %}
 				<a href="{{ url_for('main.ShowOrder', order_id = child.id) }}">
 					{{ child.id }}
