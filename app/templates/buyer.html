@@ -114,8 +114,8 @@
 		});
 
 	var decodeEntities = (function () {
-        var doc = document.implementation.createHTMLDocument("");
-        var element = doc.createElement('div');
+        let doc = document.implementation.createHTMLDocument("");
+        let element = doc.createElement('div');
         function getText(str) {
             element.innerHTML = str;
             str = element.textContent;
@@ -124,7 +124,7 @@
         }
         function decodeHTMLEntities(str) {
             if (str && typeof str === 'string') {
-                var x = getText(str);
+                let x = getText(str);
                 while (str !== x) {
                     str = x;
                     x = getText(x);

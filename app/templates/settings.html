@@ -255,7 +255,7 @@
 
 			$(".showUserModal").click(function(){
 								
-				var userModal = new bootstrap.Modal(document.getElementById('userModal'), {});
+				let userModal = new bootstrap.Modal(document.getElementById('userModal'), {});
 				
 				let user_id = Number($(this).attr('data-id'));
 				$("#user_id").val(user_id);

@@ -176,22 +176,24 @@
 				{% endfor %}
 				</ul>
 			</div>
-			{% if current_user.role.name in ['validator', 'purchaser'] %}
-				<div class="col text-end">
-					<button type="button" class="btn btn-primary approveButton" data-approved="false" data-bs-target="order">Согласен с заявкой</button>
-					<button type="button" class="btn btn-outline-primary approveButton my-2" data-approved="true" data-bs-target="order">Не согласен с заявкой</button>
-				</div>
-			{% endif %}
 		</div>
 		{% for product in order.products %}
 			{% include '_product.html' %}
 		{% endfor %}
 		<div class="row">
 			<div class="col">
-				Итого: {{ order.products|length }} позиции
+				Всего позиций: {{ order.products|length }}
 				на сумму {{ '{:,.2f}'.format(order.total) }}
 			</div>
 		</div>
+		{% if current_user.role.name in ['validator', 'purchaser'] %}
+			<div class="row">
+				<div class="col text-end">
+					<button type="button" class="btn btn-success approveButton" data-approved="false" data-target="order">Согласен</button>
+					<button type="button" class="btn btn-danger approveButton my-2" data-approved="true" data-target="order">Не согласен</button>
+				</div>
+			</div>
+		{% endif %}
 	</div>
 	<div class="container">
 		<div class="row my-2">
@@ -215,8 +217,8 @@
 						</div>
 					</div>
 					<div class="row">
-						<div class="col px-5 overflow-hidden text-{{event.type.color()}}">
-							&boxur; <span class="fw-bold">{{event.type}}</span>: {{ event.data|safe }}
+						<div class="col px-5 overflow-hidden">
+							&boxur; <span class="fw-bold text-{{event.type.color()}}">{{event.type}}</span>: {{ event.data|safe }}
 						</div>
 					</div>
 				</div>
@@ -244,7 +246,7 @@
 								{{ initiative_form.site.label(class_ = 'form-label') }}
 								{{ initiative_form.site(class_ = 'form-control') }}
 							</div>
-							<div class="mb-3">
+							<div class="mb-3 {% if current_user.role.name != 'admin' %}d-none{% endif %}">
 								{{ initiative_form.categories.label(class_ = 'form-label') }}
 								{{ initiative_form.categories(class_ = 'form-control') }}
 							</div>
@@ -380,18 +382,16 @@
 					</div>
 					<form method="post" action="{{ url_for('main.SaveApproval', order_id = order.id) }}">
 						<div class="modal-body">
-							<p id="approvalHint">
-							</p>
 							{{ approval_form.csrf_token(id=False) }}
 							{{ approval_form.product_id }}
 							<div class="form-group">
-								{{ approval_form.comment.label(class_ = 'col-form-label', id=False) }}
+								{{ approval_form.comment.label(class_ = 'col-form-label', id='approvalHint') }}
 								{{ approval_form.comment(class_ = 'form-control', id=False) }}
-								<small class="form-text text-muted">Прокомментируйте свои действия.</small>
+								<small class="form-text text-muted">Комментарии не обязательное поле.</small>
 							</div>
 						</div>
 						<div class="modal-footer">
-							{{ approval_form.submit(class_ = 'btn btn-primary', id=False) }}
+							{{ approval_form.submit(class_ = 'btn', id='submitApproval') }}
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
 						</div>
 					</form>
@@ -497,44 +497,57 @@
 		{% if current_user.role.name in ['purchaser', 'validator'] %}
 			$(".approveButton").click(function(){
 				
+				let userModal = new bootstrap.Modal(document.getElementById('approveModal'), {});
+				let submitApproval = $("#submitApproval");
+				let approvalHint = $("#approvalHint");
 				let target = $(this).data("target");
 				let approved = $(this).data("approved");
 				if (target == "order"){
 					if (approved == true){
 						$("#product_id").prop("disabled", false);
 						$("#product_id").val(0);
-						$("#approvalHint").text("Вы собираетесь ОТКЛОНИТЬ заявку с номером {{ order.id }}. Вы можете прокомментировать свои действия.");
-						$("#approvalHint").removeClass("text-success");
-						$("#approvalHint").addClass("text-danger");
-						$('#approveModal').modal({});
+						approvalHint.text("Опишите суть замечания:");
+						approvalHint.removeClass("text-success");
+						approvalHint.addClass("text-danger");
+						submitApproval.removeClass("btn-success");
+						submitApproval.addClass("btn-danger");
+						submitApproval.text('Сохранить');
 					}
 					else if (approved == false){
 						$("#product_id").prop("disabled", true);
 						$("#product_id").val(null);
-						$("#approvalHint").text("Вы собираетесь СОГЛАСОВАТЬ заявку с номером {{ order.id }}. Вы можете прокомментировать свои действия.");
-						$("#approvalHint").removeClass("text-danger");
-						$("#approvalHint").addClass("text-success");
-						$('#approveModal').modal({});
+						approvalHint.text("Подтвердите согласование заявки. Вы также можете добавить комментарий:");
+						approvalHint.removeClass("text-danger");
+						approvalHint.addClass("text-success");
+						submitApproval.removeClass("btn-danger");
+						submitApproval.addClass("btn-success");
+						submitApproval.text('Подтвердить');
 					}
+					userModal.show();
 					
 				}
 				else if (target == "product"){
-					let value = $(this).data("id");
-					let sku = $(this).data("sku");
+					
+					let productId = $(this).data("id");
 					$("#product_id").prop("disabled", false);
-					$("#product_id").val(value);
+					$("#product_id").val(productId);
 					if (approved == true){
-						$("#approvalHint").text("Вы собираетесь ОТКЛОНИТЬ товар с артикулом "+ sku +". Вы можете прокомментировать свои действия.");
-						$("#approvalHint").removeClass("text-success");
-						$("#approvalHint").addClass("text-danger");
-						$('#approveModal').modal({});
+						approvalHint.text("Опишите суть замечания:");
+						approvalHint.removeClass("text-success");
+						approvalHint.addClass("text-danger");
+						submitApproval.removeClass("btn-success");
+						submitApproval.addClass("btn-danger");
+						submitApproval.text('Сохранить');
 					}
 					else if (approved == false){
-						$("#approvalHint").text("Вы собираетесь СОГЛАСОВАТЬ товар с артикулом "+ sku +". Вы можете прокомментировать свои действия.");
-						$("#approvalHint").removeClass("text-danger");
-						$("#approvalHint").addClass("text-success");
-						$('#approveModal').modal({});
+						approvalHint.text("Подтвердите согласие с позицией. Вы также можете добавить комментарий:");
+						approvalHint.removeClass("text-danger");
+						approvalHint.addClass("text-success");
+						submitApproval.removeClass("btn-danger");
+						submitApproval.addClass("btn-success");
+						submitApproval.text('Подтвердить');
 					}
+					userModal.show();
 				}
 				
 			});

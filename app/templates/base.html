@@ -85,7 +85,7 @@
 		<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 		<script>
 			function ShowAjaxFlashes(data){
-				var ajaxAlert = $("<div>");
+				let ajaxAlert = $("<div>");
 				if (data.status == true)
 				{
 					ajaxAlert.addClass("alert alert-fixed alert-dismissible alert-primary");
