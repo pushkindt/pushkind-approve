@@ -157,7 +157,7 @@
 						{% if appr.user is sameas none %}
 							<li>
 								{{ moment(order.create_date).format('DD.MM.YYYY') }}
-								<span class="badge border text-dark">новая&nbsp;заявка</span>
+								<span class="badge border text-dark">не&nbsp;просмотрено</span>
 								{{ appr.position.name }}
 								({%for user in appr.position.users%}
 								{% include '_user.popover.html' %}
@@ -166,7 +166,7 @@
 						{% else %}
 							<li class="text-danger">
 								{{ moment(appr.timestamp).format('DD.MM.YYYY') }}
-								<span class="badge border border-danger text-dark">не&nbsp;согласен</span>
+								<span class="badge border border-danger text-dark">замечания</span>
 								{{ appr.position.name }}
 								{% set user = appr.user %}
 								( {% include '_user.popover.html' %} )
