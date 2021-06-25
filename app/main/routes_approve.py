@@ -470,7 +470,7 @@ if order.status == OrderStatus.approved:
 
 @bp.route('/orders/statements/<order_id>', methods=['POST'])
 @login_required
-@role_required([UserRoles.admin, UserRoles.purchaser])
+@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.validator, UserRoles.purchaser])
 @ecwid_required	
 def SaveStatements(order_id):
 	order = GetOrder(order_id)

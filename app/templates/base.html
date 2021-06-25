@@ -110,6 +110,9 @@
 				var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
 					return new bootstrap.Tooltip(tooltipTriggerEl)
 				})
+				var popover = new bootstrap.Popover(document.querySelector('.popover-dismiss'), {
+					trigger: 'focus'
+				})
 			});
 		</script>
 		{% block scripts %}{% endblock %}

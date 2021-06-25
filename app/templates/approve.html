@@ -128,11 +128,18 @@
 				<span class="fw-bold">Комментарии: </span>
 				<ul class="list-unstyled">
 				{% for event in order.events|reverse %}
-					{% if event.type.name == 'comment'%}
+					{% if event.type.name == 'comment' %}
 						<li>
 							<span class="bg-yellow">
 							{% set user = event.user %}
 							{{ moment(event.timestamp).format('DD.MM.YYYY') }} {% include '_user.popover.html' %}: {{ event.data|safe }}
+							</span>
+						</li>
+					{% elif event.type.name == 'disapproved' %}
+						<li>
+							<span class="bg-yellow">
+							{% set user = event.user %}
+							{{ moment(event.timestamp).format('DD.MM.YYYY') }} {% include '_user.popover.html' %} {{event.type}}: {{ event.data|safe }}
 							</span>
 						</li>
 					{% endif %}
@@ -209,6 +216,7 @@
 						<div class="col">
 							{% set user = event.user %}
 							{% include '_user.popover.html' %}
+							{{ user.position.name }}
 							{{ moment(event.timestamp).format() }}
 						</div>
 					</div>
