@@ -1,14 +1,14 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval
+from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval, User
 from flask import render_template, flash, request, redirect, url_for, Response
 from app.main.utils import ecwid_required, role_forbidden, role_required
 from datetime import datetime, timedelta, timezone
 from app.main.forms import MergeOrdersForm, SaveOrdersForm
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, not_
 
 '''
 ################################################################################
@@ -39,7 +39,9 @@ def ShowIndex():
 	filter_category = request.args.get('category', default=None, type=int)
 	
 	if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
-		filter_focus = 'focus' not in request.args
+		filter_focus = request.args.get('focus', default=None, type=str)
+		if filter_focus is not None:
+			filter_focus = True
 	else:
 		filter_focus = None
 
@@ -51,7 +53,7 @@ def ShowIndex():
 	if filter_from > 0:
 		orders = orders.filter(Order.create_timestamp > filter_from)
 
-	if filter_focus is True and current_user.role == UserRoles.validator:
+	if filter_focus is None and current_user.role == UserRoles.validator:
 		orders = orders.filter(Order.status != OrderStatus.approved)
 
 	if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
@@ -60,11 +62,12 @@ def ShowIndex():
 		orders = orders.join(Site)
 		orders = orders.filter(Site.project_id.in_([p.id for p in current_user.projects]))
 
-	if filter_focus is True:
-		orders = orders.join(OrderApproval, isouter=True)
-		orders = orders.filter(or_(OrderApproval.id == None, OrderApproval.user_id != current_user.id))
+	if filter_focus is None:
+		orders = orders.filter(~Order.user_approvals.any(OrderApproval.user_id==current_user.id))
 
-	orders = orders.order_by(Order.create_timestamp.desc()).all()
+	orders = orders.order_by(Order.create_timestamp.desc())
+	
+	orders = orders.all()
 	projects = Project.query.filter_by(hub_id = current_user.hub.id).all()
 	categories = Category.query.filter_by(hub_id = current_user.hub.id).all()
 	merge_form = MergeOrdersForm()

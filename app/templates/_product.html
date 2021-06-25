@@ -26,21 +26,21 @@
 			{{ '{:,.2f}'.format(product['price'])  }}
 		</span>
 	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none fw-bold">Кол-во:</span>
-		{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
+	{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
+		<div class="col-sm overflow-hidden mt-sm-2 text-sm-center">
+			<span class="d-sm-none fw-bold">Кол-во:</span>
 			<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order.id) }}" method="POST">
 				<div class="row">
 					<div class="col">
 						{{ quantity_form.csrf_token(id=False) }}
 						{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['id'], id=False) }}
-						{{ quantity_form.product_quantity(class_ = 'productQuantity text-primary form-control-plaintext  mt-sm-2', value = product['quantity'], id=False) }}
+						{{ quantity_form.product_quantity(class_ = 'text-primary form-control-plaintext', value = product['quantity'], id=False) }}
 					</div>
 					<div class="col">
 						{% if 'selectedOptions' in product %}
-							{{ quantity_form.product_measurement(class_ = 'productQuantity text-primary form-control-plaintext  mt-sm-2', value = product['selectedOptions'][0]['value'], id=False) }}
+							{{ quantity_form.product_measurement(class_ = 'text-primary form-control-plaintext', value = product['selectedOptions'][0]['value'], id=False) }}
 						{%else%}
-							{{ quantity_form.product_measurement(class_ = 'productQuantity text-primary form-control-plaintext  mt-sm-2 border', id=False) }}
+							{{ quantity_form.product_measurement(class_ = 'text-primary form-control', id=False, placeholder='ед.изм.') }}
 							{% set _ = glob.update({'no_measurements':True}) %}
 						{% endif %}
 					</div>
@@ -51,28 +51,26 @@
 					</div>
 				</div>
 			</form>
+		</div>
 		{% else %}
-			<div class="mt-sm-3">
+		<div class="col-sm overflow-hidden mt-sm-3 text-sm-center">
+			<span class="d-sm-none fw-bold">Кол-во:</span>
+			<span>
 				{{ product['quantity'] }}
 				{% if 'selectedOptions' in product %}
 					{{ product['selectedOptions'][0]['value'] }}
 				{%else%}
 					{% set _ = glob.update({'no_measurements':True}) %}
+					'ед.изм.'
 				{% endif %}
-			</div>
-		{% endif %}
-	</div>
+			</span>
+		</div>
+	{% endif %}
 	{% if current_user.role.name in ['validator','purchaser'] %}
 		<div class="col text-center overflow-hidden my-3">
-			{% if product['id'] in approvals %}
-				<a href="#" class="approveButton" data-approved="false" data-id="{{ product['id'] }}" data-sku="{{ product[sku] }}" data-target="product">
-					-замечание
-				</a>
-			{% else %}
-				<a href="#" class="approveButton" data-approved="true" data-id="{{ product['id'] }}" data-sku="{{ product['sku'] }}" data-target="product">
-					+замечание
-				</a>
-			{% endif %}
+			<a href="#" class="approveButton text-decoration-none" data-id="{{ product['id'] }}" data-target="product">
+				+замечание
+			</a>
 		</div>
 	{% endif %}
 </div>

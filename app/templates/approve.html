@@ -126,7 +126,7 @@
 		<div class="row">
 			<div class="col">
 				<span class="fw-bold">Комментарии: </span>
-				<ul>
+				<ul class="list-unstyled">
 				{% for event in order.events|reverse %}
 					{% if event.type.name == 'comment'%}
 						<li>
@@ -142,37 +142,33 @@
 		</div>
 		<div class="row">
 			<div class="col">
-				<span class="fw-bold">Согласующие:</span><br>
-				<ul>
+				<span class="fw-bold">Согласующие:</span>
+				<ul class="list-unstyled">
 				{% for appr in order.approvals %}
-					{% if appr.approved is sameas true %}
-						<li class="text-success">
-							{{ moment(appr.timestamp).format('DD.MM.YYYY') }}
-							<span class="badge border border-success text-dark">согласен</span>
+					<li>
+						{% if appr.approved is sameas true %}
 							{{ appr.position.name }}
+							<span class="badge border border-success text-dark">согласен</span>
 							{% set user = appr.user %}
-							( {% include '_user.popover.html' %} )
-						</li>
-					{% else %}
-						{% if appr.user is sameas none %}
-							<li>
-								{{ moment(order.create_date).format('DD.MM.YYYY') }}
-								<span class="badge border text-dark">не&nbsp;просмотрено</span>
-								{{ appr.position.name }}
-								({%for user in appr.position.users%}
-								{% include '_user.popover.html' %}
-								{%endfor%})
-							</li>
+							{% include '_user.popover.html' %}
+							{{ moment(appr.timestamp).format('DD.MM.YYYY') }}
 						{% else %}
-							<li class="text-danger">
-								{{ moment(appr.timestamp).format('DD.MM.YYYY') }}
-								<span class="badge border border-danger text-dark">замечания</span>
+							{% if appr.user is sameas none %}
 								{{ appr.position.name }}
+								<span class="badge border text-dark text-nowrap">не просмотрено</span>
+								{% for user in appr.position.users %}
+									{% include '_user.popover.html' %}
+								{% endfor %}
+								{{ moment(order.create_date).format('DD.MM.YYYY') }}
+							{% else %}
+								{{ appr.position.name }}
+								<span class="badge border border-danger text-dark">замечания</span>
 								{% set user = appr.user %}
-								( {% include '_user.popover.html' %} )
-							</li>
+								{% include '_user.popover.html' %}
+								{{ moment(appr.timestamp).format('DD.MM.YYYY') }}
+							{% endif %}
 						{% endif %}
-					{% endif %}
+					</li>
 				{% endfor %}
 				</ul>
 			</div>
@@ -386,8 +382,7 @@
 							{{ approval_form.product_id }}
 							<div class="form-group">
 								{{ approval_form.comment.label(class_ = 'col-form-label', id='approvalHint') }}
-								{{ approval_form.comment(class_ = 'form-control', id=False) }}
-								<small class="form-text text-muted">Комментарии не обязательное поле.</small>
+								{{ approval_form.comment(class_ = 'form-control', id='approvalComment') }}
 							</div>
 						</div>
 						<div class="modal-footer">
@@ -483,13 +478,16 @@
 	
 	
 		{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
-			$(".productQuantity").focus(function() {
+			var focusOutTimer = null;
+			$(".changeQuantityForm input").focus(function() {
+				if (focusOutTimer != null)
+					clearTimeout(focusOutTimer);
 				$(this).closest("form").find(":submit").removeClass("d-none");
 			});
-			$(".productQuantity").focusout(function() {
-				setTimeout(()=>
+			$(".changeQuantityForm input").focusout(function() {
+				focusOutTimer = setTimeout(()=>
 					$(this).closest("form").find(":submit").addClass("d-none"),
-					500
+					1000
 				);
 			});
 		{% endif %}
@@ -501,11 +499,12 @@
 				let submitApproval = $("#submitApproval");
 				let approvalHint = $("#approvalHint");
 				let target = $(this).data("target");
-				let approved = $(this).data("approved");
 				if (target == "order"){
+					let approved = $(this).data("approved");
 					if (approved == true){
 						$("#product_id").prop("disabled", false);
 						$("#product_id").val(0);
+						$("#approvalComment").prop("required", true);
 						approvalHint.text("Опишите суть замечания:");
 						approvalHint.removeClass("text-success");
 						approvalHint.addClass("text-danger");
@@ -524,32 +523,21 @@
 						submitApproval.text('Подтвердить');
 					}
 					userModal.show();
-					
 				}
 				else if (target == "product"){
 					
 					let productId = $(this).data("id");
 					$("#product_id").prop("disabled", false);
 					$("#product_id").val(productId);
-					if (approved == true){
-						approvalHint.text("Опишите суть замечания:");
-						approvalHint.removeClass("text-success");
-						approvalHint.addClass("text-danger");
-						submitApproval.removeClass("btn-success");
-						submitApproval.addClass("btn-danger");
-						submitApproval.text('Сохранить');
-					}
-					else if (approved == false){
-						approvalHint.text("Подтвердите согласие с позицией. Вы также можете добавить комментарий:");
-						approvalHint.removeClass("text-danger");
-						approvalHint.addClass("text-success");
-						submitApproval.removeClass("btn-danger");
-						submitApproval.addClass("btn-success");
-						submitApproval.text('Подтвердить');
-					}
+					$("#approvalComment").prop("required", true);
+					approvalHint.text("Опишите суть замечания:");
+					approvalHint.removeClass("text-success");
+					approvalHint.addClass("text-danger");
+					submitApproval.removeClass("btn-success");
+					submitApproval.addClass("btn-danger");
+					submitApproval.text('Сохранить');
 					userModal.show();
 				}
-				
 			});
 		{% endif %}
 	});
