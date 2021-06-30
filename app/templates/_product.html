@@ -14,7 +14,7 @@
 	</div>
 	<div class="col-sm-4 overflow-hidden mt-sm-3">
 		<span class="d-sm-none fw-bold">Название:</span>
-		<span class="fw-bold">{{ product['name'] }}</span>
+		<span class="fw-bold {% if product['quantity'] == 0 %}text-secondary{% endif %}">{{ product['name'] }}</span>
 	</div>
 	<div class="col-sm overflow-hidden mt-sm-3">
 		<span class="d-sm-none fw-bold">Поставщик:</span>
@@ -27,7 +27,7 @@
 		</span>
 	</div>
 	{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
-		<div class="col-sm overflow-hidden mt-sm-2 text-sm-center">
+		<div class="col-sm-2 overflow-hidden mt-sm-2 text-sm-center">
 			<span class="d-sm-none fw-bold">Кол-во:</span>
 			<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order.id) }}" method="POST">
 				<div class="row">
@@ -53,7 +53,7 @@
 			</form>
 		</div>
 		{% else %}
-		<div class="col-sm overflow-hidden mt-sm-3 text-sm-center">
+		<div class="col-sm-2 overflow-hidden mt-sm-3 text-sm-center">
 			<span class="d-sm-none fw-bold">Кол-во:</span>
 			<span>
 				{{ product['quantity'] }}

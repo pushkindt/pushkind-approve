@@ -16,19 +16,49 @@ from json.decoder import JSONDecodeError
 from sqlalchemy.sql import expression
 
 class EventType(enum.IntEnum):
-	comment = 0
+	commented = 0
 	approved = 1
 	disapproved = 2
-	modified = 3
+	quantity = 3
 	duplicated = 4
-	vendor = 5
-	export1C = 6
+	purchased = 5
+	exported = 6
+	merged = 7
+	dealdone = 8
+	cash_statement = 9
+	cash_flow_statement = 10
+	site = 11
+	measurement = 12
 
 	def __str__(self):
-		pretty = ['комментарий', 'согласовано', 'отклонено', 'изменено', 'заявка дублирована', 'отправлена поставщикам', 'экспортирована в 1С']
+		pretty = ['комментарий',
+				  'согласование', 
+				  'замечание', 
+				  'изменение', 
+				  'дублирование', 
+				  'поставщику', 
+				  'экспорт в 1С', 
+				  'объединение',
+				  'законтрактовано',
+				  'изменение БДР',
+				  'изменение БДДС',
+				  'изменение объекта',
+				  'изменение ЕИ']
 		return pretty[self.value]
 	def color(self):
-		colors = ['warning', 'success', 'danger', 'primary', 'primary', 'info', 'info']
+		colors = ['warning',
+				  'success',
+				  'danger',
+				  'primary',
+				  'primary',
+				  'info',
+				  'info',
+				  'info',
+				  'info',
+				  'info',
+				  'info',
+				  'info',
+				  'info']
 		return colors[self.value]
 
 
@@ -219,7 +249,7 @@ class OrderEvent(db.Model):
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 	user = db.relationship('User')
 	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
-	type = db.Column(db.Enum(EventType), nullable=False, default=EventType.comment)
+	type = db.Column(db.Enum(EventType), nullable=False, default=EventType.commented)
 	data = db.Column(db.String(), nullable=False, default='', server_default='')
 
 
@@ -248,8 +278,6 @@ class Site(db.Model):
 		data = {'id':self.id, 'project_id':self.project_id, 'name':self.name}
 		return data
 
-
-
 class Order(db.Model):
 	id  = db.Column(db.String(128), primary_key = True, nullable=False)
 	initiative_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -268,18 +296,13 @@ class Order(db.Model):
 	events = db.relationship('OrderEvent', cascade="all, delete-orphan")
 	purchased = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
 	exported = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+	dealdone = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
 	positions = db.relationship('Position', secondary = 'order_position')
 	approvals = db.relationship('OrderPosition')
 	user_approvals = db.relationship('OrderApproval')
 	positions = db.relationship('Position', secondary = 'order_position')
-	
-	parents = db.relationship(
-		'Order',
-		secondary='order_relationship',
-		primaryjoin='Order.id == OrderRelationship.child_id',
-		secondaryjoin='Order.id == OrderRelationship.parent_id',
-		backref=db.backref('children')
-	)
+	child_id = db.Column(db.String(128), db.ForeignKey('order.id'), nullable=True)
+	parents = db.relationship('Order', backref=db.backref('child', remote_side=[id]))
 
 	def UpdateOrderStatus(self):
 		disapproved = OrderApproval.query.filter(OrderApproval.order_id == self.id, OrderApproval.product_id != None).all()
@@ -343,11 +366,6 @@ class OrderCategory(db.Model):
 	__tablename__ = 'order_category'
 	order_id = db.Column(db.String(128), db.ForeignKey('order.id', ondelete='CASCADE'), primary_key = True)
 	category_id = db.Column(db.Integer, db.ForeignKey('category.id', ondelete='CASCADE'), primary_key = True)
-	
-class OrderRelationship(db.Model):
-	__tablename__ = 'order_relationship'
-	parent_id = db.Column(db.String(128), db.ForeignKey('order.id', ondelete='CASCADE'), primary_key = True)
-	child_id = db.Column(db.String(128), db.ForeignKey('order.id', ondelete='CASCADE'), primary_key = True)
 	
 class OrderPosition(db.Model):
 	__tablename__ = 'order_position'

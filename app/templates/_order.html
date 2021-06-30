@@ -1,17 +1,14 @@
-{% if order.children | length > 0%}
-<div class="row bg-light border" data-id="{{ order.id }}">
-		<div>
-			<span class="fw-bold">Объединена &rarr;</span>
-			{% for child in order.children %}
-				<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id = child.id) }}">
-					{{ child.id }}
-				</a>
-			{% endfor %}
-		</div>
+{% if order.child %}
+<div class="row text-muted border bg-white my-1 rounded fs-7" data-id="{{ order.id }}" data-total="{{ order.total }}">
+	<div class="col-sm-1 overflow-hidden">
+		<span class="fw-bold">Объединена в</span>
+		<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id = order.child_id) }}">
+			{{ order.child_id }}
+		</a>
+	</div>
 {%else%}
-<div class="row ecwidOrder border bg-white" data-id="{{ order.id }}">
-{% endif %}
-	<div class="col-sm-2 overflow-hidden">
+<div class="row ecwidOrder border bg-white my-1 rounded fs-7" data-id="{{ order.id }}" data-total="{{ order.total }}">
+	<div class="col-sm-1 overflow-hidden">
 		<span class="d-sm-none fw-bold">Заявка:</span>
 		<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.id) }}">#{{ order.id }}</a>
 		<br>
@@ -25,7 +22,8 @@
 			{% endfor %}
 		</span>
 	</div>
-	<div class="col-sm overflow-hidden">
+{% endif %}
+	<div class="col-sm-3 overflow-hidden">
 		<span class="d-sm-none fw-bold">Инициатор:</span>
 		<span class="fw-bold">
 			{{ order.site.name if order.site else 'объект не указан' }}
@@ -65,14 +63,18 @@
 			{% endfor %}
 		{% endif %}
 	</div>
-	<div class="col-sm-2 overflow-hidden">
+	<div class="col-sm-1 overflow-hidden">
 		<span class="d-sm-none">Статус:</span>
 		{% include '_order.status.html' %}
-		{% if order.purchased is sameas true %}
-			<span class="badge bg-info"><img class="octicon" src="{{ url_for('static', filename='octicons/mail.svg') }}" alt="Отправлена"></span>
-		{% endif%}
-		{% if order.exported is sameas true %}
-			<span class="badge bg-info"><img class="octicon" src="{{ url_for('static', filename='1C.png') }}" alt="Экспортирована"></span>
-		{% endif%}
 	</div>
+	{% if order.parents %}
+		<div class="col-12">
+			<small>
+				&sum;
+				{% for parent in order.parents %}
+					#{{ parent.id }}
+				{%endfor%}
+			</small>
+		</div>
+	{% endif %}
 </div>

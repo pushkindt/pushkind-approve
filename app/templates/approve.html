@@ -115,7 +115,14 @@
 					</li>
 					<li class="nav-item">
 						{% if current_user.role.name in ['admin', 'purchaser'] %}
-							<a href="{{ url_for('main.ProcessHubOrder', order_id = order.id) }}" {% if order['externalFulfillment'] %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>отправить поставщику</a>
+							<a href="{{ url_for('main.ProcessHubOrder', order_id = order.id) }}" {% if order.purchased %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>отправить поставщику</a>
+						{% else %}
+							<span class="text-secondary">отправить поставщику</span>
+						{% endif %}
+					</li>
+					<li class="nav-item">
+						{% if current_user.role.name in ['admin', 'purchaser'] %}
+							<a href="{{ url_for('main.SetDealDone', order_id = order.id) }}" onclick="return confirm('Установить статус заявки законтрактовано?')">законтрактовать</a>
 						{% else %}
 							<span class="text-secondary">отправить поставщику</span>
 						{% endif %}
@@ -128,7 +135,7 @@
 				<span class="fw-bold">Комментарии: </span>
 				<ul class="list-unstyled">
 				{% for event in order.events|reverse %}
-					{% if event.type.name == 'comment' %}
+					{% if event.type.name == 'commented' %}
 						<li>
 							<span class="bg-yellow">
 							{% set user = event.user %}
@@ -214,15 +221,15 @@
 				<div class="action" data-datetime="{{ event.timestamp.timestamp() }}">
 					<div class="row">
 						<div class="col">
+							{{ moment(event.timestamp).format() }}
 							{% set user = event.user %}
 							{% include '_user.popover.html' %}
-							{{ user.position.name }}
-							{{ moment(event.timestamp).format() }}
+							<span class="fw-bold text-{{event.type.color()}}">{{event.type}}</span>
 						</div>
 					</div>
 					<div class="row">
 						<div class="col px-5 overflow-hidden">
-							&boxur; <span class="fw-bold text-{{event.type.color()}}">{{event.type}}</span>: {{ event.data|safe }}
+							&boxur; {{ event.data|safe }}
 						</div>
 					</div>
 				</div>

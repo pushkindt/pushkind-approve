@@ -53,17 +53,20 @@ def ShowIndex():
 	if filter_from > 0:
 		orders = orders.filter(Order.create_timestamp > filter_from)
 
-	if filter_focus is None and current_user.role == UserRoles.validator:
-		orders = orders.filter(Order.status != OrderStatus.approved)
-
 	if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
+	
+		if filter_focus is None:
+			if current_user.role == UserRoles.validator:
+				orders = orders.filter(Order.status != OrderStatus.approved)
+				orders = orders.filter(~Order.user_approvals.any(OrderApproval.user_id==current_user.id))
+			elif current_user.role == UserRoles.purchaser:
+				orders = orders.filter(Order.dealdone == False)
+			orders = orders.filter(Order.child_id == None)
+	
 		orders = orders.join(OrderCategory)
 		orders = orders.filter(OrderCategory.category_id.in_([cat.id for cat in current_user.categories]))
 		orders = orders.join(Site)
 		orders = orders.filter(Site.project_id.in_([p.id for p in current_user.projects]))
-
-	if filter_focus is None:
-		orders = orders.filter(~Order.user_approvals.any(OrderApproval.user_id==current_user.id))
 
 	orders = orders.order_by(Order.create_timestamp.desc())
 	
@@ -95,7 +98,7 @@ def MergeOrders():
 			
 		orders = list()
 
-		orders = Order.query.filter(Order.id.in_(orders_list), Order.hub_id == current_user.hub_id)
+		orders = Order.query.filter(Order.id.in_(orders_list), Order.hub_id == current_user.hub_id, Order.child_id == None)
 		if current_user.role == UserRoles.initiative:
 			orders = orders.filter(Order.initiative_id == current_user.id)
 			
@@ -162,10 +165,10 @@ def MergeOrders():
 		for o in orders:
 			message += ' <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = o.id), o.id)
 			message2 = 'Заявка объединена в заявку <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = order.id), order.id)
-			event = OrderEvent(user_id = current_user.id, order_id = o.id, type=EventType.duplicated, data=message2, timestamp = datetime.now(tz = timezone.utc))
+			event = OrderEvent(user_id = current_user.id, order_id = o.id, type=EventType.merged, data=message2, timestamp = datetime.now(tz = timezone.utc))
 			db.session.add(event)
 			
-		event = OrderEvent(user_id = current_user.id, order_id = order.id, type=EventType.duplicated, data=message, timestamp = datetime.now(tz = timezone.utc))
+		event = OrderEvent(user_id = current_user.id, order_id = order.id, type=EventType.merged, data=message, timestamp = datetime.now(tz = timezone.utc))
 		db.session.add(event)
 		
 		db.session.commit()

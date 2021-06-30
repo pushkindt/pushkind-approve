@@ -18,21 +18,27 @@
 	<div class="row justify-content-center">
 		<div class="col-md-8">
 			{% for d in dates %}
-				<a href="{{ url_for('main.ShowIndex', from = dates[d], focus=filter_focus) }}" class="text-decoration-none badge {%if filter_from == dates[d] %}bg-primary{%else%}bg-secondary{%endif%}">{{ d }}</a>
+				<a href="{{ url_for('main.ShowIndex', from = dates[d], focus=filter_focus) }}" class="text-decoration-none badge {%if filter_from == dates[d] %}bg-primary{%else%}bg-secondary fw-normal{%endif%}">{{ d }}</a>
 			{% endfor %}
-			<a href="{{ url_for('main.ShowIndex', from = 0, focus=filter_focus) }}" class="text-decoration-none badge {%if filter_from == 0 %}bg-primary{%else%}bg-secondary{%endif%}">все</a>
+			<a href="{{ url_for('main.ShowIndex', from = 0, focus=filter_focus) }}" class="text-decoration-none badge {%if filter_from == 0 %}bg-primary{%else%}bg-secondary fw-normal{%endif%}">все</a>
 		</div>
 	</div>
 </div>
 <div class="container">
 	<div class="row my-2">
 		<div class="col">
-			Показано <span id="orderCount">{{ orders|length }}</span> заявок
+			Выбрано заявок: <span id="orderCount">{{ orders|length }}</span> на сумму <span id="orderTotal">{{ "%.2f"|format(orders| sum(attribute='total')) }}</span>
 			{% if current_user.role.name in ['validator', 'purchaser'] %}
 				<br>
 				<div class="form-check form-check-inline">
 					<input class="form-check-input" type="checkbox" id="filterFocus" {%if not filter_focus%}checked{%endif%}>
-					<label class="form-check-label" for="filterFocus">Показывать только заявки, которые я должен согласовать.</label>
+					<label class="form-check-label" for="filterFocus">
+					{% if current_user.role.name == 'validator' %}
+						Показывать только заявки, которые я должен согласовать.
+					{% else %}
+						Показывать только не законтрактованные заявки.
+					{% endif %}
+					</label>
 				</div>
 			{% endif %}
 		</div>
@@ -45,10 +51,10 @@
 
 	</div>
 	<div class="row bg-light d-none d-sm-flex border">
-		<div class="col-2 overflow-hidden">
+		<div class="col-1 overflow-hidden">
 			Заявка
 		</div>
-		<div class="col overflow-hidden">
+		<div class="col-3 overflow-hidden">
 			Инициатор
 		</div>
 		<div class="col overflow-hidden">
@@ -60,13 +66,15 @@
 		<div class="col overflow-hidden">
 			Ожидаем
 		</div>
-		<div class="col-2 overflow-hidden">
+		<div class="col-1 overflow-hidden">
 			Статус
 		</div>
 	</div>
-	{% for order in orders %}
-		{% include '_order.html' %}
-	{% endfor %}
+	<div id="orderList">
+		{% for order in orders %}
+			{% include '_order.html' %}
+		{% endfor %}
+	<div>
 </div>
 
 
@@ -139,14 +147,17 @@
 		$("#orderFilter").on("keyup", function() {
 			let value = $(this).val().toLowerCase();
 			let order_list = [];
-			$(".ecwidOrder").filter(function() {
+			let orderTotal = 0;
+			$("#orderList > .row").filter(function() {
 				let show = $(this).text().toLowerCase().indexOf(value) > -1;
 				$(this).toggle(show);
 				if (show){
 					order_list.push($(this).data("id"));
+					orderTotal += Number($(this).data("total"));
 				}
 			});
 			$("#orderCount").text(order_list.length);
+			$("#orderTotal").text(orderTotal.toFixed(2));
 			$("#saveOrders").val(JSON.stringify(order_list));
 		});
 		
