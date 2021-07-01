@@ -21,6 +21,7 @@ Settings page
 def RemoveExcessivePosition():
 	positions = Position.query.filter(Position.users == None).all()
 	for position in positions:
+		position.approvals = []
 		db.session.delete(position)
 	db.session.commit()
 		

@@ -42,10 +42,9 @@
 	<div class="col-sm overflow-hidden">
 		<span class="d-sm-none fw-bold">Не согласен:</span>
 		<span class="text-danger">
-			{% for appr in order.user_approvals %}
-				{% if appr.product_id %}
-					{{ appr.user.position.name }}<br>
-				{% endif %}
+			{% set positions = order.user_approvals|rejectattr('product_id', 'none')|map(attribute='user')|map(attribute='position')|map(attribute='name')|unique %}
+			{% for position in positions %}
+				{{ position }}<br>
 			{% endfor %}
 		</span>
 	</div>

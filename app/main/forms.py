@@ -107,7 +107,7 @@ class UserSettings(Form):
 	phone = StringField('Телефон')
 	categories = SelectMultipleField('Категории', coerce=int)
 	projects = SelectMultipleField('Проекты', coerce=int)
-	position = StringField('Роль')
+	position = StringField('Роль', [InputRequired(message = 'Роль - обязательное поле')])
 	location = StringField('Площадка')
 	email_new = BooleanField('Новые заявки')
 	email_modified = BooleanField('Заявка изменена')
