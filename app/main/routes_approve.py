@@ -532,7 +532,7 @@ def SaveStatements(order_id):
 
 @bp.route('/orders/parameters/<order_id>', methods=['POST'])
 @login_required
-@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
+@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.validator, UserRoles.purchaser])
 @ecwid_required	
 def SaveParameters(order_id):
 	order = GetOrder(order_id)
