@@ -115,7 +115,11 @@
 					</li>
 					<li class="nav-item">
 						{% if current_user.role.name in ['admin', 'purchaser'] %}
-							<a href="{{ url_for('main.ProcessHubOrder', order_id = order.id) }}" {% if order.purchased %}onclick="return confirm('Уже отправлена, отправить ещё раз?')"{% endif %}>отправить поставщику</a>
+							 {% if order.purchased %}
+								<a href="{{ url_for('main.ProcessHubOrder', order_id = order.id) }}" onclick="return confirm('Уже отправлена, отправить ещё раз?')">отправить поставщику</a>
+							{%else%}
+								<a href="{{ url_for('main.ProcessHubOrder', order_id = order.id) }}" onclick="return confirm('Отправить заявку поставщику?')">отправить поставщику</a>
+							{% endif %}
 						{% else %}
 							<span class="text-secondary">отправить поставщику</span>
 						{% endif %}
@@ -124,7 +128,7 @@
 						{% if current_user.role.name in ['admin', 'purchaser'] %}
 							<a href="{{ url_for('main.SetDealDone', order_id = order.id) }}" onclick="return confirm('Установить статус заявки законтрактовано?')">законтрактовать</a>
 						{% else %}
-							<span class="text-secondary">отправить поставщику</span>
+							<span class="text-secondary">законтрактовать</span>
 						{% endif %}
 					</li>
 				</ul>
@@ -171,7 +175,9 @@
 								{{ appr.position.name }}
 								<span class="badge border text-dark text-nowrap">не просмотрено</span>
 								{% for user in appr.position.users %}
-									{% include '_user.popover.html' %}
+									{% if order.site.project.id in user.projects_list %}
+										{% include '_user.popover.html' %}
+									{% endif %}
 								{% endfor %}
 								{{ moment(order.create_date).format('DD.MM.YYYY') }}
 							{% else %}

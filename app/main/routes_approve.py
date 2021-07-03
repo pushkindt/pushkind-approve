@@ -101,7 +101,7 @@ def DuplicateOrder(order_id):
 	new_order.total = order.total
 	new_order.income_statement = order.income_statement
 	new_order.cash_flow_statement = order.cash_flow_statement
-	new_order.site = order.site
+	new_order.site_id = order.site_id
 	new_order.status = OrderStatus.new
 	new_order.create_timestamp = int(now.timestamp())
 
@@ -109,12 +109,13 @@ def DuplicateOrder(order_id):
 	new_order.hub_id = current_user.hub_id
 	new_order.categories = order.categories
 	
+	
 	db.session.add(new_order)
 
-	message = 'Заявка дублирована с номером <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = new_order.id), new_order.id)
+	message = 'Заявка дублирована с номером {}'.format(new_order.id)
 	event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.duplicated, data=message, timestamp = datetime.now(tz = timezone.utc))
 	db.session.add(event)
-	message = 'Заявка дублирована из заявки <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = order_id), order_id)
+	message = 'Заявка дублирована из заявки {}'.format(order_id)
 	event = OrderEvent(user_id = current_user.id, order_id = new_order.id, type=EventType.duplicated, data=message, timestamp = datetime.now(tz = timezone.utc))
 	db.session.add(event)
 	db.session.commit()
@@ -442,12 +443,11 @@ def SaveApproval(order_id):
 				position_approval.user = current_user
 				position_approval.timestamp = datetime.utcnow()
 		else:
+			OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id, product_id = None).delete()
 			if form.product_id.data == 0:
-				OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id).delete()
 				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp = datetime.now(tz = timezone.utc))
-				for product in order.products:
-					product_approval = OrderApproval(order_id = order_id, product_id=product['id'], user_id = current_user.id)
-					db.session.add(product_approval)
+				product_approval = OrderApproval(order_id = order_id, product_id=0, user_id = current_user.id)
+				db.session.add(product_approval)
 				if position_approval is not None:
 					position_approval.approved = False
 					position_approval.user = current_user
@@ -459,8 +459,6 @@ def SaveApproval(order_id):
 				else:
 					flash('Указанный товар не найден в заявке.')
 					return redirect(url_for('main.ShowOrder', order_id = order_id))
-					
-				OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id, product_id = None).delete()
 				product_approval = OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id, product_id = form.product_id.data).first()
 				if product_approval is None:
 					product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id)

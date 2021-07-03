@@ -148,7 +148,7 @@ def MergeOrders():
 		order.total = sum([product['quantity']*product['price'] for product in order.products])
 		order.income_statement = orders[0].income_statement
 		order.cash_flow_statement = orders[0].cash_flow_statement
-		order.site = orders[0].site
+		order.site_id = orders[0].site_id
 		order.status = OrderStatus.new
 		order.create_timestamp = int(now.timestamp())
 		

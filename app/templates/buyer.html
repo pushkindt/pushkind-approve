@@ -96,6 +96,7 @@
 		
 		Ecwid.OnOrderPlaced.add(function(order){
 			setTimeout(function(){
+				alert('Ожидайте сообщения о синхронизации.');
 				$.ajax({
 					url: "{{ url_for('main.SyncStoreOrders') }}",
 					type: "get",
