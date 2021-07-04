@@ -160,15 +160,15 @@ def MergeOrders():
 		
 		db.session.add(order)
 		
-		message = 'Заявка объединена из заявок'
+		message = 'заявка объединена из заявок'
 		
 		for o in orders:
-			message += ' <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = o.id), o.id)
-			message2 = 'Заявка объединена в заявку <a href={}>{}</a>'.format(url_for('main.ShowOrder', order_id = order.id), order.id)
-			event = OrderEvent(user_id = current_user.id, order_id = o.id, type=EventType.merged, data=message2, timestamp = datetime.now(tz = timezone.utc))
+			message += ' {}'.format(o.id)
+			message2 = 'заявка объединена в заявку {}'.format(order.id)
+			event = OrderEvent(user_id = current_user.id, order_id = o.id, type=EventType.merged, data=message2)
 			db.session.add(event)
 			
-		event = OrderEvent(user_id = current_user.id, order_id = order.id, type=EventType.merged, data=message, timestamp = datetime.now(tz = timezone.utc))
+		event = OrderEvent(user_id = current_user.id, order_id = order.id, type=EventType.merged, data=message)
 		db.session.add(event)
 		
 		db.session.commit()

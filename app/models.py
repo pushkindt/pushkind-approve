@@ -36,7 +36,7 @@ class EventType(enum.IntEnum):
 				  'замечание', 
 				  'изменение', 
 				  'дублирование', 
-				  'поставщику', 
+				  'отправлено поставщику', 
 				  'экспорт в 1С', 
 				  'объединение',
 				  'законтрактовано',
@@ -139,8 +139,8 @@ class User(UserMixin, db.Model):
 	email_approved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
 	last_seen = db.Column(db.DateTime, nullable=True)
 	note = db.Column(db.String(), nullable=True)
-	categories = db.relationship('Category', secondary = 'user_category')
-	projects = db.relationship('Project', secondary = 'user_project')
+	categories = db.relationship('Category', secondary = 'user_category', backref='users')
+	projects = db.relationship('Project', secondary = 'user_project', backref='users')
 	events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='user')
 	approvals = db.relationship('OrderApproval', cascade='all, delete-orphan', backref='user', lazy='dynamic')
 	orders = db.relationship('Order', backref='initiative')
