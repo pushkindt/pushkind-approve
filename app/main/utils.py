@@ -86,7 +86,7 @@ def ecwid_required_ajax(function):
 		else:
 			return function(*args, **kwargs)
 	return wrapper
-	
+
 def SendEmailNotification(type, order):
 	recipients = [reviewer.email for reviewer in order.reviewers if getattr(reviewer, 'email_{}'.format(type), False) == True]
 	if getattr(order.initiative, 'email_{}'.format(type), False) == True:
@@ -98,7 +98,7 @@ def SendEmailNotification(type, order):
 				   recipients=recipients,
 				   text_body=render_template('email/{}.txt'.format(type), order=order),
 				   html_body=render_template('email/{}.html'.format(type), order=order))
-				   
+
 def SendEmail1C(recipients, order, subject, data):
 	current_app.logger.info('"export1C" email about order {} has been sent to {}'.format(order.id, recipients))
 	SendEmail(subject,
@@ -107,3 +107,4 @@ def SendEmail1C(recipients, order, subject, data):
 			   text_body=render_template('email/export1C.txt', order=order),
 			   html_body=render_template('email/export1C.html', order=order),
 			   attachments = [data])
+

@@ -337,6 +337,7 @@ class Order(db.Model):
 			for approval in approvals:
 				db.session.query(OrderPosition).filter(OrderPosition.order_id == order.id, OrderPosition.position_id == approval.id).\
 				update({OrderPosition.approved: True})
+			order.UpdateOrderStatus()
 		db.session.commit()
 	
 	@property

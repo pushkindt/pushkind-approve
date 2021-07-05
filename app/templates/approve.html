@@ -175,7 +175,7 @@
 								{{ appr.position.name }}
 								<span class="badge border text-dark text-nowrap">не просмотрено</span>
 								{% for user in appr.position.users %}
-									{% if order.site.project.id in user.projects_list %}
+									{% if order.site.project.id in user.projects_list and order.categories_list | intersect(user.categories_list)  %}
 										{% include '_user.popover.html' %}
 									{% endif %}
 								{% endfor %}

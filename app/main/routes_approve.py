@@ -19,6 +19,10 @@ Approve page
 ################################################################################
 '''
 
+@bp.app_template_filter()
+def intersect(a, b):
+    return set(a).intersection(set(b))
+
 def GetOrder(order_id):
 	order = Order.query.filter_by(id = order_id, hub_id = current_user.hub_id)
 	if current_user.role == UserRoles.initiative:
