@@ -16,124 +16,124 @@
 
 {% block content %}
 	<div class="container bg-white border rounded">
-		<div class="row">
+
+		<div class="row my-2">
 			<div class="col">
-			
-				<div class="row my-2">
-					<div class="col">
-						<span class="fw-bold">ЗАЯВКА
-							#{{ order.id }}
-						</span>
-						от {{ moment(order.create_date).format('DD.MM.YYYY') }}
-						{% include '_order.status.html' %}
-					</div>
-				</div>
-			
-				<div class="row">
-					<div class="col">
-						{% if current_user.role.name in ['admin', 'initiative', 'validator', 'purchaser'] %}
-							{% if order.site %}
-								<span class="fw-bold">Проект:</span>
-								<a href="#initiativeSettingsModal" data-bs-toggle="modal">{{ order.site.project.name }}</a><br>
-								<span class="fw-bold">Объект:</span>
-								<a href="#initiativeSettingsModal" data-bs-toggle="modal">{{ order.site.name }}</a>
-							{%else%}
-								<span class="fw-bold">Проект:</span>
-								<a href="#initiativeSettingsModal" data-bs-toggle="modal">указать</a><br>
-								<span class="fw-bold">Объект:</span>
-								<a href="#initiativeSettingsModal" data-bs-toggle="modal">указать</a>
-							{%endif%}
-						{% else %}
-								<span class="fw-bold">Проект:</span>
-								{{ order.site.project.name or 'не указан' }}<br>
-								<span class="fw-bold">Объект:</span>
-								{{ order.site.project.name or 'не указан' }}
-						{% endif %}
-					</div>
-				</div>
-				<div class="row">
-					<div class="col">
-						{% if current_user.role.name in ['admin', 'initiative', 'validator', 'purchaser'] %}
-							<span class="fw-bold">Статья БДР:</span>
-							<a href="#approverSettingsModal" data-bs-toggle="modal">
-								{{ order.income_statement or 'указать' }}
-							</a>
-							<br>
-							<span class="fw-bold">Статья БДДС:</span>
-							<a href="#approverSettingsModal" data-bs-toggle="modal">
-								{{ order.cash_flow_statement or 'указать' }}
-							</a>
-						{% else %}
-								<span class="fw-bold">Статья БДР:</span>
-								{{ order.income_statement or 'не указана' }}<br>
-								<span class="fw-bold">Статья БДДС:</span>
-								{{ order.cash_flow_statement or 'не указана' }}
-						{% endif %}
-					</div>
-				</div>			
-				<div class="row">
-					<div class="col">
-						<span class="fw-bold">Инициатор:</span>
-						{% set user = order.initiative %}
-						{% include '_user.popover.html' %}
-					</div>
-				</div>
+				<span class="fw-bold">ЗАЯВКА
+					#{{ order.id }}
+				</span>
+				от {{ moment(order.create_date).format('DD.MM.YYYY') }}
+				{% include '_order.status.html' %}
 			</div>
-			<div class="col-auto bg-light m-2 border rounded">
-				<span class="fw-bold">Действия с заявкой</span>
-				<ul class="nav flex-column">
-					<li class="nav-item">
-						{% if current_user.role.name in ['admin', 'initiative', 'validator', 'purchaser'] %}
-							<a href="#" data-bs-toggle="modal" data-bs-target="#leaveCommentModal">комментировать</a>
-						{% else %}
-							<span class="text-secondary">комментировать</span>
-						{% endif %}
-					</li>
-					<li class="nav-item">
-						{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
-							<a href="{{ url_for('main.DuplicateOrder', order_id = order.id) }}" onclick="return confirm('Клонировать заявку?')">клонировать</a>
-						{% else %}
-							<span class="text-secondary">клонировать</span>
-						{% endif %}
-					</li>
-					<li class="nav-item">
-						{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
-							<a href="{{ url_for('main.NotifyApprovers', order_id = order.id) }}" onclick="return confirm('Отправить уведомление согласующим?')">уведомить</a>
-						{% else %}
-							<span class="text-secondary">уведомить</span>
-						{% endif %}
-					</li>
-					<li class="nav-item">
-						<a href="#" data-bs-toggle="modal" data-bs-target="#excelModal">выгрузить в Excel</a>
-					</li>
-					<li class="nav-item">
-						{% if current_user.role.name in ['admin', 'purchaser'] %}
-							<a href="#" data-bs-toggle="modal" data-bs-target="#export1CModal">отправить в 1С</a>
-						{% else %}
-							<span class="text-secondary">отправить в 1С</span>
-						{% endif %}
-					</li>
-					<li class="nav-item">
-						{% if current_user.role.name in ['admin', 'purchaser'] %}
-							 {% if order.purchased %}
-								<a href="{{ url_for('main.ProcessHubOrder', order_id = order.id) }}" onclick="return confirm('Уже отправлена, отправить ещё раз?')">отправить поставщику</a>
-							{%else%}
-								<a href="{{ url_for('main.ProcessHubOrder', order_id = order.id) }}" onclick="return confirm('Отправить заявку поставщику?')">отправить поставщику</a>
+			<div class="col-auto">
+				<div class="dropdown">
+					<a class="dropdown-toggle" href="#" role="button" id="orderActionsLink" data-bs-toggle="dropdown" aria-expanded="false">
+						Действия с заявкой
+					</a>
+					<ul class="dropdown-menu bg-light" aria-labelledby="orderActionsLink">
+						<li class="dropdown-item">
+							{% if current_user.role.name in ['admin', 'initiative', 'validator', 'purchaser'] %}
+								<a href="#" data-bs-toggle="modal" data-bs-target="#leaveCommentModal">комментировать</a>
+							{% else %}
+								<span class="text-secondary">комментировать</span>
 							{% endif %}
-						{% else %}
-							<span class="text-secondary">отправить поставщику</span>
-						{% endif %}
-					</li>
-					<li class="nav-item">
-						{% if current_user.role.name in ['admin', 'purchaser'] %}
-							<a href="{{ url_for('main.SetDealDone', order_id = order.id) }}" onclick="return confirm('Установить статус заявки законтрактовано?')">законтрактовать</a>
-						{% else %}
-							<span class="text-secondary">законтрактовать</span>
-						{% endif %}
-					</li>
-				</ul>
+						</li>
+						<li class="dropdown-item">
+							{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
+								<a href="{{ url_for('main.DuplicateOrder', order_id = order.id) }}" onclick="return confirm('Клонировать заявку?')">клонировать</a>
+							{% else %}
+								<span class="text-secondary">клонировать</span>
+							{% endif %}
+						</li>
+						<li class="dropdown-item">
+							{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
+								<a href="{{ url_for('main.NotifyApprovers', order_id = order.id) }}" onclick="return confirm('Отправить уведомление согласующим?')">уведомить</a>
+							{% else %}
+								<span class="text-secondary">уведомить</span>
+							{% endif %}
+						</li>
+						<li class="dropdown-item">
+							<a href="#" data-bs-toggle="modal" data-bs-target="#excelModal">выгрузить в Excel</a>
+						</li>
+						<li class="dropdown-item">
+							{% if current_user.role.name in ['admin', 'purchaser'] %}
+								<a href="#" data-bs-toggle="modal" data-bs-target="#export1CModal">отправить в 1С</a>
+							{% else %}
+								<span class="text-secondary">отправить в 1С</span>
+							{% endif %}
+						</li>
+						<li class="dropdown-item">
+							{% if current_user.role.name in ['admin', 'purchaser'] %}
+								 {% if order.purchased %}
+									<a href="{{ url_for('main.ProcessHubOrder', order_id = order.id) }}" onclick="return confirm('Уже отправлена, отправить ещё раз?')">отправить поставщику</a>
+								{%else%}
+									<a href="{{ url_for('main.ProcessHubOrder', order_id = order.id) }}" onclick="return confirm('Отправить заявку поставщику?')">отправить поставщику</a>
+								{% endif %}
+							{% else %}
+								<span class="text-secondary">отправить поставщику</span>
+							{% endif %}
+						</li>
+						<li class="dropdown-item">
+							{% if current_user.role.name in ['admin', 'purchaser'] %}
+								<a href="{{ url_for('main.SetDealDone', order_id = order.id) }}" onclick="return confirm('Установить статус заявки законтрактовано?')">законтрактовать</a>
+							{% else %}
+								<span class="text-secondary">законтрактовать</span>
+							{% endif %}
+						</li>
+					</ul>
+				</div>
 			</div>
 		</div>
+		<div class="row">
+			<div class="col">
+				{% if current_user.role.name in ['admin', 'initiative', 'validator', 'purchaser'] %}
+					{% if order.site %}
+						<span class="fw-bold">Проект:</span>
+						<a href="#initiativeSettingsModal" data-bs-toggle="modal">{{ order.site.project.name }}</a><br>
+						<span class="fw-bold">Объект:</span>
+						<a href="#initiativeSettingsModal" data-bs-toggle="modal">{{ order.site.name }}</a>
+					{%else%}
+						<span class="fw-bold">Проект:</span>
+						<a href="#initiativeSettingsModal" data-bs-toggle="modal">указать</a><br>
+						<span class="fw-bold">Объект:</span>
+						<a href="#initiativeSettingsModal" data-bs-toggle="modal">указать</a>
+					{%endif%}
+				{% else %}
+						<span class="fw-bold">Проект:</span>
+						{{ order.site.project.name or 'не указан' }}<br>
+						<span class="fw-bold">Объект:</span>
+						{{ order.site.project.name or 'не указан' }}
+				{% endif %}
+			</div>
+		</div>
+		<div class="row">
+			<div class="col">
+				{% if current_user.role.name in ['admin', 'initiative', 'validator', 'purchaser'] %}
+					<span class="fw-bold">Статья БДР:</span>
+					<a href="#approverSettingsModal" data-bs-toggle="modal">
+						{{ order.income_statement or 'указать' }}
+					</a>
+					<br>
+					<span class="fw-bold">Статья БДДС:</span>
+					<a href="#approverSettingsModal" data-bs-toggle="modal">
+						{{ order.cash_flow_statement or 'указать' }}
+					</a>
+				{% else %}
+						<span class="fw-bold">Статья БДР:</span>
+						{{ order.income_statement or 'не указана' }}<br>
+						<span class="fw-bold">Статья БДДС:</span>
+						{{ order.cash_flow_statement or 'не указана' }}
+				{% endif %}
+			</div>
+		</div>			
+		<div class="row">
+			<div class="col">
+				<span class="fw-bold">Инициатор:</span>
+				{% set user = order.initiative %}
+				{% include '_user.popover.html' %}
+			</div>
+		</div>
+
 		<div class="row">
 			<div class="col">
 				<span class="fw-bold">Комментарии: </span>
