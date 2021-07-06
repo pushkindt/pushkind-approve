@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
 {% block styles%}
-	<style>
-		.ec-radiogroup, .ec-cart__next, .ec-form--comments, .ec-header-h5 {display:none}
-	</style>
+
 {% endblock %}
 
 {% block content %}
+
 	<div class="container bg-white border rounded">
 		<div id="my-store-{{current_user.hub.id}}"></div>
 	</div>
-	
+
+
 	<div class="modal fade" id="siteProjectModal" tabindex="-1" aria-labelledby="siteProjectModalLabel" aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
@@ -42,6 +42,24 @@
 			</div>
 		</div>
 	</div>
+	
+	
+	<div class="modal" tabindex="-1" id="loadingModal">
+		<div class="modal-dialog modal-sm modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="staticBackdropLabel">Ожидайте создания заявки</h5>
+				</div>
+				<div class="modal-body text-center">
+					<div class="spinner-border" role="status">
+						<span class="visually-hidden">Loading...</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	
 {% endblock %}
 {% block scripts %}
 <script data-cfasync="false" type="text/javascript" src="https://app.shopsettings.com/script.js?{{current_user.hub.id}}&data_platform=code&data_date=2020-10-28" charset="utf-8"></script>
@@ -51,6 +69,10 @@
 	
 		var siteProjectModal = new bootstrap.Modal(document.getElementById('siteProjectModal'), {'backdrop':'static'});
 		siteProjectModal.show();
+		
+		
+		var loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'), {'backdrop':'static'});
+		
 		
 		var projects = [
 					{% for project in projects %}
@@ -95,8 +117,8 @@
 		});
 		
 		Ecwid.OnOrderPlaced.add(function(order){
+			loadingModal.show();
 			setTimeout(function(){
-				alert('Ожидайте сообщения о синхронизации.');
 				$.ajax({
 					url: "{{ url_for('main.SyncStoreOrders') }}",
 					type: "get",
@@ -104,13 +126,15 @@
 						id: order.vendorNumber
 					},
 					success: function(data) {
+						loadingModal.hide();
 						ShowAjaxFlashes(data);
 					},
 					error: function(data) {
+						loadingModal.hide();
 						ShowAjaxFlashes(data);
 					}
 				})},
-				1500
+				2000
 			);
 		});
 
