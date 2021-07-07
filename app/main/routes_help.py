@@ -17,7 +17,7 @@ Responibility page
 @ecwid_required
 def ShowHelp():
 	project_responsibility = dict()
-	projects = Project.query.filter_by(hub_id = current_user.hub_id).join(UserProject).join(User).filter_by(role = UserRoles.validator).all()
+	projects = Project.query.filter_by(hub_id = current_user.hub_id).join(UserProject).join(User).filter_by(role = UserRoles.validator).order_by(Project.name).all()
 	
 	for project in projects:
 		project_responsibility[project.name] = {'users':project.users, 'positions':set()}
@@ -26,7 +26,7 @@ def ShowHelp():
 			project_responsibility[project.name]['positions'].add(position)
 				
 	category_responsibility = dict()
-	categories = Category.query.filter_by(hub_id = current_user.hub_id).join(UserCategory).join(User).filter_by(role = UserRoles.validator).all()
+	categories = Category.query.filter_by(hub_id = current_user.hub_id).join(UserCategory).join(User).filter_by(role = UserRoles.validator).order_by(Category.name).all()
 	
 	for category in categories:
 		category_responsibility[category.name] = {'users':category.users, 'positions':set()}
