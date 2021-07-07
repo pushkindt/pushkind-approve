@@ -150,12 +150,8 @@ static bool GetStoreOrders(TDatabase *pDB, TEcwid store, uint64_t start_from, ch
 					
 				}
 				
-				order.products = (char *)json_object_to_json_string(products);
 				order.hub_id = store.id;
 				
-				if (StoreOrders(pDB, order) != 0)
-					log_err("Cannot save order %s.", order.id);
-
 				for (size_t j = 0; j < products_count; j++){
 					struct json_object *product = json_object_array_get_idx(products, j);
 					
@@ -164,14 +160,24 @@ static bool GetStoreOrders(TDatabase *pDB, TEcwid store, uint64_t start_from, ch
 					struct json_object *category_id = NULL;
 					json_object_object_get_ex(product,"categoryId", &category_id);
 					if (category_id != NULL){
-						uint64_t root_category = GetCategoryIdByChildId(pDB, store.id, json_object_get_int64(category_id));
+						char *cat_name = NULL;
+						uint64_t root_category = GetCategoryIdByChildId(pDB, store.id, json_object_get_int64(category_id), &cat_name);
 						if (root_category != 0){
 							if (StoreOrderCategory(pDB, order.id, root_category) != 0){
 								log_err("Cannot save order category %s %lu.", order.id, root_category);
 							}
+							json_object_object_add(product, "categoryId", json_object_new_int64(root_category));
+						}
+						if (cat_name != NULL){
+							json_object_object_add(product, "category", json_object_new_string(cat_name));
+							free(cat_name);
 						}
 					}
 				}
+				
+				order.products = (char *)json_object_to_json_string(products);
+				if (StoreOrders(pDB, order) != 0)
+					log_err("Cannot save order %s.", order.id);
 					   
 				if (parsed_comment != NULL)
 					json_object_put(parsed_comment);

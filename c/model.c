@@ -336,7 +336,7 @@ error:
 	return result;
 }
 
-uint64_t GetCategoryIdByChildId(TDatabase *pDB, uint64_t hub_id, uint64_t cat_id){
+uint64_t GetCategoryIdByChildId(TDatabase *pDB, uint64_t hub_id, uint64_t cat_id, char **cat_name){
 	
 	uint64_t root_id = 0;
 	int result = -1;
@@ -347,7 +347,7 @@ uint64_t GetCategoryIdByChildId(TDatabase *pDB, uint64_t hub_id, uint64_t cat_id
 	/*****************************************************************************/
 	//	Prepare SQL query
 	/*****************************************************************************/
-	result = sqlite3_prepare_v2(pDB, "SELECT `category`.`id` FROM `category`, json_each(`category`.`children`) WHERE json_each.value = ? and `hub_id` = ? LIMIT 1", -1, &stmt, NULL);
+	result = sqlite3_prepare_v2(pDB, "SELECT `category`.`id`, `category`.`name` FROM `category`, json_each(`category`.`children`) WHERE json_each.value = ? and `hub_id` = ? LIMIT 1", -1, &stmt, NULL);
 	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
 	result = sqlite3_bind_int64(stmt, 1, cat_id);
 	check(result == SQLITE_OK, "Error while binding SQLite statement.");
@@ -356,6 +356,11 @@ uint64_t GetCategoryIdByChildId(TDatabase *pDB, uint64_t hub_id, uint64_t cat_id
 	result = sqlite3_step(stmt);
 	if (result == SQLITE_ROW){
 		root_id = (uint64_t) sqlite3_column_int64(stmt, 0);
+		if (cat_name != NULL){
+			*cat_name = (char *)sqlite3_column_text(stmt, 1);
+			if (*cat_name != NULL)
+				*cat_name = strdup(*cat_name);
+		}
 	}
 error:
 	if (stmt != NULL)
