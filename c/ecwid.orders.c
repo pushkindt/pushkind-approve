@@ -59,15 +59,15 @@ static bool GetStoreOrders(TDatabase *pDB, TEcwid store, uint64_t start_from, ch
 			struct json_object *template = json_object_array_get_idx(tmp, i);
 			
 			if (template != NULL){
-				
+
 				TOrder order = {0};
-				
+
 				struct json_object * parsed_comment = NULL;
-				
+
 				struct json_object *id = NULL, *total = NULL, *create_timestamp = NULL, \
 				*products = NULL, *comments = NULL, *email = NULL, \
 				*external_fulfillment = NULL;
-				
+
 				json_object_object_get_ex(template,"id", &id);
 				json_object_object_get_ex(template,"total", &total);
 				json_object_object_get_ex(template,"createTimestamp", &create_timestamp);
@@ -75,32 +75,32 @@ static bool GetStoreOrders(TDatabase *pDB, TEcwid store, uint64_t start_from, ch
 				json_object_object_get_ex(template,"orderComments", &comments);
 				json_object_object_get_ex(template,"email", &email);
 				json_object_object_get_ex(template,"externalFulfillment", &external_fulfillment);
-				
+
 				if (id == NULL || total == NULL || create_timestamp == NULL || products == NULL || email == NULL)
 					continue;
-				
+
 				if (json_object_get_type(products) != json_type_array)
 					continue;
-				
+
 				size_t products_count = json_object_array_length(products);
 				if (products_count == 0)
 					continue;
-				
+
 				order.initiative_id = GetInitiativeIdByEmail(pDB, store.id, (char *)json_object_get_string(email));
 				if (order.initiative_id == 0)
 					continue;
-				
+
 				order.id = (char *)json_object_get_string(id);
 				if (order.id == NULL)
 					continue;
-				
+
 				order.total = json_object_get_double(total);
 				order.create_timestamp = json_object_get_int64(create_timestamp);
 				
 				if (external_fulfillment != NULL){
 					order.purchased = json_object_get_boolean(external_fulfillment);
 				}
-				
+
 				if (comments != NULL){
 					parsed_comment = json_tokener_parse((char *)json_object_get_string(comments));
 					if (parsed_comment != NULL){
@@ -124,8 +124,7 @@ static bool GetStoreOrders(TDatabase *pDB, TEcwid store, uint64_t start_from, ch
 						}
 					}
 				}
-				
-				
+
 				for (size_t j = 0; j < products_count; j++){
 					struct json_object *product = json_object_array_get_idx(products, j);
 					FilterProductFields(product);

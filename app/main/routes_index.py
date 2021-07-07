@@ -137,6 +137,8 @@ def MergeOrders():
 					products[product_id]['imageUrl'] = product['imageUrl']
 					if 'vendor' in product:
 						products[product_id]['vendor'] = product['vendor']
+					if 'category' in product:
+						products[product_id]['category'] = product['category']
 				else:
 					products[product_id]['quantity'] += product['quantity']
 		order = Order()

@@ -15,6 +15,12 @@
 	<div class="col-sm-4 overflow-hidden mt-sm-3">
 		<span class="d-sm-none fw-bold">Название:</span>
 		<span class="fw-bold {% if product['quantity'] == 0 %}text-secondary{% endif %}">{{ product['name'] }}</span>
+		{% if product['category'] %}
+			<br>
+			<small>
+				{{ product['category'] }}
+			</small>
+		{% endif %}
 	</div>
 	<div class="col-sm overflow-hidden mt-sm-3">
 		<span class="d-sm-none fw-bold">Поставщик:</span>
