@@ -70,12 +70,6 @@ class ChangeQuantityForm(FlaskForm):
 		if product_quantity.data < 0:
 			raise ValidationError('Количество не может быть меньше нуля.')
 
-class Export1CReport(FlaskForm):
-	date = DateField('Дата поставки', [InputRequired(message = 'Дата поставки - обязательное поле.')], format=DATE_FORMAT, default = date.today())
-	send_email = BooleanField('Отправить на электронную почту для заявок.')
-	submit = SubmitField('Выгрузить')
-
-
 '''
 ################################################################################
 Stores page
@@ -119,7 +113,7 @@ class UserRolesForm(FlaskForm):
 	role = SelectField('Права доступа',[InputRequired(message = 'Некорректные права доступа пользователя')], coerce = int,
 						choices = [(int(role), str(role)) for role in UserRoles])
 	about_user = FormField(UserSettings, [DataRequired()])
-	note = StringField('Заметка')
+	note = TextAreaField('Заметка')
 	submit = SubmitField('Сохранить')
 	
 class UserSettingsForm(FlaskForm):

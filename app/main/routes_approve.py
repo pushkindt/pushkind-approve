@@ -2,8 +2,8 @@ from app import db
 from flask_login import current_user, login_required
 from app.main import bp
 from app.models import User, UserRoles, Ecwid, OrderApproval, OrderEvent, EventType, OrderStatus, Project, Category, Order, OrderCategory, Site, AppSettings, OrderPosition
-from flask import render_template, redirect, url_for, flash, jsonify, current_app, Response
-from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, Export1CReport, InitiativeForm, ApproverForm
+from flask import render_template, redirect, url_for, flash, jsonify, current_app, Response, request
+from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, InitiativeForm, ApproverForm
 from datetime import datetime, timezone, date
 from app.ecwid import EcwidAPIException
 from app.main.utils import role_required, ecwid_required, role_forbidden, SendEmailNotification, SendEmail1C
@@ -47,7 +47,6 @@ def ShowOrder(order_id):
 	approval_form = OrderApprovalForm()
 	quantity_form = ChangeQuantityForm()
 	comment_form = LeaveCommentForm()
-	export1C_form = Export1CReport()
 	initiative_form = InitiativeForm()
 	approver_form = ApproverForm(income_statement = order.income_statement, cash_flow_statement = order.cash_flow_statement)
 	
@@ -69,19 +68,12 @@ def ShowOrder(order_id):
 		initiative_form.site.default = order.site_id
 	initiative_form.process()
 	
-	if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
-		approvals = [approval.product_id for approval in current_user.approvals.filter_by(order_id = order.id).all()]
-	else:
-		approvals = None
-	
 	return render_template('approve.html',
 							order = order,
-							approvals = approvals,
 							projects = projects,
 							comment_form = comment_form,
 							approval_form = approval_form,
 							quantity_form = quantity_form,
-							export1C_form = export1C_form,
 							initiative_form = initiative_form,
 							approver_form = approver_form)
 
@@ -117,10 +109,10 @@ def DuplicateOrder(order_id):
 	db.session.add(new_order)
 
 	message = 'заявка клонирована с номером {}'.format(new_order.id)
-	event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.duplicated, data=message)
+	event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.duplicated, data=message, timestamp=datetime.now(tz = timezone.utc))
 	db.session.add(event)
 	message = 'заявка клонирована из заявки {}'.format(order_id)
-	event = OrderEvent(user_id = current_user.id, order_id = new_order.id, type=EventType.duplicated, data=message)
+	event = OrderEvent(user_id = current_user.id, order_id = new_order.id, type=EventType.duplicated, data=message, timestamp=datetime.now(tz = timezone.utc))
 	db.session.add(event)
 	db.session.commit()
 	flash('Заявка успешно клонирована.')
@@ -158,7 +150,7 @@ def SaveQuantity(order_id):
 		if product['quantity'] != form.product_quantity.data:
 			message = '{} количество было {} стало {}'.format(product['sku'], product['quantity'], form.product_quantity.data)
 			product['quantity'] = form.product_quantity.data
-			event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.quantity, data=message)
+			event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.quantity, data=message, timestamp=datetime.now(tz = timezone.utc))
 			db.session.add(event)
 		
 		if form.product_measurement.data != '':
@@ -175,7 +167,7 @@ def SaveQuantity(order_id):
 				product['selectedOptions'] = [{'name':'Единица измерения','value':form.product_measurement.data}]
 			if changed is True:
 				message = '{} единицы были {} стали {}'.format(product['sku'], old_measurement, form.product_measurement.data)
-				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.measurement, data=message)
+				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.measurement, data=message, timestamp=datetime.now(tz = timezone.utc))
 				db.session.add(event)
 
 		approvals = OrderApproval.query.join(User).filter(OrderApproval.order_id == order_id, User.hub_id == current_user.hub_id).all()
@@ -301,13 +293,13 @@ def SetDealDone(order_id):
 		flash('Заявка уже законтрактована.')
 	else:
 		order.dealdone = True
-		event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.dealdone, data='заявка законтрактована')
+		event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.dealdone, data='заявка законтрактована', timestamp=datetime.now(tz = timezone.utc))
 		db.session.add(event)
 		flash('Заявка законтрактована.')
 		db.session.commit()
 	return redirect(url_for('main.ShowOrder', order_id = order_id))
 	
-def Prepare1CReport(order, date):
+def Prepare1CReport(order, excel_date):
 	data_len = len(order.products)
 	if data_len > 0:
 		categories = Category.query.filter(Category.hub_id == order.initiative.hub_id).all()
@@ -366,7 +358,7 @@ def Prepare1CReport(order, date):
 			ws.cell(i, 20).value = product.get('name', '')
 			#Quantity
 			ws.cell(i, 22).value = product.get('quantity', '')
-			ws.cell(i, 29).value = date
+			ws.cell(i, 29).value = excel_date
 			
 			ws.cell(i, 31).value = product.get('price', '')
 
@@ -377,7 +369,7 @@ def Prepare1CReport(order, date):
 		return None
 
 
-@bp.route('/orders/excel1C/<order_id>', methods=['POST'])
+@bp.route('/orders/excel1C/<order_id>')
 @login_required
 @role_required([UserRoles.admin, UserRoles.validator, UserRoles.purchaser])
 @ecwid_required	
@@ -386,34 +378,34 @@ def GetExcelReport1C(order_id):
 	if order is None:
 		flash('Заявка с таким номером не найдена.')
 		return redirect(url_for('main.ShowIndex'))
-	form = Export1CReport()
-	if form.validate_on_submit():
-		data = Prepare1CReport(order, form.date.data)
-		if data is not None:
-			if form.send_email.data is True:
-				app_data = AppSettings.query.filter_by(hub_id == current_user.hub_id).first()
-				if app_data is not None and app_data.email_1C is not None:
-					if order.site is not None:
-						subject = '{}. {} (pushkind_{})'.format(order.site.project.name, order.site.name, order.id)
-					else:
-						subject = 'pushkind_{}'.format(order.id)
-					SendEmail1C([app_data.email_1C], order, subject,('pushkind_{}.xlsx'.format(order.id), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data))
-					message = f'отправлена на {app_data.email_1C}'
-				else:
-					flash('Email для отправки в 1С не настроен администратором.')
+	excel_date = request.args.get('date', default = date.today(), type = lambda x: datetime.strptime(x, "%Y-%m-%d").date())
+	excel_send = request.args.get('send', default = False, type = bool)
+	data = Prepare1CReport(order, excel_date)
+	if send is False:
+		message = 'выгружена в Excel-файл'
+		event = OrderEvent(user_id = current_user.id, order_id = order.id, type=EventType.exported, data=message, timestamp=datetime.now(tz = timezone.utc))
+		db.session.add(event)
+		order.exported = True
+		db.session.commit()	
+		return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=pushkind_{}.xlsx'.format(order.id)})
+	else:
+		app_data = AppSettings.query.filter_by(hub_id == current_user.hub_id).first()
+		if app_data is not None and app_data.email_1C is not None:
+			if order.site is not None:
+				subject = '{}. {} (pushkind_{})'.format(order.site.project.name, order.site.name, order.id)
 			else:
-				message = 'выгружена в Excel-файл'
-			event = OrderEvent(user_id = current_user.id, order_id = order.id, type=EventType.exported, data=message)
+				subject = 'pushkind_{}'.format(order.id)
+			SendEmail1C([app_data.email_1C], order, subject,('pushkind_{}.xlsx'.format(order.id), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data))
+			message = f'отправлена на {app_data.email_1C}'
+			event = OrderEvent(user_id = current_user.id, order_id = order.id, type=EventType.exported, data=message, timestamp=datetime.now(tz = timezone.utc))
 			db.session.add(event)
 			order.exported = True
 			db.session.commit()	
-			return Response (data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers = {'Content-Disposition':'attachment;filename=pushkind_{}.xlsx'.format(order.id)})
 		else:
-			flash('Не удалось сгенерировать файл.')
-	else:
-		for error in form.date.errors:
-			flash(error)
-	return redirect(url_for('main.ShowIndex'))
+			flash('Email для отправки в 1С не настроен администратором.')
+		flash('Заявка отправлена на {}')
+		return redirect(url_for('main.ShowOrder', order_id = order_id))
+
 
 
 @bp.route('/orders/approval/<order_id>', methods=['POST'])
@@ -428,7 +420,7 @@ def SaveApproval(order_id):
 	if form.validate_on_submit():
 		position_approval = OrderPosition.query.filter_by(order_id = order_id, position_id = current_user.position_id).first()
 		if form.comment.data != '':
-			message = form.comment.data
+			message = form.comment.data.strip()
 		else:
 			message = 'без комментария'
 		if form.product_id.data is None:
@@ -439,9 +431,9 @@ def SaveApproval(order_id):
 			for disapproval in position_disapprovals:
 				db.session.delete(disapproval)
 			
-			order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id)
+			order_approval = OrderApproval(order_id = order_id, product_id = None, user_id = current_user.id, remark=message)
 			db.session.add(order_approval)
-			event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message)
+			event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.approved, data=message, timestamp=datetime.now(tz = timezone.utc))
 			if position_approval is not None:
 				position_approval.approved = True
 				position_approval.user = current_user
@@ -449,8 +441,8 @@ def SaveApproval(order_id):
 		else:
 			OrderApproval.query.filter_by(order_id = order_id, user_id = current_user.id, product_id = None).delete()
 			if form.product_id.data == 0:
-				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message)
-				product_approval = OrderApproval(order_id = order_id, product_id=0, user_id = current_user.id)
+				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp=datetime.now(tz = timezone.utc))
+				product_approval = OrderApproval(order_id = order_id, product_id=0, user_id = current_user.id, remark=message)
 				db.session.add(product_approval)
 				if position_approval is not None:
 					position_approval.approved = False
@@ -467,8 +459,9 @@ def SaveApproval(order_id):
 				if product_approval is None:
 					product_approval = OrderApproval(order_id = order_id, product_id = form.product_id.data, user_id = current_user.id)
 					db.session.add(product_approval)
+				product_approval.remark = message
 				message = 'позиция "{}" '.format(product['name']) + message
-				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message)
+				event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.disapproved, data=message, timestamp=datetime.now(tz = timezone.utc))
 				if position_approval is not None:
 					position_approval.approved = False
 					position_approval.user = current_user
@@ -517,12 +510,12 @@ def SaveStatements(order_id):
 		if order.income_statement != form.income_statement.data.strip():
 			message = 'статья БДР была "{}" стала "{}"'.format(order.income_statement or '', form.income_statement.data.strip())
 			order.income_statement = form.income_statement.data.strip()
-			event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.cash_statement, data=message)
+			event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.cash_statement, data=message, timestamp=datetime.now(tz = timezone.utc))
 			db.session.add(event)
 		if order.cash_flow_statement != form.cash_flow_statement.data.strip():
 			message = 'статья БДДС была "{}" стала "{}"'.format(order.cash_flow_statement or '', form.cash_flow_statement.data.strip())
 			order.cash_flow_statement = form.cash_flow_statement.data.strip()
-			event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.cash_flow_statement, data=message)
+			event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.cash_flow_statement, data=message, timestamp=datetime.now(tz = timezone.utc))
 			db.session.add(event)
 		db.session.commit()
 		flash('Статьи БДДР и БДДС успешно сохранены.')
@@ -560,7 +553,7 @@ def SaveParameters(order_id):
 		new_site = Site.query.filter_by(id = form.site.data, project_id = form.project.data).first()
 		if new_site is not None and (order.site is None or order.site.id != new_site.id):
 			message = 'объект изменён с {} на {}'.format(order.site.name if order.site else '', new_site.name)
-			event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.site, data=message)
+			event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.site, data=message, timestamp=datetime.now(tz = timezone.utc))
 			db.session.add(event)
 			order.site = Site.query.filter_by(id = form.site.data, project_id = form.project.data).first()
 		order.categories = Category.query.filter(Category.id.in_(form.categories.data), Category.hub_id == current_user.hub_id).all()	
@@ -585,7 +578,7 @@ def LeaveComment(order_id):
 	if form.validate_on_submit():
 		stripped = form.comment.data.strip()
 		if len(stripped) > 0:
-			comment = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.commented, data=stripped)
+			comment = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.commented, data=stripped, timestamp=datetime.now(tz = timezone.utc))
 			db.session.add(comment)
 			flash('Комментарий успешно добавлен.')
 		else:
@@ -637,7 +630,7 @@ def ProcessHubOrder(order_id):
 		message = ', '.join(f'{vendor} (#{order_id})' for vendor,order_id in got_orders.items())
 
 		referer = current_user.name if current_user.name else current_user.email
-		event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.purchased, data=message)
+		event = OrderEvent(user_id = current_user.id, order_id = order_id, type=EventType.purchased, data=message, timestamp=datetime.now(tz = timezone.utc))
 		
 		order.purchased = True
 		

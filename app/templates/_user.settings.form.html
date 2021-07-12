@@ -64,13 +64,13 @@
 		</div>
 		{% if current_user.role.name in ['validator', 'purchaser', 'admin'] %}
 			<div class="row mb-3" id="userDataWrapper">
-				<div class="col">
-					{{ user_form.about_user.projects.label() }} 
-					{{ user_form.about_user.projects(class_ = 'form-control') }}
+				<div class="col-md">
+					{{ user_form.about_user.projects.label() }}<br>
+					{{ user_form.about_user.projects(class_ = 'form-control', style="width:100%") }}
 				</div>
-				<div class="col">
-					{{ user_form.about_user.categories.label() }} 
-					{{ user_form.about_user.categories(class_ = 'form-control') }}
+				<div class="col-md">
+					{{ user_form.about_user.categories.label() }}<br>
+					{{ user_form.about_user.categories(class_ = 'form-control', style="width:100%") }}
 				</div>
 			</div>
 		{% endif %}

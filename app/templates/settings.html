@@ -217,9 +217,12 @@
 		{% if current_user.role.name in ['validator', 'admin', 'purchaser'] %}
 			var categoriesData = $("#about_user-categories");
 			var projectsData = $("#about_user-projects");
-			
+			categoriesData.select2();
+			projectsData.select2();
 			categoriesData.val({{current_user.categories_list}});
+			categoriesData.trigger('change');
 			projectsData.val({{current_user.projects_list}});
+			projectsData.trigger('change');
 			
 		{% endif %}
 		
@@ -236,10 +239,12 @@
 						{% endfor %}
 							];
 
-
+			
 			function HideUserData(){
 				projectsData.val('');
 				categoriesData.val('');
+				categoriesData.trigger('change');
+				projectsData.trigger('change');
 				projectsData.removeAttr('value');
 				categoriesData.removeAttr('value');
 				$("#userDataWrapper").hide();
@@ -276,6 +281,8 @@
 							$("#userDataWrapper").show();
 							categoriesData.val(user["categories"]);
 							projectsData.val(user["projects"]);
+							categoriesData.trigger('change');
+							projectsData.trigger('change');
 						}
 						else{
 							HideUserData();

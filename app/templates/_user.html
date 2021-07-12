@@ -3,6 +3,8 @@
 		<div class="col-sm-1 overflow-hidden">
 			<span class="d-sm-none fw-bold">Номер:</span>
 			{{ user.id }}
+			<br>
+			<small class="text-secondary">{{ moment(user.registered).format() if user.registered is not none }}</small>
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none fw-bold">ФИО:</span>

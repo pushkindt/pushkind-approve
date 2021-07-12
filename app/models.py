@@ -139,6 +139,7 @@ class User(UserMixin, db.Model):
 	email_approved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
 	last_seen = db.Column(db.DateTime, nullable=True)
 	note = db.Column(db.String(), nullable=True)
+	registered = db.Column(db.DateTime, nullable=True)	
 	categories = db.relationship('Category', secondary = 'user_category', backref='users')
 	projects = db.relationship('Project', secondary = 'user_project', backref='users')
 	events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='user')
@@ -218,6 +219,7 @@ class OrderApproval(db.Model):
 	order_id = db.Column(db.String(128), db.ForeignKey('order.id'), nullable=False)
 	product_id  = db.Column(db.Integer, index=True, nullable=True)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+	remark = db.Column(db.String(128), nullable=True)
 	
 	def __bool__(self):
 		return self.product_id is None
@@ -228,6 +230,7 @@ class Category(db.Model):
 	name = db.Column(db.String(128), nullable=False, index=True)
 	children = db.Column(JsonType(), nullable=False)
 	hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+	responsible = db.Column(db.String(128), nullable=True)
 	
 	def __hash__(self):
 		return self.id
@@ -245,7 +248,7 @@ class AppSettings(db.Model):
 
 class OrderEvent(db.Model):
 	id  = db.Column(db.Integer, primary_key = True, nullable=False)
-	order_id = db.Column(db.String(128), db.ForeignKey('order.id'), nullable=False)
+	order_id = db.Column(db.String(128), db.ForeignKey('order.id'), nullable=True)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 	timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(tz = timezone.utc), server_default=func.datetime('now'))
 	type = db.Column(db.Enum(EventType), nullable=False, default=EventType.commented)
@@ -257,6 +260,8 @@ class Project(db.Model):
 	name = db.Column(db.String(128), nullable=False, index=True)
 	hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
 	sites = db.relationship('Site', cascade='all, delete-orphan', backref='project')
+	enabled = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true(), index = True)
+	uid = db.Column(db.String(128), nullable=True)
 
 	def __repr__(self):
 		return json.dumps(self.to_dict())
@@ -271,6 +276,7 @@ class Site(db.Model):
 	name = db.Column(db.String(128), nullable=False, index=True)
 	project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
 	orders = db.relationship('Order', backref='site')
+	uid = db.Column(db.String(128), nullable=True)
 
 	def to_dict(self):
 		data = {'id':self.id, 'project_id':self.project_id, 'name':self.name}

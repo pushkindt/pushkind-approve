@@ -39,6 +39,7 @@ def PerformRegistration():
 		email = form.email.data.lower()
 		user = User(email = email)
 		user.SetPassword(form.password.data)
+		user.registered = datetime.now(tz = timezone.utc)
 		db.session.add(user)
 		db.session.commit()
 		#SendUserRegisteredEmail(user)
