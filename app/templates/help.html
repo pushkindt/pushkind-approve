@@ -2,203 +2,204 @@
 
 {% block content %}
 
-	<div class="container bg-white border rounded">
-		<h6>Права на выполнение действий</h6>
-		<div class="table-responsive-md">
-			<table class="table table-striped">
-				<caption>*Все означает "все зарегистрированные заявки", *Только свои означает "только заявки, для которых пользователь является инициатором"</caption>
-				<thead>
-					<tr>
-						<th scope="col">Действия/Права</th>
-						<th scope="col">Администратор</th>
-						<th scope="col">Инициатор</th>
-						<th scope="col">Валидатор</th>
-						<th scope="col">Закупщик</th>
-						<th scope="col">Наблюдатель</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<th scope="row">Просмотр заявок</th>
-						<td class="text-success">Все</td>
-						<td class="text-warning">Только свои</td>
-						<td class="text-success">Все</td>
-						<td class="text-success">Все</td>
-						<td class="text-success">Все</td>
-					</tr>
-					<tr>
-						<th scope="row">Объединение заявок</th>
-						<td class="text-success">Все</td>
-						<td class="text-warning">Только свои</td>
-						<td class="text-danger">Нет</td>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-					</tr>
-					<tr>
-						<th scope="row">Указать проект, объект и категории</th>
-						<td class="text-success">Все</td>
-						<td class="text-warning">Только свои</td>
-						<td class="text-success">Все</td>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-					</tr>
-					<tr>
-						<th scope="row">Указать статьи БДР и БДДС</th>
-						<td class="text-success">Все</td>
-						<td class="text-warning">Только свои</td>
-						<td class="text-success">Все</td>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-					</tr>
-					<tr>
-						<th scope="row">Оставить комментарий</th>
-						<td class="text-success">Все</td>
-						<td class="text-warning">Только свои</td>
-						<td class="text-success">Все</td>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-					</tr>
-					<tr>
-						<th scope="row">Клонировать заявку</th>
-						<td class="text-success">Все</td>
-						<td class="text-warning">Только свои</td>
-						<td class="text-danger">Нет</td>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-					</tr>
-					<tr>
-						<th scope="row">Уведомить согласующих</th>
-						<td class="text-success">Все</td>
-						<td class="text-warning">Только свои</td>
-						<td class="text-danger">Нет</td>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-					</tr>
-					<tr>
-						<th scope="row">Отправить заявку поставщику</th>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-						<td class="text-danger">Нет</td>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-					</tr>
-					<tr>
-						<th scope="row">Выгрузить заявку в Excel</th>
-						<td class="text-success">Все</td>
-						<td class="text-warning">Только свои</td>
-						<td class="text-success">Все</td>
-						<td class="text-success">Все</td>
-						<td class="text-success">Все</td>
-					</tr>
-					<tr>
-						<th scope="row">Выгрузить заявку для 1С</th>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-						<td class="text-success">Все</td>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-					</tr>
-					<tr>
-						<th scope="row">Согласование заявки</th>
-						<td class="text-danger">Нет</td>
-						<td class="text-danger">Нет</td>
-						<td class="text-success">Все</td>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-					</tr>
-					<tr>
-						<th scope="row">Создать новую заявку</th>
-						<td class="text-success">Разрешено</td>
-						<td class="text-success">Разрешено</td>
-						<td class="text-danger">Нет</td>
-						<td class="text-success">Разрешено</td>
-						<td class="text-danger">Нет</td>
-					</tr>
-					<tr>
-						<th scope="row">Законтрактовать</th>
-						<td class="text-danger">Нет</td>
-						<td class="text-danger">Нет</td>
-						<td class="text-danger">Нет</td>
-						<td class="text-success">Все</td>
-						<td class="text-danger">Нет</td>
-					</tr>
-				</tbody>
-			</table>
+<div class="container bg-white border rounded">
+	<h6>Права на выполнение действий</h6>
+	<div class="table-responsive-md">
+		<table class="table table-striped">
+			<caption>*Все означает "все зарегистрированные заявки", *Только свои означает "только заявки, для которых
+				пользователь является инициатором"</caption>
+			<thead>
+				<tr>
+					<th scope="col">Действия/Права</th>
+					<th scope="col">Администратор</th>
+					<th scope="col">Инициатор</th>
+					<th scope="col">Валидатор</th>
+					<th scope="col">Закупщик</th>
+					<th scope="col">Наблюдатель</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<th scope="row">Просмотр заявок</th>
+					<td class="text-success">Все</td>
+					<td class="text-warning">Только свои</td>
+					<td class="text-success">Все</td>
+					<td class="text-success">Все</td>
+					<td class="text-success">Все</td>
+				</tr>
+				<tr>
+					<th scope="row">Объединение заявок</th>
+					<td class="text-success">Все</td>
+					<td class="text-warning">Только свои</td>
+					<td class="text-danger">Нет</td>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+				</tr>
+				<tr>
+					<th scope="row">Указать проект, объект и категории</th>
+					<td class="text-success">Все</td>
+					<td class="text-warning">Только свои</td>
+					<td class="text-success">Все</td>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+				</tr>
+				<tr>
+					<th scope="row">Указать статьи БДР и БДДС</th>
+					<td class="text-success">Все</td>
+					<td class="text-warning">Только свои</td>
+					<td class="text-success">Все</td>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+				</tr>
+				<tr>
+					<th scope="row">Оставить комментарий</th>
+					<td class="text-success">Все</td>
+					<td class="text-warning">Только свои</td>
+					<td class="text-success">Все</td>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+				</tr>
+				<tr>
+					<th scope="row">Клонировать заявку</th>
+					<td class="text-success">Все</td>
+					<td class="text-warning">Только свои</td>
+					<td class="text-danger">Нет</td>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+				</tr>
+				<tr>
+					<th scope="row">Уведомить согласующих</th>
+					<td class="text-success">Все</td>
+					<td class="text-warning">Только свои</td>
+					<td class="text-danger">Нет</td>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+				</tr>
+				<tr>
+					<th scope="row">Отправить заявку поставщику</th>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+					<td class="text-danger">Нет</td>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+				</tr>
+				<tr>
+					<th scope="row">Выгрузить заявку в Excel</th>
+					<td class="text-success">Все</td>
+					<td class="text-warning">Только свои</td>
+					<td class="text-success">Все</td>
+					<td class="text-success">Все</td>
+					<td class="text-success">Все</td>
+				</tr>
+				<tr>
+					<th scope="row">Выгрузить заявку для 1С</th>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+					<td class="text-success">Все</td>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+				</tr>
+				<tr>
+					<th scope="row">Согласование заявки</th>
+					<td class="text-danger">Нет</td>
+					<td class="text-danger">Нет</td>
+					<td class="text-success">Все</td>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+				</tr>
+				<tr>
+					<th scope="row">Создать новую заявку</th>
+					<td class="text-success">Разрешено</td>
+					<td class="text-success">Разрешено</td>
+					<td class="text-danger">Нет</td>
+					<td class="text-success">Разрешено</td>
+					<td class="text-danger">Нет</td>
+				</tr>
+				<tr>
+					<th scope="row">Законтрактовать</th>
+					<td class="text-danger">Нет</td>
+					<td class="text-danger">Нет</td>
+					<td class="text-danger">Нет</td>
+					<td class="text-success">Все</td>
+					<td class="text-danger">Нет</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+<div class="container bg-white border rounded my-1">
+	<h6>Ответственность по согласованию</h6>
+
+	<div class="row">
+		<div class="col">
+			<input class="form-control" id="responsibilityFilter" type="text" placeholder="Фильтр..">
 		</div>
 	</div>
-	<div class="container bg-white border rounded my-1">
-		<h6>Ответственность по согласованию</h6>
-		
-		<div class="row">
-			<div class="col">
-				<input class="form-control" id="responsibilityFilter" type="text" placeholder="Фильтр..">
-			</div>
-		</div>
-		
-		<div class="table-responsive-md">
-			<table class="table table-striped table-responsive">
-				<thead>
-					<tr>
-						<th scope="col">Проект</th>
-						<th scope="col" style="width: 20%">Роли</th>
-						<th scope="col" style="width: 20%">Пользователи</th>
-					</tr>
-				</thead>
-				<tbody>
-					{% for project in projects %}
-						<tr class="responsibility">
-							<th scope="row">{{ project }}</th>
-							<td style="width: 20%">
-								{% for position in projects[project]['positions'] %}
-									{{ position }}<br>
-								{% endfor %}
-							</td>
-							<td style="width: 20%">
-								{% for user in projects[project]['users'] %}
-									{% include '_user.popover.html' %}{{user.name}}<br>
-								{% endfor %}
-							</td>
-						</tr>
-					{% endfor %}
-				</tbody>
-			</table>
-			<table class="table table-striped table-responsive">
-				<thead>
-					<tr>
-						<th scope="col">Категория</th>
-						<th scope="col" style="width: 20%">Роли</th>
-						<th scope="col" style="width: 20%">Пользователи</th>
-					</tr>
-				</thead>
-				<tbody>
-					{% for category in categories %}
-						<tr class="responsibility">
-							<th scope="row">{{ category }}</th>
-							<td style="width: 20%">
-								{% for position in categories[category]['positions'] %}
-									{{ position }}<br>
-								{% endfor %}
-							</td>
-							<td style="width: 20%">
-								{% for user in categories[category]['users'] %}
-									{% include '_user.popover.html' %}{{user.name}}<br>
-								{% endfor %}
-							</td>
-						</tr>
-					{% endfor %}
-				</tbody>
-			</table>
-		</div>
+
+	<div class="table-responsive-md">
+		<table class="table table-striped table-responsive">
+			<thead>
+				<tr>
+					<th scope="col">Проект</th>
+					<th scope="col" style="width: 20%">Роли</th>
+					<th scope="col" style="width: 20%">Пользователи</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for project in projects %}
+				<tr class="responsibility">
+					<th scope="row">{{ project }}</th>
+					<td style="width: 20%">
+						{% for position in projects[project]['positions'] %}
+						{{ position }}<br>
+						{% endfor %}
+					</td>
+					<td style="width: 20%">
+						{% for user in projects[project]['users'] %}
+						{% include '_user.popover.html' %}{{user.name}}<br>
+						{% endfor %}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		<table class="table table-striped table-responsive">
+			<thead>
+				<tr>
+					<th scope="col">Категория</th>
+					<th scope="col" style="width: 20%">Роли</th>
+					<th scope="col" style="width: 20%">Пользователи</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for category in categories %}
+				<tr class="responsibility">
+					<th scope="row">{{ category }}</th>
+					<td style="width: 20%">
+						{% for position in categories[category]['positions'] %}
+						{{ position }}<br>
+						{% endfor %}
+					</td>
+					<td style="width: 20%">
+						{% for user in categories[category]['users'] %}
+						{% include '_user.popover.html' %}{{user.name}}<br>
+						{% endfor %}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
 	</div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 
 <script>
-	$(document).ready(function(){
-		$("#responsibilityFilter").on("keyup", function() {
+	$(document).ready(function () {
+		$("#responsibilityFilter").on("keyup", function () {
 			let value = $(this).val().toLowerCase();
-			$(".responsibility").filter(function() {
+			$(".responsibility").filter(function () {
 				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
 			});
 		});

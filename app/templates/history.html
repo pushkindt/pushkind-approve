@@ -2,51 +2,52 @@
 
 {% block content %}
 
-	<div class="container">
-		<div class="row bg-light d-none d-sm-flex border">
-			<div class="col-1 overflow-hidden">
-				Время
-			</div>
-			<div class="col-3 overflow-hidden">
-				Заявка
-			</div>
-			<div class="col overflow-hidden">
-				Пользователь
-			</div>
-			<div class="col overflow-hidden">
-				Событие
-			</div>
-			<div class="col overflow-hidden">
-				Описание
-			</div>
+<div class="container">
+	<div class="row bg-light d-none d-sm-flex border">
+		<div class="col-1 overflow-hidden">
+			Время
 		</div>
-		<div id="eventList">
-			{% for event in events %}
-				<div class="row border bg-white my-1 rounded" data-id = "{{ event.id }}">
-					<div class="col-sm-auto overflow-hidden mt-sm-3">
-						<span class="d-sm-none fw-bold">Время:</span>
-						{{ moment(event.timestamp).format() }}
-					</div>
-					<div class="col-sm overflow-hidden mt-sm-3">
-						<span class="d-sm-none fw-bold">Заявка:</span>
-						<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=event.order_id) }}">#{{ event.order_id }}</a>
-					</div>
-					<div class="col-sm overflow-hidden mt-sm-3">
-						<span class="d-sm-none fw-bold">Пользователь:</span>
-						{% set user = event.user %}
-						{% include '_user.popover.html' %}
-						{{ event.user.name }}
-					</div>
-					<div class="col-sm overflow-hidden mt-sm-3">
-						<span class="d-sm-none fw-bold">Событие:</span>
-						<span class="fw-bold text-{{event.type.color()}}">{{event.type}}</span>
-					</div>
-					<div class="col-sm overflow-hidden mt-sm-3">
-						<span class="d-sm-none fw-bold">Описание:</span>
-						{{ event.data|safe }}
-					</div>
-				</div>
-			{% endfor %}
+		<div class="col-3 overflow-hidden">
+			Заявка
+		</div>
+		<div class="col overflow-hidden">
+			Пользователь
+		</div>
+		<div class="col overflow-hidden">
+			Событие
+		</div>
+		<div class="col overflow-hidden">
+			Описание
 		</div>
 	</div>
+	<div id="eventList">
+		{% for event in events %}
+		<div class="row border bg-white my-1 rounded" data-id="{{ event.id }}">
+			<div class="col-sm-1 overflow-hidden mt-sm-3">
+				<span class="d-sm-none fw-bold">Время:</span>
+				{{ moment(event.timestamp).format() }}
+			</div>
+			<div class="col-sm-3 overflow-hidden mt-sm-3">
+				<span class="d-sm-none fw-bold">Заявка:</span>
+				<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=event.order_id) }}">#{{
+					event.order_id }}</a>
+			</div>
+			<div class="col-sm overflow-hidden mt-sm-3">
+				<span class="d-sm-none fw-bold">Пользователь:</span>
+				{% set user = event.user %}
+				{% include '_user.popover.html' %}
+				{{ event.user.name }}
+			</div>
+			<div class="col-sm overflow-hidden mt-sm-3">
+				<span class="d-sm-none fw-bold">Событие:</span>
+				<span class="fw-bold text-{{event.type.color()}}">{{event.type}}</span>
+			</div>
+			<div class="col-sm overflow-hidden mt-sm-3">
+				<span class="d-sm-none fw-bold">Описание:</span>
+				{{ event.data|safe }}
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+</div>
 {% endblock %}

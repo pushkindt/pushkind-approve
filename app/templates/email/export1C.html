@@ -1,9 +1,10 @@
 <p>
-Заявка #{{ order['vendorOrderNumber'] }} экспортирована в Excel для загрузки в 1С. Файл приложен к этому письму.
+    Заявка #{{ order['vendorOrderNumber'] }} экспортирована в Excel для загрузки в 1С. Файл приложен к этому письму.
 </p>
 <p>
-Нажмите на <a href="{{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}">ссылку</a> для перехода в Личный Кабинет.
+    Нажмите на <a href="{{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}">ссылку</a> для
+    перехода в Личный Кабинет.
 </p>
 <p>
-Это автоматическое уведомление, не отвечайте на него.
+    Это автоматическое уведомление, не отвечайте на него.
 </p>

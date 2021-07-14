@@ -12,12 +12,14 @@ Responibility page
 ################################################################################
 '''
 
+
 @bp.route('/history/', methods=['GET', 'POST'])
 @login_required
 @role_forbidden([UserRoles.default])
 @ecwid_required
 def ShowHistory():
-	now = datetime.now(tz = timezone.utc)
-	filter_from = now - timedelta(days = 42)
-	events = OrderEvent.query.filter(OrderEvent.timestamp > int(filter_from.timestamp())).join(Order).filter_by(hub_id = current_user.hub_id).order_by(OrderEvent.timestamp.desc()).all()
-	return render_template('history.html', events = events)
+    now = datetime.now(tz=timezone.utc)
+    filter_from = now - timedelta(days=42)
+    events = OrderEvent.query.filter(OrderEvent.timestamp > int(filter_from.timestamp())).join(
+        Order).filter_by(hub_id=current_user.hub_id).order_by(OrderEvent.timestamp.desc()).all()
+    return render_template('history.html', events=events)

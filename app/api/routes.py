@@ -72,4 +72,3 @@ def NotifyWaitingOrders():
 				   text_body=render_template('email/waiting.txt', orders=orders),
 				   html_body=render_template('email/waiting.html', orders=orders))
 	return jsonify({'result':'success'})'''
-		

@@ -1,24 +1,24 @@
 {% if order.child %}
-	<span class="badge bg-white text-muted border }}">&sum; {{ order.child_id }}</span>
+<span class="badge bg-white text-muted border }}">&sum; {{ order.child_id }}</span>
 {% else %}
-	{% if order['status'].name == 'new' %}
-		<span class="badge bg-white text-secondary border }}">{{ order.status }}</span>
-	{% elif order['status'].name == 'partly_approved' %}
-		<span class="badge bg-{{order['status'].color() }}">
-			{{ order.approvals|selectattr('approved')|list|length }}
-			из
-			{{ order.approvals|length }}
-		</span>
-	{% else %}
-		<span class="badge bg-{{order['status'].color() }}">{{ order.status }}</span>
-	{% endif %}
-	{% if order.purchased %}
-		<span class="badge bg-info"><i class="bi bi-wallet2"></i></span>
-	{% endif %}
-	{% if order.exported %}
-		<span class="badge bg-info">1C</span>
-	{% endif %}
-	{% if order.dealdone %}
-		<span class="badge bg-info">DealDone</span>
-	{% endif %}
+{% if order['status'].name == 'new' %}
+<span class="badge bg-white text-secondary border }}">{{ order.status }}</span>
+{% elif order['status'].name == 'partly_approved' %}
+<span class="badge bg-{{order['status'].color() }}">
+	{{ order.approvals|selectattr('approved')|list|length }}
+	из
+	{{ order.approvals|length }}
+</span>
+{% else %}
+<span class="badge bg-{{order['status'].color() }}">{{ order.status }}</span>
+{% endif %}
+{% if order.purchased %}
+<span class="badge bg-info"><i class="bi bi-wallet2"></i></span>
+{% endif %}
+{% if order.exported %}
+<span class="badge bg-info">1C</span>
+{% endif %}
+{% if order.dealdone %}
+<span class="badge bg-info">DealDone</span>
+{% endif %}
 {% endif %}

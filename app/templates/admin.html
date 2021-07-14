@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if current_user.role.name == "admin" %}
+
+<div class="container border rounded bg-white my-1">
+	<h6>Ecwid</h6>
+	<form method="POST" action="{{ url_for('main.ConfigureEcwid') }}">
+		{{ ecwid_form.csrf_token(id=False) }}
+		<div class="row my-3">
+			{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
+			<div class="col-md-10">
+				{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '', value =
+				current_user.hub.partners_key if current_user.hub.partners_key is not none else '') }}
+			</div>
+		</div>
+		<div class="row mb-3">
+			{{ ecwid_form.client_id.label(class_ = "col-md-2 col-form-label") }}
+			<div class="col-md-10">
+				{{ ecwid_form.client_id(class_ = 'form-control', value = current_user.hub.client_id if
+				current_user.hub.client_id is not none else '') }}
+			</div>
+		</div>
+		<div class="row mb-3">
+			{{ ecwid_form.client_secret.label(class_ = "col-md-2 col-form-label") }}
+			<div class="col-md-10">
+				{{ ecwid_form.client_secret(class_ = 'form-control', value = current_user.hub.client_secret if
+				current_user.hub.client_secret is not none else '') }}
+			</div>
+		</div>
+		<div class="row mb-3">
+			{{ ecwid_form.store_id.label(class_ = "col-md-2 col-form-label") }}
+			<div class="col-md-10">
+				{{ ecwid_form.store_id(class_ = 'form-control', value = current_user.hub.id if current_user.hub.id is
+				not none else '') }}
+			</div>
+		</div>
+		<div class="row mb-3">
+			<div class="col">
+				{{ ecwid_form.submit(id=False, class_ = 'btn btn-primary') }}
+			</div>
+		</div>
+	</form>
+</div>
+
+<div class="container border rounded bg-white my-1">
+	<h6>Рассылка 1С</h6>
+	<form method="POST" action="{{ url_for('main.Notify1CSettings') }}">
+		<div class="row my-3">
+			{{ notify1C_form.csrf_token(id=False) }}
+			{{ notify1C_form.email.label(class_ = 'col-md-2 form-label') }}
+			<div class="col-md-10">
+				{{ notify1C_form.email(class_ = 'form-control') }}
+			</div>
+		</div>
+		<div class="row mb-3">
+			<div class="col-md-10 offset-md-2">
+				<div class="form-check">
+					{{ notify1C_form.enable(class_ = 'form-check-input') }}
+					{{ notify1C_form.enable.label(class_ = 'form-check-label') }}
+				</div>
+			</div>
+		</div>
+		<div class="row mb-3">
+			<div class="col">
+				{{ notify1C_form.submit(id=False, class_ = 'btn btn-primary') }}
+			</div>
+		</div>
+	</form>
+</div>
+
+<div class="container border rounded bg-white my-1">
+	<h6>Проекты</h6>
+	<form method="POST" action="{{ url_for('main.AddRemoveProject') }}">
+		{{ project_form.csrf_token(id=False) }}
+		<div class="row my-3">
+			<div class="col">
+				{{ project_form.project_name(class_ = 'form-control', list='projectsList',
+				placeholder='Введите название проекта...') }}
+				<datalist id="projectsList">
+					{% for project in projects%}
+					<option data-loc_id="{{project.id}}">{{ project.name }}</option>
+					{% endfor %}
+				</datalist>
+			</div>
+		</div>
+		<div class="row mb-3">
+			<div class="col">
+				{{ project_form.site_name(class_ = 'form-control', list='sitesList',
+				placeholder='Введите название объекта...') }}
+				<datalist id="sitesList">
+				</datalist>
+			</div>
+		</div>
+		<div class="row mb-3">
+			<div class="col">
+				{{ project_form.submit1(id=False, class_ = 'btn btn-primary') }}
+				{{ project_form.submit2(id=False, class_ = 'btn btn-danger') }}
+			</div>
+		</div>
+	</form>
+</div>
+
+<div class="container border rounded bg-white my-1">
+	<h6>Категории</h6>
+	<div class="row d-none d-sm-flex fw-bold">
+		<div class="col overflow-hidden">
+			Название
+		</div>
+		<div class="col overflow-hidden">
+			Ответственный/ФДБ
+		</div>
+	</div>
+	{% for category in categories %}
+	<div class="row my-1 py-1 border-bottom">
+		<div class="col-sm">
+			<span class="d-sm-none fw-bold">Название:</span>
+			{{ category.name }}
+		</div>
+		<div class="col-sm">
+			<form class="categoryForm" action="{{ url_for('main.SaveCategoryResponsibility') }}" method="POST">
+				<div class="row">
+					<div class="col">
+						{{ category_form.csrf_token(id=False) }}
+						{{ category_form.category_id(class_ = 'd-none', hidden = '', value = category.id,
+						id=False) }}
+						{{ category_form.responsible(class_ = 'form-control', id=False,
+						placeholder='Ответственный', value = category.responsible or '') }}
+					</div>
+					<div class="col">
+						{{ category_form.functional_budget(class_ = 'form-control', id=False,
+						placeholder='ФДБ', value = category.functional_budget or '') }}
+					</div>
+				</div>
+				<div class="row">
+					<div class="col text-center">
+						{{ category_form.submit(id=False, class_='d-none w-50 btn btn-primary my-1') }}
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	{% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+	$(document).ready(function () {
+		var focusOutTimer = null;
+		$(".categoryForm input").focus(function () {
+			if (focusOutTimer != null)
+				clearTimeout(focusOutTimer);
+			$(this).closest("form").find(":submit").removeClass("d-none");
+		});
+		$(".categoryForm input").focusout(function () {
+			focusOutTimer = setTimeout(() =>
+				$(this).closest("form").find(":submit").addClass("d-none"),
+				1000
+			);
+		});
+
+
+		$("#project_name").on('input', function () {
+			let val = this.value;
+			let sitesList = $("#sitesList");
+			sitesList.empty();
+			for (let i = 0, locLen = projects.length; i < locLen; i++) {
+				loc = projects[i];
+				if (loc["name"].toUpperCase() === val.toUpperCase()) {
+					for (j = 0, siteLen = loc["sites"].length; j < siteLen; j++) {
+						sitesList.append($("<option>").text(loc["sites"][j]["name"]));
+					}
+					break;
+				}
+			}
+		});
+	});
+</script>
+{% endblock %}

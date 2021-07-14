@@ -3,7 +3,8 @@
 #define DATABASE_URL "app.db"
 #define DATABASE_OK SQLITE_OK
 
-typedef struct {
+typedef struct
+{
 	uint64_t id;
 	char *token;
 	char *client_id;
@@ -14,15 +15,16 @@ typedef struct {
 	char *url;
 } TEcwid;
 
-typedef struct {
+typedef struct
+{
 	uint64_t id;
 	uint64_t hub_id;
 	char *name;
 	char *children;
 } TCategory;
 
-
-typedef struct {
+typedef struct
+{
 	char *id;
 	uint64_t initiative_id;
 	uint64_t hub_id;
@@ -54,7 +56,7 @@ extern int CommitTransaction(TDatabase *pDB);
 extern int RollbackTransaction(TDatabase *pDB);
 
 extern uint64_t GetRecentOrderTimestamp(TDatabase *pDB, uint64_t hub_id);
-extern uint64_t GetCategoryIdByChildId(TDatabase *pDB, uint64_t hub_id, uint64_t cat_id, char** cat_name);
+extern uint64_t GetCategoryIdByChildId(TDatabase *pDB, uint64_t hub_id, uint64_t cat_id, char **cat_name);
 extern uint64_t GetInitiativeIdByEmail(TDatabase *pDB, uint64_t hub_id, char *email);
 extern uint64_t GetSiteIdByName(TDatabase *pDB, uint64_t hub_id, char *name);
 extern int StoreOrders(TDatabase *pDB, TOrder order);

@@ -2,209 +2,71 @@
 
 {% block content %}
 {% if current_user.role.name == "admin" %}
-	<div class="container border-bottom">
-		<div class="row">
-			<div class="col text-end">
-				<button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#ecwidFormCollapse" aria-expanded="false" aria-controls="ecwidFormCollapse">
-					Настроить API
-				</button>
-			</div>
+<div class="container border bg-white rounded">
+	<div class="row">
+		<div class="col">
+			<a href="{{ url_for('auth.PerformRegistration') }}">Новый пользователь</a>
 		</div>
-		<div class="collapse" id="ecwidFormCollapse">
-			{% set errorsList = ecwid_form.partners_key.errors + ecwid_form.client_id.errors + ecwid_form.client_secret.errors + ecwid_form.store_id.errors %}
-			{% if errorsList|length > 0 %}
-				<div class = "row">
-					<div class="col">
-						<div class="alert alert-danger" role="alert">
-							{% for error in  errorsList %}
-								{{ error }}<br>
-							{% endfor %}
-						</div>
-					</div>
-				</div>
-			{% endif %}
-			<form method="post" class="my-2" action="{{ url_for('main.ConfigureEcwid') }}">
-				{{ ecwid_form.csrf_token(id=False) }}
-				<div class="row mb-3">
-					{{ ecwid_form.partners_key.label(class_ = "col-md-2 col-form-label") }}
-					<div class="col-md-10">
-						{{ ecwid_form.partners_key(class_ = 'form-control', autofocus = '', value = current_user.hub.partners_key if current_user.hub.partners_key is not none else '') }}
-					</div>
-				</div>
-				<div class="row mb-3">
-					{{ ecwid_form.client_id.label(class_ = "col-md-2 col-form-label") }} 
-					<div class="col-md-10">
-						{{ ecwid_form.client_id(class_ = 'form-control', value = current_user.hub.client_id if current_user.hub.client_id is not none else '') }}
-					</div>
-				</div>
-				<div class="row mb-3">
-					{{ ecwid_form.client_secret.label(class_ = "col-md-2 col-form-label") }} 
-					<div class="col-md-10">
-						{{ ecwid_form.client_secret(class_ = 'form-control', value = current_user.hub.client_secret if current_user.hub.client_secret is not none else '') }}
-					</div>
-				</div>
-				<div class="row mb-3">
-					{{ ecwid_form.store_id.label(class_ = "col-md-2 col-form-label") }} 
-					<div class="col-md-10">
-						{{  ecwid_form.store_id(class_ = 'form-control', value = current_user.hub.id if current_user.hub.id is not none else '') }}
-					</div>
-				</div>
-				<div class="row mb-3">
-					<div class="col">
-						{{ ecwid_form.submit(id=False, class_ = 'btn btn-primary') }}
-					</div>
-				</div>
-			</form>
+		<div class="col text-end">
+			<a href="{{ url_for('static', filename = 'app.log') }}">Лог файл</a>
 		</div>
 	</div>
-	
-	<div class="container border-bottom">
-		<div class="row">
-			<div class="col text-end">
-				<button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#notify1CFormCollapse" aria-expanded="false" aria-controls="notify1CFormCollapse">
-					Настроить рассылку 1С
-				</button>
-			</div>
-		</div>
-		<div class="collapse" id="notify1CFormCollapse">	
-			<form method="POST" action="{{ url_for('main.Notify1CSettings') }}">
-				<div class="row mb-3">
-					{{ notify1C_form.csrf_token(id=False) }}
-					{{ notify1C_form.email.label(class_ = 'col-md-2 form-label') }}
-					<div class="col-md-10">
-						{{ notify1C_form.email(class_ = 'form-control') }}
-					</div>
-				</div>	
-				<div class="row mb-3">
-					<div class="col-md-10 offset-md-2">
-						<div class="form-check">
-							{{ notify1C_form.enable(class_ = 'form-check-input') }}
-							{{ notify1C_form.enable.label(class_ = 'form-check-label') }}
-						</div>
-					</div>
-				</div>
-				<div class="row mb-3">
-					<div class="col">
-						{{ notify1C_form.submit(id=False, class_ = 'btn btn-primary') }}
-					</div>
-				</div>
-			</form>
-		</div>
-	</div>	
-	
-	<div class="container">
-		<div class="row">
-			<div class="col text-end">
-				<button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#projectFormCollapse" aria-expanded="false" aria-controls="projectFormCollapse">
-					Управление проектами
-				</button>
-			</div>
-		</div>
-		<div class="collapse" id="projectFormCollapse">
-			<form method="post" action="{{ url_for('main.AddRemoveProject') }}">
-				{{ project_form.csrf_token(id=False) }}
-				<div class="row mb-3">
-					<div class="col">
-						{{ project_form.project_name(class_ = 'form-control', list='projectsList', placeholder='Введите название проекта...') }}
-						<datalist id="projectsList">
-						{% for project in projects%}
-							<option data-loc_id="{{project.id}}" >{{ project.name }}</option>
-						{% endfor %}
-						</datalist>
-					</div>
-				</div>
-				<div class="row mb-3">
-					<div class="col">
-						{{ project_form.site_name(class_ = 'form-control', list='sitesList', placeholder='Введите название объекта...') }}
-						<datalist id="sitesList">
-						</datalist>
-					</div>
-				</div>
-				<div class="row mb-3">
-					<div class="col">
-						{{ project_form.submit1(id=False, class_ = 'btn btn-primary') }}
-						{{ project_form.submit2(id=False, class_ = 'btn btn-danger') }}
-					</div>
-				</div>
-			</form>
+	<div class="row">
+		<div class="col">
+			<input class="form-control" id="usersFilter" type="text" placeholder="Фильтр..">
 		</div>
 	</div>
-	<div class="container border bg-white rounded">
-		<div class="row">
-			<div class="col">
-				<a href="{{ url_for('auth.PerformRegistration') }}">Создание нового пользователя</a>
-			</div>			
-			<div class="col text-end">
-				<a href="{{ url_for('static', filename = 'app.log') }}">Лог файл веб приложения</a>
-			</div>
-		</div>	
-		<div class = "row my-2">
-			<div class="col">	
-				<span class="fw-bold">ПОЛЬЗОВАТЕЛИ</span>
-			</div>
-		</div>		
-		<div class="row">
-			<div class="col">
-				<input class="form-control" id="usersFilter" type="text" placeholder="Фильтр..">
-			</div>
+	<div class="row d-none d-sm-flex fw-bold px-3">
+		<div class="col-1 overflow-hidden">
+			#
 		</div>
-		
-		<div class="row d-none d-sm-flex fw-bold px-3">
-			<div class="col-1 overflow-hidden">
-				#
-			</div>
-			<div class="col overflow-hidden">
-				ФИО
-			</div>
-			<div class="col overflow-hidden">
-				Телефон
-			</div>
-			<div class="col overflow-hidden">
-				Email
-			</div>
-			<div class="col overflow-hidden">
-				Роль
-			</div>
-			<div class="col overflow-hidden">
-				Площадка
-			</div>
-			<div class="col overflow-hidden">
-				Права
-			</div>
-			<div class="col overflow-hidden">
-				Заметка
-			</div>
-			<div class="col overflow-hidden">
-				Активность
-			</div>
+		<div class="col overflow-hidden">
+			ФИО
 		</div>
-		{% for user in users %}
-			{% include '_user.html' %}
-		{% endfor %}
+		<div class="col overflow-hidden">
+			Телефон
+		</div>
+		<div class="col overflow-hidden">
+			Email
+		</div>
+		<div class="col overflow-hidden">
+			Роль
+		</div>
+		<div class="col overflow-hidden">
+			Площадка
+		</div>
+		<div class="col overflow-hidden">
+			Права
+		</div>
+		<div class="col overflow-hidden">
+			Заметка
+		</div>
+		<div class="col overflow-hidden">
+			Активность
+		</div>
 	</div>
+	{% for user in users %}
+	{% include '_user.html' %}
+	{% endfor %}
+</div>
 
-	<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-lg">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="userModalLabel">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				{% include '_user.settings.form.html' %}
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="userModalLabel">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
+			{% include '_user.settings.form.html' %}
 		</div>
 	</div>
-	
+</div>
+
 {% else %}
 
-	<div class="container">
-		<div class="row my-2">
-			<div class="col">	
-				<span class="fw-bold">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ</span>
-			</div>
-		</div>				
-		{% include '_user.settings.form.html' %}
-	</div>
+<div class="container">
+	{% include '_user.settings.form.html' %}
+</div>
 {% endif %}
 
 {% endblock %}
@@ -212,104 +74,88 @@
 {% block scripts %}
 
 <script>
-	$(document).ready(function(){
+	$(document).ready(function () {
 		//Scripts
 		{% if current_user.role.name in ['validator', 'admin', 'purchaser'] %}
-			var categoriesData = $("#about_user-categories");
-			var projectsData = $("#about_user-projects");
-			categoriesData.select2();
-			projectsData.select2();
-			categoriesData.val({{current_user.categories_list}});
-			categoriesData.trigger('change');
-			projectsData.val({{current_user.projects_list}});
-			projectsData.trigger('change');
-			
-		{% endif %}
-		
-		{% if current_user.role.name == 'admin' %}
-			var users = [
-						{% for user in users %}
-							{{ user|safe }},
-						{% endfor %}
+		var categoriesData = $("#about_user-categories");
+		var projectsData = $("#about_user-projects");
+		categoriesData.select2();
+		projectsData.select2();
+		categoriesData.val({{ current_user.categories_list }});
+	categoriesData.trigger('change');
+	projectsData.val({{ current_user.projects_list }});
+	projectsData.trigger('change');
+
+	{% endif %}
+
+	{% if current_user.role.name == 'admin' %}
+	var users = [
+		{% for user in users %}
+	{ { user | safe } },
+	{% endfor %}
 						];
-						
-			var projects = [
-						{% for project in projects %}
-							{{ project|safe }},
-						{% endfor %}
+
+	var projects = [
+		{% for project in projects %}
+	{ { project | safe } },
+	{% endfor %}
 							];
 
-			
-			function HideUserData(){
-				projectsData.val('');
-				categoriesData.val('');
-				categoriesData.trigger('change');
-				projectsData.trigger('change');
-				projectsData.removeAttr('value');
-				categoriesData.removeAttr('value');
-				$("#userDataWrapper").hide();
-			}
+
+	function HideUserData() {
+		projectsData.val('');
+		categoriesData.val('');
+		categoriesData.trigger('change');
+		projectsData.trigger('change');
+		projectsData.removeAttr('value');
+		categoriesData.removeAttr('value');
+		$("#userDataWrapper").hide();
+	}
 
 
-			$("#usersFilter").on("keyup", function() {
-				let value = $(this).val().toLowerCase();
-				$(".showUserModal").filter(function() {
-					$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-				});
-			});
+	$("#usersFilter").on("keyup", function () {
+		let value = $(this).val().toLowerCase();
+		$(".showUserModal").filter(function () {
+			$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+		});
+	});
 
-			$(".showUserModal").click(function(){
-								
-				let userModal = new bootstrap.Modal(document.getElementById('userModal'), {});
-				
-				let user_id = Number($(this).attr('data-id'));
-				$("#user_id").val(user_id);
-				users.some(function(user){
-					if (user["id"] == user_id){
-						$("#about_user-phone").val(user["phone"]);
-						$("#about_user-position").val(user["position"]);
-						$("#about_user-location").val(user["location"]);
-						$("#about_user-full_name").val(user["name"]);
-						$("#about_user-email_new").prop("checked", user["email_new"]);
-						$("#about_user-email_modified").prop("checked", user["email_modified"]);
-						$("#about_user-email_disapproved").prop("checked", user["email_disapproved"]);
-						$("#about_user-email_approved").prop("checked", user["email_approved"]);
-						$("#role").val(user["role_id"]);
-						$("#note").val(user["note"]);
-						$("#removeUserButton").attr("href","{{ url_for('main.RemoveUser', user_id='0') }}".replace("0", user_id));
-						if (user["role"] == "validator" || user["role"] == "purchaser"){
-							$("#userDataWrapper").show();
-							categoriesData.val(user["categories"]);
-							projectsData.val(user["projects"]);
-							categoriesData.trigger('change');
-							projectsData.trigger('change');
-						}
-						else{
-							HideUserData();
-						}
-						return true;
-					}
-				});
-				userModal.show();
-			});
+	$(".showUserModal").click(function () {
 
-			$("#project_name").on('input', function () {
-				let val = this.value;
-				let sitesList = $("#sitesList");
-				sitesList.empty();
-				for(let i = 0, locLen=projects.length; i < locLen; i++) {
-					loc = projects[i];
-					if (loc["name"].toUpperCase() === val.toUpperCase()){
-						for (j = 0, siteLen = loc["sites"].length; j < siteLen; j++)
-						{
-							sitesList.append($("<option>").text(loc["sites"][j]["name"]));
-						}
-						break;
-					}
+		let userModal = new bootstrap.Modal(document.getElementById('userModal'), {});
+
+		let user_id = Number($(this).attr('data-id'));
+		$("#user_id").val(user_id);
+		users.some(function (user) {
+			if (user["id"] == user_id) {
+				$("#about_user-phone").val(user["phone"]);
+				$("#about_user-position").val(user["position"]);
+				$("#about_user-location").val(user["location"]);
+				$("#about_user-full_name").val(user["name"]);
+				$("#about_user-email_new").prop("checked", user["email_new"]);
+				$("#about_user-email_modified").prop("checked", user["email_modified"]);
+				$("#about_user-email_disapproved").prop("checked", user["email_disapproved"]);
+				$("#about_user-email_approved").prop("checked", user["email_approved"]);
+				$("#role").val(user["role_id"]);
+				$("#note").val(user["note"]);
+				$("#removeUserButton").attr("href", "{{ url_for('main.RemoveUser', user_id='0') }}".replace("0", user_id));
+				if (user["role"] == "validator" || user["role"] == "purchaser") {
+					$("#userDataWrapper").show();
+					categoriesData.val(user["categories"]);
+					projectsData.val(user["projects"]);
+					categoriesData.trigger('change');
+					projectsData.trigger('change');
 				}
-			});
-			$("#role").change(HideUserData);
-		{% endif %}
+				else {
+					HideUserData();
+				}
+				return true;
+			}
+		});
+		userModal.show();
+	});
+	$("#role").change(HideUserData);
+	{% endif %}
 	});
 </script>
-{%endblock %}
+{% endblock %}

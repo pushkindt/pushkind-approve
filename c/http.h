@@ -1,15 +1,16 @@
 #include <curl/curl.h>
 
-typedef enum {
-    HTTP_GET,
-    HTTP_POST,
+typedef enum
+{
+	HTTP_GET,
+	HTTP_POST,
 	HTTP_PUT,
 	HTTP_DELETE
 } THTTPMethod;
 
 typedef struct
 {
-	void * memory;
+	void *memory;
 	size_t size;
 } TMemoryStruct;
 

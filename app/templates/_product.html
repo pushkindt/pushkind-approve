@@ -1,93 +1,101 @@
 <div class="row">
 	<div class="col">
-{% if product['id'] in order.user_approvals|map(attribute='product_id')|list %}
-<div class="row m-1 ecwidOrderProduct rounded border border-danger" data-id = "{{ product.id }}">
-{% else %}
-<div class="row m-1 ecwidOrderProduct rounded border" data-id = "{{ product.id }}">
-{% endif %}
-	<div class="col-sm-auto overflow-hidden">
-		{% if product.imageUrl is defined %}
-			<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
-		{% endif %}
-	</div>
-	<div class="col-sm overflow-hidden mt-sm-3">
-		<span class="d-sm-none fw-bold">Артикул:</span>
-		{{ product['sku'] }}
-	</div>
-	<div class="col-sm-4 overflow-hidden mt-sm-3">
-		<span class="d-sm-none fw-bold">Название:</span>
-		<span class="fw-bold {% if product['quantity'] == 0 %}text-secondary{% endif %}">{{ product['name'] }}</span>
-		{% if product['category'] %}
-			<br>
-			<small>
-				{{ product['category'] }}
-			</small>
-		{% endif %}
-	</div>
-	<div class="col-sm overflow-hidden mt-sm-3">
-		<span class="d-sm-none fw-bold">Поставщик:</span>
-		{{ product['vendor'] }}
-	</div>		
-	<div class="col-sm-1 overflow-hidden mt-sm-3">
-		<span class="d-sm-none fw-bold">Цена:</span>
-		<span class="productPrice">
-			{{ '{:,.2f}'.format(product['price'])  }}
-		</span>
-	</div>
-	{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
-		<div class="col-sm-3 overflow-hidden mt-sm-2 text-sm-center">
-			<span class="d-sm-none fw-bold">Кол-во:</span>
-			<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order.id) }}" method="POST">
-				<div class="row">
-					<div class="col g-1">
-						{{ quantity_form.csrf_token(id=False) }}
-						{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['id'], id=False) }}
-						{{ quantity_form.product_quantity(class_ = 'text-primary form-control', value = product['quantity'], id=False) }}
-					</div>
-					<div class="col g-1">
-						{% if 'selectedOptions' in product %}
-							{{ quantity_form.product_measurement(class_ = 'text-primary form-control', value = product['selectedOptions'][0]['value'], id=False) }}
-						{%else%}
-							{{ quantity_form.product_measurement(class_ = 'text-primary form-control', id=False, placeholder='ед.изм.') }}
-							{% set _ = glob.update({'no_measurements':True}) %}
-						{% endif %}
-					</div>
-				</div>
-				<div class="row">
-					<div class="col">
-						{{ quantity_form.submit(id=False, class_='d-none btn btn-primary w-100 my-1') }}
-					</div>
-				</div>
-			</form>
-		</div>
-		{% else %}
-		<div class="col-sm-1 overflow-hidden mt-sm-3 text-sm-center">
-			<span class="d-sm-none fw-bold">Кол-во:</span>
-			<span>
-				{{ product['quantity'] }}
-				{% if 'selectedOptions' in product %}
-					{{ product['selectedOptions'][0]['value'] }}
-				{%else%}
-					{% set _ = glob.update({'no_measurements':True}) %}
-					<span class="text-primary">'ед.изм.'</span>
+		{% if product['id'] in order.user_approvals|map(attribute='product_id')|list %}
+		<div class="row m-1 ecwidOrderProduct rounded border border-danger" data-id="{{ product.id }}">
+			{% else %}
+			<div class="row m-1 ecwidOrderProduct rounded border" data-id="{{ product.id }}">
 				{% endif %}
-			</span>
+				<div class="col-sm-auto overflow-hidden">
+					{% if product.imageUrl is defined %}
+					<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
+					{% endif %}
+				</div>
+				<div class="col-sm overflow-hidden mt-sm-3">
+					<span class="d-sm-none fw-bold">Артикул:</span>
+					{{ product['sku'] }}
+				</div>
+				<div class="col-sm-4 overflow-hidden mt-sm-3">
+					<span class="d-sm-none fw-bold">Название:</span>
+					<span class="fw-bold {% if product['quantity'] == 0 %}text-secondary{% endif %}">{{ product['name']
+						}}</span>
+					{% if product['category'] %}
+					<br>
+					<small>
+						{{ product['category'] }}
+					</small>
+					{% endif %}
+				</div>
+				<div class="col-sm overflow-hidden mt-sm-3">
+					<span class="d-sm-none fw-bold">Поставщик:</span>
+					{{ product['vendor'] }}
+				</div>
+				<div class="col-sm-1 overflow-hidden mt-sm-3">
+					<span class="d-sm-none fw-bold">Цена:</span>
+					<span class="productPrice">
+						{{ '{:,.2f}'.format(product['price']) }}
+					</span>
+				</div>
+				{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
+				<div class="col-sm-3 overflow-hidden mt-sm-2 text-sm-center">
+					<span class="d-sm-none fw-bold">Кол-во:</span>
+					<form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id = order.id) }}"
+						method="POST">
+						<div class="row">
+							<div class="col g-1">
+								{{ quantity_form.csrf_token(id=False) }}
+								{{ quantity_form.product_id(class_ = 'd-none', hidden = '', value = product['id'],
+								id=False) }}
+								{{ quantity_form.product_quantity(class_ = 'text-primary form-control', value =
+								product['quantity'], id=False) }}
+							</div>
+							<div class="col g-1">
+								{% if 'selectedOptions' in product %}
+								{{ quantity_form.product_measurement(class_ = 'text-primary form-control', value =
+								product['selectedOptions'][0]['value'], id=False) }}
+								{%else%}
+								{{ quantity_form.product_measurement(class_ = 'text-primary form-control', id=False,
+								placeholder='ед.изм.') }}
+								{% set _ = glob.update({'no_measurements':True}) %}
+								{% endif %}
+							</div>
+						</div>
+						<div class="row">
+							<div class="col">
+								{{ quantity_form.submit(id=False, class_='d-none btn btn-primary w-100 my-1') }}
+							</div>
+						</div>
+					</form>
+				</div>
+				{% else %}
+				<div class="col-sm-1 overflow-hidden mt-sm-3 text-sm-center">
+					<span class="d-sm-none fw-bold">Кол-во:</span>
+					<span>
+						{{ product['quantity'] }}
+						{% if 'selectedOptions' in product %}
+						{{ product['selectedOptions'][0]['value'] }}
+						{%else%}
+						{% set _ = glob.update({'no_measurements':True}) %}
+						<span class="text-primary">'ед.изм.'</span>
+						{% endif %}
+					</span>
+				</div>
+				{% endif %}
+				{% if current_user.role.name in ['validator','purchaser'] %}
+				<div class="col text-center overflow-hidden my-3">
+					<a href="#" class="approveButton text-decoration-none" data-id="{{ product['id'] }}"
+						data-target="product">
+						+замечание
+					</a>
+				</div>
+				{% endif %}
+			</div>
 		</div>
-	{% endif %}
-	{% if current_user.role.name in ['validator','purchaser'] %}
-		<div class="col text-center overflow-hidden my-3">
-			<a href="#" class="approveButton text-decoration-none" data-id="{{ product['id'] }}" data-target="product">
-				+замечание
-			</a>
+		<div class="col-auto fs-1 text-center">
+			{% if product['id'] in order.user_approvals|map(attribute='product_id')|list %}
+			<a class="showRemarks text-danger" href="#" data-bs-toggle="modal" data-bs-target="#remarksModal"
+				data-id="{{ product.id }}"><i class="bi bi-exclamation-triangle"></i></a>
+			{% else %}
+			<span class="text-secondary"><i class="bi bi-exclamation-triangle"></i></span>
+			{% endif %}
 		</div>
-	{% endif %}
-</div>
-</div>
-<div class="col-auto fs-1 text-center">
-	{% if product['id'] in order.user_approvals|map(attribute='product_id')|list %}
-		<a class="showRemarks text-danger" href="#" data-bs-toggle="modal" data-bs-target="#remarksModal" data-id="{{ product.id }}"><i class="bi bi-exclamation-triangle"></i></a>
-	{% else %}
-		<span class="text-secondary"><i class="bi bi-exclamation-triangle"></i></span>
-	{% endif %}
-</div>
-<div>
+		<div>

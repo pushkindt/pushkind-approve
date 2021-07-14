@@ -5,14 +5,14 @@ from app import mail
 
 
 def SendEmailAsync(app, msg):
-	with app.app_context():
-		mail.send(msg)
+    with app.app_context():
+        mail.send(msg)
 
 
 def SendEmail(subject, sender, recipients, text_body, html_body,
-			   attachments=None, sync=False):
-	return
-	'''
+              attachments=None, sync=False):
+    return
+    '''
 	msg = Message(subject, sender=sender, recipients=recipients)
 	msg.body = text_body
 	msg.html = html_body

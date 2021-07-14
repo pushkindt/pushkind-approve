@@ -1,18 +1,19 @@
 #include "model.h"
 
+bool OpenDatabaseConnection(TDatabase **pDB)
+{
 
-bool OpenDatabaseConnection(TDatabase **pDB){
-	
 	bool result = false;
 	check(pDB != NULL, "Invalid function inputs.")
-	check(sqlite3_open_v2(DATABASE_URL, pDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_WAL, NULL) == SQLITE_OK, "Error while opening DB.");
+		check(sqlite3_open_v2(DATABASE_URL, pDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_WAL, NULL) == SQLITE_OK, "Error while opening DB.");
 	result = true;
 error:
 	return result;
 }
-	
-bool CloseDatabaseConnection(TDatabase *pDB){
-	
+
+bool CloseDatabaseConnection(TDatabase *pDB)
+{
+
 	bool result = false;
 	check(pDB != NULL, "Invalid function inputs.");
 	check(sqlite3_close_v2(pDB) == SQLITE_OK, "Error while closing DB.");
@@ -21,11 +22,12 @@ error:
 	return result;
 }
 
-
-void FreeStores(TEcwid *stores, size_t stores_count){
+void FreeStores(TEcwid *stores, size_t stores_count)
+{
 	if (stores == NULL)
 		return;
-	for(size_t i = 0; i < stores_count; i++){
+	for (size_t i = 0; i < stores_count; i++)
+	{
 		if (stores[i].token != NULL)
 			free(stores[i].token);
 		if (stores[i].client_id != NULL)
@@ -44,7 +46,8 @@ void FreeStores(TEcwid *stores, size_t stores_count){
 	free(stores);
 }
 
-void FreeCategories(TCategory *cache){
+void FreeCategories(TCategory *cache)
+{
 	if (cache == NULL)
 		return;
 	if (cache->name != NULL)
@@ -54,7 +57,8 @@ void FreeCategories(TCategory *cache){
 	free(cache);
 }
 
-int BeginTransaction(TDatabase *pDB){
+int BeginTransaction(TDatabase *pDB)
+{
 	int result = -1;
 	result = sqlite3_exec(pDB, "BEGIN", 0, 0, 0);
 	check(result == SQLITE_OK, "Failed to start transaction.");
@@ -63,7 +67,8 @@ error:
 	return result;
 }
 
-int CommitTransaction(TDatabase *pDB){
+int CommitTransaction(TDatabase *pDB)
+{
 	int result = -1;
 	result = sqlite3_exec(pDB, "COMMIT", 0, 0, 0);
 	check(result == SQLITE_OK, "Failed to commit transaction.");
@@ -72,7 +77,8 @@ error:
 	return result;
 }
 
-int RollbackTransaction(TDatabase *pDB){
+int RollbackTransaction(TDatabase *pDB)
+{
 	int result = -1;
 	result = sqlite3_exec(pDB, "ROLLBACK", 0, 0, 0);
 	check(result == SQLITE_OK, "Failed to rollback transaction.");
@@ -81,19 +87,19 @@ error:
 	return result;
 }
 
-
-int DeleteCategories(TDatabase *pDB, uint64_t hub_id){
+int DeleteCategories(TDatabase *pDB, uint64_t hub_id)
+{
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	check(pDB != NULL, "Invalid function inputs.");
-	
+
 	/*****************************************************************************/
 	//	Prepare SQL query
-	/*****************************************************************************/	
+	/*****************************************************************************/
 	result = sqlite3_prepare_v2(pDB, "delete from `category` where `hub_id` = ?", -1, &stmt, NULL);
 	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
 	result = sqlite3_bind_int64(stmt, 1, hub_id);
-	check(result == SQLITE_OK, "Error while binding SQLite statement.");	
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
 	result = sqlite3_step(stmt);
 	check(result == SQLITE_DONE, "Error while deleting cache.");
 	result = 0;
@@ -103,14 +109,15 @@ error:
 	return result;
 }
 
-int StoreCategories(TDatabase *pDB, TCategory *cache){
+int StoreCategories(TDatabase *pDB, TCategory *cache)
+{
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	check(pDB != NULL && cache != NULL, "Invalid function inputs.");
-	
+
 	/*****************************************************************************/
 	//	Prepare SQL query
-	/*****************************************************************************/	
+	/*****************************************************************************/
 	result = sqlite3_prepare_v2(pDB, "insert into `category`(`id`, `name`, `children`, `hub_id`) values (?,?,?,?)", -1, &stmt, NULL);
 	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
 	result = sqlite3_bind_int64(stmt, 1, cache->id);
@@ -130,18 +137,20 @@ error:
 	return result;
 }
 
-TEcwid *GetStores(TDatabase *pDB, uint64_t hub_id, size_t *stores_count, uint64_t store_id){
-	
+TEcwid *GetStores(TDatabase *pDB, uint64_t hub_id, size_t *stores_count, uint64_t store_id)
+{
+
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	TEcwid *stores = NULL;
 	check(pDB != NULL && stores_count != NULL, "Invalid function inputs.");
-	
+
 	/*****************************************************************************/
 	//	Prepare SQL query
 	/*****************************************************************************/
 	const char *sql = NULL;
-	if (hub_id != 0){
+	if (hub_id != 0)
+	{
 		if (store_id == 0)
 			sql = "select `id`,`token`,`name` from `ecwid` where `hub_id` = ?";
 		else
@@ -151,27 +160,34 @@ TEcwid *GetStores(TDatabase *pDB, uint64_t hub_id, size_t *stores_count, uint64_
 		sql = "select `id`, `token` from `ecwid` where `id` = ?";
 	result = sqlite3_prepare_v2(pDB, sql, -1, &stmt, NULL);
 	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
-	if (hub_id == 0){
+	if (hub_id == 0)
+	{
 		result = sqlite3_bind_int64(stmt, 1, store_id);
 		check(result == SQLITE_OK, "Error while binding SQLite statement.");
 	}
-	else{
+	else
+	{
 		result = sqlite3_bind_int64(stmt, 1, hub_id);
 		check(result == SQLITE_OK, "Error while binding SQLite statement.");
-		if (store_id != 0){
+		if (store_id != 0)
+		{
 			result = sqlite3_bind_int64(stmt, 2, store_id);
 			check(result == SQLITE_OK, "Error while binding SQLite statement.");
 		}
 	}
 	/*****************************************************************************/
 	//	Get SQL query result
-	/*****************************************************************************/	
-	while (sqlite3_step(stmt) == SQLITE_ROW){
-		if (stores == NULL){
+	/*****************************************************************************/
+	while (sqlite3_step(stmt) == SQLITE_ROW)
+	{
+		if (stores == NULL)
+		{
 			stores = calloc(sizeof(TEcwid), 1);
 			check_mem(stores);
 			*stores_count = 1;
-		}else{
+		}
+		else
+		{
 			stores = realloc(stores, (*stores_count + 1) * sizeof(TEcwid));
 			check_mem(stores);
 			*stores_count += 1;
@@ -187,15 +203,17 @@ TEcwid *GetStores(TDatabase *pDB, uint64_t hub_id, size_t *stores_count, uint64_
 			stores[*stores_count - 1].name = strdup(value);
 	}
 	result = 0;
-	
+
 error:
 	/*****************************************************************************/
 	//	Clean everything up
 	/*****************************************************************************/
 	if (stmt != NULL)
 		sqlite3_finalize(stmt);
-	if (result != 0){
-		if (stores != NULL){
+	if (result != 0)
+	{
+		if (stores != NULL)
+		{
 			FreeStores(stores, *stores_count);
 			stores = NULL;
 		}
@@ -203,14 +221,15 @@ error:
 	return stores;
 }
 
-int StoreEcwidProfile(TDatabase *pDB, TEcwid store){
+int StoreEcwidProfile(TDatabase *pDB, TEcwid store)
+{
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	check(pDB != NULL, "Invalid function inputs.");
-	
+
 	/*****************************************************************************/
 	//	Prepare SQL query
-	/*****************************************************************************/	
+	/*****************************************************************************/
 	result = sqlite3_prepare_v2(pDB, "update `ecwid` set `email` = ?, `name` = ?, `url` = ? where `id` = ?", -1, &stmt, NULL);
 	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
 	result = sqlite3_bind_text(stmt, 1, store.email, -1, SQLITE_STATIC);
@@ -230,14 +249,14 @@ error:
 	return result;
 }
 
-uint64_t GetRecentOrderTimestamp(TDatabase *pDB, uint64_t hub_id){
-	
+uint64_t GetRecentOrderTimestamp(TDatabase *pDB, uint64_t hub_id)
+{
+
 	uint64_t timestamp = 0;
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	check(pDB != NULL, "Invalid function inputs.");
-	
-	
+
 	/*****************************************************************************/
 	//	Prepare SQL query
 	/*****************************************************************************/
@@ -246,8 +265,9 @@ uint64_t GetRecentOrderTimestamp(TDatabase *pDB, uint64_t hub_id){
 	result = sqlite3_bind_int64(stmt, 1, hub_id);
 	check(result == SQLITE_OK, "Error while binding SQLite statement.");
 	result = sqlite3_step(stmt);
-	if (result == SQLITE_ROW){
-		timestamp = (uint64_t) sqlite3_column_int64(stmt, 0);
+	if (result == SQLITE_ROW)
+	{
+		timestamp = (uint64_t)sqlite3_column_int64(stmt, 0);
 	}
 error:
 	if (stmt != NULL)
@@ -255,13 +275,15 @@ error:
 	return timestamp;
 }
 
-int StoreOrders(TDatabase *pDB, TOrder order){
+int StoreOrders(TDatabase *pDB, TOrder order)
+{
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	check(pDB != NULL && order.id != NULL, "Invalid function inputs.");
-	
+
 	result = sqlite3_prepare_v2(pDB, "insert or replace into `order`(`id`, `initiative_id`, `create_timestamp`, \
-	`products`, `total`, `hub_id`, `purchased`) values (?,?,?,?,?,?,?)", -1, &stmt, NULL);
+	`products`, `total`, `hub_id`, `purchased`) values (?,?,?,?,?,?,?)",
+								-1, &stmt, NULL);
 	check(result == SQLITE_OK, "Error while preparing SQLite statement. %d", result);
 	result = sqlite3_bind_text(stmt, 1, order.id, -1, SQLITE_STATIC);
 	check(result == SQLITE_OK, "Error while binding SQLite statement.");
@@ -279,12 +301,13 @@ int StoreOrders(TDatabase *pDB, TOrder order){
 	check(result == SQLITE_OK, "Error while binding SQLite statement.");
 	result = sqlite3_step(stmt);
 	check(result == SQLITE_DONE, "Error while saving order %s.", order.id);
-	
+
 	sqlite3_finalize(stmt);
 	stmt = NULL;
-	
-	if (order.cash_flow_statement != NULL){
-		
+
+	if (order.cash_flow_statement != NULL)
+	{
+
 		result = sqlite3_prepare_v2(pDB, "update `order` set `cash_flow_statement` = ? where `order`.`id` = ? and `hub_id` = ?", -1, &stmt, NULL);
 		check(result == SQLITE_OK, "Error while preparing SQLite statement. %d", result);
 		result = sqlite3_bind_text(stmt, 1, order.cash_flow_statement, -1, SQLITE_STATIC);
@@ -297,9 +320,10 @@ int StoreOrders(TDatabase *pDB, TOrder order){
 		check(result == SQLITE_DONE, "Error while saving order %s.", order.id);
 		sqlite3_finalize(stmt);
 		stmt = NULL;
-	}	
-	
-	if (order.income_statement != NULL){
+	}
+
+	if (order.income_statement != NULL)
+	{
 		result = sqlite3_prepare_v2(pDB, "update `order` set `income_statement` = ? where `order`.`id` = ? and `hub_id` = ?", -1, &stmt, NULL);
 		check(result == SQLITE_OK, "Error while preparing SQLite statement. %d", result);
 		result = sqlite3_bind_text(stmt, 1, order.income_statement, -1, SQLITE_STATIC);
@@ -313,8 +337,9 @@ int StoreOrders(TDatabase *pDB, TOrder order){
 		sqlite3_finalize(stmt);
 		stmt = NULL;
 	}
-	
-	if (order.site_id != 0){
+
+	if (order.site_id != 0)
+	{
 		result = sqlite3_prepare_v2(pDB, "update `order` set `site_id` = ? where `order`.`id` = ? and `hub_id` = ?", -1, &stmt, NULL);
 		check(result == SQLITE_OK, "Error while preparing SQLite statement. %d", result);
 		result = sqlite3_bind_int64(stmt, 1, order.site_id);
@@ -328,7 +353,7 @@ int StoreOrders(TDatabase *pDB, TOrder order){
 		sqlite3_finalize(stmt);
 		stmt = NULL;
 	}
-	
+
 	result = 0;
 error:
 	if (stmt != NULL)
@@ -336,14 +361,14 @@ error:
 	return result;
 }
 
-uint64_t GetCategoryIdByChildId(TDatabase *pDB, uint64_t hub_id, uint64_t cat_id, char **cat_name){
-	
+uint64_t GetCategoryIdByChildId(TDatabase *pDB, uint64_t hub_id, uint64_t cat_id, char **cat_name)
+{
+
 	uint64_t root_id = 0;
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	check(pDB != NULL, "Invalid function inputs.");
-	
-	
+
 	/*****************************************************************************/
 	//	Prepare SQL query
 	/*****************************************************************************/
@@ -354,9 +379,11 @@ uint64_t GetCategoryIdByChildId(TDatabase *pDB, uint64_t hub_id, uint64_t cat_id
 	result = sqlite3_bind_int64(stmt, 2, hub_id);
 	check(result == SQLITE_OK, "Error while binding SQLite statement.");
 	result = sqlite3_step(stmt);
-	if (result == SQLITE_ROW){
-		root_id = (uint64_t) sqlite3_column_int64(stmt, 0);
-		if (cat_name != NULL){
+	if (result == SQLITE_ROW)
+	{
+		root_id = (uint64_t)sqlite3_column_int64(stmt, 0);
+		if (cat_name != NULL)
+		{
 			*cat_name = (char *)sqlite3_column_text(stmt, 1);
 			if (*cat_name != NULL)
 				*cat_name = strdup(*cat_name);
@@ -368,18 +395,20 @@ error:
 	return root_id;
 }
 
-char *GetStoreNameById(TDatabase *pDB, char *store_id){
+char *GetStoreNameById(TDatabase *pDB, char *store_id)
+{
 	int result = -1;
 	char *store_name = NULL;
 	sqlite3_stmt *stmt = NULL;
-	
+
 	check(pDB != NULL, "Invalid function inputs.");
 	result = sqlite3_prepare_v2(pDB, "SELECT `name` FROM `ecwid` WHERE `id` = ? LIMIT 1", -1, &stmt, NULL);
 	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
 	result = sqlite3_bind_text(stmt, 1, store_id, -1, SQLITE_STATIC);
-	check(result == SQLITE_OK, "Error while binding SQLite statement.");	
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
 	result = sqlite3_step(stmt);
-	if (result == SQLITE_ROW){
+	if (result == SQLITE_ROW)
+	{
 		const char *value = (const char *)sqlite3_column_text(stmt, 0);
 		if (value != NULL)
 			store_name = strdup(value);
@@ -390,14 +419,14 @@ error:
 	return store_name;
 }
 
-uint64_t GetInitiativeIdByEmail(TDatabase *pDB, uint64_t hub_id, char *email){
-	
+uint64_t GetInitiativeIdByEmail(TDatabase *pDB, uint64_t hub_id, char *email)
+{
+
 	uint64_t user_id = 0;
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	check(pDB != NULL, "Invalid function inputs.");
-	
-	
+
 	/*****************************************************************************/
 	//	Prepare SQL query
 	/*****************************************************************************/
@@ -408,8 +437,9 @@ uint64_t GetInitiativeIdByEmail(TDatabase *pDB, uint64_t hub_id, char *email){
 	result = sqlite3_bind_int64(stmt, 2, hub_id);
 	check(result == SQLITE_OK, "Error while binding SQLite statement.");
 	result = sqlite3_step(stmt);
-	if (result == SQLITE_ROW){
-		user_id = (uint64_t) sqlite3_column_int64(stmt, 0);
+	if (result == SQLITE_ROW)
+	{
+		user_id = (uint64_t)sqlite3_column_int64(stmt, 0);
 	}
 error:
 	if (stmt != NULL)
@@ -417,14 +447,14 @@ error:
 	return user_id;
 }
 
-uint64_t GetSiteIdByName(TDatabase *pDB, uint64_t hub_id, char *name){
-	
+uint64_t GetSiteIdByName(TDatabase *pDB, uint64_t hub_id, char *name)
+{
+
 	uint64_t site_id = 0;
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	check(pDB != NULL, "Invalid function inputs.");
-	
-	
+
 	/*****************************************************************************/
 	//	Prepare SQL query
 	/*****************************************************************************/
@@ -435,8 +465,9 @@ uint64_t GetSiteIdByName(TDatabase *pDB, uint64_t hub_id, char *name){
 	result = sqlite3_bind_int64(stmt, 2, hub_id);
 	check(result == SQLITE_OK, "Error while binding SQLite statement.");
 	result = sqlite3_step(stmt);
-	if (result == SQLITE_ROW){
-		site_id = (uint64_t) sqlite3_column_int64(stmt, 0);
+	if (result == SQLITE_ROW)
+	{
+		site_id = (uint64_t)sqlite3_column_int64(stmt, 0);
 	}
 error:
 	if (stmt != NULL)
@@ -444,13 +475,13 @@ error:
 	return site_id;
 }
 
-int StoreOrderCategory(TDatabase *pDB, char *order_id, uint64_t cat_id){
-	
+int StoreOrderCategory(TDatabase *pDB, char *order_id, uint64_t cat_id)
+{
+
 	int result = -1;
 	sqlite3_stmt *stmt = NULL;
 	check(pDB != NULL && order_id != NULL, "Invalid function inputs.");
-	
-	
+
 	/*****************************************************************************/
 	//	Prepare SQL query
 	/*****************************************************************************/
@@ -469,8 +500,9 @@ error:
 	return result;
 }
 
-int CleanCategoriesRelationships(TDatabase *pDB){
-	
+int CleanCategoriesRelationships(TDatabase *pDB)
+{
+
 	int result = -1;
 	check(pDB != NULL, "Invalid function inputs.");
 
@@ -486,7 +518,8 @@ error:
 	return result;
 }
 
-int UpdateOrderPositions(TDatabase *pDB, char *order_id){
+int UpdateOrderPositions(TDatabase *pDB, char *order_id)
+{
 	int result = -1;
 
 	sqlite3_stmt *stmt1 = NULL, *stmt2 = NULL, *stmt3 = NULL;
@@ -499,17 +532,19 @@ int UpdateOrderPositions(TDatabase *pDB, char *order_id){
 	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
 	result = sqlite3_bind_text(stmt1, 1, order_id, -1, SQLITE_STATIC);
 	check(result == SQLITE_OK, "Error while binding SQLite statement.");
-	
+
 	/*****************************************************************************/
 	//	Get SQL query result
-	/*****************************************************************************/	
-	if (sqlite3_step(stmt1) == SQLITE_ROW){
+	/*****************************************************************************/
+	if (sqlite3_step(stmt1) == SQLITE_ROW)
+	{
 		uint64_t hub_id = sqlite3_column_int64(stmt1, 0);
 		uint64_t project_id = sqlite3_column_int64(stmt1, 1);
-		
+
 		result = sqlite3_prepare_v2(pDB, "SELECT position.id AS position_id \
 										  FROM position JOIN user ON position.id = user.position_id JOIN user_category ON user.id = user_category.user_id JOIN user_project ON user.id = user_project.user_id \
-                                          WHERE position.hub_id = ? AND user.role = \"validator\" AND user_category.category_id IN (select `category_id` from `order_category` where order_id = ?) AND user_project.project_id = ?", -1, &stmt2, NULL);
+                                          WHERE position.hub_id = ? AND user.role = \"validator\" AND user_category.category_id IN (select `category_id` from `order_category` where order_id = ?) AND user_project.project_id = ?",
+									-1, &stmt2, NULL);
 		check(result == SQLITE_OK, "Error while preparing SQLite statement.");
 		result = sqlite3_bind_int64(stmt2, 1, hub_id);
 		check(result == SQLITE_OK, "Error while binding SQLite statement.");
@@ -517,40 +552,49 @@ int UpdateOrderPositions(TDatabase *pDB, char *order_id){
 		check(result == SQLITE_OK, "Error while binding SQLite statement.");
 		result = sqlite3_bind_int64(stmt2, 3, project_id);
 		check(result == SQLITE_OK, "Error while binding SQLite statement.");
-		while (sqlite3_step(stmt2) == SQLITE_ROW){
+		while (sqlite3_step(stmt2) == SQLITE_ROW)
+		{
 			uint64_t position_id = sqlite3_column_int64(stmt2, 0);
 			result = sqlite3_prepare_v2(pDB, "INSERT OR IGNORE INTO `order_position`(`order_id`, `position_id`) VALUES (?,?)", -1, &stmt3, NULL);
-			if (result != SQLITE_OK){
+			if (result != SQLITE_OK)
+			{
 				log_err("Error while saving order positions (%s %lu).", order_id, position_id);
-				if (stmt3 != NULL){
+				if (stmt3 != NULL)
+				{
 					sqlite3_finalize(stmt3);
 					stmt3 = NULL;
 				}
 				continue;
 			}
 			result = sqlite3_bind_text(stmt3, 1, order_id, -1, SQLITE_STATIC);
-			if (result != SQLITE_OK){
+			if (result != SQLITE_OK)
+			{
 				log_err("Error while saving order positions (%s %lu).", order_id, position_id);
-				if (stmt3 != NULL){
+				if (stmt3 != NULL)
+				{
 					sqlite3_finalize(stmt3);
 					stmt3 = NULL;
 				}
 				continue;
 			}
 			result = sqlite3_bind_int64(stmt3, 2, position_id);
-			if (result != SQLITE_OK){
+			if (result != SQLITE_OK)
+			{
 				log_err("Error while saving order positions (%s %lu).", order_id, position_id);
-				if (stmt3 != NULL){
+				if (stmt3 != NULL)
+				{
 					sqlite3_finalize(stmt3);
 					stmt3 = NULL;
 				}
 				continue;
 			}
 			result = sqlite3_step(stmt3);
-			if (result != SQLITE_DONE){
+			if (result != SQLITE_DONE)
+			{
 				log_err("Error while saving order positions (%s %lu).", order_id, position_id);
 			}
-			if (stmt3 != NULL){
+			if (stmt3 != NULL)
+			{
 				sqlite3_finalize(stmt3);
 				stmt3 = NULL;
 			}

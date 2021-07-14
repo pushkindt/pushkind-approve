@@ -1,1 +1,1 @@
-extern char *TrimWhiteSpaces (char *str);
+extern char *TrimWhiteSpaces(char *str);

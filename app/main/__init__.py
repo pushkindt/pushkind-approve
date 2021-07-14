@@ -18,3 +18,4 @@ from app.main import routes_stores
 from app.main import routes_buyer
 from app.main import routes_help
 from app.main import routes_history
+from app.main import routes_admin

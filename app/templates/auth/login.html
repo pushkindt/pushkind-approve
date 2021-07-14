@@ -10,7 +10,7 @@
 					Авторизация
 				</div>
 				<div class="card-body">
-					<form method="post">
+					<form method="POST">
 						{{ form.csrf_token }}
 						<div class="row mb-3">
 							{{ form.email.label (class_ = "col-md-4 col-form-label") }}
@@ -19,7 +19,7 @@
 							</div>
 						</div>
 						<div class="row mb-3">
-							{{ form.password.label (class_ = "col-md-4 col-form-label") }} 
+							{{ form.password.label (class_ = "col-md-4 col-form-label") }}
 							<div class="col-md-6">
 								{{ form.password(class_ = 'form-control') }}
 							</div>

@@ -6,74 +6,77 @@
 			{{ order.child_id }}
 		</a>
 	</div>
-{%else%}
-<div class="row ecwidOrder border bg-white my-1 rounded fs-7" data-id="{{ order.id }}" data-total="{{ order.total }}">
-	<div class="col-sm-1 overflow-hidden">
-		<span class="d-sm-none fw-bold">Заявка:</span>
-		<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.id) }}">#{{ order.id }}</a>
-		<br>
-		<span class="text-muted">
-			{{ moment(order.create_date).format() }}
-		</span>
-		<span class="d-none">
-			{{ order.site.project.name if order.site }}
-			{% for cat in order.categories %}
+	{%else%}
+	<div class="row ecwidOrder border bg-white my-1 rounded fs-7" data-id="{{ order.id }}"
+		data-total="{{ order.total }}">
+		<div class="col-sm-1 overflow-hidden">
+			<span class="d-sm-none fw-bold">Заявка:</span>
+			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.id) }}">#{{ order.id
+				}}</a>
+			<br>
+			<span class="text-muted">
+				{{ moment(order.create_date).format() }}
+			</span>
+			<span class="d-none">
+				{{ order.site.project.name if order.site }}
+				{% for cat in order.categories %}
 				{{ cat.name }}
-			{% endfor %}
-		</span>
-	</div>
-{% endif %}
-	<div class="col-sm-3 overflow-hidden">
-		<span class="d-sm-none fw-bold">Инициатор:</span>
-		<span class="fw-bold">
-			{{ order.site.name if order.site else 'объект не указан' }}
-		</span>
-		<br>
-		<small>{{ order.initiative.name }}</small>
-	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none fw-bold">Согласен:</span>
-		{% for appr in order.approvals %}
+				{% endfor %}
+			</span>
+		</div>
+		{% endif %}
+		<div class="col-sm-3 overflow-hidden">
+			<span class="d-sm-none fw-bold">Инициатор:</span>
+			<span class="fw-bold">
+				{{ order.site.name if order.site else 'объект не указан' }}
+			</span>
+			<br>
+			<small>{{ order.initiative.name }}</small>
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none fw-bold">Согласен:</span>
+			{% for appr in order.approvals %}
 			{% if appr.approved is sameas true %}
-				{{ appr.position.name }}<br>
+			{{ appr.position.name }}<br>
 			{% endif %}
-		{% endfor %}
-	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none fw-bold">Не согласен:</span>
-		<span class="text-danger">
-			{% set positions = order.user_approvals|rejectattr('product_id', 'none')|map(attribute='user')|map(attribute='position')|map(attribute='name')|unique %}
-			{% for position in positions %}
-				{{ position }}<br>
 			{% endfor %}
-		</span>
-	</div>
-	<div class="col-sm overflow-hidden">
-		<span class="d-sm-none fw-bold">Ожидаем:</span>
-		{% if order['status'].name == 'not_approved' %}
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none fw-bold">Не согласен:</span>
+			<span class="text-danger">
+				{% set positions = order.user_approvals|rejectattr('product_id',
+				'none')|map(attribute='user')|map(attribute='position')|map(attribute='name')|unique %}
+				{% for position in positions %}
+				{{ position }}<br>
+				{% endfor %}
+			</span>
+		</div>
+		<div class="col-sm overflow-hidden">
+			<span class="d-sm-none fw-bold">Ожидаем:</span>
+			{% if order['status'].name == 'not_approved' %}
 			Инициатор<br>
 			устраняет<br>
 			замечания
-		{% else %}
+			{% else %}
 			{% for appr in order.approvals %}
-				{% if appr.approved is sameas false %}
-					{{ appr.position.name }}<br>
-				{% endif %}
+			{% if appr.approved is sameas false %}
+			{{ appr.position.name }}<br>
+			{% endif %}
 			{% endfor %}
-		{% endif %}
-	</div>
-	<div class="col-sm-1 overflow-hidden">
-		<span class="d-sm-none">Статус:</span>
-		{% include '_order.status.html' %}
-	</div>
-	{% if order.parents %}
+			{% endif %}
+		</div>
+		<div class="col-sm-1 overflow-hidden">
+			<span class="d-sm-none">Статус:</span>
+			{% include '_order.status.html' %}
+		</div>
+		{% if order.parents %}
 		<div class="col-12">
 			<small>
 				&sum;
 				{% for parent in order.parents %}
-					#{{ parent.id }}
+				#{{ parent.id }}
 				{%endfor%}
 			</small>
 		</div>
-	{% endif %}
-</div>
+		{% endif %}
+	</div>
