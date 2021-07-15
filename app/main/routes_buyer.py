@@ -1,10 +1,9 @@
 from app import db
-from flask_login import login_required, current_user
+from flask_login import login_required
 from app.main import bp
 from app.models import UserRoles, Project
 from flask import render_template
 from app.main.utils import role_required
-from datetime import datetime
 
 
 @bp.route('/buyer/')

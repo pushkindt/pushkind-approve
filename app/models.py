@@ -295,7 +295,7 @@ class Project(db.Model):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        data = {'id': self.id, 'name': self.name, 'sites': [
+        data = {'id': self.id, 'name': self.name, 'uid': self.uid, 'sites': [
             site.to_dict() for site in self.sites]}
         return data
 
@@ -309,7 +309,8 @@ class Site(db.Model):
     uid = db.Column(db.String(128), nullable=True)
 
     def to_dict(self):
-        data = {'id': self.id, 'project_id': self.project_id, 'name': self.name}
+        data = {'id': self.id, 'project_id': self.project_id,
+                'name': self.name, 'uid': self.uid}
         return data
 
 

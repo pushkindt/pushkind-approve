@@ -1,33 +1,35 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderApproval, Category, OrderEvent, Project, Site
-from app.models import AppSettings, Position, Order
+from app.models import UserRoles, Ecwid, Category, Project, Site
+from app.models import AppSettings
 from flask import render_template, redirect, url_for, flash
-from app.main.forms import EcwidSettingsForm, AddRemoveProjectForm
+from app.main.forms import EcwidSettingsForm, AddProjectForm, AddSiteForm, EditProjectForm, EditSiteForm
 from app.main.forms import Notify1CSettingsForm, CategoryResponsibilityForm
-from sqlalchemy import distinct, func, or_
 from app.ecwid import EcwidAPIException
 from sqlalchemy.exc import SQLAlchemyError
 from app.main.utils import role_required, role_forbidden
-import json
-from json.decoder import JSONDecodeError
-from datetime import datetime
 
 
 @bp.route('/admin/', methods=['GET', 'POST'])
 @login_required
 @role_forbidden([UserRoles.default])
 def ShowAdminPage():
-    ecwid_form = EcwidSettingsForm()
-    project_form = AddRemoveProjectForm()
-    category_form = CategoryResponsibilityForm()
+
+    forms = {
+        'ecwid': EcwidSettingsForm(),
+        'category': CategoryResponsibilityForm(),
+        'add_project': AddProjectForm(),
+        'edit_project': EditProjectForm(),
+        'add_site': AddSiteForm(),
+        'edit_site': EditSiteForm()
+    }
 
     app_data = AppSettings.query.filter_by(hub_id=current_user.hub_id).first()
     if app_data is None:
-        notify1C_form = Notify1CSettingsForm()
+        forms['notify1C'] = Notify1CSettingsForm()
     else:
-        notify1C_form = Notify1CSettingsForm(
+        forms['notify1C'] = Notify1CSettingsForm(
             enable=app_data.notify_1C, email=app_data.email_1C)
 
     projects = Project.query.filter(
@@ -36,70 +38,8 @@ def ShowAdminPage():
         Category.hub_id == current_user.hub_id).all()
 
     return render_template('admin.html',
-                           ecwid_form=ecwid_form,
-                           project_form=project_form,
-                           category_form=category_form,
-                           notify1C_form=notify1C_form,
+                           forms=forms,
                            projects=projects, categories=categories)
-
-
-@bp.route('/admin/projects/', methods=['POST'])
-@login_required
-@role_required([UserRoles.admin])
-def AddRemoveProject():
-    form = AddRemoveProjectForm()
-    if form.validate_on_submit():
-        project_name = form.project_name.data.strip()
-        site_name = form.site_name.data.strip()
-        project = Project.query.filter(
-            Project.hub_id == current_user.hub_id, Project.name.ilike(project_name)).first()
-        if form.submit1.data is True:
-            if project is not None:
-                if len(site_name) > 0:
-                    site = Site.query.filter(
-                        Site.project_id == project.id, Site.name.ilike(site_name)).first()
-                    if site is None:
-                        site = Site(name=site_name, project_id=project.id)
-                        db.session.add(site)
-                        db.session.commit()
-                        flash('Объект {} создан'.format(site_name))
-                    else:
-                        flash('Такой объект уже существует')
-                else:
-                    flash('Такой проект уже существует')
-            else:
-                project = Project(name=project_name,
-                                  hub_id=current_user.hub_id)
-                db.session.add(project)
-                db.session.commit()
-                flash('Проект {} создан'.format(project_name))
-                if len(site_name) > 0:
-                    site = Site(name=site_name, project_id=project.id)
-                    db.session.add(site)
-                    db.session.commit()
-                    flash('Объект {} создан'.format(project_name))
-        elif form.submit2.data is True:
-            if project is not None:
-                if len(site_name) == 0:
-                    Site.query.filter(Site.project_id == project.id).delete()
-                    db.session.delete(project)
-                    db.session.commit()
-                    flash('Проект {} удален'.format(project_name))
-                else:
-                    site = Site.query.filter(
-                        Site.project_id == project.id, Site.name.ilike(site_name)).first()
-                    if site is not None:
-                        db.session.delete(site)
-                        db.session.commit()
-                        flash('Объект {} удален'.format(site_name))
-                    else:
-                        flash('Такой объект не существует')
-            else:
-                flash('Такого проекта не существует')
-    else:
-        for error in form.project_name.errors:
-            flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
 
 
 @bp.route('/admin/1C/', methods=['POST'])
@@ -169,4 +109,128 @@ def SaveCategoryResponsibility():
             category.functional_budget = form.functional_budget.data.strip()
             db.session.commit()
             flash('Ответственный и ФДБ для категории сохранёны.')
+    return redirect(url_for('main.ShowAdminPage'))
+
+
+@bp.route('/admin/project/add', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin])
+def AddProject():
+    form = AddProjectForm()
+    if form.validate_on_submit():
+        project_name = form.project_name.data.strip()
+        uid = form.uid.data.strip() if form.uid.data is not None else None
+        project = Project.query.filter_by(name=project_name).first()
+        if project is None:
+            project = Project(name=project_name, uid=uid,
+                              hub_id=current_user.hub_id)
+            db.session.add(project)
+            db.session.commit()
+            flash(f'Проект {project_name} добавлен.')
+        else:
+            flash(f'Проект {project_name} уже существует.')
+    else:
+        for error in form.project_name.errors + form.uid.errors:
+            flash(error)
+    return redirect(url_for('main.ShowAdminPage'))
+
+
+@bp.route('/admin/site/add', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin])
+def AddSite():
+    form = AddSiteForm()
+    if form.validate_on_submit():
+        site_name = form.site_name.data.strip()
+        uid = form.uid.data.strip() if form.uid.data is not None else None
+        site = Site.query.filter_by(name=site_name).first()
+        if site is None:
+            site = Site(name=site_name, uid=uid,
+                        project_id=form.project_id.data)
+            db.session.add(site)
+            db.session.commit()
+            flash(f'Объект {site_name} добавлен.')
+        else:
+            flash(f'Объект {site_name} уже существует.')
+    else:
+        for error in form.site_name.errors + form.uid.errors + form.project_id.errors:
+            flash(error)
+    return redirect(url_for('main.ShowAdminPage'))
+
+
+@bp.route('/admin/project/remove/<int:id>')
+@login_required
+@role_required([UserRoles.admin])
+def RemoveProject(id):
+    project = Project.query.filter_by(id=id).first()
+    if project is not None:
+        db.session.delete(project)
+        db.session.commit()
+        flash(f'Проект {project.name} удален.')
+    else:
+        flash('Такого проекта не существует.')
+    return redirect(url_for('main.ShowAdminPage'))
+
+
+@bp.route('/admin/project/edit/', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin])
+def EditProject():
+    form = EditProjectForm()
+    if form.validate_on_submit():
+        project = Project.query.filter_by(id=form.project_id.data).first()
+        if project is not None:
+            project_name = form.project_name.data.strip()
+            existed = Project.query.filter_by(name=project_name).first()
+            if existed is None or existed.id == project.id:
+                project.name = project_name
+                project.uid = form.uid.data.strip() if form.uid.data is not None else None
+                db.session.commit()
+                flash(f'Проект {project_name} изменён.')
+            else:
+                flash(f'Проект {project_name} уже существует.')
+        else:
+            flash('Такого проекта не существует.')
+    else:
+        for error in form.project_id.errors + form.project_name.errors + form.uid.errors:
+            flash(error)
+    return redirect(url_for('main.ShowAdminPage'))
+
+
+@bp.route('/admin/site/remove/<int:id>')
+@login_required
+@role_required([UserRoles.admin])
+def RemoveSite(id):
+    site = Site.query.filter_by(id=id).first()
+    if site is not None:
+        db.session.delete(site)
+        db.session.commit()
+        flash(f'Объект {site.name} удален.')
+    else:
+        flash('Такой объект не существует.')
+    return redirect(url_for('main.ShowAdminPage'))
+
+
+@bp.route('/admin/site/edit/', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin])
+def EditSite():
+    form = EditSiteForm()
+    if form.validate_on_submit():
+        site = Site.query.filter_by(id=form.site_id.data).first()
+        if site is not None:
+            site_name = form.site_name.data.strip()
+            existed = Site.query.filter_by(name=site_name).first()
+            if existed is None or existed.id == site.id:
+                site.name = site_name
+                site.uid = form.uid.data.strip() if form.uid.data is not None else None
+                db.session.commit()
+                flash(f'Объект {site_name} изменён.')
+            else:
+                flash(f'Объект {site_name} уже существует.')
+        else:
+            flash('Такой объект не существует.')
+    else:
+        for error in form.site_id.errors + form.site_name.errors + form.uid.errors:
+            flash(error)
     return redirect(url_for('main.ShowAdminPage'))

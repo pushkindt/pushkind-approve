@@ -1,16 +1,11 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderApproval, Category, OrderEvent, Project, Site, AppSettings, Position, Order
+from app.models import User, UserRoles, Category, Project, Position, Order
 from flask import render_template, redirect, url_for, flash
-from app.main.forms import EcwidSettingsForm, UserRolesForm, UserSettingsForm, AddRemoveProjectForm, Notify1CSettingsForm
-from sqlalchemy import distinct, func, or_
-from app.ecwid import EcwidAPIException
-from sqlalchemy.exc import SQLAlchemyError
+from app.main.forms import UserRolesForm, UserSettingsForm
+from sqlalchemy import or_
 from app.main.utils import role_required, role_forbidden
-import json
-from json.decoder import JSONDecodeError
-from datetime import datetime
 
 '''
 ################################################################################

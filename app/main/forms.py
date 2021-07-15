@@ -182,12 +182,38 @@ class Notify1CSettingsForm(FlaskForm):
     submit = SubmitField('Сохранить')
 
 
-class AddRemoveProjectForm(FlaskForm):
-    project_name = StringField('Проект', validators=[DataRequired(
+class AddProjectForm(FlaskForm):
+    project_name = StringField('Название', validators=[DataRequired(
         message='Название проекта - обязательное поле.')])
-    site_name = StringField('Объект', validators=[Optional()])
-    submit1 = SubmitField('Добавить')
-    submit2 = SubmitField('Удалить')
+    uid = StringField('Код', validators=[Optional()])
+    submit = SubmitField('Добавить')
+
+
+class AddSiteForm(FlaskForm):
+    project_id = IntegerField('ID проекта', [DataRequired(
+        message='ID проекта - обязательное поле')])
+    site_name = StringField('Название', validators=[DataRequired(
+        message='Название объекта - обязательное поле.')])
+    uid = StringField('Код', validators=[Optional()])
+    submit = SubmitField('Добавить')
+
+
+class EditProjectForm(FlaskForm):
+    project_id = IntegerField('ID проекта', [DataRequired(
+        message='ID проекта - обязательное поле')])
+    project_name = StringField('Название', validators=[DataRequired(
+        message='Название проекта - обязательное поле.')])
+    uid = StringField('Код', validators=[Optional()])
+    submit = SubmitField('Изменить')
+
+
+class EditSiteForm(FlaskForm):
+    site_id = IntegerField('ID проекта', [DataRequired(
+        message='ID проекта - обязательное поле')])
+    site_name = StringField('Название', validators=[DataRequired(
+        message='Название объекта - обязательное поле.')])
+    uid = StringField('Код', validators=[Optional()])
+    submit = SubmitField('Изменить')
 
 
 class CategoryResponsibilityForm(FlaskForm):

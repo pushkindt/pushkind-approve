@@ -1,9 +1,11 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderApproval, OrderEvent, EventType, OrderStatus, Project, Category, Order, OrderCategory, Site, AppSettings, OrderPosition
-from flask import render_template, redirect, url_for, flash, jsonify, current_app, Response, request
-from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, InitiativeForm, ApproverForm
+from app.models import User, UserRoles, Ecwid, OrderApproval, OrderEvent, EventType, OrderStatus
+from app.models import Project, Category, Order, OrderCategory, Site, AppSettings, OrderPosition
+from flask import render_template, redirect, url_for, flash, Response, request
+from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, InitiativeForm
+from app.main.forms import ApproverForm
 from datetime import datetime, timezone, date
 from app.ecwid import EcwidAPIException
 from app.main.utils import role_required, ecwid_required, role_forbidden, SendEmailNotification, SendEmail1C

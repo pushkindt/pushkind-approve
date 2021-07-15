@@ -1,14 +1,13 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval, User
+from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval
 from flask import render_template, flash, request, redirect, url_for, Response
 from app.main.utils import ecwid_required, role_forbidden, role_required
 from datetime import datetime, timedelta, timezone
 from app.main.forms import MergeOrdersForm, SaveOrdersForm
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
-from sqlalchemy import or_, and_, not_
 
 '''
 ################################################################################
