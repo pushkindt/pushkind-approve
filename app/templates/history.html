@@ -2,18 +2,34 @@
 
 {% block content %}
 
+<div class="container my-2">
+	<div class="row justify-content-center">
+		<div class="col-md-8">
+			<input class="form-control" id="eventFilter" type="text" placeholder="Фильтр..">
+		</div>
+	</div>
+	<div class="row justify-content-center">
+		<div class="col-md-8">
+			{% for d in dates %}
+				<a href="{{ url_for('main.ShowHistory', from=dates[d]) }}" class="text-decoration-none badge {% if filter_from == dates[d] %}bg-primary{% else %}bg-white fw-normal text-secondary border{% endif %}">{{ d }}</a>
+			{% endfor %}
+			<a href="{{ url_for('main.ShowHistory', from=0) }}" class="text-decoration-none badge {% if filter_from == 0 %}bg-primary{% else %}bg-white fw-normal text-secondary border{% endif %}">все</a>
+		</div>
+	</div>
+</div>
+
 <div class="container">
 	<div class="row bg-light d-none d-sm-flex border">
 		<div class="col-1 overflow-hidden">
 			Время
 		</div>
-		<div class="col-3 overflow-hidden">
+		<div class="col-1 overflow-hidden">
 			Заявка
 		</div>
-		<div class="col overflow-hidden">
+		<div class="col-2 overflow-hidden">
 			Пользователь
 		</div>
-		<div class="col overflow-hidden">
+		<div class="col-2 overflow-hidden">
 			Событие
 		</div>
 		<div class="col overflow-hidden">
@@ -22,23 +38,23 @@
 	</div>
 	<div id="eventList">
 		{% for event in events %}
-		<div class="row border bg-white my-1 rounded" data-id="{{ event.id }}">
+		<div class="row border bg-white my-1 rounded event" data-id="{{ event.id }}">
 			<div class="col-sm-1 overflow-hidden mt-sm-3">
 				<span class="d-sm-none fw-bold">Время:</span>
 				{{ moment(event.timestamp).format() }}
 			</div>
-			<div class="col-sm-3 overflow-hidden mt-sm-3">
+			<div class="col-sm-1 overflow-hidden mt-sm-3">
 				<span class="d-sm-none fw-bold">Заявка:</span>
 				<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=event.order_id) }}">#{{
 					event.order_id }}</a>
 			</div>
-			<div class="col-sm overflow-hidden mt-sm-3">
+			<div class="col-sm-2 overflow-hidden mt-sm-3">
 				<span class="d-sm-none fw-bold">Пользователь:</span>
 				{% set user = event.user %}
 				{% include '_user.popover.html' %}
 				{{ event.user.name }}
 			</div>
-			<div class="col-sm overflow-hidden mt-sm-3">
+			<div class="col-sm-2 overflow-hidden mt-sm-3">
 				<span class="d-sm-none fw-bold">Событие:</span>
 				<span class="fw-bold text-{{event.type.color()}}">{{event.type}}</span>
 			</div>
@@ -50,4 +66,18 @@
 		{% endfor %}
 	</div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+	$(document).ready(function () {
+		$("#eventFilter").on("keyup", function () {
+			let value = $(this).val().toLowerCase();
+			$(".event").filter(function () {
+				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+			});
+		});
+	});
+</script>
 {% endblock %}

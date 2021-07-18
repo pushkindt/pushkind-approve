@@ -67,6 +67,7 @@
 <div class="container">
 	{% include '_user.settings.form.html' %}
 </div>
+
 {% endif %}
 
 {% endblock %}
@@ -77,85 +78,90 @@
 	$(document).ready(function () {
 		//Scripts
 		{% if current_user.role.name in ['validator', 'admin', 'purchaser'] %}
-		var categoriesData = $("#about_user-categories");
-		var projectsData = $("#about_user-projects");
-		categoriesData.select2();
-		projectsData.select2();
-		categoriesData.val({{ current_user.categories_list }});
-	categoriesData.trigger('change');
-	projectsData.val({{ current_user.projects_list }});
-	projectsData.trigger('change');
+			var categoriesData = $("#about_user-categories");
+			var projectsData = $("#about_user-projects");
+		{% endif %}
 
-	{% endif %}
+		{% if current_user.role.name in ['validator', 'purchaser'] %}
+			categoriesData.select2();
+			projectsData.select2();
+			
+		{% endif %}
 
-	{% if current_user.role.name == 'admin' %}
-	var users = [
-		{% for user in users %}
-	{ { user | safe } },
-	{% endfor %}
-						];
+		{% if current_user.role.name == 'admin' %}
+		
+			categoriesData.select2({dropdownParent: $('#userModal')});
+			projectsData.select2({dropdownParent: $('#userModal')});
+			
+		{% endif %}
+		
+		{% if current_user.role.name in ['validator', 'admin', 'purchaser'] %}
+			categoriesData.val({{ current_user.categories_list }});
+			categoriesData.trigger('change');
+			projectsData.val({{ current_user.projects_list }});
+			projectsData.trigger('change');
+		{% endif %}
+		
+		{% if current_user.role.name == 'admin' %}
+			var users = [{% for user in users %}{{ user | safe }},{% endfor %}];
 
-	var projects = [
-		{% for project in projects %}
-	{ { project | safe } },
-	{% endfor %}
-							];
-
-
-	function HideUserData() {
-		projectsData.val('');
-		categoriesData.val('');
-		categoriesData.trigger('change');
-		projectsData.trigger('change');
-		projectsData.removeAttr('value');
-		categoriesData.removeAttr('value');
-		$("#userDataWrapper").hide();
-	}
+			var projects = [{% for project in projects %}{{ project | safe }},{% endfor %}];
 
 
-	$("#usersFilter").on("keyup", function () {
-		let value = $(this).val().toLowerCase();
-		$(".showUserModal").filter(function () {
-			$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-		});
-	});
-
-	$(".showUserModal").click(function () {
-
-		let userModal = new bootstrap.Modal(document.getElementById('userModal'), {});
-
-		let user_id = Number($(this).attr('data-id'));
-		$("#user_id").val(user_id);
-		users.some(function (user) {
-			if (user["id"] == user_id) {
-				$("#about_user-phone").val(user["phone"]);
-				$("#about_user-position").val(user["position"]);
-				$("#about_user-location").val(user["location"]);
-				$("#about_user-full_name").val(user["name"]);
-				$("#about_user-email_new").prop("checked", user["email_new"]);
-				$("#about_user-email_modified").prop("checked", user["email_modified"]);
-				$("#about_user-email_disapproved").prop("checked", user["email_disapproved"]);
-				$("#about_user-email_approved").prop("checked", user["email_approved"]);
-				$("#role").val(user["role_id"]);
-				$("#note").val(user["note"]);
-				$("#removeUserButton").attr("href", "{{ url_for('main.RemoveUser', user_id='0') }}".replace("0", user_id));
-				if (user["role"] == "validator" || user["role"] == "purchaser") {
-					$("#userDataWrapper").show();
-					categoriesData.val(user["categories"]);
-					projectsData.val(user["projects"]);
-					categoriesData.trigger('change');
-					projectsData.trigger('change');
-				}
-				else {
-					HideUserData();
-				}
-				return true;
+			function HideUserData() {
+				projectsData.val('');
+				categoriesData.val('');
+				categoriesData.trigger('change');
+				projectsData.trigger('change');
+				projectsData.removeAttr('value');
+				categoriesData.removeAttr('value');
+				$("#userDataWrapper").hide();
 			}
-		});
-		userModal.show();
-	});
-	$("#role").change(HideUserData);
-	{% endif %}
+
+
+			$("#usersFilter").on("keyup", function () {
+				let value = $(this).val().toLowerCase();
+				$(".showUserModal").filter(function () {
+					$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+				});
+			});
+
+			$(".showUserModal").click(function () {
+
+				let userModal = new bootstrap.Modal(document.getElementById('userModal'), {});
+
+				let user_id = Number($(this).attr('data-id'));
+				$("#user_id").val(user_id);
+				users.some(function (user) {
+					if (user["id"] == user_id) {
+						$("#about_user-phone").val(user["phone"]);
+						$("#about_user-position").val(user["position"]);
+						$("#about_user-location").val(user["location"]);
+						$("#about_user-full_name").val(user["name"]);
+						$("#about_user-email_new").prop("checked", user["email_new"]);
+						$("#about_user-email_modified").prop("checked", user["email_modified"]);
+						$("#about_user-email_disapproved").prop("checked", user["email_disapproved"]);
+						$("#about_user-email_approved").prop("checked", user["email_approved"]);
+						$("#role").val(user["role_id"]);
+						$("#note").val(user["note"]);
+						$("#removeUserButton").attr("href", "{{ url_for('main.RemoveUser', user_id='0') }}".replace("0", user_id));
+						if (user["role"] == "validator" || user["role"] == "purchaser") {
+							$("#userDataWrapper").show();
+							categoriesData.val(user["categories"]);
+							projectsData.val(user["projects"]);
+							categoriesData.trigger('change');
+							projectsData.trigger('change');
+						}
+						else {
+							HideUserData();
+						}
+						return true;
+					}
+				});
+				userModal.show();
+			});
+			$("#role").change(HideUserData);
+		{% endif %}
 	});
 </script>
 {% endblock %}

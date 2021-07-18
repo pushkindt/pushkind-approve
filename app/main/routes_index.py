@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from app.main import bp
 from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval
 from flask import render_template, flash, request, redirect, url_for, Response
-from app.main.utils import ecwid_required, role_forbidden, role_required
+from app.main.utils import ecwid_required, role_forbidden, role_required, GetFilterTimestamps
 from datetime import datetime, timedelta, timezone
 from app.main.forms import MergeOrdersForm, SaveOrdersForm
 from openpyxl import Workbook
@@ -16,17 +16,6 @@ Index page
 '''
 
 
-def GetDateTimestamps():
-    now = datetime.now(tz=timezone.utc)
-    today = datetime(now.year, now.month, now.day)
-    week = today - timedelta(days=today.weekday())
-    month = datetime(now.year, now.month, 1)
-    recently = today - timedelta(days=42)
-    dates = {'сегодня': int(today.timestamp()), 'неделя': int(week.timestamp(
-    )), 'месяц': int(month.timestamp()), 'недавно': int(recently.timestamp())}
-    return dates
-
-
 @bp.route('/')
 @bp.route('/index/')
 @login_required
@@ -34,7 +23,7 @@ def GetDateTimestamps():
 @ecwid_required
 def ShowIndex():
 
-    dates = GetDateTimestamps()
+    dates = GetFilterTimestamps()
     filter_from = request.args.get('from', default=dates['недавно'], type=int)
 
     filter_project = request.args.get('project', default=None, type=int)
@@ -84,7 +73,6 @@ def ShowIndex():
                            orders=orders, dates=dates, projects=projects, categories=categories,
                            filter_from=filter_from,
                            filter_focus=filter_focus,
-                           OrderStatus=OrderStatus,
                            merge_form=merge_form,
                            save_form=save_form)
 

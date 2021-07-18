@@ -3,6 +3,7 @@ from flask import render_template, flash, jsonify
 from functools import wraps
 from app.email import SendEmail
 from flask import current_app
+from datetime import datetime, timedelta, timezone
 
 '''
 ################################################################################
@@ -113,3 +114,14 @@ def SendEmail1C(recipients, order, subject, data):
               text_body=render_template('email/export1C.txt', order=order),
               html_body=render_template('email/export1C.html', order=order),
               attachments=[data])
+
+
+def GetFilterTimestamps():
+    now = datetime.now(tz=timezone.utc)
+    today = datetime(now.year, now.month, now.day)
+    week = today - timedelta(days=today.weekday())
+    month = datetime(now.year, now.month, 1)
+    recently = today - timedelta(days=42)
+    dates = {'сегодня': int(today.timestamp()), 'неделя': int(week.timestamp(
+    )), 'месяц': int(month.timestamp()), 'недавно': int(recently.timestamp())}
+    return dates

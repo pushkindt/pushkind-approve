@@ -1,89 +1,83 @@
 {% extends "base.html" %}
 
 {% block styles %}
-<style>
-	.ecwidOrder {
-		cursor: pointer;
-	}
-</style>
+	<style>
+		.ecwidOrder {cursor: pointer;}
+	</style>
 {% endblock %}
 
 {% block content %}
-<div class="container my-2">
-	<div class="row justify-content-center">
-		<div class="col-md-8">
-			<input class="form-control" id="orderFilter" type="text" placeholder="Фильтр..">
-		</div>
-	</div>
-	<div class="row justify-content-center">
-		<div class="col-md-8">
-			{% for d in dates %}
-			<a href="{{ url_for('main.ShowIndex', from = dates[d], focus=filter_focus) }}"
-				class="text-decoration-none badge {%if filter_from == dates[d] %}bg-primary{%else%}bg-secondary fw-normal{%endif%}">{{
-				d }}</a>
-			{% endfor %}
-			<a href="{{ url_for('main.ShowIndex', from = 0, focus=filter_focus) }}"
-				class="text-decoration-none badge {%if filter_from == 0 %}bg-primary{%else%}bg-secondary fw-normal{%endif%}">все</a>
-		</div>
-	</div>
-</div>
-<div class="container">
-	<div class="row my-2">
-		<div class="col">
-			Выбрано заявок: <span id="orderCount">{{ orders|length }}</span> на сумму <span id="orderTotal">{{
-				"%.2f"|format(orders| sum(attribute='total')) }}</span>
-			{% if current_user.role.name in ['validator', 'purchaser'] %}
-			<br>
-			<div class="form-check form-check-inline">
-				<input class="form-check-input" type="checkbox" id="filterFocus" {%if not
-					filter_focus%}checked{%endif%}>
-				<label class="form-check-label" for="filterFocus">
-					{% if current_user.role.name == 'validator' %}
-					Показывать только заявки, которые я должен согласовать.
-					{% else %}
-					Показывать только не законтрактованные заявки.
-					{% endif %}
-				</label>
+	<div class="container my-2">
+		<div class="row justify-content-center">
+			<div class="col-md-8">
+				<input class="form-control" id="orderFilter" type="text" placeholder="Фильтр..">
 			</div>
-			{% endif %}
 		</div>
-		<div class="col text-end">
-			<a href="#" id="saveOrdersButton">скачать</a><br>
-			{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
-			<a href="#" id="startMerging">объединить</a>
-			{% endif %}
+		<div class="row justify-content-center">
+			<div class="col-md-8">
+				{% for d in dates %}
+					<a href="{{ url_for('main.ShowIndex', from=dates[d], focus=filter_focus) }}" class="text-decoration-none badge {% if filter_from == dates[d] %}bg-primary{% else %}bg-white fw-normal text-secondary border{% endif %}">{{ d }}</a>
+				{% endfor %}
+				<a href="{{ url_for('main.ShowIndex', from=0, focus=filter_focus) }}" class="text-decoration-none badge {% if filter_from == 0 %}bg-primary{% else %}bg-white fw-normal text-secondary border{% endif %}">все</a>
+			</div>
 		</div>
-
+		{% if current_user.role.name in ['validator', 'purchaser'] %}
+			<div class="row justify-content-center">
+				<div class="col-md-8 fs-7">
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="filterFocus" {%if not filter_focus %}checked{% endif %}>
+						<label class="form-check-label" for="filterFocus">
+							{% if current_user.role.name == 'validator' %}
+								Показывать только заявки, которые я должен согласовать.
+							{% else %}
+								Показывать только не законтрактованные заявки.
+							{% endif %}
+						</label>
+					</div>
+				</div>
+			</div>
+		{% endif %}
 	</div>
-	<div class="row bg-light d-none d-sm-flex border">
-		<div class="col-1 overflow-hidden">
-			Заявка
+	<div class="container">
+		<div class="row my-2 fs-7">
+			<div class="col">
+				Выбрано заявок: <span id="orderCount">{{ orders|length }}</span> на сумму <span id="orderTotal">{{"%.2f"|format(orders| sum(attribute='total')) }}</span>
+			</div>
+			<div class="col text-end">
+				<a href="#" id="saveOrdersButton">скачать</a><br>
+				{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
+					<a href="#" id="startMerging">объединить</a>
+				{% endif %}
+			</div>
 		</div>
-		<div class="col-3 overflow-hidden">
-			Инициатор
+		<div class="row bg-light d-none d-sm-flex border">
+			<div class="col-1 overflow-hidden">
+				Заявка
+			</div>
+			<div class="col-3 overflow-hidden">
+				Инициатор
+			</div>
+			<div class="col overflow-hidden">
+				Согласен
+			</div>
+			<div class="col overflow-hidden">
+				Не&nbsp;согласен
+			</div>
+			<div class="col overflow-hidden">
+				Ожидаем
+			</div>
+			<div class="col-1 overflow-hidden">
+				Статус
+			</div>
 		</div>
-		<div class="col overflow-hidden">
-			Согласен
-		</div>
-		<div class="col overflow-hidden">
-			Не&nbsp;согласен
-		</div>
-		<div class="col overflow-hidden">
-			Ожидаем
-		</div>
-		<div class="col-1 overflow-hidden">
-			Статус
+		<div id="orderList">
+			{% for order in orders %}
+				{% include '_order.html' %}
+			{% endfor %}
 		</div>
 	</div>
-	<div id="orderList">
-		{% for order in orders %}
-		{% include '_order.html' %}
-		{% endfor %}
-		<div>
-		</div>
 
-
-		{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
+	{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
 		<form id="mergeForm" class="d-none" method="POST" action="{{ url_for('main.MergeOrders') }}">
 			<div class="fixed-top">
 				<div class="container">
@@ -94,41 +88,40 @@
 						<div class="col text-end">
 							{{ merge_form.csrf_token(id=False) }}
 							{{ merge_form.orders(id='mergeOrders', class_='d-none', readonly=True) }}
-							{{ merge_form.submit(id=False, class_ = 'btn btn-primary') }}
+							{{ merge_form.submit(id=False, class_='btn btn-primary') }}
 						</div>
 					</div>
 				</div>
 			</div>
 		</form>
-		{% endif %}
+	{% endif %}
 
-		<form id="saveForm" class="d-none" method="POST" action="{{ url_for('main.SaveOrders') }}">
-			{{ save_form.csrf_token(id=False) }}
-			{{ save_form.orders(id="saveOrders", class_="d-none") }}
-		</form>
+	<form id="saveForm" class="d-none" method="POST" action="{{ url_for('main.SaveOrders') }}">
+		{{ save_form.csrf_token(id=False) }}
+		{{ save_form.orders(id="saveOrders", class_="d-none") }}
+	</form>
 
-		{% endblock %}
+{% endblock %}
 
-		{% block scripts %}
+{% block scripts %}
 
-		<script>
-			$(document).ready(function () {
+	<script>
+		$(document).ready(function () {
 
-				var isMerging = false;
+			var isMerging = false;
 
+			$("#filterFocus").change(function () {
+				if (this.checked)
+					document.location.href = "{{ url_for('main.ShowIndex', from=filter_from) }}".replaceAll("&amp;", "&");
+				else
+					document.location.href = "{{ url_for('main.ShowIndex', from=filter_from, focus=True) }}".replaceAll("&amp;", "&");
+			});
 
-				$("#filterFocus").change(function () {
-					if (this.checked)
-						document.location.href = "{{ url_for('main.ShowIndex', from = filter_from) }}".replaceAll("&amp;", "&");
-					else
-						document.location.href = "{{ url_for('main.ShowIndex', from = filter_from, focus=True) }}".replaceAll("&amp;", "&");
-				});
+			$("#saveOrdersButton").click(function () {
+				$("#saveForm").submit()
+			});
 
-				$("#saveOrdersButton").click(function () {
-					$("#saveForm").submit()
-				});
-
-				{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
+			{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
 
 				var mergeOrders = [];
 
@@ -147,44 +140,44 @@
 					$(".ecwidOrder").addClass("bg-white");
 				});
 
-				{% endif %}
+			{% endif %}
 
-				$("#orderFilter").on("keyup", function () {
-					let value = $(this).val().toLowerCase();
-					let order_list = [];
-					let orderTotal = 0;
-					$("#orderList > .row").filter(function () {
-						let show = $(this).text().toLowerCase().indexOf(value) > -1;
-						$(this).toggle(show);
-						if (show) {
-							order_list.push($(this).data("id"));
-							orderTotal += Number($(this).data("total"));
-						}
-					});
-					$("#orderCount").text(order_list.length);
-					$("#orderTotal").text(orderTotal.toFixed(2));
-					$("#saveOrders").val(JSON.stringify(order_list));
-				});
-
-				$(".ecwidOrder").click(function (event) {
-					let orderId = $(this).attr('data-id');
-					if (isMerging == false) {
-						document.location.href = "{{ url_for('main.ShowOrder', order_id = 'replace_me') }}".replace("replace_me", orderId);
-					} else {
-						if (mergeOrders.includes(orderId)) {
-							$(this).removeClass("bg-dark text-white");
-							$(this).addClass("bg-white");
-							let index = mergeOrders.indexOf(orderId);
-							mergeOrders.splice(index, 1);
-						} else {
-							mergeOrders.push(orderId);
-							$(this).removeClass("bg-white");
-							$(this).addClass("bg-dark text-white");
-						}
-						console.log(JSON.stringify(mergeOrders));
-						$("#mergeOrders").val(JSON.stringify(mergeOrders));
+			$("#orderFilter").on("keyup", function () {
+				let value = $(this).val().toLowerCase();
+				let order_list = [];
+				let orderTotal = 0;
+				$("#orderList > .row").filter(function () {
+					let show = $(this).text().toLowerCase().indexOf(value) > -1;
+					$(this).toggle(show);
+					if (show) {
+						order_list.push($(this).data("id"));
+						orderTotal += Number($(this).data("total"));
 					}
 				});
+				$("#orderCount").text(order_list.length);
+				$("#orderTotal").text(orderTotal.toFixed(2));
+				$("#saveOrders").val(JSON.stringify(order_list));
 			});
-		</script>
-		{%endblock %}
+
+			$(".ecwidOrder").click(function (event) {
+				let orderId = $(this).attr('data-id');
+				if (isMerging == false) {
+					document.location.href = "{{ url_for('main.ShowOrder', order_id='replace_me') }}".replace("replace_me", orderId);
+				} else {
+					if (mergeOrders.includes(orderId)) {
+						$(this).removeClass("bg-dark text-white");
+						$(this).addClass("bg-white");
+						let index = mergeOrders.indexOf(orderId);
+						mergeOrders.splice(index, 1);
+					} else {
+						mergeOrders.push(orderId);
+						$(this).removeClass("bg-white");
+						$(this).addClass("bg-dark text-white");
+					}
+					console.log(JSON.stringify(mergeOrders));
+					$("#mergeOrders").val(JSON.stringify(mergeOrders));
+				}
+			});
+		});
+	</script>
+{% endblock %}

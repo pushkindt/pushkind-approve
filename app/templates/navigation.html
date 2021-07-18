@@ -1,6 +1,6 @@
 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 	<li class="nav-item">
-		<a class="nav-link {% if request.endpoint == 'main.ShowIndex'%} active {% endif %}"
+		<a class="nav-link {% if request.endpoint == 'main.ShowIndex' %} active {% endif %}"
 			href="{{ url_for('main.ShowIndex') }}">Главная</a>
 	</li>
 	{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}

@@ -1,29 +1,27 @@
 <div class="container border-bottom" data-id="{{ store.id }}">
 	<div class="row">
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none fw-bold">Номер: </span>
+			<span class="d-sm-none fw-bold">Номер:</span>
 			{% if store.url %}
-			<a href="{{ store.url }}" target="blank">{{ store.id }}</a>
+				<a href="{{ store.url }}" target="blank">{{ store.id }}</a>
 			{% else %}
-			{{ store.id }}
+				{{ store.id }}
 			{% endif %}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none fw-bold">Название: </span>
+			<span class="d-sm-none fw-bold">Название:</span>
 			{{ store.name or '' }}
 		</div>
 		<div class="col-sm overflow-hidden">
-			<span class="d-sm-none fw-bold">Электронная почта: </span>
+			<span class="d-sm-none fw-bold">Электронная почта:</span>
 			{{ store.email or '' }}
 		</div>
 		<div class="col-sm overflow-hidden">
 			{% if current_user.role.name == 'admin' %}
-			<a href="{{ url_for('main.RemoveStore', store_id = store.id) }}" class="btn btn-danger"
-				onclick="return confirm('Удалить поставщика?')">Удалить</a><br>
+				<a href="{{ url_for('main.RemoveStore', store_id=store.id) }}" class="btn btn-danger" onclick="return confirm('Удалить поставщика?')">Удалить</a><br>
 			{% endif %}
 			{% if current_user.role.name in ['admin','purchaser'] %}
-			<a href="{{ url_for('main.SyncStoreProducts', store_id = store.id) }}"
-				class="btn btn-warning my-1">Синхронизация</a>
+				<a href="{{ url_for('main.SyncStoreProducts', store_id=store.id) }}" class="btn btn-warning my-1">Синхронизация</a>
 			{% endif %}
 		</div>
 	</div>
