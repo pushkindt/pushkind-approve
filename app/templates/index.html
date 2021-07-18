@@ -83,12 +83,12 @@
 				<div class="container">
 					<div class="row">
 						<div class="col">
-							<button id="cancelMerging" type="button" class="btn btn-danger">Отменить</button>
+							<button id="cancelMerging" type="button" class="btn btn-danger text-white">Отменить</button>
 						</div>
 						<div class="col text-end">
 							{{ merge_form.csrf_token(id=False) }}
 							{{ merge_form.orders(id='mergeOrders', class_='d-none', readonly=True) }}
-							{{ merge_form.submit(id=False, class_='btn btn-primary') }}
+							{{ merge_form.submit(id=False, class_='btn btn-primary text-white') }}
 						</div>
 					</div>
 				</div>

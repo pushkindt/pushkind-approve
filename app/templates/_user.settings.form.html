@@ -79,14 +79,14 @@
 	</div>
 	{% if current_user.role.name == 'admin' %}
 		<div class="modal-footer">
-			{{ user_form.submit(class_='btn btn-primary') }}
-			<a href="" id="removeUserButton" class="btn btn-danger" onclick="return confirm('Удалить пользователя?')">Удалить</a>
+			{{ user_form.submit(class_='btn btn-primary text-white') }}
+			<a href="" id="removeUserButton" class="btn btn-danger text-white" onclick="return confirm('Удалить пользователя?')">Удалить</a>
 			<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
 		</div>
 	{% else %}
 		<div class="row mb-3">
 			<div class="col">
-				{{ user_form.submit(class_='btn btn-primary') }}
+				{{ user_form.submit(class_='btn btn-primary text-white') }}
 			</div>
 		</div>
 	{% endif %}

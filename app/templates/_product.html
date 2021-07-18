@@ -53,7 +53,7 @@
 						</div>
 						<div class="row">
 							<div class="col">
-								{{ quantity_form.submit(id=False, class_='d-none btn btn-primary w-100 my-1') }}
+								{{ quantity_form.submit(id=False, class_='d-none btn btn-primary w-100 my-1 text-white') }}
 							</div>
 						</div>
 					</form>
@@ -83,9 +83,9 @@
 	</div>
 	<div class="col-auto fs-1 text-center">
 		{% if product['id'] in order.user_approvals|map(attribute='product_id')|list %}
-			<a class="showRemarks text-danger" href="#" data-bs-toggle="modal" data-bs-target="#remarksModal" data-id="{{ product.id }}"><i class="bi bi-exclamation-triangle"></i></a>
+			<a class="showRemarks text-danger" href="#" data-bs-toggle="modal" data-bs-target="#remarksModal" data-id="{{ product.id }}"><i class="bi bi-chat-left"></i></a>
 		{% else %}
-			<span class="text-secondary"><i class="bi bi-exclamation-triangle"></i></span>
+			<span class="text-white"><i class="bi bi-chat-left"></i></span>
 		{% endif %}
 	</div>
 </div>

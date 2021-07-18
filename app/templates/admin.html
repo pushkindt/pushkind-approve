@@ -40,7 +40,7 @@
 							</div>
 							<div class="row mb-3">
 								<div class="col">
-									{{ forms['ecwid'].submit(id=False, class_ = 'btn btn-primary') }}
+									{{ forms['ecwid'].submit(id=False, class_ = 'btn btn-primary text-white') }}
 								</div>
 							</div>
 						</form>
@@ -73,7 +73,7 @@
 							</div>
 							<div class="row mb-3">
 								<div class="col">
-									{{ forms['notify1C'].submit(id=False, class_ = 'btn btn-primary') }}
+									{{ forms['notify1C'].submit(id=False, class_ = 'btn btn-primary text-white') }}
 								</div>
 							</div>
 						</form>
@@ -117,7 +117,7 @@
 										</div>
 										<div class="row">
 											<div class="col text-center">
-												{{ forms['category'].submit(id=False, class_='d-none w-50 btn btn-primary my-1') }}
+												{{ forms['category'].submit(id=False, class_='d-none w-50 btn btn-primary my-1 text-white') }}
 											</div>
 										</div>
 									</form>
@@ -141,7 +141,7 @@
 								<input class="form-control" id="projectFilter" type="text" placeholder="Фильтр..">
 							</div>
 							<div class="col-auto">
-								<a class="btn btn-primary" href="#" role="button" data-bs-toggle="modal" data-bs-target="#addProjectModal"><i class="bi bi-plus-square"></i></a>
+								<a class="btn btn-primary text-white" href="#" role="button" data-bs-toggle="modal" data-bs-target="#addProjectModal"><i class="bi bi-plus-square"></i></a>
 							</div>
 						</div>
 						<div class="row d-none d-sm-flex fw-bold">
@@ -208,7 +208,7 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						{{ forms['add_project'].submit(id=False, class_='btn btn-primary') }}
+						{{ forms['add_project'].submit(id=False, class_='btn btn-primary text-white') }}
 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
 					</div>
 				</form>
@@ -237,7 +237,7 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						{{ forms['add_site'].submit(id=False, class_='btn btn-primary') }}
+						{{ forms['add_site'].submit(id=False, class_='btn btn-primary text-white') }}
 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
 					</div>
 				</form>
@@ -266,8 +266,8 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						{{ forms['edit_project'].submit(id=False, class_='btn btn-primary') }}
-						<a class="btn btn-danger" href="#" role="button" id="removeProjectButton" onclick="confirm('Вы действительно хотите удалить?')">Удалить</a>
+						{{ forms['edit_project'].submit(id=False, class_='btn btn-primary text-white') }}
+						<a class="btn btn-danger text-white" href="#" role="button" id="removeProjectButton" onclick="confirm('Вы действительно хотите удалить?')">Удалить</a>
 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
 					</div>
 				</form>
@@ -296,8 +296,8 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						{{ forms['edit_site'].submit(id=False, class_='btn btn-primary') }}
-						<a class="btn btn-danger" href="#" role="button" id="removeSiteButton" onclick="confirm('Вы действительно хотите удалить?')">Удалить</a>
+						{{ forms['edit_site'].submit(id=False, class_='btn btn-primary text-white') }}
+						<a class="btn btn-danger text-white" href="#" role="button" id="removeSiteButton" onclick="confirm('Вы действительно хотите удалить?')">Удалить</a>
 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
 					</div>
 				</form>

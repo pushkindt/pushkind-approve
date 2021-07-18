@@ -495,7 +495,7 @@ def SaveApproval(order_id):
                         order_id=order_id, product_id=form.product_id.data, user_id=current_user.id)
                     db.session.add(product_approval)
                 product_approval.remark = message
-                message = 'позиция "{}" '.format(product['name']) + message
+                message = 'к позиции "{}" '.format(product['name']) + message
                 event = OrderEvent(user_id=current_user.id, order_id=order_id,
                                    type=EventType.disapproved, data=message, timestamp=datetime.now(tz=timezone.utc))
                 if position_approval is not None:

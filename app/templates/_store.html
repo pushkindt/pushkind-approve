@@ -18,7 +18,7 @@
 		</div>
 		<div class="col-sm overflow-hidden">
 			{% if current_user.role.name == 'admin' %}
-				<a href="{{ url_for('main.RemoveStore', store_id=store.id) }}" class="btn btn-danger" onclick="return confirm('Удалить поставщика?')">Удалить</a><br>
+				<a href="{{ url_for('main.RemoveStore', store_id=store.id) }}" class="btn btn-danger text-white" onclick="return confirm('Удалить поставщика?')">Удалить</a><br>
 			{% endif %}
 			{% if current_user.role.name in ['admin','purchaser'] %}
 				<a href="{{ url_for('main.SyncStoreProducts', store_id=store.id) }}" class="btn btn-warning my-1">Синхронизация</a>

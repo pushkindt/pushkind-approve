@@ -17,7 +17,7 @@
 	{% endif %}
 	<li class="nav-item">
 		<a class="nav-link {% if request.endpoint == 'main.ShowSettings' %} active {% endif %}"
-			href="{{ url_for('main.ShowSettings') }}">Профиль</a>
+			href="{{ url_for('main.ShowSettings') }}">Настройки</a>
 	</li>
 	{% if current_user.role.name in ['admin'] %}
 	<li class="nav-item">

@@ -64,8 +64,7 @@ class LeaveCommentForm(FlaskForm):
 
 class OrderApprovalForm(FlaskForm):
     product_id = IntegerField('Идентификатор товара', render_kw={'hidden': ''})
-    comment = TextAreaField('Комментарий', [Length(
-        max=256, message='Слишком длинный комментарий.')])
+    comment = TextAreaField('Замечание', [Length(max=256, message='Слишком длинное замечание.')])
     submit = SubmitField('Сохранить')
 
 

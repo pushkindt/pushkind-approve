@@ -51,7 +51,7 @@
 					</div>
 					<div class="row mb-3">
 						<div class="col">
-							{{ store_form.submit(class_='btn btn-primary') }}
+							{{ store_form.submit(class_='btn btn-primary text-white') }}
 							<a href="{{ url_for('main.SyncStoreProducts') }}" class="btn btn-warning" onclick="return confirm('Синхронизация занимает несколько минут.')"><i class="bi bi-arrow-clockwise"></i>Товары</a>
 							<button id="syncOrders" class="btn btn-warning" onclick="return confirm('Синхронизация занимает несколько минут.')"><i class="bi bi-arrow-clockwise"></i>Заявки</button>
 						</div>
