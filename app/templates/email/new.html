@@ -1,6 +1,5 @@
 <p>
-    Инициатор {{ order['initiative'].name }} создал заявку #{{ order['vendorOrderNumber'] }} для площадки "{{
-    order['refererId'] or 'ПЛОЩАДКА НЕ ВЫБРАНА!' }}".
+    Инициатор {{ order['initiative'].name }} создал заявку #{{ order['vendorOrderNumber'] }} для площадки "{{ order['refererId'] or 'ПЛОЩАДКА НЕ ВЫБРАНА!' }}".
 </p>
 <p>
     Нажмите на <a href="{{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}">ссылку</a> для

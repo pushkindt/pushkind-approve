@@ -38,31 +38,30 @@
 	</div>
 	<div id="eventList">
 		{% for event in events %}
-		<div class="row border bg-white my-1 rounded event" data-id="{{ event.id }}">
-			<div class="col-sm-1 overflow-hidden mt-sm-3">
-				<span class="d-sm-none fw-bold">Время:</span>
-				{{ moment(event.timestamp).format() }}
+			<div class="row border bg-white my-1 rounded event" data-id="{{ event.id }}">
+				<div class="col-sm-1 overflow-hidden mt-sm-3">
+					<span class="d-sm-none fw-bold">Время:</span>
+					{{ moment(event.timestamp).format() }}
+				</div>
+				<div class="col-sm-1 overflow-hidden mt-sm-3">
+					<span class="d-sm-none fw-bold">Заявка:</span>
+					<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=event.order_id) }}">#{{ event.order_id }}</a>
+				</div>
+				<div class="col-sm-2 overflow-hidden mt-sm-3">
+					<span class="d-sm-none fw-bold">Пользователь:</span>
+					{% set user = event.user %}
+					{% include '_user.popover.html' %}
+					{{ event.user.name }}
+				</div>
+				<div class="col-sm-2 overflow-hidden mt-sm-3">
+					<span class="d-sm-none fw-bold">Событие:</span>
+					<span class="fw-bold text-{{event.type.color()}}">{{ event.type }}</span>
+				</div>
+				<div class="col-sm overflow-hidden mt-sm-3">
+					<span class="d-sm-none fw-bold">Описание:</span>
+					{{ event.data|safe }}
+				</div>
 			</div>
-			<div class="col-sm-1 overflow-hidden mt-sm-3">
-				<span class="d-sm-none fw-bold">Заявка:</span>
-				<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=event.order_id) }}">#{{
-					event.order_id }}</a>
-			</div>
-			<div class="col-sm-2 overflow-hidden mt-sm-3">
-				<span class="d-sm-none fw-bold">Пользователь:</span>
-				{% set user = event.user %}
-				{% include '_user.popover.html' %}
-				{{ event.user.name }}
-			</div>
-			<div class="col-sm-2 overflow-hidden mt-sm-3">
-				<span class="d-sm-none fw-bold">Событие:</span>
-				<span class="fw-bold text-{{event.type.color()}}">{{event.type}}</span>
-			</div>
-			<div class="col-sm overflow-hidden mt-sm-3">
-				<span class="d-sm-none fw-bold">Описание:</span>
-				{{ event.data|safe }}
-			</div>
-		</div>
 		{% endfor %}
 	</div>
 </div>

@@ -1,108 +1,108 @@
 {% extends "base.html" %}
 
 {% block content %}
-	{% if current_user.role.name == "admin" %}
-		<div class="container">
-			<div class="row">
-				<div class="col text-end">
-					<button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#storeFormCollapse" aria-expanded="false" aria-controls="storeFormCollapse">
-						Добавить поставщика
-					</button>
-				</div>
-			</div>
-			<div class="collapse" id="storeFormCollapse">
-				{% set errorsList = store_form.email.errors + store_form.password.errors + store_form.plan.errors + store_form.name.errors %}
-				{% if errorsList|length > 0 %}
-					<div class="row">
-						<div class="col">
-							<div class="alert alert-danger" role="alert">
-								{% for error in errorsList %}
-									{{ error }}<br>
-								{% endfor %}
-							</div>
-						</div>
-					</div>
-				{% endif %}
-				<form method="POST">
-					{{ store_form.csrf_token }}
-					<div class="row mb-3">
-						{{ store_form.name.label(class_='col-md-2 col-form-label') }}
-						<div class="col-md-10">
-							{{ store_form.name(class_ = 'form-control') }}
-						</div>
-					</div>
-					<div class="row mb-3">
-						{{ store_form.email.label(class_='col-md-2 col-form-label') }}
-						<div class="col-md-10">
-							{{ store_form.email(class_='form-control') }}
-						</div>
-					</div>
-					<div class="row mb-3">
-						{{ store_form.password.label(class_='col-md-2 col-form-label') }}
-						<div class="col-md-10">
-							{{ store_form.password(class_='form-control') }}
-						</div>
-					</div>
-					<div class="row mb-3">
-						{{ store_form.plan.label(class_='col-md-2 col-form-label') }}
-						<div class="col-md-10">
-							{{ store_form.plan(class_='form-control') }}
-						</div>
-					</div>
-					<div class="row mb-3">
-						<div class="col">
-							{{ store_form.submit(class_='btn btn-primary text-white') }}
-							<a href="{{ url_for('main.SyncStoreProducts') }}" class="btn btn-warning" onclick="return confirm('Синхронизация занимает несколько минут.')"><i class="bi bi-arrow-clockwise"></i>Товары</a>
-							<button id="syncOrders" class="btn btn-warning" onclick="return confirm('Синхронизация занимает несколько минут.')"><i class="bi bi-arrow-clockwise"></i>Заявки</button>
-						</div>
-					</div>
-				</form>
+{% if current_user.role.name == "admin" %}
+	<div class="container">
+		<div class="row">
+			<div class="col text-end">
+				<button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#storeFormCollapse" aria-expanded="false" aria-controls="storeFormCollapse">
+					Добавить поставщика
+				</button>
 			</div>
 		</div>
+		<div class="collapse" id="storeFormCollapse">
+			{% set errorsList = store_form.email.errors + store_form.password.errors + store_form.plan.errors + store_form.name.errors %}
+			{% if errorsList|length > 0 %}
+				<div class="row">
+					<div class="col">
+						<div class="alert alert-danger" role="alert">
+							{% for error in errorsList %}
+								{{ error }}<br>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			{% endif %}
+			<form method="POST">
+				{{ store_form.csrf_token }}
+				<div class="row mb-3">
+					{{ store_form.name.label(class_='col-md-2 col-form-label') }}
+					<div class="col-md-10">
+						{{ store_form.name(class_ = 'form-control') }}
+					</div>
+				</div>
+				<div class="row mb-3">
+					{{ store_form.email.label(class_='col-md-2 col-form-label') }}
+					<div class="col-md-10">
+						{{ store_form.email(class_='form-control') }}
+					</div>
+				</div>
+				<div class="row mb-3">
+					{{ store_form.password.label(class_='col-md-2 col-form-label') }}
+					<div class="col-md-10">
+						{{ store_form.password(class_='form-control') }}
+					</div>
+				</div>
+				<div class="row mb-3">
+					{{ store_form.plan.label(class_='col-md-2 col-form-label') }}
+					<div class="col-md-10">
+						{{ store_form.plan(class_='form-control') }}
+					</div>
+				</div>
+				<div class="row mb-3">
+					<div class="col">
+						{{ store_form.submit(class_='btn btn-primary text-white') }}
+						<a href="{{ url_for('main.SyncStoreProducts') }}" class="btn btn-warning" onclick="return confirm('Синхронизация занимает несколько минут.')"><i class="bi bi-arrow-clockwise"></i>Товары</a>
+						<button id="syncOrders" class="btn btn-warning" onclick="return confirm('Синхронизация занимает несколько минут.')"><i class="bi bi-arrow-clockwise"></i>Заявки</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
 
-	{% endif %}
-	{% if stores|length > 0 %}
-		<div class="container bg-white border rounded">
-			<div class="row d-none d-sm-flex fw-bold">
-				<div class="col overflow-hidden">
-					Номер
-				</div>
-				<div class="col overflow-hidden">
-					Название
-				</div>
-				<div class="col overflow-hidden">
-					Электронная почта
-				</div>
-				<div class="col overflow-hidden">
-					&nbsp;
-				</div>
+{% endif %}
+{% if stores|length > 0 %}
+	<div class="container bg-white border rounded">
+		<div class="row d-none d-sm-flex fw-bold">
+			<div class="col overflow-hidden">
+				Номер
 			</div>
-			{% for store in stores %}
-				{% include '_store.html' %}
-			{% endfor %}
+			<div class="col overflow-hidden">
+				Название
+			</div>
+			<div class="col overflow-hidden">
+				Электронная почта
+			</div>
+			<div class="col overflow-hidden">
+				&nbsp;
+			</div>
 		</div>
-	{% endif %}
+		{% for store in stores %}
+			{% include '_store.html' %}
+		{% endfor %}
+	</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
-	{% if current_user.role.name == "admin" %}
-		<script>
-			$(function () {
-				$("#syncOrders").click(function () {
-					$.ajax({
-						url: "{{ url_for('main.SyncStoreOrders') }}",
-						type: "get",
-						data: {
-						},
-						success: function (data) {
-							ShowAjaxFlashes(data);
-						},
-						error: function (data) {
-							ShowAjaxFlashes(data);
-						}
-					});
+{% if current_user.role.name == "admin" %}
+	<script>
+		$(function () {
+			$("#syncOrders").click(function () {
+				$.ajax({
+					url: "{{ url_for('main.SyncStoreOrders') }}",
+					type: "get",
+					data: {
+					},
+					success: function (data) {
+						ShowAjaxFlashes(data);
+					},
+					error: function (data) {
+						ShowAjaxFlashes(data);
+					}
 				});
 			});
-		</script>
-	{% endif %}
+		});
+	</script>
+{% endif %}
 {% endblock %}

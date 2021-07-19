@@ -1,72 +1,75 @@
 {% extends "base.html" %}
 
+{% block styles %}
+{% endblock %}
+
 {% block content %}
 {% if current_user.role.name == "admin" %}
-<div class="container border bg-white rounded">
-	<div class="row">
-		<div class="col">
-			<a href="{{ url_for('auth.PerformRegistration') }}">Новый пользователь</a>
-		</div>
-		<div class="col text-end">
-			<a href="{{ url_for('static', filename = 'app.log') }}">Лог файл</a>
-		</div>
-	</div>
-	<div class="row">
-		<div class="col">
-			<input class="form-control" id="usersFilter" type="text" placeholder="Фильтр..">
-		</div>
-	</div>
-	<div class="row d-none d-sm-flex fw-bold px-3">
-		<div class="col-1 overflow-hidden">
-			#
-		</div>
-		<div class="col overflow-hidden">
-			ФИО
-		</div>
-		<div class="col overflow-hidden">
-			Телефон
-		</div>
-		<div class="col overflow-hidden">
-			Email
-		</div>
-		<div class="col overflow-hidden">
-			Роль
-		</div>
-		<div class="col overflow-hidden">
-			Площадка
-		</div>
-		<div class="col overflow-hidden">
-			Права
-		</div>
-		<div class="col overflow-hidden">
-			Заметка
-		</div>
-		<div class="col overflow-hidden">
-			Активность
-		</div>
-	</div>
-	{% for user in users %}
-	{% include '_user.html' %}
-	{% endfor %}
-</div>
-
-<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="userModalLabel">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+	<div class="container border bg-white rounded">
+		<div class="row">
+			<div class="col">
+				<a href="{{ url_for('auth.PerformRegistration') }}">Новый пользователь</a>
 			</div>
-			{% include '_user.settings.form.html' %}
+			<div class="col text-end">
+				<a href="{{ url_for('static', filename = 'app.log') }}">Лог файл</a>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col">
+				<input class="form-control" id="usersFilter" type="text" placeholder="Фильтр..">
+			</div>
+		</div>
+		<div class="row d-none d-sm-flex fw-bold px-3">
+			<div class="col-1 overflow-hidden">
+				#
+			</div>
+			<div class="col overflow-hidden">
+				ФИО
+			</div>
+			<div class="col overflow-hidden">
+				Телефон
+			</div>
+			<div class="col overflow-hidden">
+				Email
+			</div>
+			<div class="col overflow-hidden">
+				Роль
+			</div>
+			<div class="col overflow-hidden">
+				Площадка
+			</div>
+			<div class="col overflow-hidden">
+				Права
+			</div>
+			<div class="col overflow-hidden">
+				Заметка
+			</div>
+			<div class="col overflow-hidden">
+				Активность
+			</div>
+		</div>
+		{% for user in users %}
+		{% include '_user.html' %}
+		{% endfor %}
+	</div>
+
+	<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="userModalLabel">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				{% include '_user.settings.form.html' %}
+			</div>
 		</div>
 	</div>
-</div>
 
 {% else %}
 
-<div class="container">
-	{% include '_user.settings.form.html' %}
-</div>
+	<div class="container">
+		{% include '_user.settings.form.html' %}
+	</div>
 
 {% endif %}
 
@@ -81,25 +84,41 @@
 			var categoriesData = $("#about_user-categories");
 			var projectsData = $("#about_user-projects");
 		{% endif %}
-
 		{% if current_user.role.name in ['validator', 'purchaser'] %}
-			categoriesData.select2();
-			projectsData.select2();
-			
-		{% endif %}
-
-		{% if current_user.role.name == 'admin' %}
-		
-			categoriesData.select2({dropdownParent: $('#userModal')});
-			projectsData.select2({dropdownParent: $('#userModal')});
-			
+			categoriesData.val({{ current_user.categories_list }});
+			projectsData.val({{ current_user.projects_list }});
 		{% endif %}
 		
 		{% if current_user.role.name in ['validator', 'admin', 'purchaser'] %}
-			categoriesData.val({{ current_user.categories_list }});
-			categoriesData.trigger('change');
-			projectsData.val({{ current_user.projects_list }});
-			projectsData.trigger('change');
+			categoriesData.selectize({});
+			projectsData.selectize({});
+			selectizeCategories = categoriesData[0].selectize;
+			selectizeProjects = projectsData[0].selectize;
+
+			$('#selectAllCategories').click(function() {
+				selectizeCategories.setValue(Object.keys(selectizeCategories.options));
+			});
+
+			$('#selectAllProjects').click(function() {
+				selectizeProjects.setValue(Object.keys(selectizeProjects.options));
+			});
+
+			$('#selectNoneCategories').click(function() {
+				selectizeCategories.clear(false);
+			});
+
+			$('#selectNoneProjects').click(function() {
+				selectizeProjects.clear(false);
+			});
+			
+			$('.projectsDropDown').click(function() {
+				selectizeProjects.trigger('focus');
+			});
+			
+			$('.categoriesDropDown').click(function() {
+				selectizeCategories.trigger('focus');
+			});
+			
 		{% endif %}
 		
 		{% if current_user.role.name == 'admin' %}
@@ -107,12 +126,11 @@
 
 			var projects = [{% for project in projects %}{{ project | safe }},{% endfor %}];
 
-
 			function HideUserData() {
-				projectsData.val('');
-				categoriesData.val('');
-				categoriesData.trigger('change');
-				projectsData.trigger('change');
+				selectizeCategories.clear(false);
+				selectizeProjects.clear(false);
+				categoriesData.val(null);
+				projectsData.val(null);
 				projectsData.removeAttr('value');
 				categoriesData.removeAttr('value');
 				$("#userDataWrapper").hide();
@@ -147,10 +165,8 @@
 						$("#removeUserButton").attr("href", "{{ url_for('main.RemoveUser', user_id='0') }}".replace("0", user_id));
 						if (user["role"] == "validator" || user["role"] == "purchaser") {
 							$("#userDataWrapper").show();
-							categoriesData.val(user["categories"]);
-							projectsData.val(user["projects"]);
-							categoriesData.trigger('change');
-							projectsData.trigger('change');
+							selectizeCategories.setValue(user["categories"]);
+							selectizeProjects.setValue(user["projects"])
 						}
 						else {
 							HideUserData();

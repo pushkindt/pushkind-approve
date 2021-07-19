@@ -23,7 +23,7 @@
 						<select class="form-control border-danger" id="projectSelect">
 							<option value="" disabled selected>Выберите проект...</option>
 							{% for project in projects %}
-							<option value="{{ project.id }}">{{ project.name }}</option>
+								<option value="{{ project.id }}">{{ project.name }}</option>
 							{% endfor %}
 						</select>
 					</div>
@@ -37,8 +37,7 @@
 				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" disabled
-					id="siteProjectDismiss">Продолжить</button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" disabled id="siteProjectDismiss">Продолжить</button>
 			</div>
 		</div>
 	</div>
@@ -63,9 +62,7 @@
 
 {% endblock %}
 {% block scripts %}
-<script data-cfasync="false" type="text/javascript"
-	src="https://app.shopsettings.com/script.js?{{current_user.hub.id}}&data_platform=code&data_date=2020-10-28"
-	charset="utf-8"></script>
+<script data-cfasync="false" type="text/javascript" src="https://app.shopsettings.com/script.js?{{current_user.hub.id}}&data_platform=code&data_date=2020-10-28" charset="utf-8"></script>
 <script>
 	xProductBrowser("categoriesPerRow=3", "views=grid(20,3) list(60) table(60)", "categoryView=grid", "searchView=list", "id=my-store-{{current_user.hub.id}}");
 	$(document).ready(function () {
@@ -73,95 +70,89 @@
 		var siteProjectModal = new bootstrap.Modal(document.getElementById('siteProjectModal'), { 'backdrop': 'static' });
 		siteProjectModal.show();
 
-
 		var loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'), { 'backdrop': 'static' });
 
+		var projects = [{% for project in projects %}{{ project| safe }},{% endfor %}];
 
-		var projects = [
-			{% for project in projects %}
-						{{ project| safe }},
-		{% endfor %}
-						];
+		Ecwid.OnAPILoaded.add(function () {
+			Ecwid.Cart.setCustomerEmail("{{ current_user.email }}");
 
-	Ecwid.OnAPILoaded.add(function () {
-		Ecwid.Cart.setCustomerEmail("{{ current_user.email }}");
+			$("#projectSelect").change(function () {
+				ec.order = ec.order || {};
+				let val = Number($(this).val());
+				ec.order.referer_id = decodeEntities($("#projectSelect option:selected").text());
+				$(this).removeClass("border-danger");
+				$("#siteProjectDismiss").prop("disabled", true);
+				let sitesList = $("#siteSelect");
+				sitesList.empty();
+				let defaultSite = $("<option>").text("Выберите объект...");
+				defaultSite.prop("disabled", true);
+				defaultSite.prop("selected", true);
+				sitesList.append(defaultSite);
 
-		$("#projectSelect").change(function () {
-			ec.order = ec.order || {};
-			let val = Number($(this).val());
-			ec.order.referer_id = decodeEntities($("#projectSelect option:selected").text());
-			$(this).removeClass("border-danger");
-			$("#siteProjectDismiss").prop("disabled", true);
-			let sitesList = $("#siteSelect");
-			sitesList.empty();
-			let defaultSite = $("<option>").text("Выберите объект...");
-			defaultSite.prop("disabled", true);
-			defaultSite.prop("selected", true);
-			sitesList.append(defaultSite);
-
-			for (let i = 0; i < projects.length; i++) {
-				loc = projects[i];
-				if (loc["id"] === val) {
-					for (j = 0; j < loc["sites"].length; j++) {
-						sitesList.append($("<option>").text(loc["sites"][j]["name"]));
+				for (let i = 0; i < projects.length; i++) {
+					loc = projects[i];
+					if (loc["id"] === val) {
+						for (j = 0; j < loc["sites"].length; j++) {
+							sitesList.append($("<option>").text(loc["sites"][j]["name"]));
+						}
+						break;
 					}
-					break;
+				}
+
+			});
+			$("#siteSelect").change(function () {
+				let val = $(this).val();
+				Ecwid.Cart.setOrderComments(JSON.stringify({ 'object': val, 'comment': '', 'budget': '', 'cashflow': '' }));
+				$(this).removeClass("border-danger");
+				$("#siteProjectDismiss").prop("disabled", false);
+			});
+		});
+
+		Ecwid.OnOrderPlaced.add(function (order) {
+			loadingModal.show();
+			setTimeout(function () {
+				$.ajax({
+					url: "{{ url_for('main.SyncStoreOrders') }}",
+					type: "get",
+					data: {
+						id: order.vendorNumber
+					},
+					success: function (data) {
+						loadingModal.hide();
+						ShowAjaxFlashes(data);
+					},
+					error: function (data) {
+						loadingModal.hide();
+						ShowAjaxFlashes(data);
+					}
+				})
+			},
+				2000
+			);
+		});
+
+		var decodeEntities = (function () {
+			let doc = document.implementation.createHTMLDocument("");
+			let element = doc.createElement('div');
+			function getText(str) {
+				element.innerHTML = str;
+				str = element.textContent;
+				element.textContent = '';
+				return str;
+			}
+			function decodeHTMLEntities(str) {
+				if (str && typeof str === 'string') {
+					let x = getText(str);
+					while (str !== x) {
+						str = x;
+						x = getText(x);
+					}
+					return x;
 				}
 			}
-
-		});
-		$("#siteSelect").change(function () {
-			let val = $(this).val();
-			Ecwid.Cart.setOrderComments(JSON.stringify({ 'object': val, 'comment': '', 'budget': '', 'cashflow': '' }));
-			$(this).removeClass("border-danger");
-			$("#siteProjectDismiss").prop("disabled", false);
-		});
-	});
-
-	Ecwid.OnOrderPlaced.add(function (order) {
-		loadingModal.show();
-		setTimeout(function () {
-			$.ajax({
-				url: "{{ url_for('main.SyncStoreOrders') }}",
-				type: "get",
-				data: {
-					id: order.vendorNumber
-				},
-				success: function (data) {
-					loadingModal.hide();
-					ShowAjaxFlashes(data);
-				},
-				error: function (data) {
-					loadingModal.hide();
-					ShowAjaxFlashes(data);
-				}
-			})
-		},
-			2000
-		);
-	});
-
-	var decodeEntities = (function () {
-		let doc = document.implementation.createHTMLDocument("");
-		let element = doc.createElement('div');
-		function getText(str) {
-			element.innerHTML = str;
-			str = element.textContent;
-			element.textContent = '';
-			return str;
-		}
-		function decodeHTMLEntities(str) {
-			if (str && typeof str === 'string') {
-				let x = getText(str);
-				while (str !== x) {
-					str = x;
-					x = getText(x);
-				}
-				return x;
-			}
-		}
-		return decodeHTMLEntities;
-	})();
+			return decodeHTMLEntities;
+		})();
 		
 		
 	});

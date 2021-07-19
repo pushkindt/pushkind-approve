@@ -32,11 +32,11 @@
 						</div>
 						<div class="row mb-3">
 							<div class="col-md-6 offset-md-4">
-								{{ form.submit(class_ = 'btn btn-primary') }}
+								{{ form.submit(class_ = 'btn btn-primary text-white') }}
 								{% if current_user.is_anonymous %}
-								<a href="{{ url_for('auth.PerformLogin') }}" class="btn btn-link">
-									Авторизация
-								</a>
+									<a href="{{ url_for('auth.PerformLogin') }}" class="btn btn-link">
+										Авторизация
+									</a>
 								{% endif %}
 							</div>
 						</div>

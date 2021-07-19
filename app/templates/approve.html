@@ -12,7 +12,6 @@
 
 {% block content %}
 <div class="container bg-white border rounded">
-
 	<div class="row my-2">
 		<div class="col">
 			<span class="fw-bold">ЗАЯВКА
@@ -484,172 +483,168 @@
 <script>
 	$(document).ready(function () {
 
-		var projects = [
-			{% for project in projects %}
-				{{ project| safe }},
-		{% endfor %}
-				];
+		var projects = [{% for project in projects %}{{ project| safe }},{% endfor %}];
 
-	$("#project option[value='0']").prop("disabled", true);
-	$("#site option[value='0']").prop("disabled", true);
+		$("#project option[value='0']").prop("disabled", true);
+		$("#site option[value='0']").prop("disabled", true);
 
-	$("#exportSubmit").click(function () {
-		setTimeout(() => $("#exportNotification").removeClass("d-none"), 1000);
-	});
-
-	$("#project").change(function () {
-		let val = Number($(this).val());
-		$(this).removeClass("border-danger");
-		let sitesList = $("#site");
-		sitesList.empty();
-		let defaultSite = $("<option>").text("Выберите объект...");
-		defaultSite.prop("disabled", true);
-		defaultSite.prop("selected", true);
-		defaultSite.val(0);
-		sitesList.append(defaultSite);
-
-		for (let i = 0; i < projects.length; i++) {
-			let proj = projects[i];
-			if (proj["id"] === val) {
-				for (j = 0; j < proj["sites"].length; j++) {
-					let siteOption = $("<option>").text(proj["sites"][j]["name"])
-					siteOption.val(proj["sites"][j]["id"]);
-					sitesList.append(siteOption);
-				}
-				break;
-			}
-		}
-
-	});
-
-	$("#excelModalSelect").change(function () {
-		let excelModalForm = $("#excelModalForm");
-		let excelModalDate = $("#excelModalDate");
-		excelModalForm.removeClass("d-none");
-		if ($(this).val() == 1) {
-			excelModalDate.closest("div").addClass("d-none");
-			excelModalDate.prop("disabled", true);
-			excelModalDate.prop("required", null);
-			excelModalForm.prop("action", "{{ url_for('main.GetExcelReport1', order_id = order.id) }}");
-		}
-		else if ($(this).val() == 2) {
-			excelModalDate.closest("div").addClass("d-none");
-			excelModalDate.prop("disabled", true);
-			excelModalDate.prop("required", null);
-			excelModalForm.prop("action", "{{ url_for('main.GetExcelReport2', order_id = order.id) }}");
-		}
-		else if ($(this).val() == 3) {
-			excelModalDate.closest("div").removeClass("d-none");
-			excelModalDate.prop("disabled", null);
-			excelModalDate.prop("required", true);
-			excelModalForm.prop("action", "{{ url_for('main.GetExcelReport1C', order_id = order.id) }}");
-		}
-		else {
-			excelModalForm.addClass("d-none");
-		}
-	});
-
-	$("#excelModalForm").submit(function () {
-		setTimeout(() => $("#excelNotification").removeClass("d-none"), 1000);
-	});
-
-	$("#sendModalSelect").change(function () {
-
-		let sendModalForm = $("#sendModalForm");
-		let sendModalDate = $("#sendModalDate");
-		let sendModalCheck = $("#sendModalCheck");
-		sendModalForm.removeClass("d-none");
-		if ($(this).val() == 1) {
-			sendModalDate.closest("div").addClass("d-none");
-			sendModalDate.prop("disabled", true);
-			sendModalDate.prop("required", null);
-			sendModalCheck.prop("disabled", true);
-			sendModalCheck.prop("required", null);
-			sendModalForm.prop("action", "{{ url_for('main.ProcessHubOrder', order_id = order.id) }}");
-		}
-		else if ($(this).val() == 2) {
-			sendModalDate.closest("div").removeClass("d-none");
-			sendModalDate.prop("disabled", null);
-			sendModalDate.prop("required", true);
-			sendModalCheck.prop("disabled", null);
-			sendModalCheck.prop("required", true);
-			sendModalForm.prop("action", "{{ url_for('main.GetExcelReport1C', order_id = order.id) }}");
-		}
-		else {
-			sendModalForm.addClass("d-none");
-		}
-	});
-
-	$(".showRemarks").click(function () {
-		let productId = $(this).data("id");
-		$(".remarkListItem").filter(function () {
-			$(this).toggle($(this).data("id") === productId);
+		$("#exportSubmit").click(function () {
+			setTimeout(() => $("#exportNotification").removeClass("d-none"), 1000);
 		});
-	});
 
-	{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
-	var focusOutTimer = null;
-	$(".changeQuantityForm input").focus(function () {
-		if (focusOutTimer != null)
-			clearTimeout(focusOutTimer);
-		$(this).closest("form").find(":submit").removeClass("d-none");
-	});
-	$(".changeQuantityForm input").focusout(function () {
-		focusOutTimer = setTimeout(() =>
-			$(this).closest("form").find(":submit").addClass("d-none"),
-			1000
-		);
-	});
-	{% endif %}
+		$("#project").change(function () {
+			let val = Number($(this).val());
+			$(this).removeClass("border-danger");
+			let sitesList = $("#site");
+			sitesList.empty();
+			let defaultSite = $("<option>").text("Выберите объект...");
+			defaultSite.prop("disabled", true);
+			defaultSite.prop("selected", true);
+			defaultSite.val(0);
+			sitesList.append(defaultSite);
 
-	{% if current_user.role.name in ['purchaser', 'validator'] %}
-	$(".approveButton").click(function () {
-
-		let userModal = new bootstrap.Modal(document.getElementById('approveModal'), {});
-		let submitApproval = $("#submitApproval");
-		let approvalHint = $("#approvalHint");
-		let target = $(this).data("target");
-		if (target == "order") {
-			let approved = $(this).data("approved");
-			if (approved == true) {
-				$("#product_id").prop("disabled", false);
-				$("#product_id").val(0);
-				$("#approvalComment").prop("required", true);
-				approvalHint.text("Опишите суть замечания:");
-				approvalHint.removeClass("text-success");
-				approvalHint.addClass("text-danger");
-				submitApproval.removeClass("btn-success");
-				submitApproval.addClass("btn-danger");
-				submitApproval.text('Сохранить');
+			for (let i = 0; i < projects.length; i++) {
+				let proj = projects[i];
+				if (proj["id"] === val) {
+					for (j = 0; j < proj["sites"].length; j++) {
+						let siteOption = $("<option>").text(proj["sites"][j]["name"])
+						siteOption.val(proj["sites"][j]["id"]);
+						sitesList.append(siteOption);
+					}
+					break;
+				}
 			}
-			else if (approved == false) {
-				$("#product_id").prop("disabled", true);
-				$("#product_id").val(null);
-				approvalHint.text("Подтвердите согласование заявки. Вы также можете добавить комментарий:");
-				approvalHint.removeClass("text-danger");
-				approvalHint.addClass("text-success");
-				submitApproval.removeClass("btn-danger");
-				submitApproval.addClass("btn-success");
-				submitApproval.text('Подтвердить');
-			}
-			userModal.show();
-		}
-		else if (target == "product") {
 
+		});
+
+		$("#excelModalSelect").change(function () {
+			let excelModalForm = $("#excelModalForm");
+			let excelModalDate = $("#excelModalDate");
+			excelModalForm.removeClass("d-none");
+			if ($(this).val() == 1) {
+				excelModalDate.closest("div").addClass("d-none");
+				excelModalDate.prop("disabled", true);
+				excelModalDate.prop("required", null);
+				excelModalForm.prop("action", "{{ url_for('main.GetExcelReport1', order_id = order.id) }}");
+			}
+			else if ($(this).val() == 2) {
+				excelModalDate.closest("div").addClass("d-none");
+				excelModalDate.prop("disabled", true);
+				excelModalDate.prop("required", null);
+				excelModalForm.prop("action", "{{ url_for('main.GetExcelReport2', order_id = order.id) }}");
+			}
+			else if ($(this).val() == 3) {
+				excelModalDate.closest("div").removeClass("d-none");
+				excelModalDate.prop("disabled", null);
+				excelModalDate.prop("required", true);
+				excelModalForm.prop("action", "{{ url_for('main.GetExcelReport1C', order_id = order.id) }}");
+			}
+			else {
+				excelModalForm.addClass("d-none");
+			}
+		});
+
+		$("#excelModalForm").submit(function () {
+			setTimeout(() => $("#excelNotification").removeClass("d-none"), 1000);
+		});
+
+		$("#sendModalSelect").change(function () {
+
+			let sendModalForm = $("#sendModalForm");
+			let sendModalDate = $("#sendModalDate");
+			let sendModalCheck = $("#sendModalCheck");
+			sendModalForm.removeClass("d-none");
+			if ($(this).val() == 1) {
+				sendModalDate.closest("div").addClass("d-none");
+				sendModalDate.prop("disabled", true);
+				sendModalDate.prop("required", null);
+				sendModalCheck.prop("disabled", true);
+				sendModalCheck.prop("required", null);
+				sendModalForm.prop("action", "{{ url_for('main.ProcessHubOrder', order_id = order.id) }}");
+			}
+			else if ($(this).val() == 2) {
+				sendModalDate.closest("div").removeClass("d-none");
+				sendModalDate.prop("disabled", null);
+				sendModalDate.prop("required", true);
+				sendModalCheck.prop("disabled", null);
+				sendModalCheck.prop("required", true);
+				sendModalForm.prop("action", "{{ url_for('main.GetExcelReport1C', order_id = order.id) }}");
+			}
+			else {
+				sendModalForm.addClass("d-none");
+			}
+		});
+
+		$(".showRemarks").click(function () {
 			let productId = $(this).data("id");
-			$("#product_id").prop("disabled", false);
-			$("#product_id").val(productId);
-			$("#approvalComment").prop("required", true);
-			approvalHint.text("Опишите суть замечания:");
-			approvalHint.removeClass("text-success");
-			approvalHint.addClass("text-danger");
-			submitApproval.removeClass("btn-success");
-			submitApproval.addClass("btn-danger");
-			submitApproval.text('Сохранить');
-			userModal.show();
-		}
-	});
-	{% endif %}
+			$(".remarkListItem").filter(function () {
+				$(this).toggle($(this).data("id") === productId);
+			});
+		});
+
+		{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
+			var focusOutTimer = null;
+			$(".changeQuantityForm input").focus(function () {
+				if (focusOutTimer != null)
+					clearTimeout(focusOutTimer);
+				$(this).closest("form").find(":submit").removeClass("d-none");
+			});
+			$(".changeQuantityForm input").focusout(function () {
+				focusOutTimer = setTimeout(() =>
+					$(this).closest("form").find(":submit").addClass("d-none"),
+					1000
+				);
+			});
+		{% endif %}
+
+		{% if current_user.role.name in ['purchaser', 'validator'] %}
+			$(".approveButton").click(function () {
+
+				let userModal = new bootstrap.Modal(document.getElementById('approveModal'), {});
+				let submitApproval = $("#submitApproval");
+				let approvalHint = $("#approvalHint");
+				let target = $(this).data("target");
+				if (target == "order") {
+					let approved = $(this).data("approved");
+					if (approved == true) {
+						$("#product_id").prop("disabled", false);
+						$("#product_id").val(0);
+						$("#approvalComment").prop("required", true);
+						approvalHint.text("Опишите суть замечания:");
+						approvalHint.removeClass("text-success");
+						approvalHint.addClass("text-danger");
+						submitApproval.removeClass("btn-success");
+						submitApproval.addClass("btn-danger");
+						submitApproval.text('Сохранить');
+					}
+					else if (approved == false) {
+						$("#product_id").prop("disabled", true);
+						$("#product_id").val(null);
+						approvalHint.text("Подтвердите согласование заявки. Вы также можете добавить комментарий:");
+						approvalHint.removeClass("text-danger");
+						approvalHint.addClass("text-success");
+						submitApproval.removeClass("btn-danger");
+						submitApproval.addClass("btn-success");
+						submitApproval.text('Подтвердить');
+					}
+					userModal.show();
+				}
+				else if (target == "product") {
+
+					let productId = $(this).data("id");
+					$("#product_id").prop("disabled", false);
+					$("#product_id").val(productId);
+					$("#approvalComment").prop("required", true);
+					approvalHint.text("Опишите суть замечания:");
+					approvalHint.removeClass("text-success");
+					approvalHint.addClass("text-danger");
+					submitApproval.removeClass("btn-success");
+					submitApproval.addClass("btn-danger");
+					submitApproval.text('Сохранить');
+					userModal.show();
+				}
+			});
+		{% endif %}
 	});
 </script>
 {%endblock %}
