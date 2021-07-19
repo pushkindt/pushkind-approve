@@ -295,8 +295,8 @@ class Project(db.Model):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        data = {'id': self.id, 'name': self.name, 'uid': self.uid, 'sites': [
-            site.to_dict() for site in self.sites]}
+        data = {'id': self.id, 'name': self.name, 'uid': self.uid, 'enabled': self.enabled,
+                'sites': [site.to_dict() for site in self.sites]}
         return data
 
 

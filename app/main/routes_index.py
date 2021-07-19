@@ -62,6 +62,10 @@ def ShowIndex():
         orders = orders.filter(Site.project_id.in_(
             [p.id for p in current_user.projects]))
 
+    elif current_user.role == UserRoles.supervisor:
+        orders = orders.join(Site)
+        orders = orders.join(Project).filter(Project.enabled == True)
+
     orders = orders.order_by(Order.create_timestamp.desc())
 
     orders = orders.all()

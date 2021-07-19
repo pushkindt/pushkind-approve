@@ -185,6 +185,7 @@ def EditProject():
             if existed is None or existed.id == project.id:
                 project.name = project_name
                 project.uid = form.uid.data.strip() if form.uid.data is not None else None
+                project.enabled = form.enabled.data
                 db.session.commit()
                 flash(f'Проект {project_name} изменён.')
             else:

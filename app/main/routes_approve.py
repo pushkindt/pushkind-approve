@@ -58,8 +58,12 @@ def ShowOrder(order_id):
     approver_form = ApproverForm(
         income_statement=order.income_statement, cash_flow_statement=order.cash_flow_statement)
 
-    projects = Project.query.filter(
-        Project.hub_id == current_user.hub_id).order_by(Project.name).all()
+    projects = Project.query
+    if current_user.role != UserRoles.admin:
+        projects = projects.filter_by(enabled=True)
+    projects = projects.filter_by(hub_id=current_user.hub_id)
+    projects = projects.order_by(Project.name).all()
+
     categories = Category.query.filter(
         Category.hub_id == current_user.hub_id).all()
 

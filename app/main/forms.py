@@ -64,7 +64,8 @@ class LeaveCommentForm(FlaskForm):
 
 class OrderApprovalForm(FlaskForm):
     product_id = IntegerField('Идентификатор товара', render_kw={'hidden': ''})
-    comment = TextAreaField('Замечание', [Length(max=256, message='Слишком длинное замечание.')])
+    comment = TextAreaField('Замечание', [Length(
+        max=256, message='Слишком длинное замечание.')])
     submit = SubmitField('Сохранить')
 
 
@@ -72,7 +73,7 @@ class ChangeQuantityForm(FlaskForm):
     product_id = IntegerField('Идентификатор товара', [DataRequired(
         message='ID товара - обязательное поле.')], render_kw={'hidden': ''})
     product_quantity = IntegerField('Количество товара', [InputRequired(
-        message='Невозможное значение количества')], render_kw={'type': 'number', 'step': 1, 'min': 0})
+        message='Невозможное значение количества.')], render_kw={'type': 'number', 'step': 1, 'min': 0})
     product_measurement = StringField('Единица измерения', [Length(
         max=10, message='Единицы измерения должны быть аббревиатурой.')])
     submit = SubmitField('Сохранить')
@@ -110,12 +111,12 @@ Settings page
 
 class UserSettings(Form):
     full_name = StringField(
-        'Имя', [DataRequired(message='Имя - обязательное поле')])
+        'Имя', [DataRequired(message='Имя - обязательное поле.')])
     phone = StringField('Телефон')
     categories = SelectMultipleField('Категории', coerce=int)
     projects = SelectMultipleField('Проекты', coerce=int)
     position = StringField(
-        'Роль', [InputRequired(message='Роль - обязательное поле')])
+        'Роль', [InputRequired(message='Роль - обязательное поле.')])
     location = StringField('Площадка')
     email_new = BooleanField('Новые заявки')
     email_modified = BooleanField('Заявка изменена')
@@ -126,7 +127,7 @@ class UserSettings(Form):
 class UserRolesForm(FlaskForm):
     user_id = IntegerField('Идентификатор пользователя',
                            render_kw={'hidden': ''})
-    role = SelectField('Права доступа', [InputRequired(message='Некорректные права доступа пользователя')], coerce=int,
+    role = SelectField('Права доступа', [InputRequired(message='Некорректные права доступа пользователя.')], coerce=int,
                        choices=[(int(role), str(role)) for role in UserRoles])
     about_user = FormField(UserSettings, [DataRequired()])
     note = TextAreaField('Заметка')
@@ -165,13 +166,13 @@ Admin page
 
 class EcwidSettingsForm(FlaskForm):
     partners_key = StringField('Ключ partners_key', [DataRequired(
-        message='Ключ partners_key - обязательное поле')])
+        message='Ключ partners_key - обязательное поле.')])
     client_id = StringField('Ключ client_id', [DataRequired(
-        message='Ключ client_id - обязательное поле')])
+        message='Ключ client_id - обязательное поле.')])
     client_secret = StringField('Ключ client_secret', [DataRequired(
-        message='Ключ client_secret - обязательное поле')])
+        message='Ключ client_secret - обязательное поле.')])
     store_id = IntegerField('ID магазина', [DataRequired(
-        message='ID магазина - обязательное поле')])
+        message='ID магазина - обязательное поле.')])
     submit = SubmitField('Сохранить')
 
 
@@ -190,7 +191,7 @@ class AddProjectForm(FlaskForm):
 
 class AddSiteForm(FlaskForm):
     project_id = IntegerField('ID проекта', [DataRequired(
-        message='ID проекта - обязательное поле')])
+        message='ID проекта - обязательное поле.')])
     site_name = StringField('Название', validators=[DataRequired(
         message='Название объекта - обязательное поле.')])
     uid = StringField('Код', validators=[Optional()])
@@ -199,16 +200,17 @@ class AddSiteForm(FlaskForm):
 
 class EditProjectForm(FlaskForm):
     project_id = IntegerField('ID проекта', [DataRequired(
-        message='ID проекта - обязательное поле')])
+        message='ID проекта - обязательное поле.')])
     project_name = StringField('Название', validators=[DataRequired(
         message='Название проекта - обязательное поле.')])
     uid = StringField('Код', validators=[Optional()])
+    enabled = BooleanField('Включить проект')
     submit = SubmitField('Изменить')
 
 
 class EditSiteForm(FlaskForm):
     site_id = IntegerField('ID проекта', [DataRequired(
-        message='ID проекта - обязательное поле')])
+        message='ID проекта - обязательное поле.')])
     site_name = StringField('Название', validators=[DataRequired(
         message='Название объекта - обязательное поле.')])
     uid = StringField('Код', validators=[Optional()])
@@ -219,7 +221,7 @@ class CategoryResponsibilityForm(FlaskForm):
     category_id = IntegerField('ID категории', [DataRequired(
         message='ID категории - обязательное поле.')])
     responsible = StringField('Ответственный', validators=[DataRequired(
-        message='Ответственный - обязательное поле')])
+        message='Ответственный - обязательное поле.')])
     functional_budget = StringField('Функциональный бюджет', validators=[DataRequired(
-        message='Функциональный бюджет - обязательное поле')])
+        message='Функциональный бюджет - обязательное поле.')])
     submit = SubmitField('Сохранить')
