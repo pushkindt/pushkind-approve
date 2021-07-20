@@ -370,7 +370,7 @@ class Order(db.Model):
 
         # Query orders from the hub
         orders = Order.query.filter(
-            Order.hub_id == hub_id)
+            Order.hub_id == hub_id, Order.status != OrderStatus.approved)
         # Filter by order_id if specified
         if order_id is not None:
             orders = orders.filter_by(id=order_id)
