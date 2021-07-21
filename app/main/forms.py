@@ -113,8 +113,8 @@ class UserSettings(Form):
     full_name = StringField(
         'Имя', [DataRequired(message='Имя - обязательное поле.')])
     phone = StringField('Телефон')
-    categories = SelectMultipleField('Категории', coerce=int)
-    projects = SelectMultipleField('Проекты', coerce=int)
+    categories = SelectMultipleField('Категории ▼', coerce=int)
+    projects = SelectMultipleField('Проекты ▼', coerce=int)
     position = StringField(
         'Роль', [InputRequired(message='Роль - обязательное поле.')])
     location = StringField('Площадка')
