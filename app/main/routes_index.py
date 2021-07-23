@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from app.main import bp
 from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval
 from flask import render_template, flash, request, redirect, url_for, Response
-from app.main.utils import ecwid_required, role_forbidden, role_required, GetFilterTimestamps
+from app.main.utils import ecwid_required, role_forbidden, role_required, GetFilterTimestamps, SendEmailNotification
 from datetime import datetime, timedelta, timezone
 from app.main.forms import MergeOrdersForm, SaveOrdersForm
 from openpyxl import Workbook
@@ -182,7 +182,8 @@ def MergeOrders():
 
         flash(
             f'Объединено заявок: {len(orders)}. Идентификатор новой заявки {order.id}')
-
+            
+        SendEmailNotification('new', order)
     else:
         for error in form.orders.errors:
             flash(error)

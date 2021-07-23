@@ -44,7 +44,7 @@ def PerformRegistration():
         user.registered = datetime.now(tz=timezone.utc)
         db.session.add(user)
         db.session.commit()
-        # SendUserRegisteredEmail(user)
+        SendUserRegisteredEmail(user)
         flash('Теперь пользователь может войти.')
         current_app.logger.info('{} registered'.format(user.email))
         if current_user.is_authenticated and current_user.role == UserRoles.admin:

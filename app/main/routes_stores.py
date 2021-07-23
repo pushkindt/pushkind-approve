@@ -127,4 +127,8 @@ def SyncStoreOrders():
     else:
         messages.append('Синхронизация успешно завершена.')
         status = True
+    if order_id is not None:
+        order = Order.query.filter_by(id = order_id).first()
+        if order is not None:
+            SendEmailNotification('new', new_order)
     return jsonify({'status': status, 'flash': messages})

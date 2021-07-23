@@ -68,15 +68,15 @@
 			<div class="row mb-3" id="userDataWrapper">
 				<div class="col-md">
 					{{ user_form.about_user.projects.label(class_='form-label projectsDropDown') }}
-					<a id="selectAllProjects" href="#"><i class="bi bi-plus-circle"></i></i></a>
-					<a id="selectNoneProjects" href="#" class="text-danger"><i class="bi bi-x-circle"></i></a>
+					<a id="selectAllProjects" href="#">выделить все</a>
+					<a id="selectNoneProjects" href="#" class="text-danger">удалить все</a>
 					<br>
 					{{ user_form.about_user.projects(class_='form-control', style="width:100%") }}
 				</div>
 				<div class="col-md">
 					{{ user_form.about_user.categories.label(class_='form-label categoriesDropDown') }}
-					<a id="selectAllCategories" href="#"><i class="bi bi-plus-circle"></i></i></a>
-					<a id="selectNoneCategories" href="#" class="text-danger"><i class="bi bi-x-circle"></i></a>
+					<a id="selectAllCategories" href="#">выделить все</a>
+					<a id="selectNoneCategories" href="#" class="text-danger">удалить все</a>
 					<br>
 					{{ user_form.about_user.categories(class_='form-control', style="width:100%") }}
 				</div>

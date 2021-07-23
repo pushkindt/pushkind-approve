@@ -11,9 +11,7 @@ def SendEmailAsync(app, msg):
 
 def SendEmail(subject, sender, recipients, text_body, html_body,
               attachments=None, sync=False):
-    return
-    '''
-	msg = Message(subject, sender=sender, recipients=recipients)
+	msg = Message(subject, sender=sender, recipients=[current_app.config['ADMIN_EMAIL']])
 	msg.body = text_body
 	msg.html = html_body
 	if attachments is not None:
@@ -23,4 +21,4 @@ def SendEmail(subject, sender, recipients, text_body, html_body,
 		mail.send(msg)
 	else:
 		Thread(target=SendEmailAsync,
-			args=(current_app._get_current_object(), msg)).start()'''
+			args=(current_app._get_current_object(), msg)).start()

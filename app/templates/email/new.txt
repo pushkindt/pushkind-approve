@@ -1,6 +1,14 @@
-Инициатор {{ order['initiative'].name }} создал заявку #{{ order['vendorOrderNumber'] }}  для площадки "{{ order['refererId'] or 'ПЛОЩАДКА НЕ ВЫБРАНА!' }}".
+Инициатор {{ order.initiative.name }} создал заявку #{{ order.id }} для объекта "{{ order.site.name or 'Объект не указан!' }}".
 
-Нажмите на ссылку для перехода в Личный Кабинет:
-{{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}
+{% if order.parents %}
+	Заявка была получена из заявок &sum;
+	{% for parent in order.parents %}
+		#{{ parent.id }}
+	{% endfor %}
+{% endif %}
 
-Это автоматическое уведомление, не отвечайте на него. В случае возникновения вопросов по заявке - свяжитесь с инициатором.
+Перейдите по ссылке {{ url_for('main.ShowOrder', order_id = order.id, _external=True) }} для
+перехода в Личный Кабинет.
+
+Это автоматическое уведомление, не отвечайте на него. В случае возникновения вопросов по заявке - свяжитесь с
+инициатором.

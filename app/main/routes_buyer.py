@@ -8,7 +8,7 @@ from app.main.utils import role_required
 
 @bp.route('/buyer/')
 @login_required
-@role_required([UserRoles.initiative, UserRoles.approver, UserRoles.admin])
+@role_required([UserRoles.initiative, UserRoles.purchaser, UserRoles.admin])
 def ShowEcwid():
     projects = Project.query
     if current_user.role != UserRoles.admin:

@@ -363,7 +363,13 @@ class Order(db.Model):
 
     @property
     def reviewers(self):
-        return User.query.filter_by(role=UserRoles.validator).join(Position).join(OrderPosition).filter_by(order_id=self.id).all()
+        if self.site is None or len(self.categories) == 0:
+            return []
+        approvers = User.query.filter_by(role=UserRoles.validator).join(Position).join(OrderPosition).filter_by(order_id=self.id).all()
+        purchasers = User.query.filter_by(role=UserRoles.purchaser).join(UserCategory).filter(
+                UserCategory.category_id.in_(self.categories_list)).join(UserProject).filter(
+                UserProject.project_id == self.site.project_id).all()
+        return approvers + purchasers
 
     @classmethod
     def UpdateOrdersPositions(cls, hub_id, order_id=None):

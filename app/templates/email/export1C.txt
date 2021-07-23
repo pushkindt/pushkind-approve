@@ -1,6 +1,6 @@
-Заявка #{{ order['vendorOrderNumber'] }} экспортирована в Excel для загрузки в 1С. Файл приложен к этому письму.
+Заявка #{{ order.id }} экспортирована в Excel для загрузки в 1С. Файл приложен к этому письму.
 
 Нажмите на ссылку для перехода в Личный Кабинет:
-{{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}
+{{ url_for('main.ShowOrder', order_id = order.id, _external=True) }}
 
 Это автоматическое уведомление, не отвечайте на него.

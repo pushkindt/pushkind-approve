@@ -1,8 +1,8 @@
 <p>
-    Инициатор {{ current_user.name }} ({{ order['refererId'] }}) уведомляет, что заявка #{{ order['vendorOrderNumber'] }} исправлена и ожидает согласования.
+    Инициатор {{ current_user.name }} ({{ current_user.location }}) уведомляет, что заявка #{{ order.id }} исправлена и ожидает согласования.
 </p>
 <p>
-    Нажмите на <a href="{{ url_for('main.ShowOrder', order_id = order['orderNumber'], _external=True) }}">ссылку</a> для
+    Нажмите на <a href="{{ url_for('main.ShowOrder', order_id = order.id, _external=True) }}">ссылку</a> для
     перехода в Личный Кабинет.
 </p>
 <p>

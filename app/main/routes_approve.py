@@ -6,7 +6,7 @@ from app.models import Project, Category, Order, OrderCategory, Site, AppSetting
 from flask import render_template, redirect, url_for, flash, Response, request
 from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, InitiativeForm
 from app.main.forms import ApproverForm
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 from app.ecwid import EcwidAPIException
 from app.main.utils import role_required, ecwid_required, role_forbidden, SendEmailNotification, SendEmail1C
 
@@ -134,6 +134,8 @@ def DuplicateOrder(order_id):
     flash('Заявка успешно клонирована.')
 
     Order.UpdateOrdersPositions(current_user.hub_id)
+    
+    SendEmailNotification('new', new_order)
 
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
@@ -298,7 +300,7 @@ def NotifyApprovers(order_id):
     if order is None:
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
-    #SendEmailNotification('modified', order)
+    SendEmailNotification('modified', order)
     flash('Уведомление успешно выслано.')
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
@@ -447,6 +449,9 @@ def SaveApproval(order_id):
         return redirect(url_for('main.ShowIndex'))
     form = OrderApprovalForm()
     if form.validate_on_submit():
+    
+        last_status = order.status
+    
         position_approval = OrderPosition.query.filter_by(
             order_id=order_id, position_id=current_user.position_id).first()
         if form.comment.data != '':
@@ -510,32 +515,22 @@ def SaveApproval(order_id):
         order.UpdateOrderStatus()
         db.session.commit()
         flash('Согласование сохранено.')
+        
+        if order.status != last_status:
+            if order.status == OrderStatus.approved:
+                SendEmailNotification('approved', order)
+                app_data = AppSettings.query.filter_by(hub_id = current_user.hub_id).first()
+                if app_data is not None and app_data.email_1C is not None and app_data.notify_1C is True:
+                    data = Prepare1CReport(data, date.today() + timedelta(days = 14))
+                    if data is not None:
+                        SendEmail1C([app_data.email_1C], order, data)
+            elif order.status == OrderStatus.not_approved:
+                SendEmailNotification('disapproved', order)
+        
     else:
         for error in form.product_id.errors + form.comment.errors:
             flash(error)
     return redirect(url_for('main.ShowOrder', order_id=order_id))
-
-
-'''
-if order.status == OrderStatus.approved:
-	#SendEmailNotification('approved', order)
-	app_data = AppSettings.query.filter_by(hub_id = current_user.hub_id).first()
-	if app_data is not None and app_data.email_1C is not None and app_data.notify_1C is True:
-		data = Prepare1CReport(data, date.today())
-		if data is not None:
-			if order.site is not None:
-				subject = '{}. {} (pushkind_{})'.format(order.site.project.name, order.site.name, order.id)
-			else:
-				subject = 'pushkind_{}'.format(order.id)
-			SendEmail1C([app_data.email_1C], order, subject,('pushkind_{}.xlsx'.format(order['vendorOrderNumber']), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data))
-			
-	#if order.status != OrderStatus.not_approved:
-	#	SendEmailNotification('disapproved', order)
-	
-	#if order.status != OrderStatus.not_approved:
-	#	SendEmailNotification('disapproved', order)
-
-'''
 
 
 @bp.route('/orders/statements/<order_id>', methods=['POST'])

@@ -105,9 +105,17 @@ def SendEmailNotification(type, order):
                   html_body=render_template('email/{}.html'.format(type), order=order))
 
 
-def SendEmail1C(recipients, order, subject, data):
+def SendEmail1C(recipients, order, data):
     current_app.logger.info(
         '"export1C" email about order {} has been sent to {}'.format(order.id, recipients))
+        
+    if order.site is not None:
+        subject = '{}. {} (pushkind_{})'.format(order.site.project.name, order.site.name, order.id)
+    else:
+        subject = 'pushkind_{}'.format(order.id)
+        
+    data = ('pushkind_{}.xlsx'.format(order.id), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data)
+        
     SendEmail(subject,
               sender=current_app.config['MAIL_USERNAME'],
               recipients=recipients,

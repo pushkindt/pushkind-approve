@@ -13,12 +13,12 @@
 		<span class="badge bg-{{order['status'].color() }}">{{ order.status }}</span>
 	{% endif %}
 	{% if order.purchased %}
-		<span class="badge bg-info"><i class="bi bi-wallet2"></i></span>
+		<span class="badge bg-info"><i class="bi bi-envelope"></i></span>
 	{% endif %}
 	{% if order.exported %}
 		<span class="badge bg-info">1C</span>
 	{% endif %}
 	{% if order.dealdone %}
-		<span class="badge bg-info">DealDone</span>
+		<span class="badge bg-info"><i class="bi bi-check-circle"></i></span>
 	{% endif %}
 {% endif %}
