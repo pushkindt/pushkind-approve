@@ -68,7 +68,6 @@
 	$(document).ready(function () {
 
 		var siteProjectModal = new bootstrap.Modal(document.getElementById('siteProjectModal'), { 'backdrop': 'static' });
-		siteProjectModal.show();
 
 		var loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'), { 'backdrop': 'static' });
 
@@ -76,6 +75,7 @@
 
 		Ecwid.OnAPILoaded.add(function () {
 			Ecwid.Cart.setCustomerEmail("{{ current_user.email }}");
+			siteProjectModal.show();
 
 			$("#projectSelect").change(function () {
 				ec.order = ec.order || {};

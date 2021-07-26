@@ -404,10 +404,16 @@ def GetExcelReport1C(order_id):
     if order is None:
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
-    excel_date = request.args.get('date', default=date.today(
-    ), type=lambda x: datetime.strptime(x, "%Y-%m-%d").date())
+    try:
+        excel_date = request.args.get('date', default=date.today(
+        ), type=lambda x: datetime.strptime(x, "%Y-%m-%d").date())
+    except:
+        excel_date = date.today()
     excel_send = request.args.get('send', default=False, type=bool)
     data = Prepare1CReport(order, excel_date)
+    if data is None:
+        flash('Не удалось получить выгрузку.')
+        return redirect(url_for('main.ShowOrder', order_id=order_id))
     if excel_send is False:
         message = 'выгружена в Excel-файл'
         event = OrderEvent(user_id=current_user.id, order_id=order.id,
@@ -420,23 +426,18 @@ def GetExcelReport1C(order_id):
         app_data = AppSettings.query.filter_by(
             hub_id=current_user.hub_id).first()
         if app_data is not None and app_data.email_1C is not None:
-            if order.site is not None:
-                subject = '{}. {} (pushkind_{})'.format(
-                    order.site.project.name, order.site.name, order.id)
-            else:
-                subject = 'pushkind_{}'.format(order.id)
-            SendEmail1C([app_data.email_1C], order, subject, ('pushkind_{}.xlsx'.format(
-                order.id), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data))
+            SendEmail1C([app_data.email_1C], order, data)
             message = f'отправлена на {app_data.email_1C}'
             event = OrderEvent(user_id=current_user.id, order_id=order.id,
                                type=EventType.exported, data=message, timestamp=datetime.now(tz=timezone.utc))
             db.session.add(event)
             order.exported = True
             db.session.commit()
+            flash(f'Заявка отправлена на {app_data.email_1C}')
         else:
             flash('Email для отправки в 1С не настроен администратором.')
-        flash('Заявка отправлена на {}')
         return redirect(url_for('main.ShowOrder', order_id=order_id))
+
 
 
 @bp.route('/orders/approval/<order_id>', methods=['POST'])
