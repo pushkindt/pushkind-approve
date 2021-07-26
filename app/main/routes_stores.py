@@ -1,12 +1,12 @@
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import UserRoles, Ecwid
+from app.models import UserRoles, Ecwid, Order
 from flask import render_template, redirect, url_for, flash, jsonify, request
 from app.main.forms import AddStoreForm
 from app.ecwid import EcwidAPIException
 import subprocess
-from app.main.utils import role_required, ecwid_required, role_forbidden, role_forbidden_ajax, ecwid_required_ajax
+from app.main.utils import role_required, ecwid_required, role_forbidden, role_forbidden_ajax, ecwid_required_ajax, SendEmailNotification
 
 '''
 ################################################################################
@@ -130,5 +130,5 @@ def SyncStoreOrders():
     if order_id is not None:
         order = Order.query.filter_by(id = order_id).first()
         if order is not None:
-            SendEmailNotification('new', new_order)
+            SendEmailNotification('new', order)
     return jsonify({'status': status, 'flash': messages})
