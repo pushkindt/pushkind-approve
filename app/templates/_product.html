@@ -71,7 +71,7 @@
 					</span>
 				</div>
 			{% endif %}
-			{% if current_user.role.name in ['validator','purchaser'] %}
+			{% if current_user.role.name in ['validator'] %}
 				<div class="col text-center overflow-hidden my-3">
 					<a href="#" class="approveButton text-decoration-none" data-id="{{ product['id'] }}" data-target="product">
 						+замечание

@@ -66,19 +66,20 @@
 		</div>
 		{% if current_user.role.name in ['validator', 'purchaser', 'admin'] %}
 			<div class="row mb-3" id="userDataWrapper">
+				<div class="col-12 fw-bold">Подписка</div>
 				<div class="col-md">
 					{{ user_form.about_user.projects.label(class_='form-label projectsDropDown') }}
+					<a class="projectsDropDown" href="#">добавить из списка</a>
+					{{ user_form.about_user.projects(class_='form-control', style="width:100%") }}
 					<a id="selectAllProjects" href="#">выделить все</a>
 					<a id="selectNoneProjects" href="#" class="text-danger">удалить все</a>
-					<br>
-					{{ user_form.about_user.projects(class_='form-control', style="width:100%") }}
 				</div>
 				<div class="col-md">
 					{{ user_form.about_user.categories.label(class_='form-label categoriesDropDown') }}
+					<a class="categoriesDropDown" href="#">добавить из списка</a>
+					{{ user_form.about_user.categories(class_='form-control', style="width:100%") }}
 					<a id="selectAllCategories" href="#">выделить все</a>
 					<a id="selectNoneCategories" href="#" class="text-danger">удалить все</a>
-					<br>
-					{{ user_form.about_user.categories(class_='form-control', style="width:100%") }}
 				</div>
 			</div>
 		{% endif %}

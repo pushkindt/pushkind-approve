@@ -442,7 +442,7 @@ def GetExcelReport1C(order_id):
 
 @bp.route('/orders/approval/<order_id>', methods=['POST'])
 @login_required
-@role_required([UserRoles.validator, UserRoles.purchaser])
+@role_required([UserRoles.validator])
 def SaveApproval(order_id):
     order = GetOrder(order_id)
     if order is None:

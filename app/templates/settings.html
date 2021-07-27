@@ -111,12 +111,12 @@
 				selectizeProjects.clear(false);
 			});
 			
-			$('.projectsDropDown').click(function() {
-				selectizeProjects.trigger('focus');
+			$('.projectsDropDown').click(function(e) {
+				selectizeProjects.focus();
 			});
 			
-			$('.categoriesDropDown').click(function() {
-				selectizeCategories.trigger('focus');
+			$('.categoriesDropDown').click(function(e) {
+				selectizeCategories.focus();
 			});
 			
 		{% endif %}

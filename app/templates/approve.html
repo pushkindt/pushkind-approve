@@ -194,7 +194,7 @@
 			на сумму {{ '{:,.2f}'.format(order.total) }}
 		</div>
 	</div>
-	{% if current_user.role.name in ['validator', 'purchaser'] %}
+	{% if current_user.role.name in ['validator'] %}
 		<div class="row">
 			<div class="col text-end">
 				<button type="button" class="btn btn-success approveButton text-white" data-approved="false" data-target="order">Согласен</button>
@@ -331,7 +331,7 @@
 
 {% endif %}
 
-{% if current_user.role.name in ['validator', 'purchaser'] %}
+{% if current_user.role.name in ['validator'] %}
 
 	<div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
 		<div class="modal-dialog">
@@ -597,7 +597,7 @@
 			});
 		{% endif %}
 
-		{% if current_user.role.name in ['purchaser', 'validator'] %}
+		{% if current_user.role.name in ['validator'] %}
 			$(".approveButton").click(function () {
 
 				let userModal = new bootstrap.Modal(document.getElementById('approveModal'), {});
