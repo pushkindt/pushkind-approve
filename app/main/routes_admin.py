@@ -2,10 +2,11 @@ from app import db
 from flask_login import current_user, login_required
 from app.main import bp
 from app.models import UserRoles, Ecwid, Category, Project, Site
-from app.models import AppSettings
+from app.models import AppSettings, IncomeStatement, CashflowStatement
 from flask import render_template, redirect, url_for, flash
 from app.main.forms import EcwidSettingsForm, AddProjectForm, AddSiteForm, EditProjectForm, EditSiteForm
 from app.main.forms import Notify1CSettingsForm, CategoryResponsibilityForm
+from app.main.forms import AddIncomeForm, AddCashflowForm, EditIncomeForm, EditCashflowForm
 from app.ecwid import EcwidAPIException
 from sqlalchemy.exc import SQLAlchemyError
 from app.main.utils import role_required, role_forbidden
@@ -22,7 +23,11 @@ def ShowAdminPage():
         'add_project': AddProjectForm(),
         'edit_project': EditProjectForm(),
         'add_site': AddSiteForm(),
-        'edit_site': EditSiteForm()
+        'edit_site': EditSiteForm(),
+        'add_income': AddIncomeForm(),
+        'add_cashflow': AddCashflowForm(),
+        'edit_income': EditIncomeForm(),
+        'edit_cashflow': EditCashflowForm(),
     }
 
     app_data = AppSettings.query.filter_by(hub_id=current_user.hub_id).first()
@@ -37,9 +42,13 @@ def ShowAdminPage():
     categories = Category.query.filter(
         Category.hub_id == current_user.hub_id).all()
 
+    incomes = IncomeStatement.query.filter(IncomeStatement.hub_id == current_user.hub_id).order_by(IncomeStatement.name).all()
+    cashflows = CashflowStatement.query.filter(CashflowStatement.hub_id == current_user.hub_id).order_by(CashflowStatement.name).all()
+
     return render_template('admin.html',
                            forms=forms,
-                           projects=projects, categories=categories)
+                           projects=projects, categories=categories,
+                           incomes=incomes, cashflows=cashflows)
 
 
 @bp.route('/admin/1C/', methods=['POST'])
@@ -233,5 +242,123 @@ def EditSite():
             flash('Такой объект не существует.')
     else:
         for error in form.site_id.errors + form.site_name.errors + form.uid.errors:
+            flash(error)
+    return redirect(url_for('main.ShowAdminPage'))
+
+
+@bp.route('/admin/income/add', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin])
+def AddIncome():
+    form = AddIncomeForm()
+    if form.validate_on_submit():
+        income_name = form.income_name.data.strip()
+        income = IncomeStatement.query.filter_by(name=income_name, hub_id=current_user.hub_id).first()
+        if income is None:
+            income = IncomeStatement(name=income_name, hub_id=current_user.hub_id)
+            db.session.add(income)
+            db.session.commit()
+            flash(f'БДР "{income_name}" добавлен.')
+        else:
+            flash(f'БДР "{income_name}" уже существует.')
+    else:
+        for error in form.income_name.errors:
+            flash(error)
+    return redirect(url_for('main.ShowAdminPage'))
+    
+    
+@bp.route('/admin/cashflow/add', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin])
+def AddCashflow():
+    form = AddCashflowForm()
+    if form.validate_on_submit():
+        cashflow_name = form.cashflow_name.data.strip()
+        cashflow = CashflowStatement.query.filter_by(name=cashflow_name, hub_id=current_user.hub_id).first()
+        if cashflow is None:
+            cashflow = CashflowStatement(name=cashflow_name, hub_id=current_user.hub_id)
+            db.session.add(cashflow)
+            db.session.commit()
+            flash(f'БДДС "{cashflow_name}" добавлен.')
+        else:
+            flash(f'БДДС "{cashflow_name}" уже существует.')
+    else:
+        for error in form.cashflow_name.errors:
+            flash(error)
+    return redirect(url_for('main.ShowAdminPage'))
+    
+    
+@bp.route('/admin/income/remove/<int:id>')
+@login_required
+@role_required([UserRoles.admin])
+def RemoveIncome(id):
+    income = IncomeStatement.query.filter_by(id=id).first()
+    if income is not None:
+        db.session.delete(income)
+        db.session.commit()
+        flash(f'БДР "{income.name}" удален.')
+    else:
+        flash('Такой БДР не существует.')
+    return redirect(url_for('main.ShowAdminPage'))
+    
+    
+@bp.route('/admin/cashflow/remove/<int:id>')
+@login_required
+@role_required([UserRoles.admin])
+def RemoveCashflow(id):
+    cashflow = CashflowStatement.query.filter_by(id=id).first()
+    if cashflow is not None:
+        db.session.delete(cashflow)
+        db.session.commit()
+        flash(f'БДДС "{cashflow.name}" удален.')
+    else:
+        flash('Такой БДДС не существует.')
+    return redirect(url_for('main.ShowAdminPage'))
+    
+    
+@bp.route('/admin/income/edit/', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin])
+def EditIncome():
+    form = EditIncomeForm()
+    if form.validate_on_submit():
+        income = IncomeStatement.query.filter_by(id=form.income_id.data).first()
+        if income is not None:
+            income_name = form.income_name.data.strip()
+            existed = IncomeStatement.query.filter_by(name=income_name, hub_id=current_user.hub_id).first()
+            if existed is None or existed.id == income.id:
+                income.name = income_name
+                db.session.commit()
+                flash(f'БДР "{income_name}" изменён.')
+            else:
+                flash(f'БДР "{income_name}" уже существует.')
+        else:
+            flash('Такой БДР не существует.')
+    else:
+        for error in form.income_id.errors + form.income_name.errors:
+            flash(error)
+    return redirect(url_for('main.ShowAdminPage'))
+    
+    
+@bp.route('/admin/cashflow/edit/', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin])
+def EditCashflow():
+    form = EditCashflowForm()
+    if form.validate_on_submit():
+        cashflow = CashflowStatement.query.filter_by(id=form.cashflow_id.data).first()
+        if cashflow is not None:
+            cashflow_name = form.cashflow_name.data.strip()
+            existed = CashflowStatement.query.filter_by(name=cashflow_name, hub_id=current_user.hub_id).first()
+            if existed is None or existed.id == cashflow.id:
+                cashflow.name = cashflow_name
+                db.session.commit()
+                flash(f'БДДС "{cashflow_name}" изменён.')
+            else:
+                flash(f'БДДС "{cashflow_name}" уже существует.')
+        else:
+            flash('Такой БДДС не существует.')
+    else:
+        for error in form.cashflow_id.errors + form.cashflow_name.errors:
             flash(error)
     return redirect(url_for('main.ShowAdminPage'))

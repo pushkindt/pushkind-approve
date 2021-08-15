@@ -109,7 +109,7 @@ def MergeOrders():
         for order in orders[1:]:
             if order.site_id != orders[0].site_id or \
                     order.income_statement != orders[0].income_statement or \
-                    order.cash_flow_statement != orders[0].cash_flow_statement:
+                    order.cashflow_statement != orders[0].cashflow_statement:
                 flash('Нельзя объединять заявки с разными объектами, БДДР или БДДС.')
                 return redirect(url_for('main.ShowIndex'))
 
@@ -149,7 +149,7 @@ def MergeOrders():
         order.total = sum([product['quantity']*product['price']
                           for product in order.products])
         order.income_statement = orders[0].income_statement
-        order.cash_flow_statement = orders[0].cash_flow_statement
+        order.cashflow_statement = orders[0].cashflow_statement
         order.site_id = orders[0].site_id
         order.status = OrderStatus.new
         order.create_timestamp = int(now.timestamp())
@@ -239,8 +239,8 @@ def SaveOrders():
             ws.cell(row=i, column=6, value=len(order.products))
             ws.cell(row=i, column=7, value=str(order.status))
             ws.cell(row=i, column=8, value=order.initiative.name)
-            ws.cell(row=i, column=9, value=order.income_statement)
-            ws.cell(row=i, column=10, value=order.cash_flow_statement)
+            ws.cell(row=i, column=9, value=order.income_statement.name if order.income_statement is not None else '')
+            ws.cell(row=i, column=10, value=order.cashflow_statement.name if order.cashflow_statement is not None else '')
             ws.cell(row=i, column=11, value=', '.join(
                 [pos.position.name for pos in order.approvals if pos.approved is True]))
             ws.cell(row=i, column=12, value=', '.join(

@@ -26,8 +26,8 @@ class EventType(enum.IntEnum):
     exported = 6
     merged = 7
     dealdone = 8
-    cash_statement = 9
-    cash_flow_statement = 10
+    income_statement = 9
+    cashflow_statement = 10
     site = 11
     measurement = 12
 
@@ -324,8 +324,8 @@ class Order(db.Model):
     status = db.Column(db.Enum(OrderStatus), nullable=False,
                        default=OrderStatus.new, server_default='new')
     site_id = db.Column(db.Integer, db.ForeignKey('site.id'), nullable=True)
-    income_statement = db.Column(db.String(128), nullable=True)  # БДР
-    cash_flow_statement = db.Column(db.String(128), nullable=True)  # БДДС
+    income_id = db.Column(db.Integer, db.ForeignKey('income_statement.id'), nullable=True)  # БДР
+    cashflow_id = db.Column(db.Integer, db.ForeignKey('cashflow_statement.id'), nullable=True)  # БДДС
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
     purchased = db.Column(db.Boolean, nullable=False,
                           default=False, server_default=expression.false())
@@ -343,6 +343,8 @@ class Order(db.Model):
     user_approvals = db.relationship('OrderApproval', backref='order')
     parents = db.relationship(
         'Order', backref=db.backref('child', remote_side=[id]))
+    income_statement = db.relationship('IncomeStatement')
+    cashflow_statement = db.relationship('CashflowStatement')
 
     def UpdateOrderStatus(self):
         disapproved = OrderApproval.query.filter(
@@ -458,3 +460,28 @@ class UserProject(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey(
         'project.id'), primary_key=True)
+        
+class IncomeStatement(db.Model):
+    __tablename__ = 'income_statement'
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    name = db.Column(db.String(128), nullable=False, index=True)
+    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+    def __repr__(self):
+        return json.dumps(self.to_dict())
+
+    def to_dict(self):
+        data = {'id': self.id, 'name': self.name}
+        return data
+    
+
+class CashflowStatement(db.Model):
+    __tablename__ = 'cashflow_statement'
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    name = db.Column(db.String(128), nullable=False, index=True)
+    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+    def __repr__(self):
+        return json.dumps(self.to_dict())
+
+    def to_dict(self):
+        data = {'id': self.id, 'name': self.name}
+        return data

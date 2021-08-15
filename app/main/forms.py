@@ -49,10 +49,10 @@ class InitiativeForm(FlaskForm):
 
 
 class ApproverForm(FlaskForm):
-    income_statement = StringField(
-        'Статья БДР', [InputRequired(message='Статья БДР - обязательное поле.')])
-    cash_flow_statement = StringField(
-        'Статья БДДС', [InputRequired(message='Статья БДДС - обязательное поле.')])
+    income_statement = SelectField(
+        'Статья БДР', [DataRequired(message='Статья БДР - обязательное поле.')], coerce=int)
+    cashflow_statement = SelectField(
+        'Статья БДДС', [DataRequired(message='Статья БДДС - обязательное поле.')], coerce=int)
     submit = SubmitField('Сохранить')
 
 
@@ -225,3 +225,28 @@ class CategoryResponsibilityForm(FlaskForm):
     functional_budget = StringField('Функциональный бюджет', validators=[DataRequired(
         message='Функциональный бюджет - обязательное поле.')])
     submit = SubmitField('Сохранить')
+    
+ 
+class AddIncomeForm(FlaskForm):
+    income_name = StringField('БДР', validators=[DataRequired(
+        message='БДР - обязательное поле.')])
+    submit = SubmitField('Добавить')
+    
+class AddCashflowForm(FlaskForm):
+    cashflow_name = StringField('БДДС', validators=[DataRequired(
+        message='БДДС - обязательное поле.')])
+    submit = SubmitField('Добавить')
+    
+class EditIncomeForm(FlaskForm):
+    income_id = IntegerField('ID БДР', [DataRequired(
+        message='ID БДР - обязательное поле.')])
+    income_name = StringField('БДР', validators=[DataRequired(
+        message='БДР - обязательное поле.')])
+    submit = SubmitField('Изменить')
+    
+class EditCashflowForm(FlaskForm):
+    cashflow_id = IntegerField('ID БДДС', [DataRequired(
+        message='ID БДДС - обязательное поле.')])
+    cashflow_name = StringField('БДДС', validators=[DataRequired(
+        message='БДДС - обязательное поле.')])
+    submit = SubmitField('Изменить')

@@ -3,6 +3,7 @@ from flask_login import current_user, login_required
 from app.main import bp
 from app.models import User, UserRoles, Ecwid, OrderApproval, OrderEvent, EventType, OrderStatus
 from app.models import Project, Category, Order, OrderCategory, Site, AppSettings, OrderPosition
+from app.models import IncomeStatement, CashflowStatement
 from flask import render_template, redirect, url_for, flash, Response, request
 from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, InitiativeForm
 from app.main.forms import ApproverForm
@@ -55,8 +56,10 @@ def ShowOrder(order_id):
     quantity_form = ChangeQuantityForm()
     comment_form = LeaveCommentForm()
     initiative_form = InitiativeForm()
-    approver_form = ApproverForm(
-        income_statement=order.income_statement, cash_flow_statement=order.cash_flow_statement)
+    approver_form = ApproverForm()
+
+    incomes = IncomeStatement.query.filter(IncomeStatement.hub_id == current_user.hub_id).order_by(IncomeStatement.name).all()
+    cashflows = CashflowStatement.query.filter(CashflowStatement.hub_id == current_user.hub_id).order_by(CashflowStatement.name).all()
 
     projects = Project.query
     if current_user.role != UserRoles.admin:
@@ -69,6 +72,23 @@ def ShowOrder(order_id):
 
     initiative_form.categories.choices = [(c.id, c.name) for c in categories]
     initiative_form.categories.default = order.categories_list
+
+    approver_form.income_statement.choices = [(i.id, i.name) for i in incomes]
+    approver_form.cashflow_statement.choices = [(c.id, c.name) for c in cashflows]
+    
+    if order.income_statement is None:
+        approver_form.income_statement.choices.append((0, 'Выберите БДР..'))
+        approver_form.income_statement.default = 0
+    else:
+        approver_form.income_statement.default = order.income_statement.id
+        
+    if order.cashflow_statement is None:
+        approver_form.cashflow_statement.choices.append((0, 'Выберите БДДС...'))
+        approver_form.cashflow_statement.default = 0
+    else:
+        approver_form.cashflow_statement.default = order.cashflow_statement.id
+        
+    approver_form.process()
 
     initiative_form.project.choices = [(p.id, p.name) for p in projects]
     if order.site is None:
@@ -111,7 +131,7 @@ def DuplicateOrder(order_id):
     new_order.products = order.products
     new_order.total = order.total
     new_order.income_statement = order.income_statement
-    new_order.cash_flow_statement = order.cash_flow_statement
+    new_order.cashflow_statement = order.cashflow_statement
     new_order.site_id = order.site_id
     new_order.status = OrderStatus.new
     new_order.create_timestamp = int(now.timestamp())
@@ -373,8 +393,8 @@ def Prepare1CReport(order, excel_date):
                 ws.cell(i, 10).value = ''
                 ws.cell(i, 24).value = ''
 
-            ws.cell(i, 11).value = order.income_statement
-            ws.cell(i, 12).value = order.cash_flow_statement
+            ws.cell(i, 11).value = order.income_statement.name if order.income_statement is not None else ''
+            ws.cell(i, 12).value = order.cashflow_statement.name if order.cashflow_statement is not None else ''
             ws.cell(i, 15).value = 'Непроектные МТР и СИЗ'
 
             # Measurement
@@ -544,25 +564,37 @@ def SaveStatements(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
     form = ApproverForm()
+    
+    incomes = IncomeStatement.query.filter(IncomeStatement.hub_id == current_user.hub_id).order_by(IncomeStatement.name).all()
+    cashflows = CashflowStatement.query.filter(CashflowStatement.hub_id == current_user.hub_id).order_by(CashflowStatement.name).all()
+    
+    form.income_statement.choices = [(i.id, i.name) for i in incomes]
+    form.cashflow_statement.choices = [(c.id, c.name) for c in cashflows]   
+    
     if form.validate_on_submit() is True:
-        if order.income_statement != form.income_statement.data.strip():
-            message = 'статья БДР была "{}" стала "{}"'.format(
-                order.income_statement or '', form.income_statement.data.strip())
-            order.income_statement = form.income_statement.data.strip()
+    
+        income = IncomeStatement.query.filter_by(id=form.income_statement.data, hub_id = current_user.hub_id).first()
+        cashflow = CashflowStatement.query.filter_by(id=form.cashflow_statement.data, hub_id = current_user.hub_id).first()
+        
+        income_name_last = order.income_statement.name if order.income_statement is not None else 'не указана'
+        cashflow_name_last = order.cashflow_statement.name if order.cashflow_statement is not None else 'не указана'
+        
+        if income_name_last != income.name:
+            message = f'статья БДР была "{income_name_last}" стала "{income.name}"'
+            order.income_statement = income
             event = OrderEvent(user_id=current_user.id, order_id=order_id,
-                               type=EventType.cash_statement, data=message, timestamp=datetime.now(tz=timezone.utc))
+                               type=EventType.income_statement, data=message, timestamp=datetime.now(tz=timezone.utc))
             db.session.add(event)
-        if order.cash_flow_statement != form.cash_flow_statement.data.strip():
-            message = 'статья БДДС была "{}" стала "{}"'.format(
-                order.cash_flow_statement or '', form.cash_flow_statement.data.strip())
-            order.cash_flow_statement = form.cash_flow_statement.data.strip()
+        if cashflow_name_last != cashflow.name:
+            message = f'статья БДДС была "{cashflow_name_last}" стала "{cashflow.name}"'
+            order.cashflow_statement = cashflow
             event = OrderEvent(user_id=current_user.id, order_id=order_id,
-                               type=EventType.cash_flow_statement, data=message, timestamp=datetime.now(tz=timezone.utc))
+                               type=EventType.cashflow_statement, data=message, timestamp=datetime.now(tz=timezone.utc))
             db.session.add(event)
         db.session.commit()
         flash('Статьи БДДР и БДДС успешно сохранены.')
     else:
-        for error in form.income_statement.errors + form.cash_flow_statement.errors:
+        for error in form.income_statement.errors + form.cashflow_statement.errors:
             flash(error)
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
