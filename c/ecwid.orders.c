@@ -115,19 +115,19 @@ static bool GetStoreOrders(TDatabase *pDB, TEcwid store, uint64_t start_from, ch
 					parsed_comment = json_tokener_parse((char *)json_object_get_string(comments));
 					if (parsed_comment != NULL)
 					{
-						struct json_object *object = NULL, *income_statement = NULL, *cash_flow_statement = NULL;
+						struct json_object *object = NULL, *income_statement = NULL, *cashflow_statement = NULL;
 
 						json_object_object_get_ex(parsed_comment, "object", &object);
 						json_object_object_get_ex(parsed_comment, "budget", &income_statement);
-						json_object_object_get_ex(parsed_comment, "cashflow", &cash_flow_statement);
+						json_object_object_get_ex(parsed_comment, "cashflow", &cashflow_statement);
 
 						if (object != NULL)
 							order.site_id = GetSiteIdByName(pDB, store.id, (char *)json_object_get_string(object));
-						if (cash_flow_statement != NULL)
+						if (cashflow_statement != NULL)
 						{
-							order.cash_flow_statement = (char *)json_object_get_string(cash_flow_statement);
-							if (strlen(order.cash_flow_statement) == 0)
-								order.cash_flow_statement = NULL;
+							order.cashflow_statement = (char *)json_object_get_string(cashflow_statement);
+							if (strlen(order.cashflow_statement) == 0)
+								order.cashflow_statement = NULL;
 						}
 						if (income_statement != NULL)
 						{

@@ -32,7 +32,7 @@ typedef struct
 	char *products;
 	double total;
 	uint64_t site_id;
-	char *cash_flow_statement;
+	char *cashflow_statement;
 	char *income_statement;
 	bool purchased;
 } TOrder;

@@ -148,8 +148,8 @@ def MergeOrders():
         order.products = [products[sku] for sku in products.keys()]
         order.total = sum([product['quantity']*product['price']
                           for product in order.products])
-        order.income_statement = orders[0].income_statement
-        order.cashflow_statement = orders[0].cashflow_statement
+        order.income_id = orders[0].income_id
+        order.cashflow_id = orders[0].cashflow_id
         order.site_id = orders[0].site_id
         order.status = OrderStatus.new
         order.create_timestamp = int(now.timestamp())

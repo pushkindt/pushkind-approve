@@ -130,8 +130,8 @@ def DuplicateOrder(order_id):
 
     new_order.products = order.products
     new_order.total = order.total
-    new_order.income_statement = order.income_statement
-    new_order.cashflow_statement = order.cashflow_statement
+    new_order.income_id = order.income_id
+    new_order.cashflow_id = order.cashflow_id
     new_order.site_id = order.site_id
     new_order.status = OrderStatus.new
     new_order.create_timestamp = int(now.timestamp())

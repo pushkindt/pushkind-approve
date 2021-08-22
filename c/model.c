@@ -275,6 +275,100 @@ error:
 	return timestamp;
 }
 
+int InsertOrderCashflowStatement(TDatabase *pDB, uint64_t hub_id, char *cashflow_statement)
+{
+	int result = -1;
+	sqlite3_stmt *stmt = NULL;
+	
+	check(pDB != NULL && cashflow_statement != NULL, "Invalid function inputs.");
+	result = sqlite3_prepare_v2(pDB, "insert into `cashflow_statement`(`name`, `hub_id`) VALUES(?,?)", -1, &stmt, NULL);
+	check(result == SQLITE_OK, "Error while preparing SQLite statement. %d", result);
+	result = sqlite3_bind_text(stmt, 1, cashflow_statement, -1, SQLITE_STATIC);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_bind_int64(stmt, 2, hub_id);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_step(stmt);
+	if (result != SQLITE_DONE)
+	{
+		result = -1;
+	}
+error:
+	if (stmt != NULL)
+		sqlite3_finalize(stmt);
+	return result;
+}
+
+uint64_t GetOrderCashflowStatement(TDatabase *pDB, uint64_t hub_id, char *cashflow_statement)
+{
+	int result = -1;
+	sqlite3_stmt *stmt = NULL;
+	uint64_t cashflow_id = 0;
+	
+	check(pDB != NULL && cashflow_statement != NULL, "Invalid function inputs.");
+	result = sqlite3_prepare_v2(pDB, "select `id` from `cashflow_statement` where `name` = ? and `hub_id` = ? LIMIT 1", -1, &stmt, NULL);
+	check(result == SQLITE_OK, "Error while preparing SQLite statement. %d", result);
+	result = sqlite3_bind_text(stmt, 1, cashflow_statement, -1, SQLITE_STATIC);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_bind_int64(stmt, 2, hub_id);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_step(stmt);
+	if (result == SQLITE_ROW)
+	{
+		cashflow_id = (uint64_t)sqlite3_column_int64(stmt, 0);
+	}
+error:
+	if (stmt != NULL)
+		sqlite3_finalize(stmt);
+	return cashflow_id;
+}
+
+int InsertOrderIncomeStatement(TDatabase *pDB, uint64_t hub_id, char *income_statement)
+{
+	int result = -1;
+	sqlite3_stmt *stmt = NULL;
+	
+	check(pDB != NULL && income_statement != NULL, "Invalid function inputs.");
+	result = sqlite3_prepare_v2(pDB, "insert into `income_statement`(`name`, `hub_id`) VALUES(?,?)", -1, &stmt, NULL);
+	check(result == SQLITE_OK, "Error while preparing SQLite statement. %d", result);
+	result = sqlite3_bind_text(stmt, 1, income_statement, -1, SQLITE_STATIC);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_bind_int64(stmt, 2, hub_id);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_step(stmt);
+	if (result != SQLITE_DONE)
+	{
+		result = -1;
+	}
+error:
+	if (stmt != NULL)
+		sqlite3_finalize(stmt);
+	return result;
+}
+
+uint64_t GetOrderIncomeStatement(TDatabase *pDB, uint64_t hub_id, char *income_statement)
+{
+	int result = -1;
+	sqlite3_stmt *stmt = NULL;
+	uint64_t income_id = 0;
+	
+	check(pDB != NULL && income_statement != NULL, "Invalid function inputs.");
+	result = sqlite3_prepare_v2(pDB, "select `id` from `income_statement` where `name` = ? and `hub_id` = ? LIMIT 1", -1, &stmt, NULL);
+	check(result == SQLITE_OK, "Error while preparing SQLite statement. %d", result);
+	result = sqlite3_bind_text(stmt, 1, income_statement, -1, SQLITE_STATIC);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_bind_int64(stmt, 2, hub_id);
+	check(result == SQLITE_OK, "Error while binding SQLite statement.");
+	result = sqlite3_step(stmt);
+	if (result == SQLITE_ROW)
+	{
+		income_id = (uint64_t)sqlite3_column_int64(stmt, 0);
+	}
+error:
+	if (stmt != NULL)
+		sqlite3_finalize(stmt);
+	return income_id;
+}
+
 int StoreOrders(TDatabase *pDB, TOrder order)
 {
 	int result = -1;
@@ -305,12 +399,18 @@ int StoreOrders(TDatabase *pDB, TOrder order)
 	sqlite3_finalize(stmt);
 	stmt = NULL;
 
-	if (order.cash_flow_statement != NULL)
+	if (order.cashflow_statement != NULL)
 	{
-
-		result = sqlite3_prepare_v2(pDB, "update `order` set `cash_flow_statement` = ? where `order`.`id` = ? and `hub_id` = ?", -1, &stmt, NULL);
+		uint64_t casheflow_id = GetOrderCashflowStatement(pDB, order.hub_id, order.cashflow_statement);
+		if (casheflow_id == 0)
+		{
+			check(InsertOrderCashflowStatement(pDB, order.hub_id, order.cashflow_statement) != -1, "Error while inserting new cashflow_statement");
+			casheflow_id = GetOrderCashflowStatement(pDB, order.hub_id, order.cashflow_statement);
+			check(casheflow_id != 0, "Error while inserting new cashflow_statement");
+		}
+		result = sqlite3_prepare_v2(pDB, "update `order` set `cashflow_id` = ? where `order`.`id` = ? and `hub_id` = ?", -1, &stmt, NULL);
 		check(result == SQLITE_OK, "Error while preparing SQLite statement. %d", result);
-		result = sqlite3_bind_text(stmt, 1, order.cash_flow_statement, -1, SQLITE_STATIC);
+		result = sqlite3_bind_int64(stmt, 1, casheflow_id);
 		check(result == SQLITE_OK, "Error while binding SQLite statement.");
 		result = sqlite3_bind_text(stmt, 2, order.id, -1, SQLITE_STATIC);
 		check(result == SQLITE_OK, "Error while binding SQLite statement.");
@@ -324,9 +424,18 @@ int StoreOrders(TDatabase *pDB, TOrder order)
 
 	if (order.income_statement != NULL)
 	{
-		result = sqlite3_prepare_v2(pDB, "update `order` set `income_statement` = ? where `order`.`id` = ? and `hub_id` = ?", -1, &stmt, NULL);
+		
+		uint64_t income_id = GetOrderIncomeStatement(pDB, order.hub_id, order.income_statement);
+		if (income_id == 0)
+		{
+			check(InsertOrderIncomeStatement(pDB, order.hub_id, order.income_statement) != -1, "Error while inserting new income_statement");
+			income_id = GetOrderIncomeStatement(pDB, order.hub_id, order.income_statement);
+			check(income_id != 0, "Error while inserting new income_statement");
+		}
+		
+		result = sqlite3_prepare_v2(pDB, "update `order` set `income_id` = ? where `order`.`id` = ? and `hub_id` = ?", -1, &stmt, NULL);
 		check(result == SQLITE_OK, "Error while preparing SQLite statement. %d", result);
-		result = sqlite3_bind_text(stmt, 1, order.income_statement, -1, SQLITE_STATIC);
+		result = sqlite3_bind_int64(stmt, 1, income_id);
 		check(result == SQLITE_OK, "Error while binding SQLite statement.");
 		result = sqlite3_bind_text(stmt, 2, order.id, -1, SQLITE_STATIC);
 		check(result == SQLITE_OK, "Error while binding SQLite statement.");
