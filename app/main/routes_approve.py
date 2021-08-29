@@ -9,7 +9,7 @@ from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityFo
 from app.main.forms import ApproverForm
 from datetime import datetime, timezone, date, timedelta
 from app.ecwid import EcwidAPIException
-from app.main.utils import role_required, ecwid_required, role_forbidden, SendEmailNotification, SendEmail1C
+from app.main.utils import role_required, ecwid_required, role_forbidden, SendEmailNotification, SendEmail1C, GetNewOrderNumber
 
 from openpyxl import load_workbook
 from copy import copy
@@ -123,7 +123,10 @@ def DuplicateOrder(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
 
-    new_order = Order()
+    order_id = GetNewOrderNumber()
+    new_order = Order(id = order_id)
+    db.session.add(new_order)
+    
     new_order.initiative = current_user
 
     now = datetime.now(tz=timezone.utc)
@@ -136,22 +139,19 @@ def DuplicateOrder(order_id):
     new_order.status = OrderStatus.new
     new_order.create_timestamp = int(now.timestamp())
 
-    new_order.id = now.strftime('_%y%j%H%M%S')
     new_order.hub_id = current_user.hub_id
     new_order.categories = order.categories
 
-    db.session.add(new_order)
-
     message = 'заявка клонирована с номером {}'.format(new_order.id)
-    event = OrderEvent(user_id=current_user.id, order_id=order_id,
+    event = OrderEvent(user_id=current_user.id, order_id=order.id,
                        type=EventType.duplicated, data=message, timestamp=datetime.now(tz=timezone.utc))
     db.session.add(event)
-    message = 'заявка клонирована из заявки {}'.format(order_id)
+    message = 'заявка клонирована из заявки {}'.format(order.id)
     event = OrderEvent(user_id=current_user.id, order_id=new_order.id,
                        type=EventType.duplicated, data=message, timestamp=datetime.now(tz=timezone.utc))
     db.session.add(event)
     db.session.commit()
-    flash('Заявка успешно клонирована.')
+    flash(f'Заявка успешно клонирована. Номер новой заявки {new_order.id}. Вы перемещены в новую заявку.')
 
     Order.UpdateOrdersPositions(current_user.hub_id)
     

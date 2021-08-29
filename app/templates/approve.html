@@ -121,6 +121,7 @@
 			<span class="fw-bold">Инициатор:</span>
 			{% set user = order.initiative %}
 			{% include '_user.popover.html' %}
+			{{ user.name }}
 		</div>
 	</div>
 
@@ -152,37 +153,42 @@
 	<div class="row">
 		<div class="col">
 			<span class="fw-bold">Согласующие:</span>
-			<ul class="list-unstyled">
-				{% for appr in order.approvals %}
-					<li>
-						{% if appr.approved is sameas true %}
-							{{ appr.position.name }}
-							<span class="badge border border-success text-dark">согласен</span>
-							{% set user = appr.user %}
-							{% include '_user.popover.html' %}
-							{{ moment(appr.timestamp).format('DD.MM.YYYY') }}
-						{% else %}
-							{% if appr.user is sameas none %}
-								{{ appr.position.name }}
-								<span class="badge border text-dark text-nowrap">не просмотрено</span>
-								{% for user in appr.position.users %}
-									{% if order.site %}
-										{% if order.site.project.id in user.projects_list and order.categories_list | intersect(user.categories_list) %}
-											{% include '_user.popover.html' %}
-										{% endif %}
-									{% endif %}
-								{% endfor %}
-							{% else %}
-								{{ appr.position.name }}
-								<span class="badge border border-danger text-dark">замечания</span>
+			{% if order.site %}
+				<ul class="list-unstyled">
+					{% for appr in order.approvals %}
+						<li>
+							{{ appr.position.name }} -
+							{% if appr.approved is sameas true %}
+								<span class="fw-bold text-success">согласен</span>
 								{% set user = appr.user %}
 								{% include '_user.popover.html' %}
+								{{ user.name }}
 								{{ moment(appr.timestamp).format('DD.MM.YYYY') }}
+							{% else %}
+								{% if appr.user is sameas none %}
+									<span class="fw-bold text-warning">ждём</span>
+									{% set ns = namespace (first = 1) %}
+									{% for user in appr.position.users %}
+										{% if order.site.project.id in user.projects_list and order.categories_list | intersect(user.categories_list) %}
+											{% if ns.first == 0 %}
+												или
+											{% endif %}
+											{% set ns.first = 0 %}
+											{% include '_user.popover.html' %}
+										{% endif %}
+									{% endfor %}
+								{% else %}
+									<span class="fw-bold text-danger">замечания</span>
+									{% set user = appr.user %}
+									{% include '_user.popover.html' %}
+									{{ user.name }}
+									{{ moment(appr.timestamp).format('DD.MM.YYYY') }}
+								{% endif %}
 							{% endif %}
-						{% endif %}
-					</li>
-				{% endfor %}
-			</ul>
+						</li>
+					{% endfor %}
+				</ul>
+			{% endif %}
 		</div>
 	</div>
 	{% for product in order.products %}

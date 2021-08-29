@@ -1,4 +1,6 @@
+from app import db
 from flask_login import current_user
+from app.models import Order
 from flask import render_template, flash, jsonify
 from functools import wraps
 from app.email import SendEmail
@@ -133,3 +135,10 @@ def GetFilterTimestamps():
     dates = {'сегодня': int(today.timestamp()), 'неделя': int(week.timestamp(
     )), 'месяц': int(month.timestamp()), 'недавно': int(recently.timestamp())}
     return dates
+    
+    
+def GetNewOrderNumber():
+    count = db.session.query(Order).count()
+    letter = chr(int(count / 1000) + 97)
+    count = count % 1000
+    return f'{letter}{count:04d}'

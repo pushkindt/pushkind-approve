@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from app.main import bp
 from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval
 from flask import render_template, flash, request, redirect, url_for, Response
-from app.main.utils import ecwid_required, role_forbidden, role_required, GetFilterTimestamps, SendEmailNotification
+from app.main.utils import ecwid_required, role_forbidden, role_required, GetFilterTimestamps, SendEmailNotification, GetNewOrderNumber
 from datetime import datetime, timedelta, timezone
 from app.main.forms import MergeOrdersForm, SaveOrdersForm
 from openpyxl import Workbook
@@ -140,7 +140,10 @@ def MergeOrders():
                         products[product_id]['category'] = product['category']
                 else:
                     products[product_id]['quantity'] += product['quantity']
-        order = Order()
+                    
+        order_id = GetNewOrderNumber()
+        order = Order(id = order_id)
+        db.session.add(order)
         order.initiative = current_user
 
         now = datetime.now(tz=timezone.utc)
@@ -153,15 +156,12 @@ def MergeOrders():
         order.site_id = orders[0].site_id
         order.status = OrderStatus.new
         order.create_timestamp = int(now.timestamp())
-
-        order.id = now.strftime('_%y%j%H%M%S')
+      
         order.hub_id = current_user.hub_id
         order.categories = Category.query.filter(Category.id.in_(
             categories), Category.hub_id == current_user.hub_id).all()
 
         order.parents = orders
-
-        db.session.add(order)
 
         message = 'заявка объединена из заявок'
 
