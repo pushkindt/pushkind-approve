@@ -240,7 +240,9 @@ def GetExcelReport1(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
 
-    data_len = len(order.products)
+    order_products = [p for p in order.products if p['quantity'] > 0]
+
+    data_len = len(order_products)
     starting_row = 11
     wb = load_workbook(filename='template.xlsx')
     ws = wb.active
@@ -251,7 +253,7 @@ def GetExcelReport1(order_id):
                 merged_cell.shift(0, data_len)
         ws.insert_rows(starting_row, data_len-1)
     for k, i in enumerate(range(starting_row, starting_row+data_len)):
-        product = order.products[k]
+        product = order_products[k]
         ws.row_dimensions[i].height = 50
         if data_len > 1:
             for j in range(1, 20):
@@ -289,7 +291,9 @@ def GetExcelReport2(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
 
-    data_len = len(order.products)
+    order_products = [p for p in order.products if p['quantity'] > 0]
+
+    data_len = len(order_products)
     starting_row = 2
     wb = load_workbook(filename='template2.xlsx')
     ws = wb.active
@@ -297,7 +301,7 @@ def GetExcelReport2(order_id):
     ws.title = order.site.name if order.site is not None else 'Объект не указан'
 
     i = starting_row
-    for product in order.products:
+    for product in order_products:
         ws.cell(i, 1).value = product['sku']
         ws.cell(i, 2).value = product['name']
         if 'selectedOptions' in product:
@@ -348,7 +352,10 @@ def SetDealDone(order_id):
 
 
 def Prepare1CReport(order, excel_date):
-    data_len = len(order.products)
+
+    order_products = [p for p in order.products if p['quantity'] > 0]
+
+    data_len = len(order_products)
     if data_len > 0:
         categories = Category.query.filter(
             Category.hub_id == order.initiative.hub_id).all()
@@ -361,7 +368,7 @@ def Prepare1CReport(order, excel_date):
 
         ws.insert_rows(starting_row, data_len)
         for k, i in enumerate(range(starting_row, starting_row+data_len)):
-            product = order.products[k]
+            product = order_products[k]
             ws.row_dimensions[i].height = 50
 
             for j in range(1, 32):

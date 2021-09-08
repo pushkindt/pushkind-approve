@@ -364,14 +364,30 @@ class Order(db.Model):
         return [c.id for c in self.categories]
 
     @property
+    def validators(self, position_id = None):
+        if self.site is None or len(self.categories) == 0:
+            return []
+        validators = User.query.filter_by(role=UserRoles.validator).join(UserCategory).filter(
+                UserCategory.category_id.in_(self.categories_list)).join(UserProject).filter(
+                UserProject.project_id == self.site.project_id).join(Position).join(OrderPosition).filter_by(order_id=self.id)
+        if position_id is not None:
+            validators = validators.filter_by(position_id = position_id)
+        return validators.all()
+        
+    @property
+    def purchasers(self, position_id = None):
+        if self.site is None or len(self.categories) == 0:
+            return []    
+        purchasers = User.query.filter_by(role=UserRoles.purchaser).join(UserCategory).filter(
+                UserCategory.category_id.in_(self.categories_list)).join(UserProject).filter(
+                UserProject.project_id == self.site.project_id)
+        return purchasers.all()
+
+    @property
     def reviewers(self):
         if self.site is None or len(self.categories) == 0:
             return []
-        approvers = User.query.filter_by(role=UserRoles.validator).join(Position).join(OrderPosition).filter_by(order_id=self.id).all()
-        purchasers = User.query.filter_by(role=UserRoles.purchaser).join(UserCategory).filter(
-                UserCategory.category_id.in_(self.categories_list)).join(UserProject).filter(
-                UserProject.project_id == self.site.project_id).all()
-        return approvers + purchasers
+        return self.validators + self.purchasers
 
     @classmethod
     def UpdateOrdersPositions(cls, hub_id, order_id=None):
