@@ -6,7 +6,7 @@ from app.models import Project, Category, Order, OrderCategory, Site, AppSetting
 from app.models import IncomeStatement, CashflowStatement
 from flask import render_template, redirect, url_for, flash, Response, request
 from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, InitiativeForm
-from app.main.forms import ApproverForm
+from app.main.forms import ApproverForm, SplitOrderForm
 from datetime import datetime, timezone, date, timedelta
 from app.ecwid import EcwidAPIException
 from app.main.utils import role_required, ecwid_required, role_forbidden, SendEmailNotification, SendEmail1C, GetNewOrderNumber
@@ -102,6 +102,8 @@ def ShowOrder(order_id):
             (s.id, s.name) for s in order.site.project.sites]
         initiative_form.site.default = order.site_id
     initiative_form.process()
+    
+    split_form = SplitOrderForm()
 
     return render_template('approve.html',
                            order=order,
@@ -110,8 +112,88 @@ def ShowOrder(order_id):
                            approval_form=approval_form,
                            quantity_form=quantity_form,
                            initiative_form=initiative_form,
-                           approver_form=approver_form)
+                           approver_form=approver_form,
+                           split_form=split_form)
 
+
+
+@bp.route('/orders/split/<order_id>', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
+@ecwid_required
+def SplitOrder(order_id):
+
+    order = GetOrder(order_id)
+    if order is None:
+        flash('Заявка с таким номером не найдена.')
+        return redirect(url_for('main.ShowIndex'))
+
+    if len(order.children) > 0:
+        flash('Нельзя разделять заявки, которые были объединены или разделены.')
+        return redirect(url_for('main.ShowIndex'))
+
+    form = SplitOrderForm()
+    if form.validate_on_submit():
+        product_ids = form.products.data
+        if not isinstance(product_ids, list) or len(product_ids) == 0:
+            flash('Некорректный список позиции.')
+            return redirect(url_for('main.ShowOrder', order_id=order_id))
+
+       
+        product_lists = [[], []]
+        
+        for product in order.products:
+            if str(product['id']) in product_ids:
+                product_lists[0].append(product)
+            else:
+                product_lists[1].append(product)
+
+        if len(product_lists[0]) == 0 or len(product_lists[1]) == 0:
+            flash('Некорректный список позиции.')
+            return redirect(url_for('main.ShowOrder', order_id=order_id))
+
+        message_flash = f'заявка разделена на заявки'
+
+        for product_list in product_lists:
+            new_order_id = GetNewOrderNumber() 
+            message_flash += f' {new_order_id}'
+            new_order = Order(id = new_order_id)
+            db.session.add(new_order)
+            new_order.initiative_id = order.initiative_id
+            now = datetime.now(tz=timezone.utc)
+            new_order.products = product_list
+            new_order.total = sum([product['quantity']*product['price']
+                               for product in new_order.products])
+            new_order.income_id = order.income_id
+            new_order.cashflow_id = order.cashflow_id
+            new_order.site_id = order.site_id
+            new_order.status = OrderStatus.new
+            new_order.create_timestamp = int(now.timestamp())
+            new_order.hub_id = order.hub_id
+            categories = [product.get('categoryId', -1) for product in new_order.products]
+            new_order.categories = Category.query.filter(Category.id.in_(categories), Category.hub_id == current_user.hub_id).all()
+            new_order.parents = [order]
+            message = f'заявка получена разделением из заявки {order_id}'
+            event = OrderEvent(user_id=current_user.id, order_id=new_order_id, type=EventType.splitted,
+                               data=message, timestamp=datetime.now(tz=timezone.utc))
+            db.session.add(event)
+            db.session.commit()
+            SendEmailNotification('new', new_order)
+        
+        
+        event = OrderEvent(user_id=current_user.id, order_id=order_id, type=EventType.splitted,
+                           data=message_flash, timestamp=datetime.now(tz=timezone.utc))
+        db.session.add(event)
+        db.session.commit()
+
+        Order.UpdateOrdersPositions(current_user.hub_id)
+
+        flash(message_flash)
+            
+    else:
+        for error in form.products.errors:
+            flash(error)
+    return redirect(url_for('main.ShowOrder', order_id=order_id))
 
 @bp.route('/orders/duplicate/<order_id>')
 @login_required

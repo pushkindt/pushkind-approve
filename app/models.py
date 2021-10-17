@@ -30,6 +30,7 @@ class EventType(enum.IntEnum):
     cashflow_statement = 10
     site = 11
     measurement = 12
+    splitted = 13
 
     def __str__(self):
         pretty = ['комментарий',
@@ -44,7 +45,8 @@ class EventType(enum.IntEnum):
                   'изменение БДР',
                   'изменение БДДС',
                   'изменение объекта',
-                  'изменение ЕИ']
+                  'изменение ЕИ',
+                  'разделение']
         return pretty[self.value]
 
     def color(self):
@@ -53,6 +55,7 @@ class EventType(enum.IntEnum):
                   'danger',
                   'primary',
                   'primary',
+                  'info',
                   'info',
                   'info',
                   'info',
@@ -86,12 +89,19 @@ class OrderStatus(enum.IntEnum):
     modified = 4
 
     def __str__(self):
-        pretty = ['Новая', 'Отклонена', 'В работе',
-                  'Согласована', 'Исправлена']
+        pretty = ['Новая',
+                  'Отклонена',
+                  'В работе',
+                  'Согласована',
+                  'Исправлена']
         return pretty[self.value]
 
     def color(self):
-        colors = ['white', 'danger', 'warning', 'success', 'secondary']
+        colors = ['white',
+                  'danger',
+                  'warning',
+                  'success',
+                  'secondary']
         return colors[self.value]
 
 
@@ -132,33 +142,29 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     email = db.Column(db.String(128), index=True, unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)
-    role = db.Column(db.Enum(UserRoles), index=True, nullable=False,
-                     default=UserRoles.default, server_default='default')
+    role = db.Column(
+        db.Enum(UserRoles),
+        index=True,
+        nullable=False,
+        default=UserRoles.default,
+        server_default='default'
+    )
     name = db.Column(db.String(128), nullable=True)
     phone = db.Column(db.String(128), nullable=True)
-    position_id = db.Column(
-        db.Integer, db.ForeignKey('position.id'), nullable=True)
+    position_id = db.Column(db.Integer, db.ForeignKey('position.id', ondelete='SET NULL'), nullable=True)
     location = db.Column(db.String(128), nullable=True)
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=True)
-    email_new = db.Column(db.Boolean, nullable=False,
-                          default=True, server_default=expression.true())
-    email_modified = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=expression.true())
-    email_disapproved = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=expression.true())
-    email_approved = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=expression.true())
+    email_new = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+    email_modified = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+    email_disapproved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+    email_approved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
     last_seen = db.Column(db.DateTime, nullable=True)
     note = db.Column(db.String(), nullable=True)
     registered = db.Column(db.DateTime, nullable=True)
-    categories = db.relationship(
-        'Category', secondary='user_category', backref='users')
-    projects = db.relationship(
-        'Project', secondary='user_project', backref='users')
-    events = db.relationship(
-        'OrderEvent', cascade='all, delete-orphan', backref='user')
-    approvals = db.relationship(
-        'OrderApproval', cascade='all, delete-orphan', backref='user', lazy='dynamic')
+    categories = db.relationship('Category', secondary='user_category', backref='users')
+    projects = db.relationship('Project', secondary='user_project', backref='users')
+    events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='user')
+    approvals = db.relationship('OrderApproval', cascade='all, delete-orphan', backref='user', lazy='dynamic')
     orders = db.relationship('Order', backref='initiative')
 
     @property
@@ -208,10 +214,9 @@ class User(UserMixin, db.Model):
         return data
 
     def GetPasswordResetToken(self, expires_in=600):
-        return jwt.encode(
-            {'reset_password': self.id, 'exp': time() + expires_in},
-            current_app.config['SECRET_KEY'],
-            algorithm='HS256').decode('utf-8')
+        return jwt.encode({'reset_password': self.id, 'exp': time() + expires_in},
+                          current_app.config['SECRET_KEY'],
+                          algorithm='HS256').decode('utf-8')
 
     @staticmethod
     def VerifyPasswordResetToken(token):
@@ -228,14 +233,12 @@ class Position(db.Model):
     name = db.Column(db.String(128), nullable=False, index=True)
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
     users = db.relationship('User', backref='position')
-    approvals = db.relationship(
-        'OrderPosition', cascade='all, delete-orphan', backref='position')
+    approvals = db.relationship('OrderPosition', cascade='all, delete-orphan', backref='position')
 
 
 class OrderApproval(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    order_id = db.Column(db.String(128), db.ForeignKey(
-        'order.id'), nullable=False)
+    order_id = db.Column(db.String(128), db.ForeignKey('order.id'), nullable=False)
     product_id = db.Column(db.Integer, index=True, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     remark = db.Column(db.String(128), nullable=True)
@@ -261,32 +264,30 @@ class Category(db.Model):
 
 class AppSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    hub_id = db.Column(db.Integer, db.ForeignKey(
-        'ecwid.id'), nullable=False, unique=True)
-    notify_1C = db.Column(db.Boolean, nullable=False,
-                          default=True, server_default=expression.true())
+    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False, unique=True)
+    notify_1C = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
     email_1C = db.Column(db.String(128), nullable=True)
 
 
 class OrderEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    order_id = db.Column(
-        db.String(128), db.ForeignKey('order.id'), nullable=True)
+    order_id = db.Column(db.String(128), db.ForeignKey('order.id'), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now(
-        tz=timezone.utc), server_default=func.datetime('now'))
-    type = db.Column(db.Enum(EventType), nullable=False,
-                     default=EventType.commented)
-    data = db.Column(db.String(), nullable=False,
-                     default='', server_default='')
+    timestamp = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.now(tz=timezone.utc),
+        server_default=func.datetime('now')
+    )
+    type = db.Column(db.Enum(EventType), nullable=False, default=EventType.commented)
+    data = db.Column(db.String(), nullable=False, default='', server_default='')
 
 
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
-    sites = db.relationship(
-        'Site', cascade='all, delete-orphan', backref='project')
+    sites = db.relationship('Site', cascade='all, delete-orphan', backref='project')
     enabled = db.Column(db.Boolean, nullable=False, default=True,
                         server_default=expression.true(), index=True)
     uid = db.Column(db.String(128), nullable=True)
@@ -295,7 +296,10 @@ class Project(db.Model):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        data = {'id': self.id, 'name': self.name, 'uid': self.uid, 'enabled': self.enabled,
+        data = {'id': self.id,
+                'name': self.name,
+                'uid': self.uid,
+                'enabled': self.enabled,
                 'sites': [site.to_dict() for site in self.sites]}
         return data
 
@@ -303,52 +307,70 @@ class Project(db.Model):
 class Site(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    project_id = db.Column(db.Integer, db.ForeignKey(
-        'project.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     orders = db.relationship('Order', backref='site')
     uid = db.Column(db.String(128), nullable=True)
 
     def to_dict(self):
-        data = {'id': self.id, 'project_id': self.project_id,
-                'name': self.name, 'uid': self.uid}
+        data = {'id': self.id,
+                'project_id': self.project_id,
+                'name': self.name,
+                'uid': self.uid}
         return data
+
+
+OrderRelationship = db.Table(
+    'order_relationship',
+    db.Model.metadata,
+    db.Column('order_id', db.String(128), db.ForeignKey('order.id'), primary_key=True),
+    db.Column('child_id', db.String(128), db.ForeignKey('order.id'), primary_key=True)
+)
 
 
 class Order(db.Model):
     id = db.Column(db.String(128), primary_key=True, nullable=False)
-    initiative_id = db.Column(
-        db.Integer, db.ForeignKey('user.id'), nullable=False)
+    initiative_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     create_timestamp = db.Column(db.Integer, nullable=False)
     products = db.Column(JsonType(), nullable=False)
     total = db.Column(db.Float, nullable=False)
-    status = db.Column(db.Enum(OrderStatus), nullable=False,
-                       default=OrderStatus.new, server_default='new')
-    site_id = db.Column(db.Integer, db.ForeignKey('site.id'), nullable=True)
-    income_id = db.Column(db.Integer, db.ForeignKey('income_statement.id'), nullable=True)  # БДР
-    cashflow_id = db.Column(db.Integer, db.ForeignKey('cashflow_statement.id'), nullable=True)  # БДДС
+    status = db.Column(db.Enum(OrderStatus), nullable=False, default=OrderStatus.new, server_default='new')
+    site_id = db.Column(db.Integer, db.ForeignKey('site.id', ondelete='SET NULL'), nullable=True)
+    income_id = db.Column(db.Integer, db.ForeignKey('income_statement.id', ondelete='SET NULL'), nullable=True)  # БДР
+    cashflow_id = db.Column(  # БДДС
+        db.Integer,
+        db.ForeignKey('cashflow_statement.id', ondelete='SET NULL'),
+        nullable=True
+    )
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
-    purchased = db.Column(db.Boolean, nullable=False,
-                          default=False, server_default=expression.false())
-    exported = db.Column(db.Boolean, nullable=False,
-                         default=False, server_default=expression.false())
-    dealdone = db.Column(db.Boolean, nullable=False,
-                         default=False, server_default=expression.false())
-    child_id = db.Column(
-        db.String(128), db.ForeignKey('order.id'), nullable=True)
+    purchased = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    exported = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    dealdone = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
     categories = db.relationship('Category', secondary='order_category')
-    events = db.relationship(
-        'OrderEvent', cascade='all, delete-orphan', backref='order')
+    events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='order')
     positions = db.relationship('Position', secondary='order_position')
     approvals = db.relationship('OrderPosition', backref='order')
     user_approvals = db.relationship('OrderApproval', backref='order')
+    children = db.relationship(
+        'Order',
+        secondary=OrderRelationship,
+        primaryjoin=id == OrderRelationship.c.order_id,
+        secondaryjoin=id == OrderRelationship.c.child_id
+    )
     parents = db.relationship(
-        'Order', backref=db.backref('child', remote_side=[id]))
+        'Order',
+        secondary=OrderRelationship,
+        primaryjoin=id == OrderRelationship.c.child_id,
+        secondaryjoin=id == OrderRelationship.c.order_id
+    )
     income_statement = db.relationship('IncomeStatement')
     cashflow_statement = db.relationship('CashflowStatement')
 
     def UpdateOrderStatus(self):
-        disapproved = OrderApproval.query.filter(
-            OrderApproval.order_id == self.id, OrderApproval.product_id != None).all()
+        disapproved = (
+            OrderApproval.query
+            .filter(OrderApproval.order_id == self.id, OrderApproval.product_id != None)
+            .all()
+        )
         if len(disapproved) > 0:
             self.status = OrderStatus.not_approved
             return
@@ -364,23 +386,35 @@ class Order(db.Model):
         return [c.id for c in self.categories]
 
     @property
-    def validators(self, position_id = None):
+    def validators(self, position_id=None):
         if self.site is None or len(self.categories) == 0:
             return []
-        validators = User.query.filter_by(role=UserRoles.validator).join(UserCategory).filter(
-                UserCategory.category_id.in_(self.categories_list)).join(UserProject).filter(
-                UserProject.project_id == self.site.project_id).join(Position).join(OrderPosition).filter_by(order_id=self.id)
+        validators = (
+            User.query
+            .filter_by(role=UserRoles.validator)
+            .join(UserCategory)
+            .filter(UserCategory.category_id.in_(self.categories_list))
+            .join(UserProject)
+            .filter(UserProject.project_id == self.site.project_id)
+            .join(Position).join(OrderPosition)
+            .filter_by(order_id=self.id)
+        )
         if position_id is not None:
-            validators = validators.filter_by(position_id = position_id)
+            validators = validators.filter_by(position_id=position_id)
         return validators.all()
-        
+
     @property
-    def purchasers(self, position_id = None):
+    def purchasers(self, position_id=None):
         if self.site is None or len(self.categories) == 0:
-            return []    
-        purchasers = User.query.filter_by(role=UserRoles.purchaser).join(UserCategory).filter(
-                UserCategory.category_id.in_(self.categories_list)).join(UserProject).filter(
-                UserProject.project_id == self.site.project_id)
+            return []
+        purchasers = (
+            User.query
+            .filter_by(role=UserRoles.purchaser)
+            .join(UserCategory)
+            .filter(UserCategory.category_id.in_(self.categories_list))
+            .join(UserProject)
+            .filter(UserProject.project_id == self.site.project_id)
+        )
         return purchasers.all()
 
     @property
@@ -393,8 +427,7 @@ class Order(db.Model):
     def UpdateOrdersPositions(cls, hub_id, order_id=None):
 
         # Query orders from the hub
-        orders = Order.query.filter(
-            Order.hub_id == hub_id, Order.status != OrderStatus.approved)
+        orders = Order.query.filter(Order.hub_id == hub_id, Order.status != OrderStatus.approved)
         # Filter by order_id if specified
         if order_id is not None:
             orders = orders.filter_by(id=order_id)
@@ -404,24 +437,32 @@ class Order(db.Model):
             if order.site is None or len(order.categories) == 0:
                 continue
             # Query positions which have validators with the same project and categories bindings as the order
-            positions = Position.query.filter_by(hub_id=hub_id)
-            positions = positions.join(User).filter(
-                User.role == UserRoles.validator)
-            positions = positions.join(UserCategory, User.id == UserCategory.user_id).filter(
-                UserCategory.category_id.in_(order.categories_list))
-            positions = positions.join(UserProject, User.id == UserProject.user_id).filter(
-                UserProject.project_id == order.site.project_id)
             # Update the order's responsible positions
-            order.positions = positions.all()
-            
+            order.positions = (
+                Position.query
+                .filter_by(hub_id=hub_id)
+                .join(User).filter(User.role == UserRoles.validator)
+                .join(UserCategory, User.id == UserCategory.user_id)
+                .filter(UserCategory.category_id.in_(order.categories_list))
+                .join(UserProject, User.id == UserProject.user_id)
+                .filter(UserProject.project_id == order.site.project_id)
+                .all()
+            )
+
             # Update those which have users approved the order
-            
+
             for position in order.approvals:
-                approval = OrderApproval.query.filter(OrderApproval.order_id == order.id, OrderApproval.product_id == None).join(User).filter(User.position_id == position.position_id).first()
+                approval = (
+                    OrderApproval.query
+                    .filter(OrderApproval.order_id == order.id, OrderApproval.product_id == None)
+                    .join(User)
+                    .filter(User.position_id == position.position_id)
+                    .first()
+                )
                 if approval is not None:
                     position.approved = True
                     position.user = approval.user
-            
+
             order.UpdateOrderStatus()
         db.session.commit()
 
@@ -438,28 +479,22 @@ class Order(db.Model):
                 'items': self.products,
                 'total': self.total,
                 'paymentStatus': 'AWAITING_PAYMENT',
-                'fulfillmentStatus': 'AWAITING_PROCESSING'
-                }
+                'fulfillmentStatus': 'AWAITING_PROCESSING'}
         return data
 
 
 class OrderCategory(db.Model):
     __tablename__ = 'order_category'
-    order_id = db.Column(db.String(128), db.ForeignKey(
-        'order.id'), primary_key=True)
-    category_id = db.Column(db.Integer, db.ForeignKey(
-        'category.id'), primary_key=True)
+    order_id = db.Column(db.String(128), db.ForeignKey('order.id'), primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), primary_key=True)
 
 
 class OrderPosition(db.Model):
     __tablename__ = 'order_position'
-    order_id = db.Column(db.String(128), db.ForeignKey(
-        'order.id'), primary_key=True)
-    position_id = db.Column(db.Integer, db.ForeignKey(
-        'position.id'), primary_key=True)
-    approved = db.Column(db.Boolean, nullable=False,
-                         default=False, server_default=expression.false())
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    order_id = db.Column(db.String(128), db.ForeignKey('order.id'), primary_key=True)
+    position_id = db.Column(db.Integer, db.ForeignKey('position.id'), primary_key=True)
+    approved = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True)
     timestamp = db.Column(db.DateTime, nullable=True)
     user = db.relationship('User')
 
@@ -467,34 +502,35 @@ class OrderPosition(db.Model):
 class UserCategory(db.Model):
     __tablename__ = 'user_category'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-    category_id = db.Column(db.Integer, db.ForeignKey(
-        'category.id'), primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), primary_key=True)
 
 
 class UserProject(db.Model):
     __tablename__ = 'user_project'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-    project_id = db.Column(db.Integer, db.ForeignKey(
-        'project.id'), primary_key=True)
-        
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), primary_key=True)
+
+
 class IncomeStatement(db.Model):
     __tablename__ = 'income_statement'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+
     def __repr__(self):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
         data = {'id': self.id, 'name': self.name}
         return data
-    
+
 
 class CashflowStatement(db.Model):
     __tablename__ = 'cashflow_statement'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+
     def __repr__(self):
         return json.dumps(self.to_dict())
 

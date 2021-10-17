@@ -82,6 +82,10 @@ class ChangeQuantityForm(FlaskForm):
         if product_quantity.data < 0:
             raise ValidationError('Количество не может быть меньше нуля.')
 
+class SplitOrderForm(FlaskForm):
+    products = JSONField('products', [InputRequired(
+        message='Список позиций не может быть пустым.')])
+    submit = SubmitField('Разделить')
 
 '''
 ################################################################################

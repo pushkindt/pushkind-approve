@@ -48,19 +48,19 @@ def ShowIndex():
 
         if filter_focus is None:
             if current_user.role == UserRoles.validator:
-                orders = orders.filter(Order.status != OrderStatus.approved)
-                orders = orders.filter(~Order.user_approvals.any(
-                    OrderApproval.user_id == current_user.id))
+                orders = (
+                    orders
+                    .filter(Order.status != OrderStatus.approved)
+                    .filter(~Order.user_approvals.any(OrderApproval.user_id == current_user.id))
+                )
             elif current_user.role == UserRoles.purchaser:
                 orders = orders.filter(Order.dealdone == False)
-            orders = orders.filter(Order.child_id == None)
+            orders = orders.filter(~Order.children.any())
 
         orders = orders.join(OrderCategory)
-        orders = orders.filter(OrderCategory.category_id.in_(
-            [cat.id for cat in current_user.categories]))
+        orders = orders.filter(OrderCategory.category_id.in_([cat.id for cat in current_user.categories]))
         orders = orders.join(Site)
-        orders = orders.filter(Site.project_id.in_(
-            [p.id for p in current_user.projects]))
+        orders = orders.filter(Site.project_id.in_([p.id for p in current_user.projects]))
 
     elif current_user.role == UserRoles.supervisor:
         orders = orders.join(Site)
@@ -95,8 +95,7 @@ def MergeOrders():
 
         orders = list()
 
-        orders = Order.query.filter(Order.id.in_(
-            orders_list), Order.hub_id == current_user.hub_id, Order.child_id == None)
+        orders = Order.query.filter(Order.id.in_(orders_list), Order.hub_id == current_user.hub_id).filter(~Order.children.any())
         if current_user.role == UserRoles.initiative:
             orders = orders.filter(Order.initiative_id == current_user.id)
 
@@ -119,8 +118,7 @@ def MergeOrders():
             categories += [cat.id for cat in order.categories]
             for product in order.products:
                 if 'selectedOptions' in product and len(product['selectedOptions']) > 1:
-                    product_id = product['sku'] + ''.join(
-                        sorted([k['value'] for k in product['selectedOptions']]))
+                    product_id = product['sku'] + ''.join(sorted([k['value'] for k in product['selectedOptions']]))
                 else:
                     product_id = product['sku']
                 if product_id not in products:
@@ -149,8 +147,7 @@ def MergeOrders():
         now = datetime.now(tz=timezone.utc)
 
         order.products = [products[sku] for sku in products.keys()]
-        order.total = sum([product['quantity']*product['price']
-                          for product in order.products])
+        order.total = sum([product['quantity']*product['price'] for product in order.products])
         order.income_id = orders[0].income_id
         order.cashflow_id = orders[0].cashflow_id
         order.site_id = orders[0].site_id
@@ -158,8 +155,7 @@ def MergeOrders():
         order.create_timestamp = int(now.timestamp())
       
         order.hub_id = current_user.hub_id
-        order.categories = Category.query.filter(Category.id.in_(
-            categories), Category.hub_id == current_user.hub_id).all()
+        order.categories = Category.query.filter(Category.id.in_(categories), Category.hub_id == current_user.hub_id).all()
 
         order.parents = orders
 
@@ -180,8 +176,7 @@ def MergeOrders():
 
         Order.UpdateOrdersPositions(current_user.hub_id)
 
-        flash(
-            f'Объединено заявок: {len(orders)}. Идентификатор новой заявки {order.id}')
+        flash(f'Объединено заявок: {len(orders)}. Идентификатор новой заявки {order.id}')
             
         SendEmailNotification('new', order)
     else:
@@ -204,8 +199,7 @@ def SaveOrders():
 
         orders = list()
 
-        orders = Order.query.filter(Order.id.in_(
-            orders_list), Order.hub_id == current_user.hub_id)
+        orders = Order.query.filter(Order.id.in_(orders_list), Order.hub_id == current_user.hub_id)
         if current_user.role == UserRoles.initiative:
             orders = orders.filter(Order.initiative_id == current_user.id)
 
@@ -230,8 +224,7 @@ def SaveOrders():
 
         for i, order in enumerate(orders, start=2):
             ws.cell(row=i, column=1, value=order.id)
-            ws.cell(row=i, column=2, value=datetime.fromtimestamp(
-                order.create_timestamp))
+            ws.cell(row=i, column=2, value=datetime.fromtimestamp(order.create_timestamp))
             if order.site is not None:
                 ws.cell(row=i, column=3, value=order.site.project.name)
                 ws.cell(row=i, column=4, value=order.site.name)
@@ -241,10 +234,8 @@ def SaveOrders():
             ws.cell(row=i, column=8, value=order.initiative.name)
             ws.cell(row=i, column=9, value=order.income_statement.name if order.income_statement is not None else '')
             ws.cell(row=i, column=10, value=order.cashflow_statement.name if order.cashflow_statement is not None else '')
-            ws.cell(row=i, column=11, value=', '.join(
-                [pos.position.name for pos in order.approvals if pos.approved is True]))
-            ws.cell(row=i, column=12, value=', '.join(
-                [pos.position.name for pos in order.approvals if pos.approved is False]))
+            ws.cell(row=i, column=11, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is True]))
+            ws.cell(row=i, column=12, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is False]))
 
         data = save_virtual_workbook(wb)
         return Response(data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={'Content-Disposition': 'attachment;filename=export.xlsx'})

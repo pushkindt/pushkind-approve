@@ -1,13 +1,23 @@
-{% if order.child %}
+{% if order.children | length > 1 %}
+	<div class="row text-muted border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
+		<div class="col-sm-1 overflow-hidden">
+			<span class="fw-bold">Разделена на</span><br>
+			{% for child in order.children %}
+				<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=child.id) }}">
+					{{ child.id }}
+				</a><br>
+			{% endfor %}
+		</div>
+{% elif order.children | length == 1 %}
 	<div class="row text-muted border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
 		<div class="col-sm-1 overflow-hidden">
 			<span class="fw-bold">Объединена в</span>
-			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.child_id) }}">
-				{{ order.child_id }}
+			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.children[0].id) }}">
+				{{ order.children[0].id }}
 			</a>
 		</div>
 {% else %}
-	<div class="row ecwidOrder border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
+	<div class="row selectable border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
 		<div class="col-sm-1 overflow-hidden">
 			<span class="d-sm-none fw-bold">Заявка:</span>
 			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.id) }}">#{{ order.id }}</a>
@@ -66,10 +76,19 @@
 		<span class="d-sm-none">Статус:</span>
 		{% include '_order.status.html' %}
 	</div>
-	{% if order.parents %}
+	{% if order.parents | length > 1 %}
 		<div class="col-12">
 			<small>
 				&sum;
+				{% for parent in order.parents %}
+					#{{ parent.id }}
+				{% endfor %}
+			</small>
+		</div>
+	{% elif order.parents | length == 1 %}
+		<div class="col-12">
+			<small>
+				&divide;
 				{% for parent in order.parents %}
 					#{{ parent.id }}
 				{% endfor %}

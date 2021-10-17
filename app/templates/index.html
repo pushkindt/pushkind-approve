@@ -1,11 +1,5 @@
 {% extends "base.html" %}
 
-{% block styles %}
-	<style>
-		.ecwidOrder {cursor: pointer;}
-	</style>
-{% endblock %}
-
 {% block content %}
 <div class="container my-2">
 	<div class="row justify-content-center">
@@ -81,11 +75,14 @@
 	<form id="mergeForm" class="d-none" method="POST" action="{{ url_for('main.MergeOrders') }}">
 		<div class="fixed-top">
 			<div class="container">
-				<div class="row">
-					<div class="col">
+				<div class="row bg-dark text-white py-1">
+					<div class="col-auto">
 						<button id="cancelMerging" type="button" class="btn btn-danger text-white">Отменить</button>
 					</div>
-					<div class="col text-end">
+					<div class="col text-center">
+						Укажите заявки, которые необходимо объединить.
+					</div>
+					<div class="col-auto text-end">
 						{{ merge_form.csrf_token(id=False) }}
 						{{ merge_form.orders(id='mergeOrders', class_='d-none', readonly=True) }}
 						{{ merge_form.submit(id=False, class_='btn btn-primary text-white') }}
@@ -136,8 +133,8 @@
 				isMerging = false;
 				$("#mergeForm").addClass("d-none");
 				$("#startMerging").show();
-				$(".ecwidOrder.bg-dark.text-white").removeClass("bg-dark text-white");
-				$(".ecwidOrder").addClass("bg-white");
+				$(".selectable.bg-dark.text-white").removeClass("bg-dark text-white");
+				$(".selectable").addClass("bg-white");
 			});
 
 		{% endif %}
@@ -159,7 +156,7 @@
 			$("#saveOrders").val(JSON.stringify(order_list));
 		});
 
-		$(".ecwidOrder").click(function (event) {
+		$(".selectable").click(function (event) {
 			let orderId = $(this).attr('data-id');
 			if (isMerging == false) {
 				document.location.href = "{{ url_for('main.ShowOrder', order_id='replace_me') }}".replace("replace_me", orderId);
