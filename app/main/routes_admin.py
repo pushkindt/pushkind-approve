@@ -44,6 +44,12 @@ def ShowAdminPage():
 
     incomes = IncomeStatement.query.filter(IncomeStatement.hub_id == current_user.hub_id).order_by(IncomeStatement.name).all()
     cashflows = CashflowStatement.query.filter(CashflowStatement.hub_id == current_user.hub_id).order_by(CashflowStatement.name).all()
+    
+    forms['category'].income_statement.choices = [(i.id, i.name) for i in incomes]
+    forms['category'].cashflow_statement.choices = [(c.id, c.name) for c in cashflows]
+    forms['category'].income_statement.choices.append((0, 'Выберите БДР...'))
+    forms['category'].cashflow_statement.choices.append((0, 'Выберите БДДС...'))
+    forms['category'].process()
 
     return render_template('admin.html',
                            forms=forms,
@@ -108,6 +114,11 @@ def ConfigureEcwid():
 @role_required([UserRoles.admin])
 def SaveCategoryResponsibility():
     form = CategoryResponsibilityForm()
+    print(form)
+    incomes = IncomeStatement.query.filter_by(id=form.income_statement.data, hub_id=current_user.hub_id).all()
+    cashflows = CashflowStatement.query.filter_by(id=form.cashflow_statement.data, hub_id=current_user.hub_id).all()
+    form.income_statement.choices = [(i.id, i.name) for i in incomes]
+    form.cashflow_statement.choices = [(c.id, c.name) for c in cashflows]
     if form.validate_on_submit():
         category = Category.query.filter_by(
             id=form.category_id.data, hub_id=current_user.hub_id).first()
@@ -116,8 +127,13 @@ def SaveCategoryResponsibility():
         else:
             category.responsible = form.responsible.data.strip()
             category.functional_budget = form.functional_budget.data.strip()
+            category.code = form.code.data.strip()
+            category.income_id = form.income_statement.data
+            category.cashflow_id = form.cashflow_statement.data
             db.session.commit()
-            flash('Ответственный и ФДБ для категории сохранёны.')
+    else:
+        for error in form.category_id.errors + form.responsible.errors + form.functional_budget.errors + form.income_statement.errors + form.cashflow_statement.errors + form.code.errors:
+            flash(error) 
     return redirect(url_for('main.ShowAdminPage'))
 
 

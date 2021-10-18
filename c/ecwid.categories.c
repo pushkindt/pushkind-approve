@@ -66,12 +66,6 @@ bool ProcessCategories(uint64_t hub_id)
 	check(BeginTransaction(pDB) == 0, "Failed to start database transaction.");
 
 	/*****************************************************************************/
-	//	Delete obsolete cache
-	/*****************************************************************************/
-
-	check(DeleteCategories(pDB, hub_id) == 0, "Error while deleting cache.");
-
-	/*****************************************************************************/
 	//	Get root categories
 	/*****************************************************************************/
 

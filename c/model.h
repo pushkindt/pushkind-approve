@@ -32,8 +32,8 @@ typedef struct
 	char *products;
 	double total;
 	uint64_t site_id;
-	char *cashflow_statement;
-	char *income_statement;
+	uint64_t income_id;
+	uint64_t cashflow_id;
 	bool purchased;
 } TOrder;
 
@@ -56,7 +56,7 @@ extern int CommitTransaction(TDatabase *pDB);
 extern int RollbackTransaction(TDatabase *pDB);
 
 extern uint64_t GetRecentOrderTimestamp(TDatabase *pDB, uint64_t hub_id);
-extern uint64_t GetCategoryIdByChildId(TDatabase *pDB, uint64_t hub_id, uint64_t cat_id, char **cat_name);
+extern uint64_t GetCategoryIdByChildId(TDatabase *pDB, uint64_t hub_id, uint64_t cat_id, char **cat_name, uint64_t *cat_income_id, uint64_t *cat_cashflow_id);
 extern uint64_t GetInitiativeIdByEmail(TDatabase *pDB, uint64_t hub_id, char *email);
 extern uint64_t GetSiteIdByName(TDatabase *pDB, uint64_t hub_id, char *name);
 extern int StoreOrders(TDatabase *pDB, TOrder order);

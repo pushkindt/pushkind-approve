@@ -77,7 +77,7 @@ def ShowOrder(order_id):
     approver_form.cashflow_statement.choices = [(c.id, c.name) for c in cashflows]
     
     if order.income_statement is None:
-        approver_form.income_statement.choices.append((0, 'Выберите БДР..'))
+        approver_form.income_statement.choices.append((0, 'Выберите БДР...'))
         approver_form.income_statement.default = 0
     else:
         approver_form.income_statement.default = order.income_statement.id
@@ -193,7 +193,7 @@ def SplitOrder(order_id):
     else:
         for error in form.products.errors:
             flash(error)
-    return redirect(url_for('main.ShowOrder', order_id=order_id))
+    return redirect(url_for('main.ShowIndex'))
 
 @bp.route('/orders/duplicate/<order_id>')
 @login_required

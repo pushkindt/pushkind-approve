@@ -228,6 +228,12 @@ class CategoryResponsibilityForm(FlaskForm):
         message='Ответственный - обязательное поле.')])
     functional_budget = StringField('Функциональный бюджет', validators=[DataRequired(
         message='Функциональный бюджет - обязательное поле.')])
+    income_statement = SelectField(
+        'Статья БДР', [DataRequired(message='Статья БДР - обязательное поле.')], coerce=int)
+    cashflow_statement = SelectField(
+        'Статья БДДС', [DataRequired(message='Статья БДДС - обязательное поле.')], coerce=int)
+    code = StringField('Код', validators=[DataRequired(
+        message='Код категории - обязательное поле.')])
     submit = SubmitField('Сохранить')
     
  

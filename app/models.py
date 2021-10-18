@@ -254,6 +254,31 @@ class Category(db.Model):
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
     responsible = db.Column(db.String(128), nullable=True)
     functional_budget = db.Column(db.String(128), nullable=True)
+    income_id = db.Column(db.Integer, db.ForeignKey('income_statement.id', ondelete='SET NULL'), nullable=True)  # БДР
+    cashflow_id = db.Column(  # БДДС
+        db.Integer,
+        db.ForeignKey('cashflow_statement.id', ondelete='SET NULL'),
+        nullable=True
+    )
+    code = db.Column(db.String(128), nullable=True)
+    income_statement = db.relationship('IncomeStatement')
+    cashflow_statement = db.relationship('CashflowStatement')
+    
+    def __repr__(self):
+        return json.dumps(self.to_dict())
+
+    def to_dict(self):
+        data = {
+            'id': self.id,
+            'name': self.name,
+            'children': self.children,
+            'responsible': self.responsible,
+            'functional_budget': self.responsible,
+            'income_id': self.income_id,
+            'cashflow_id': self.cashflow_id,
+            'code': self.code
+        }
+        return data
 
     def __hash__(self):
         return self.id
