@@ -5,49 +5,10 @@
 #include "http.h"
 #include "util.h"
 
-/*
-static const char *_DISALLOWED_PRODUCTS_FIELDS[] = {"id", "categories", "defaultCategoryId", "relatedProducts",
-													"combinations", "url", "productClassId", "defaultCombinationId", "categoryIds",
-													"tax", "galleryImages", "media", "files", "sku", "showOnFrontpage"};
-*/
 static const char *_ALLOWED_PRODUCTS_FIELDS[] = {"name", "price", "enabled", "options", "description", "imageUrl"};
-
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products);
 static void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products);
-
-static void FilterProductFields(struct json_object *product)
-{
-	if (product == NULL)
-		return;
-
-	{
-		json_object_object_foreach(product, key, val)
-		{
-
-			bool found = false;
-			for (size_t i = 0; i < ARRAY_SIZE(_ALLOWED_PRODUCTS_FIELDS); i++)
-			{
-				if (strcmp(key, _ALLOWED_PRODUCTS_FIELDS[i]) == 0)
-				{
-					found = true;
-					break;
-				}
-			}
-			if (found == false)
-				json_object_object_del(product, key);
-		}
-	}
-	/*	
-	for (size_t i = 0; i < ARRAY_SIZE(_DISALLOWED_PRODUCTS_FIELDS); i++){
-		struct json_object *product_field = NULL;
-		json_object_object_get_ex(product, _DISALLOWED_PRODUCTS_FIELDS[i], &product_field);
-		if (product_field != NULL)
-			json_object_object_del(product, _DISALLOWED_PRODUCTS_FIELDS[i]);
-	}
-*/
-}
 
 static bool SetHubProductImage(TEcwid store, uint64_t product_id, char *img_url)
 {
@@ -245,7 +206,7 @@ static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_categ
 		//	Remove unnecessary product's fields
 		/*****************************************************************************/
 
-		FilterProductFields(store_product);
+		FilterJSONFields(store_product, _ALLOWED_PRODUCTS_FIELDS, ARRAY_SIZE(_ALLOWED_PRODUCTS_FIELDS));
 
 		struct json_object *tmp = json_object_new_array();
 		json_object_array_add(tmp, json_object_new_int64(hub_vendor_category));

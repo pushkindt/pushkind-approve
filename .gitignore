@@ -17,3 +17,6 @@ migrations/
 
 #Pushkind-approve
 *.xlsx
+
+#VSCode
+.vscode/
