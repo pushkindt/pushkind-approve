@@ -1,4 +1,11 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
+
 #include "model.h"
+#include "dbg.h"
 
 bool OpenDatabaseConnection(TDatabase **pDB)
 {

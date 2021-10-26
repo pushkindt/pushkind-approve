@@ -1,8 +1,12 @@
 #include <json.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <math.h>
 
 #include "http.h"
 #include "rest.h"
-#include "model.h"
+#include "dbg.h"
 
 #define REST_URL "https://app.ecwid.com/api/v3/%lu/%s?"
 #define REST_URL2 "https://app.ecwid.com/api/v3/%lu/%s/%lu?"
@@ -71,8 +75,7 @@ struct json_object *RESTcall(uint64_t store_id, TRESTEndpoint endpoint, struct j
 	}
 	break;
 	default:
-		log_err("Endpoint is not implemented yet.");
-		goto error;
+		sentinel("Endpoint is not implemented yet.");
 	}
 	{
 		char *dest = &url[result - 1];
@@ -159,7 +162,7 @@ struct json_object *RESTcall(uint64_t store_id, TRESTEndpoint endpoint, struct j
 		check(json != NULL, "Invalid JSON response");
 		break;
 	default:
-		log_err("Endpoint is not implemented yet.");
+		sentinel("Endpoint is not implemented yet.");
 	}
 error:
 	if (response != NULL)

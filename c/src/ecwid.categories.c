@@ -1,9 +1,13 @@
 #include <json.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
 
 #include "rest.h"
 #include "model.h"
 #include "http.h"
 #include "util.h"
+#include "dbg.h"
 
 static bool ProcessCategoriesTree(TEcwid hub, uint64_t root_id, struct json_object *children)
 {

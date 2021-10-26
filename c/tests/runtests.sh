@@ -1,14 +1,12 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
-echo "Starting test docker container:"
+echo "Starting fake ecwid server:"
 
-container_id=`docker run --rm -d -p 127.0.0.1:8080:80/tcp kennethreitz/httpbin`
-
+python3 $FLASK_APP &
 sleep 5
 
-echo "Container ID is $container_id"
-
 echo "Running unit tests:"
+
 for i in tests/*_tests
 do
     if [ -f $i ]
@@ -24,9 +22,5 @@ do
         fi
     fi
 done
-
-echo "Stopping test docker container:"
-
-docker stop $container_id
 
 echo ""

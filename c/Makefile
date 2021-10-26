@@ -7,9 +7,9 @@ OBJS = $(subst $(SRC_DIR)/, $(BUILD_DIR)/, $(SRCS:.c=.o))
 TEST_SRCS = $(wildcard tests/*_tests.c)
 TEST_OBJS = $(filter-out $(addsuffix .o, $(TARGET)), $(OBJS))
 TESTS = $(patsubst %.c,%,$(TEST_SRCS))
-CFLAGS_PROD = -std=c17 -g -O0 -Wall -Wextra -Wshadow -Isrc -include allheaders.h `curl-config --cflags` $(shell pkg-config --cflags json-c) $(OPTGLAGS)
+CFLAGS_PROD = -std=c17 -g -O0 -Wall -Wextra -Wshadow -Isrc `curl-config --cflags` $(shell pkg-config --cflags json-c) $(OPTGLAGS) -D_DEFAULT_SOURCE
 CFLAGS_DEV = -std=c17 -Isrc `curl-config --cflags` $(shell pkg-config --cflags json-c) $(OPTGLAGS) -D_DEFAULT_SOURCE
-LDFLAGS = -g -O0 -lsqlite3 `curl-config --libs` -lm $(shell pkg-config --libs json-c)
+LDFLAGS = -g -O0 -lsqlite3 `curl-config --libs` -lm $(shell pkg-config --libs json-c) -largp
 
 .PHONY: dev all clean tests
 

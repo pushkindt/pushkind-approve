@@ -1,5 +1,8 @@
 #include <json.h>
 #include <stdbool.h>
+#include <ctype.h>
+
+#include "dbg.h"
 
 /*
  * Function:  FilterJSONFields 

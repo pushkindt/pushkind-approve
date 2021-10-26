@@ -1,9 +1,12 @@
 #include <json.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 #include "rest.h"
 #include "model.h"
 #include "http.h"
 #include "util.h"
+#include "dbg.h"
 
 static const char *_ALLOWED_PRODUCTS_FIELDS[] = {"id", "categoryId", "price", "sku", "quantity", "name", "imageUrl", "selectedOptions"};
 

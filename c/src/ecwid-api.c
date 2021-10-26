@@ -2,9 +2,15 @@
 #include <sqlite3.h>
 #include <sys/file.h>
 #include <argp.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "model.h"
 #include "ecwid.h"
+#include "dbg.h"
 
 const char *argp_program_version = "ecwid-api 1.0";
 const char *argp_program_bug_address = "<matrizaev@gmail.com>";

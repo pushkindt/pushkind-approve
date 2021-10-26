@@ -1,4 +1,10 @@
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
+
 #include "http.h"
+#include "dbg.h"
 
 /*
  * Function:  WriteMemoryCallback 
@@ -72,6 +78,10 @@ int HTTPcall(THTTPMethod method, const char *url, uint8_t *payload, size_t paylo
 	curl_result = curl_easy_setopt(handle, CURLOPT_URL, url);
 	check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
 	curl_result = curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
+	check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
+	curl_result = curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0L);
+	check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
+	curl_result = curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, 0L);
 	check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
 	curl_result = curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 	check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));

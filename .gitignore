@@ -3,6 +3,7 @@
 *.o
 *.pid
 ecwid-api
+c/tests/tests.log
 
 # Python
 venv/
