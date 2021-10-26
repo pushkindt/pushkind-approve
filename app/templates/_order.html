@@ -1,7 +1,7 @@
 {% if order.children | length > 1 %}
 	<div class="row text-muted border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
 		<div class="col-sm-1 overflow-hidden">
-			разделена на<br>
+			<small>разделена на</small><br>
 			{% for child in order.children %}
 				<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=child.id) }}">
 					{{ child.id }}
@@ -11,7 +11,7 @@
 {% elif order.children | length == 1 %}
 	<div class="row text-muted border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
 		<div class="col-sm-1 overflow-hidden">
-			объединена в<br>
+			<small>объединена в</small><br>
 			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.children[0].id) }}">
 				{{ order.children[0].id }}
 			</a>
@@ -20,14 +20,14 @@
 	<div class="row selectable border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
 		<div class="col-sm-1 overflow-hidden">
 			<span class="d-sm-none fw-bold">Заявка:</span>
-			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.id) }}">#{{ order.id }}</a>
+			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.id) }}">{{ order.id }}</a>
 			<br>
 			<span class="text-muted">
 				{{ moment(order.create_date).format() }}
 			</span>
 		</div>
 {% endif %}
-	<div class="col-sm-1 overflow-hidden">
+	<div class="col-sm-2 overflow-hidden">
 		<span class="d-sm-none fw-bold">Категории:</span>
 		{% for cat in order.categories %}		
 			{{ cat.code or '' }}<br>

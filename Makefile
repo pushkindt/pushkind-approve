@@ -1,2 +1,2 @@
 icu:
-	gcc -shared icu.c -g -o libsqliteicu.so -fPIC `icu-config --cppflags --ldflags`
+	gcc -shared icu.c -g -o libsqliteicu.so -fPIC `pkg-config --libs --cflags icu-uc icu-io`
