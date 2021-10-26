@@ -1,7 +1,7 @@
 {% if order.children | length == 1 %}
 	<span class="badge bg-white text-muted border fw-normal">&sum; {{ order.child_id }}</span>
 {% elif order.children | length > 1 %}
-	<span class="badge bg-danger text-muted border fw-normal">Разделена</span>
+	<span class="badge bg-danger text-white border fw-normal">Разделена</span>
 {% else %}
 	{% if order['status'].name == 'new' %}
 		<span class="badge bg-white text-secondary border fw-normal">{{ order.status }}</span>
