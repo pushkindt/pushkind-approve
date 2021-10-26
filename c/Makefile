@@ -30,5 +30,7 @@ build:
 	@mkdir -p build
 	@mkdir -p bin
 clean:
-	rm -rf build $(TARGET) $(OBJS)
+	rm -rf build $(TARGET)
 	rm -f tests/tests.log
+	rm -f $(TESTS)
+	rm -f $(TEST_OBJS)

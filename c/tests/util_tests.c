@@ -6,22 +6,24 @@
 
 char *test_FilterJSONFields()
 {
-	const char *ALLOWED_FIELDS1[] = {"key1"};
+	const char *ALLOWED_FIELDS[] = {"key1"};
 
-	struct json_object *test_json = json_object_new_object();
-	check_mem(test_json);
-	json_object_object_add(test_json, "key1", json_object_new_string("value1"));
-	json_object_object_add(test_json, "key2", json_object_new_string("value2"));
+	struct json_object *json = json_object_new_object();
+	check_mem(json);
+	json_object_object_add(json, "key1", json_object_new_string("value1"));
+	json_object_object_add(json, "key2", json_object_new_string("value2"));
 
 	FilterJSONFields(NULL, NULL, 0);
 
-	FilterJSONFields(test_json, ALLOWED_FIELDS1, ARRAY_SIZE(ALLOWED_FIELDS1));
+	FilterJSONFields(json, ALLOWED_FIELDS, ARRAY_SIZE(ALLOWED_FIELDS));
 
-	mu_assert(strcmp(json_object_to_json_string(test_json), "{ \"key1\": \"value1\" }") == 0, "The result JSON doesn't match the expected one.");
+	mu_assert(strcmp(json_object_to_json_string(json), "{ \"key1\": \"value1\" }") == 0, "The result JSON doesn't match the expected one.");
 
 error:
-	if (test_json != NULL)
-		json_object_put(test_json);
+	if (json != NULL)
+	{
+		json_object_put(json);
+	}
 	return NULL;
 }
 

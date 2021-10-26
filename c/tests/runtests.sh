@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 
-echo "Running unit tests:"
+echo "Starting test docker container:"
 
+container_id=`docker run --rm -d -p 127.0.0.1:8080:80/tcp kennethreitz/httpbin`
+
+sleep 5
+
+echo "Container ID is $container_id"
+
+echo "Running unit tests:"
 for i in tests/*_tests
 do
     if [ -f $i ]
@@ -17,5 +24,9 @@ do
         fi
     fi
 done
+
+echo "Stopping test docker container:"
+
+docker stop $container_id
 
 echo ""
