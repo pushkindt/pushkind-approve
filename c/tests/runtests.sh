@@ -2,7 +2,8 @@
 
 echo "Starting fake ecwid server:"
 
-python3 $FLASK_APP &
+tests/ecwid/venv/bin/python3 tests/ecwid/app.py &
+FLASK_PID=$!
 sleep 5
 
 echo "Running unit tests:"
@@ -22,5 +23,7 @@ do
         fi
     fi
 done
+
+kill $FLASK_PID
 
 echo ""

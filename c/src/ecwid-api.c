@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dotenv.h>
 
 #include "model.h"
 #include "ecwid.h"
@@ -93,6 +94,21 @@ int main(int argc, char *argv[])
 	int result = -1;
 	int pid_file = -1;
 	struct arguments arguments = {0};
+
+	/*****************************************************************************/
+	//	Parse .env
+	/*****************************************************************************/	
+
+	if (env_load(".env", true) != 0)
+		log_info(".env couldn't be loaded. Make sure all necessary environment variables are present.");
+
+	/*****************************************************************************/
+	//	Check the environment variables.
+	/*****************************************************************************/
+
+	check(getenv("DATABASE_URL") != NULL, "DATABASE_URL is not present in the environment.");
+
+	check(getenv("REST_URL") != NULL, "REST_URL is not present in the environment.");
 
 	/*****************************************************************************/
 	//	Parse arguments

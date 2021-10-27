@@ -31,4 +31,4 @@ def image(store_id, product_id):
 
 
 if __name__ == "__main__":
-    app.run(ssl_context='adhoc', host='0.0.0.0', port=443)
+    app.run()
