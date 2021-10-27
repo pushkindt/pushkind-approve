@@ -1,4 +1,12 @@
+#include <stdint.h>
+#include <stdbool.h>
+#include <json.h>
+
 #include "minunit.h"
+#include "model.h"
+
+char *DATABASE_URL = NULL;
+char *REST_URL = NULL;
 
 char *test_MyCoolFunction()
 {

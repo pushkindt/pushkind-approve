@@ -1,8 +1,12 @@
 #include <stdint.h>
+#include <stdbool.h>
 #include <json.h>
 
 #include "minunit.h"
 #include "http.h"
+
+char *DATABASE_URL = NULL;
+char *REST_URL = NULL;
 
 #define cleanup_test_data(json, buffer) \
     if (json != NULL)                   \
@@ -20,7 +24,7 @@
 char *test_HTTPcall()
 {
 
-    char *REST_URL = getenv("REST_URL");
+    REST_URL = getenv("REST_URL");
 
     mu_assert(REST_URL != NULL, "REST_URL is not present in the environment.");
 
@@ -31,6 +35,7 @@ char *test_HTTPcall()
     mu_assert(HTTPcall(HTTP_GET, REST_URL, NULL, 0, &buffer, &buffer_size) == 0, "The result doesn't match the expected 0.");
     mu_assert(buffer_size > 0, "The response buffer size have to be greater than 0.");
     mu_assert(buffer != NULL, "The response buffer can't be NULL.");
+    buffer[buffer_size] = 0;
     struct json_object *json = json_tokener_parse((char *)buffer);
     mu_assert(json != NULL, "The response must be a valid JSON.");
     cleanup_test_data(json, buffer);
@@ -39,6 +44,7 @@ char *test_HTTPcall()
     mu_assert(HTTPcall(HTTP_POST, REST_URL, (uint8_t *)test_str, strlen(test_str), &buffer, &buffer_size) == 0, "The result doesn't match the expected 0.");
     mu_assert(buffer_size > 0, "The response buffer size have to be greater than 0.");
     mu_assert(buffer != NULL, "The response buffer can't be NULL.");
+    buffer[buffer_size] = 0;
     json = json_tokener_parse((char *)buffer);
     mu_assert(json != NULL, "The response must be a valid JSON.");
     cleanup_test_data(json, buffer);
@@ -46,6 +52,7 @@ char *test_HTTPcall()
     mu_assert(HTTPcall(HTTP_PUT, REST_URL, (uint8_t *)test_str, strlen(test_str), &buffer, &buffer_size) == 0, "The result doesn't match the expected 0.");
     mu_assert(buffer_size > 0, "The response buffer size have to be greater than 0.");
     mu_assert(buffer != NULL, "The response buffer can't be NULL.");
+    buffer[buffer_size] = 0;
     json = json_tokener_parse((char *)buffer);
     mu_assert(json != NULL, "The response must be a valid JSON.");
     cleanup_test_data(json, buffer);
@@ -53,6 +60,7 @@ char *test_HTTPcall()
     mu_assert(HTTPcall(HTTP_DELETE, REST_URL, (uint8_t *)test_str, strlen(test_str), &buffer, &buffer_size) == 0, "The result doesn't match the expected 0.");
     mu_assert(buffer_size > 0, "The response buffer size have to be greater than 0.");
     mu_assert(buffer != NULL, "The response buffer can't be NULL.");
+    buffer[buffer_size] = 0;
     json = json_tokener_parse((char *)buffer);
     mu_assert(json != NULL, "The response must be a valid JSON.");
     cleanup_test_data(json, buffer);

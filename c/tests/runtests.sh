@@ -4,6 +4,7 @@ echo "Starting fake ecwid server:"
 
 tests/ecwid/venv/bin/python3 tests/ecwid/app.py &
 FLASK_PID=$!
+export REST_URL=http://127.0.0.1:5000/api/v3
 sleep 5
 
 echo "Running unit tests:"
@@ -25,5 +26,6 @@ do
 done
 
 kill $FLASK_PID
+unset REST_URL
 
 echo ""

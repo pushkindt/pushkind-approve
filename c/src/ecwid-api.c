@@ -9,9 +9,14 @@
 #include <fcntl.h>
 #include <dotenv.h>
 
+#include "ecwid-api.h"
 #include "model.h"
 #include "ecwid.h"
 #include "dbg.h"
+
+
+char *DATABASE_URL = NULL;
+char *REST_URL = NULL;
 
 const char *argp_program_version = "ecwid-api 1.0";
 const char *argp_program_bug_address = "<matrizaev@gmail.com>";
@@ -106,9 +111,13 @@ int main(int argc, char *argv[])
 	//	Check the environment variables.
 	/*****************************************************************************/
 
-	check(getenv("DATABASE_URL") != NULL, "DATABASE_URL is not present in the environment.");
+	DATABASE_URL = getenv("DATABASE_URL");
 
-	check(getenv("REST_URL") != NULL, "REST_URL is not present in the environment.");
+	check(DATABASE_URL != NULL, "DATABASE_URL is not present in the environment.");
+
+	REST_URL = getenv("REST_URL");
+
+	check(REST_URL != NULL, "REST_URL is not present in the environment.");
 
 	/*****************************************************************************/
 	//	Parse arguments

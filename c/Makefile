@@ -14,6 +14,7 @@ LDFLAGS = -g -O0 -lsqlite3 `curl-config --libs` -lm $(shell pkg-config --libs js
 
 .PHONY: dev all clean tests
 
+all: CFLAGS_PROD += -DNDEBUG
 all: $(TARGET)
 dev: CFLAGS = $(CFLAGS_DEV)
 dev: all
@@ -24,10 +25,8 @@ $(TARGET): $(BUILD_DIR) $(OBJS)
 	mv $(TARGET) $(BIN_DIR)
 	
 tests: CFLAGS = $(CFLAGS_DEV) $(TEST_OBJS)
-tests: export REST_URL = http://127.0.0.1:5000/
 tests: $(BUILD_DIR) $(TEST_OBJS) $(TESTS)
 	sh ./tests/runtests.sh
-	rm -f $(TESTS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) -c $(CFLAGS_PROD) $< -o $@

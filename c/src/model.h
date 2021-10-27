@@ -1,6 +1,5 @@
 #include <sqlite3.h>
 
-#define DATABASE_URL "app.db"
 #define DATABASE_OK SQLITE_OK
 
 typedef struct

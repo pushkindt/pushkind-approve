@@ -1,8 +1,13 @@
+#include <stdint.h>
+#include <stdbool.h>
 #include <json.h>
 #include <string.h>
 
 #include "minunit.h"
 #include "util.h"
+
+char *DATABASE_URL = NULL;
+char *REST_URL = NULL;
 
 char *test_FilterJSONFields()
 {

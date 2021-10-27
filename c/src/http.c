@@ -17,7 +17,7 @@
  *  nmemb: number of blocks
  *  userp: a structure containg the pointer and size of the the buffer
  *
- *  returns: the size of the received chunk
+ *  returns: the size of the received chunk (without trailing zero)
  */
 static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
@@ -109,6 +109,11 @@ int HTTPcall(THTTPMethod method, const char *url, uint8_t *payload, size_t paylo
 			curl_result = curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, payload_size);
 			check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
 		}
+		else
+		{
+			curl_result = curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, 0L);
+			check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
+		}
 		break;
 	case HTTP_PUT:
 		curl_result = curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "PUT");
@@ -118,6 +123,11 @@ int HTTPcall(THTTPMethod method, const char *url, uint8_t *payload, size_t paylo
 			curl_result = curl_easy_setopt(handle, CURLOPT_POSTFIELDS, payload);
 			check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
 			curl_result = curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, payload_size);
+			check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
+		}
+		else
+		{
+			curl_result = curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, 0L);
 			check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
 		}
 		break;

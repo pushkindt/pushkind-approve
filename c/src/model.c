@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include "ecwid-api.h"
 #include "model.h"
 #include "dbg.h"
 
