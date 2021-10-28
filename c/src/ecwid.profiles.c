@@ -136,7 +136,7 @@ bool ProcessProfiles(uint64_t hub_id, uint64_t store_id)
 	/*****************************************************************************/
 	for (size_t i = 0; i < stores_count; i++)
 	{
-		if ((GetStoreProfile(&stores[i]) != true) || (StoreEcwidProfile(pDB, stores[i]) != 0))
+		if ((GetStoreProfile(&stores[i]) != true) || (UpdateEcwidProfile(pDB, stores[i]) != 0))
 		{
 			log_err("Cannot process store %lu", stores[i].id);
 			continue;
@@ -146,7 +146,7 @@ bool ProcessProfiles(uint64_t hub_id, uint64_t store_id)
 	/*****************************************************************************/
 	//	Get hub profile information from Ecwid and store it locally
 	/*****************************************************************************/
-	if ((GetStoreProfile(&hub[0]) != true) || (StoreEcwidProfile(pDB, hub[0]) != 0))
+	if ((GetStoreProfile(&hub[0]) != true) || (UpdateEcwidProfile(pDB, hub[0]) != 0))
 	{
 		log_err("Cannot process hub %lu", hub[0].id);
 	}

@@ -25,8 +25,6 @@ char *test_RESTcall()
     check_mem(param_json);
     json_object_object_add(param_json, "productId", json_object_new_int64(10));
 
-    REST_URL = getenv("REST_URL");
-
     mu_assert(REST_URL != NULL, "REST_URL is not present in the environment.");
 
     mu_assert(RESTcall(0, -1, NULL, NULL, 0) == NULL, "The result doesn't match the expected NULL.");
@@ -63,6 +61,8 @@ error:
 
 char *all_tests()
 {
+    REST_URL = getenv("REST_URL");
+
     mu_suite_start();
 
     mu_run_test(test_RESTcall);

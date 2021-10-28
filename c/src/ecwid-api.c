@@ -14,7 +14,6 @@
 #include "ecwid.h"
 #include "dbg.h"
 
-
 char *DATABASE_URL = NULL;
 char *REST_URL = NULL;
 
@@ -45,8 +44,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	{
 	case 's':
 		/* STORE_ID is an unsigned integer. */
-		arguments->store_id = atoi(arg);
-		if (arguments->store_id == 0)
+		errno = 0;
+		arguments->store_id = strtoul(arg, NULL, 10);
+		if (arguments->store_id == 0 || errno == EINVAL || errno == ERANGE)
 			argp_usage(state);
 		break;
 	case 'o':
@@ -73,8 +73,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		if (state->arg_num == 1)
 		{
 			/* HUB_ID is unsigned integer. */
-			arguments->hub_id = atoi(arg);
-			if (arguments->hub_id == 0)
+			errno = 0;
+			arguments->hub_id = strtoul(arg, NULL, 10);
+			if (arguments->hub_id == 0 || errno == EINVAL || errno == ERANGE)
 				argp_usage(state);
 		}
 		break;
@@ -102,7 +103,7 @@ int main(int argc, char *argv[])
 
 	/*****************************************************************************/
 	//	Parse .env
-	/*****************************************************************************/	
+	/*****************************************************************************/
 
 	if (env_load(".env", true) != 0)
 		log_info(".env couldn't be loaded. Make sure all necessary environment variables are present.");
