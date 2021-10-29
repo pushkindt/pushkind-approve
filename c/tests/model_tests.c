@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <curl/curl.h>
+#include <sqlite3.h>
 #include <json.h>
 
 #include "minunit.h"
@@ -26,10 +28,10 @@ char *test_OpenDatabaseConnection()
 char *test_CategoryFunctions()
 {
     TCategory category1 = {
-        .children = "[1, 2, 3]",
+        .children = "[1]",
         .hub_id = 1,
         .id = 1,
-        .name = "test"};
+        .name = "name"};
 
     mu_assert(StoreCategory(pDB, &category1) == 0, "The result doesn't match the expected 0.");
 
@@ -39,7 +41,7 @@ char *test_CategoryFunctions()
 
     mu_assert(category2 != NULL, "The result doesn't match the expected non-NULL value.");
 
-    mu_assert(strcmp(category2->name, "test") == 0, "The name of the category must be \"test\".");
+    mu_assert(strcmp(category2->name, "name") == 0, "The name of the category must be \"name\".");
 
     FreeCategory(category2);
 
@@ -60,9 +62,9 @@ char *test_StoreFunctions()
 {
     TEcwid ecwid1 = {
         .id = 1,
-        .hub_id = 1,
-        .name = "name",
-        .email = "email@email",
+        .hub_id = 0,
+        .name = "hub",
+        .email = "email@email.email",
         .client_id = "client_id",
         .client_secret = "client_secret",
         .partners_key = "partners_key",
@@ -76,10 +78,10 @@ char *test_StoreFunctions()
     TEcwid *ecwid2 = NULL;
     size_t store_count = 0;
 
-    ecwid2 = GetStores(pDB, 1, &store_count, 1);
+    ecwid2 = GetStores(pDB, 1, &store_count, 0);
 
     mu_assert(store_count == 1 && ecwid2 != NULL, "The result doesn't match the expected ecwid data.");
-    mu_assert(ecwid2->id == 1, "The result doesn't match the expected ecwid data.");
+    mu_assert(ecwid2[0].id == 2, "The result doesn't match the expected ecwid data.");
 
     if (ecwid2 != NULL)
     {
@@ -111,22 +113,22 @@ char *test_OrderFunctions()
         .hub_id = 1,
         .income_id = 1,
         .initiative_id = 1,
-        .create_timestamp = 123,
+        .create_timestamp = 0,
         .cashflow_id = 1,
-        .products = "",
-        .purchased = false,
+        .products = "[]",
+        .purchased = true,
         .site_id = 1,
         .total = 1.0};
 
     mu_assert(StoreOrders(pDB, order) == 0, "The result doesn't match the expected 0.");
 
-    mu_assert(GetRecentOrderTimestamp(pDB, 1) == 123, "The result doesn't match the expected 123.");
+    mu_assert(GetRecentOrderTimestamp(pDB, 1) == 0, "The result doesn't match the expected 123.");
 
     mu_assert(StoreOrderCategory(pDB, "1", 1) == 0, "The result doesn't match the expected 0.");
 
     mu_assert(CleanCategoriesRelationships(pDB) == 0, "The result doesn't match the expected 0.");
 
-    mu_assert(GetInitiativeIdByEmail(pDB, 1, "email@email") == 1, "The result doesn't match the expected 1.");
+    mu_assert(GetInitiativeIdByEmail(pDB, 1, "email@email.email") == 1, "The result doesn't match the expected 1.");
 
     mu_assert(GetSiteIdByName(pDB, 1, "name") == 1, "The result doesn't match the expected 1.");
 
@@ -137,9 +139,10 @@ char *test_OrderFunctions()
 
 char *all_tests()
 {
+    REST_URL = getenv("REST_URL");
     DATABASE_URL = getenv("DATABASE_URL");
-
     sqlite3_initialize();
+    curl_global_init(CURL_GLOBAL_ALL);
 
     mu_suite_start();
 
@@ -156,8 +159,8 @@ char *all_tests()
         CloseDatabaseConnection(pDB);
     }
 
+    curl_global_cleanup();
     sqlite3_shutdown();
-
     return NULL;
 }
 

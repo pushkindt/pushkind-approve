@@ -75,9 +75,9 @@ CREATE TABLE IF NOT EXISTS "category" (
 	"income_id"	INTEGER,
 	"cashflow_id"	INTEGER,
 	"code"	VARCHAR(128),
-	FOREIGN KEY("income_id") REFERENCES "income_statement"("id") ON DELETE SET NULL,
-	FOREIGN KEY("cashflow_id") REFERENCES "cashflow_statement"("id") ON DELETE SET NULL,
 	FOREIGN KEY("hub_id") REFERENCES "ecwid"("id"),
+	FOREIGN KEY("cashflow_id") REFERENCES "cashflow_statement"("id") ON DELETE SET NULL,
+	FOREIGN KEY("income_id") REFERENCES "income_statement"("id") ON DELETE SET NULL,
 	PRIMARY KEY("id")
 );
 DROP TABLE IF EXISTS "site";
@@ -107,12 +107,12 @@ CREATE TABLE IF NOT EXISTS "user" (
 	"last_seen"	DATETIME,
 	"note"	VARCHAR,
 	"registered"	DATETIME,
-	FOREIGN KEY("position_id") REFERENCES "position"("id") ON DELETE SET NULL,
 	FOREIGN KEY("hub_id") REFERENCES "ecwid"("id"),
-	CHECK("email_approved" IN (0, 1)),
-	CHECK("email_new" IN (0, 1)),
-	CONSTRAINT "userroles" CHECK("role" IN ('default', 'admin', 'initiative', 'validator', 'purchaser', 'supervisor')),
+	FOREIGN KEY("position_id") REFERENCES "position"("id") ON DELETE SET NULL,
 	CHECK("email_disapproved" IN (0, 1)),
+	CHECK("email_new" IN (0, 1)),
+	CHECK("email_approved" IN (0, 1)),
+	CONSTRAINT "userroles" CHECK("role" IN ('default', 'admin', 'initiative', 'validator', 'purchaser', 'supervisor')),
 	CHECK("email_modified" IN (0, 1)),
 	PRIMARY KEY("id")
 );
@@ -131,32 +131,32 @@ CREATE TABLE IF NOT EXISTS "order" (
 	"purchased"	BOOLEAN NOT NULL DEFAULT 0,
 	"exported"	BOOLEAN NOT NULL DEFAULT 0,
 	"dealdone"	BOOLEAN NOT NULL DEFAULT 0,
-	PRIMARY KEY("id"),
-	FOREIGN KEY("site_id") REFERENCES "site"("id") ON DELETE SET NULL,
 	FOREIGN KEY("cashflow_id") REFERENCES "cashflow_statement"("id") ON DELETE SET NULL,
 	FOREIGN KEY("initiative_id") REFERENCES "user"("id"),
 	FOREIGN KEY("hub_id") REFERENCES "ecwid"("id"),
 	FOREIGN KEY("income_id") REFERENCES "income_statement"("id") ON DELETE SET NULL,
+	FOREIGN KEY("site_id") REFERENCES "site"("id") ON DELETE SET NULL,
+	CONSTRAINT "orderstatus" CHECK("status" IN ('new', 'not_approved', 'partly_approved', 'approved', 'modified')),
+	CHECK("dealdone" IN (0, 1)),
 	CHECK("exported" IN (0, 1)),
 	CHECK("purchased" IN (0, 1)),
-	CHECK("dealdone" IN (0, 1)),
-	CONSTRAINT "orderstatus" CHECK("status" IN ('new', 'not_approved', 'partly_approved', 'approved', 'modified'))
+	PRIMARY KEY("id")
 );
 DROP TABLE IF EXISTS "user_category";
 CREATE TABLE IF NOT EXISTS "user_category" (
 	"user_id"	INTEGER NOT NULL,
 	"category_id"	INTEGER NOT NULL,
-	PRIMARY KEY("user_id","category_id"),
 	FOREIGN KEY("category_id") REFERENCES "category"("id"),
-	FOREIGN KEY("user_id") REFERENCES "user"("id")
+	FOREIGN KEY("user_id") REFERENCES "user"("id"),
+	PRIMARY KEY("user_id","category_id")
 );
 DROP TABLE IF EXISTS "user_project";
 CREATE TABLE IF NOT EXISTS "user_project" (
 	"user_id"	INTEGER NOT NULL,
 	"project_id"	INTEGER NOT NULL,
-	PRIMARY KEY("user_id","project_id"),
+	FOREIGN KEY("project_id") REFERENCES "project"("id"),
 	FOREIGN KEY("user_id") REFERENCES "user"("id"),
-	FOREIGN KEY("project_id") REFERENCES "project"("id")
+	PRIMARY KEY("user_id","project_id")
 );
 DROP TABLE IF EXISTS "order_approval";
 CREATE TABLE IF NOT EXISTS "order_approval" (
@@ -165,17 +165,17 @@ CREATE TABLE IF NOT EXISTS "order_approval" (
 	"product_id"	INTEGER,
 	"user_id"	INTEGER NOT NULL,
 	"remark"	VARCHAR(128),
-	PRIMARY KEY("id"),
 	FOREIGN KEY("order_id") REFERENCES "order"("id"),
-	FOREIGN KEY("user_id") REFERENCES "user"("id")
+	FOREIGN KEY("user_id") REFERENCES "user"("id"),
+	PRIMARY KEY("id")
 );
 DROP TABLE IF EXISTS "order_category";
 CREATE TABLE IF NOT EXISTS "order_category" (
 	"order_id"	VARCHAR(128) NOT NULL,
 	"category_id"	INTEGER NOT NULL,
-	PRIMARY KEY("order_id","category_id"),
 	FOREIGN KEY("order_id") REFERENCES "order"("id"),
-	FOREIGN KEY("category_id") REFERENCES "category"("id")
+	FOREIGN KEY("category_id") REFERENCES "category"("id"),
+	PRIMARY KEY("order_id","category_id")
 );
 DROP TABLE IF EXISTS "order_event";
 CREATE TABLE IF NOT EXISTS "order_event" (
@@ -185,10 +185,10 @@ CREATE TABLE IF NOT EXISTS "order_event" (
 	"timestamp"	DATETIME NOT NULL DEFAULT (datetime('now')),
 	"type"	VARCHAR(18) NOT NULL,
 	"data"	VARCHAR NOT NULL DEFAULT '',
-	PRIMARY KEY("id"),
+	CONSTRAINT "eventtype" CHECK("type" IN ('commented', 'approved', 'disapproved', 'quantity', 'duplicated', 'purchased', 'exported', 'merged', 'dealdone', 'income_statement', 'cashflow_statement', 'site', 'measurement', 'splitted')),
 	FOREIGN KEY("order_id") REFERENCES "order"("id"),
 	FOREIGN KEY("user_id") REFERENCES "user"("id"),
-	CONSTRAINT "eventtype" CHECK("type" IN ('commented', 'approved', 'disapproved', 'quantity', 'duplicated', 'purchased', 'exported', 'merged', 'dealdone', 'income_statement', 'cashflow_statement', 'site', 'measurement', 'splitted'))
+	PRIMARY KEY("id")
 );
 DROP TABLE IF EXISTS "order_position";
 CREATE TABLE IF NOT EXISTS "order_position" (
@@ -197,37 +197,38 @@ CREATE TABLE IF NOT EXISTS "order_position" (
 	"approved"	BOOLEAN NOT NULL DEFAULT 0,
 	"user_id"	INTEGER,
 	"timestamp"	DATETIME,
+	CHECK("approved" IN (0, 1)),
 	PRIMARY KEY("order_id","position_id"),
-	FOREIGN KEY("order_id") REFERENCES "order"("id"),
-	FOREIGN KEY("user_id") REFERENCES "user"("id") ON DELETE SET NULL,
 	FOREIGN KEY("position_id") REFERENCES "position"("id"),
-	CHECK("approved" IN (0, 1))
+	FOREIGN KEY("user_id") REFERENCES "user"("id") ON DELETE SET NULL,
+	FOREIGN KEY("order_id") REFERENCES "order"("id")
 );
 DROP TABLE IF EXISTS "order_relationship";
 CREATE TABLE IF NOT EXISTS "order_relationship" (
 	"order_id"	VARCHAR(128) NOT NULL,
 	"child_id"	VARCHAR(128) NOT NULL,
 	PRIMARY KEY("order_id","child_id"),
-	FOREIGN KEY("child_id") REFERENCES "order"("id"),
-	FOREIGN KEY("order_id") REFERENCES "order"("id")
+	FOREIGN KEY("order_id") REFERENCES "order"("id"),
+	FOREIGN KEY("child_id") REFERENCES "order"("id")
 );
 INSERT INTO "alembic_version" ("version_num") VALUES ('1');
-INSERT INTO "ecwid" ("id","partners_key","client_id","client_secret","token","name","email","url","hub_id") VALUES (1,'partners_key','client_id','client_secret','token','name','email@email','http://url.url',1);
-INSERT INTO "app_settings" ("id","hub_id","notify_1C","email_1C") VALUES (1,1,1,'email@email');
+INSERT INTO "ecwid" ("id","partners_key","client_id","client_secret","token","name","email","url","hub_id") VALUES (1,'partners_key','client_id','client_secret','token','hub','email@email.email','http://url.url',NULL),
+ (2,'partners_key','client_id','client_secret','token','vendor','email@email.email','http://url.url',1);
+INSERT INTO "app_settings" ("id","hub_id","notify_1C","email_1C") VALUES (1,1,1,'email@email.email');
 INSERT INTO "cashflow_statement" ("id","name","hub_id") VALUES (1,'name',1);
 INSERT INTO "income_statement" ("id","name","hub_id") VALUES (1,'name',1);
 INSERT INTO "position" ("id","name","hub_id") VALUES (1,'name',1);
 INSERT INTO "project" ("id","name","hub_id","enabled","uid") VALUES (1,'name',1,1,'uid');
 INSERT INTO "category" ("id","name","children","hub_id","responsible","functional_budget","income_id","cashflow_id","code") VALUES (1,'name','[1]',1,'responsible','functional_budget',1,1,'code');
 INSERT INTO "site" ("id","name","project_id","uid") VALUES (1,'name',1,'uid');
-INSERT INTO "user" ("id","email","password","role","name","phone","position_id","location","hub_id","email_new","email_modified","email_disapproved","email_approved","last_seen","note","registered") VALUES (1,'email@email','password','admin','name','phone',1,'location',1,1,1,1,1,0,'note',0);
-INSERT INTO "order" ("id","initiative_id","create_timestamp","products","total","status","site_id","income_id","cashflow_id","hub_id","purchased","exported","dealdone") VALUES ('1',1,123,'',1.0,'new',1,1,1,1,1,1,1);
+INSERT INTO "user" ("id","email","password","role","name","phone","position_id","location","hub_id","email_new","email_modified","email_disapproved","email_approved","last_seen","note","registered") VALUES (1,'email@email.email','pbkdf2:sha256:150000$UoJZNku2$101f30eba5ae59618526af9d6db8483d7a5341a2b723ac7627aba7c040be8ec1','admin','name','phone',1,'location',1,1,1,1,1,'2021-10-29 04:43:13','note','2021-10-29 04:43:13');
+INSERT INTO "order" ("id","initiative_id","create_timestamp","products","total","status","site_id","income_id","cashflow_id","hub_id","purchased","exported","dealdone") VALUES ('1',1,0,'[]',1.0,'new',1,1,1,1,1,1,1);
 INSERT INTO "user_category" ("user_id","category_id") VALUES (1,1);
 INSERT INTO "user_project" ("user_id","project_id") VALUES (1,1);
 INSERT INTO "order_approval" ("id","order_id","product_id","user_id","remark") VALUES (1,'1',NULL,1,'remark');
 INSERT INTO "order_category" ("order_id","category_id") VALUES ('1',1);
 INSERT INTO "order_event" ("id","order_id","user_id","timestamp","type","data") VALUES (1,'1',1,'2021-10-28 17:09:41','approved','data');
-INSERT INTO "order_position" ("order_id","position_id","approved","user_id","timestamp") VALUES ('1',1,1,1,0);
+INSERT INTO "order_position" ("order_id","position_id","approved","user_id","timestamp") VALUES ('1',1,1,1,'2021-10-29 05:02:03');
 INSERT INTO "order_relationship" ("order_id","child_id") VALUES ('1','1');
 DROP INDEX IF EXISTS "ix_cashflow_statement_name";
 CREATE INDEX IF NOT EXISTS "ix_cashflow_statement_name" ON "cashflow_statement" (

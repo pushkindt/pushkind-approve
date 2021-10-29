@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <curl/curl.h>
+#include <sqlite3.h>
 #include <json.h>
 
 #include "minunit.h"
@@ -27,25 +29,25 @@ char *test_RESTcall()
 
     mu_assert(REST_URL != NULL, "REST_URL is not present in the environment.");
 
-    mu_assert(RESTcall(0, -1, NULL, NULL, 0) == NULL, "The result doesn't match the expected NULL.");
+    mu_assert(RESTcall(1, -1, NULL, NULL, 0) == NULL, "The result doesn't match the expected NULL.");
 
-    result_json = RESTcall(0, GET_PRODUCTS, NULL, NULL, 0);
+    result_json = RESTcall(1, GET_PRODUCTS, NULL, NULL, 0);
     mu_assert(result_json != NULL, "The result doesn't match the expected JSON object.");
     cleanup_test_data(result_json);
 
-    result_json = RESTcall(0, GET_PRODUCTS, param_json, NULL, 0);
+    result_json = RESTcall(1, GET_PRODUCTS, param_json, NULL, 0);
     mu_assert(result_json != NULL, "The result doesn't match the expected JSON object.");
     cleanup_test_data(result_json);
 
-    result_json = RESTcall(0, DELETE_PRODUCT, param_json, NULL, 0);
+    result_json = RESTcall(1, DELETE_PRODUCT, param_json, NULL, 0);
     mu_assert(result_json != NULL, "The result doesn't match the expected JSON object.");
     cleanup_test_data(result_json);
 
-    result_json = RESTcall(0, PUT_PRODUCT, param_json, NULL, 0);
+    result_json = RESTcall(1, PUT_PRODUCT, param_json, NULL, 0);
     mu_assert(result_json != NULL, "The result doesn't match the expected JSON object.");
     cleanup_test_data(result_json);
 
-    result_json = RESTcall(0, POST_IMAGE, param_json, NULL, 0);
+    result_json = RESTcall(1, POST_IMAGE, param_json, NULL, 0);
     mu_assert(result_json != NULL, "The result doesn't match the expected JSON object.");
     cleanup_test_data(result_json);
 
@@ -62,11 +64,16 @@ error:
 char *all_tests()
 {
     REST_URL = getenv("REST_URL");
+    DATABASE_URL = getenv("DATABASE_URL");
+    sqlite3_initialize();
+    curl_global_init(CURL_GLOBAL_ALL);
 
     mu_suite_start();
 
     mu_run_test(test_RESTcall);
 
+    curl_global_cleanup();
+    sqlite3_shutdown();
     return NULL;
 }
 

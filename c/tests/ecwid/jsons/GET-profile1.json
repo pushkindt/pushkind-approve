@@ -1,0 +1,836 @@
+{
+    "generalInfo": {
+        "storeId": 1,
+        "storeUrl": "http://url.url",
+        "websitePlatform": "wordpress",
+        "starterSite": {
+            "ecwidSubdomain": "ecwidSubdomain",
+            "generatedUrl": "http://url.url"
+        }
+    },
+    "account": {
+        "accountName": "accountName",
+        "accountNickName": "accountNickName",
+        "accountEmail": "email@email",
+        "whiteLabel": false
+    },
+    "settings": {
+        "closed": false,
+        "storeName": "hub",
+        "storeDescription": "<p>Welcome to my store! Check out the latest and coolest products below. </p>",
+        "invoiceLogoUrl": "https://dpbfm6h358sh7.cloudfront.net/images/4870020/253584290.jpg",
+        "emailLogoUrl": "https://dpbfm6h358sh7.cloudfront.net/images/4870020/298177033.jpg",
+        "googleRemarketingEnabled": true,
+        "googleAnalyticsId": "UA-123456-1",
+        "fbPixelId": "12305215151521",
+        "orderCommentsEnabled": false,
+        "orderCommentsCaption": "Order comments",
+        "orderCommentsRequired": false,
+        "hideOutOfStockProductsInStorefront": true,
+        "askCompanyName": false,
+        "favoritesEnabled": true,
+        "defaultProductSortOrder": "DEFINED_BY_STORE_OWNER",
+        "abandonedSales": {
+            "autoAbandonedSalesRecovery": true
+        },
+        "salePrice": {
+            "displayOnProductList": true,
+            "oldPriceLabel": "was",
+            "displayDiscount": "PERCENT"
+        },
+        "showAcceptMarketingCheckbox": true,
+        "acceptMarketingCheckboxDefaultValue": false,
+        "acceptMarketingCheckboxCustomText": "I accept to receive marketing offers to my email",
+        "askConsentToTrackInStorefront": false,
+        "askZipCode": true,
+        "showPricePerUnit": false,
+        "snapPixelId": "47eb5b42-fc91-431e-b096-f13344fc0219",
+        "pinterestTagId": "1621052432415",
+        "googleTagId": "AW-521351352",
+        "googleEventId": "aASDhjdgfmnasdIOSsdl"
+    },
+    "mailNotifications": {
+        "adminNotificationEmails": [
+            "email@email"
+        ],
+        "customerNotificationFromEmail": "email@email",
+        "customerOrderMessages": {
+            "orderConfirmation": {
+                "enabled": true,
+                "marketingBlockEnabled": false
+            },
+            "orderStatusChanged": {
+                "enabled": true
+            },
+            "orderIsReadyForPickup": {
+                "enabled": true
+            },
+            "downloadEgoods": {
+                "enabled": true
+            },
+            "orderShipped": {
+                "enabled": true
+            }
+        },
+        "adminMessages": {
+            "newOrderPlaced": {
+                "enabled": true
+            },
+            "lowStockNotification": {
+                "enabled": true
+            },
+            "weeklyStatsReport": {
+                "enabled": true
+            }
+        },
+        "customerMarketingMessages": {
+            "abandonedCartRecovery": {
+                "enabled": true,
+                "marketingBlockEnabled": false
+            },
+            "favoriteProductsReminder": {
+                "enabled": false
+            },
+            "feedbackRequest": {
+                "enabled": false
+            },
+            "customerLoyaltyAppreciation": {
+                "enabled": false
+            },
+            "inactiveCustomerReminder": {
+                "enabled": false
+            },
+            "purchaseAnniversary": {
+                "enabled": true
+            }
+        }
+    },
+    "company": {
+        "companyName": "companyName",
+        "email": "email@email",
+        "street": "W 3d st",
+        "city": "New York",
+        "countryCode": "US",
+        "postalCode": "10001",
+        "stateOrProvinceCode": "NY",
+        "phone": "234324234"
+    },
+    "formatsAndUnits": {
+        "currency": "USD",
+        "currencyPrefix": "$",
+        "currencySuffix": "",
+        "currencyGroupSeparator": " ",
+        "currencyDecimalSeparator": ".",
+        "currencyTruncateZeroFractional": false,
+        "currencyPrecision": 2,
+        "currencyRate": 1,
+        "weightUnit": "KILOGRAM",
+        "weightGroupSeparator": " ",
+        "weightDecimalSeparator": ".",
+        "weightTruncateZeroFractional": false,
+        "timeFormat": "hh:mm a",
+        "dateFormat": "MMM d, yyyy",
+        "timezone": "Europe/Moscow",
+        "dimensionsUnit": "CM",
+        "orderNumberPrefix": "00001",
+        "orderNumberSuffix": "5000",
+        "addressFormat": {
+            "plain": "%NAME%, %COMPANY_NAME%, %STREET%, %CITY%, %STATE_NAME% %POSTAL%, %COUNTRY_NAME%",
+            "multiline": "%NAME%\n%COMPANY_NAME%\n%STREET%\n%CITY%, %STATE_NAME% %POSTAL%\n%COUNTRY_NAME%"
+        },
+        "languages": {
+            "enabledLanguages": [
+                "en",
+                "es",
+                "pt"
+            ],
+            "facebookPreferredLocale": "en_US",
+            "defaultLanguage": "en"
+        },
+        "shipping": {
+            "handlingFee": {
+                "name": "Handling Fee",
+                "value": 5,
+                "description": "Silk paper wrapping"
+            },
+            "shippingOrigin": {
+                "companyName": "companyName",
+                "email": "email@email",
+                "street": "W 3d st",
+                "city": "New York",
+                "countryCode": "US",
+                "postalCode": "10001",
+                "stateOrProvinceCode": "NY",
+                "phone": "234324234"
+            },
+            "shippingOptions": [
+                {
+                    "id": "2650-1630927325144",
+                    "title": "Local delivery",
+                    "enabled": true,
+                    "orderby": 10,
+                    "fulfilmentType": "delivery",
+                    "ratesCalculationType": "flat",
+                    "destinationZone": {
+                        "id": "WORLD",
+                        "name": "WORLD"
+                    },
+                    "businessHours": "{\"THU\":[[\"09:00\",\"18:00\"]],\"TUE\":[[\"09:00\",\"18:00\"]],\"WED\":[[\"09:00\",\"18:00\"]],\"FRI\":[[\"09:00\",\"18:00\"]],\"MON\":[[\"09:00\",\"18:00\"]]}",
+                    "minimumOrderSubtotal": 20,
+                    "businessHoursLimitationType": "ALLOW_ORDERS_AND_DONT_INFORM_CUSTOMERS",
+                    "scheduled": true,
+                    "scheduledTimePrecisionType": "DATE_AND_TIME_SLOT",
+                    "timeSlotLengthInMinutes": 60,
+                    "allowSameDayDelivery": false,
+                    "cutoffTimeForSameDayDelivery": "16:00",
+                    "fulfillmentTimeInMinutes": 30,
+                    "flatRate": {
+                        "rateType": "ABSOLUTE",
+                        "rate": 6
+                    },
+                    "carrier": ""
+                },
+                {
+                    "id": "4959-1595934622523",
+                    "title": "Pickup",
+                    "enabled": true,
+                    "orderby": 30,
+                    "fulfilmentType": "pickup",
+                    "businessHours": "{\"MON\":[[\"09:00\",\"18:00\"]], \"TUE\":[[\"09:00\",\"18:00\"]], \"WED\":[[\"09:00\",\"18:00\"]], \"THU\":[[\"09:00\",\"18:00\"]], \"FRI\":[[\"09:00\",\"18:00\"]]}",
+                    "scheduled": true,
+                    "fulfillmentTimeInMinutes": 0,
+                    "pickupInstruction": ""
+                },
+                {
+                    "id": "8329-1495610692625",
+                    "title": "Flat rate",
+                    "enabled": false,
+                    "orderby": 170,
+                    "destinationZone": {
+                        "id": "7715-1423477610739",
+                        "name": "US",
+                        "countryCodes": [
+                            "US"
+                        ],
+                        "stateOrProvinceCodes": [
+                            "US-AL",
+                            "US-AK",
+                            "US-AZ",
+                            "US-AR",
+                            "US-AA",
+                            "US-AE",
+                            "US-AP",
+                            "US-CA",
+                            "US-CO",
+                            "US-CT",
+                            "US-DE",
+                            "US-DC",
+                            "US-FL",
+                            "US-GA",
+                            "US-GU",
+                            "US-HI",
+                            "US-ID",
+                            "US-IL",
+                            "US-IN",
+                            "US-IA",
+                            "US-KS",
+                            "US-KY",
+                            "US-LA",
+                            "US-ME",
+                            "US-MD",
+                            "US-MA",
+                            "US-MI",
+                            "US-MN",
+                            "US-MS",
+                            "US-MO",
+                            "US-MT",
+                            "US-NE",
+                            "US-NV",
+                            "US-NH",
+                            "US-NJ",
+                            "US-NM",
+                            "US-NY",
+                            "US-NC",
+                            "US-ND",
+                            "US-PR",
+                            "US-RI",
+                            "US-SC",
+                            "US-SD",
+                            "US-TN",
+                            "US-TX",
+                            "US-UT",
+                            "US-VT",
+                            "US-VI",
+                            "US-VA",
+                            "US-WA",
+                            "US-WV",
+                            "US-WI",
+                            "US-WY"
+                        ]
+                    },
+                    "fulfilmentType": "shipping",
+                    "ratesCalculationType": "flat",
+                    "flatRate": {
+                        "rateType": "ABSOLUTE",
+                        "rate": 22
+                    },
+                    "carrier": ""
+                },
+                {
+                    "id": "7835-1442850313554",
+                    "title": "The World: UPS",
+                    "enabled": true,
+                    "orderby": 0,
+                    "destinationZone": {
+                        "id": "WORLD",
+                        "name": "WORLD"
+                    },
+                    "fulfilmentType": "shipping",
+                    "ratesCalculationType": "carrier-calculated",
+                    "carrierMethods": [
+                        {
+                            "id": "7835-1442850313554:S1",
+                            "name": "UPS Next Day Air®",
+                            "enabled": true,
+                            "orderBy": 1240
+                        },
+                        {
+                            "id": "7835-1442850313554:S2",
+                            "name": "UPS Second Day Air®",
+                            "enabled": true,
+                            "orderBy": 1250
+                        },
+                        {
+                            "id": "7835-1442850313554:S3",
+                            "name": "UPS Ground",
+                            "enabled": false,
+                            "orderBy": 0
+                        },
+                        {
+                            "id": "7835-1442850313554:S4",
+                            "name": "UPS Worldwide Express SM",
+                            "enabled": true,
+                            "orderBy": 1120
+                        },
+                        {
+                            "id": "7835-1442850313554:S5",
+                            "name": "UPS Worldwide Expedited SM",
+                            "enabled": true,
+                            "orderBy": 1100
+                        },
+                        {
+                            "id": "7835-1442850313554:S6",
+                            "name": "UPS Standard",
+                            "enabled": true,
+                            "orderBy": 1030
+                        },
+                        {
+                            "id": "7835-1442850313554:S7",
+                            "name": "UPS Three-Day Select®",
+                            "enabled": true,
+                            "orderBy": 1040
+                        },
+                        {
+                            "id": "7835-1442850313554:S8",
+                            "name": "UPS Next Day Air Saver®",
+                            "enabled": true,
+                            "orderBy": 1000
+                        },
+                        {
+                            "id": "7835-1442850313554:S9",
+                            "name": "UPS Next Day Air® Early A.M. SM",
+                            "enabled": false,
+                            "orderBy": 0
+                        },
+                        {
+                            "id": "7835-1442850313554:S10",
+                            "name": "UPS Worldwide Express Plus SM",
+                            "enabled": true,
+                            "orderBy": 1110
+                        },
+                        {
+                            "id": "7835-1442850313554:S11",
+                            "name": "UPS Second Day Air A.M.®",
+                            "enabled": true,
+                            "orderBy": 1020
+                        },
+                        {
+                            "id": "7835-1442850313554:S12",
+                            "name": "UPS Saver",
+                            "enabled": false,
+                            "orderBy": 1010
+                        }
+                    ],
+                    "shippingCostMarkup": 0,
+                    "carrierSettings": {
+                        "defaultCarrierAccountEnabled": false,
+                        "defaultPostageDimensions": {
+                            "length": 0.0254,
+                            "width": 0.0254,
+                            "height": 0.0254
+                        }
+                    },
+                    "carrier": "UPS"
+                },
+                {
+                    "id": "9327-1430948461738",
+                    "title": "Standard shipping",
+                    "enabled": true,
+                    "orderby": 1250,
+                    "destinationZone": {
+                        "id": "WORLD",
+                        "name": "WORLD"
+                    },
+                    "fulfilmentType": "shipping",
+                    "ratesCalculationType": "table",
+                    "ratesTable": {
+                        "tableBasedOn": "weight",
+                        "rates": [
+                            {
+                                "conditions": {
+                                    "weightFrom": 0,
+                                    "weightTo": 12
+                                },
+                                "rate": {
+                                    "perOrder": 10,
+                                    "percent": 2,
+                                    "perItem": 3,
+                                    "perWeight": 2
+                                }
+                            },
+                            {
+                                "conditions": {
+                                    "weightFrom": 12.01
+                                },
+                                "rate": {
+                                    "perOrder": 20,
+                                    "percent": 3,
+                                    "perItem": 4,
+                                    "perWeight": 3
+                                }
+                            }
+                        ]
+                    },
+                    "deliveryTimeDays": "1-2",
+                    "description": "1-2",
+                    "carrier": ""
+                },
+                {
+                    "id": "6633-1504595502395",
+                    "title": "In-store Pickup",
+                    "enabled": true,
+                    "orderby": 130,
+                    "destinationZone": {
+                        "id": "WORLD",
+                        "name": "WORLD"
+                    },
+                    "fulfilmentType": "pickup",
+                    "fulfillmentTimeInMinutes": 60,
+                    "pickupInstruction": "<p><strong>Pickup location:</strong></p><p>    Cool Guys, 5th Avenue, Москва, Guam, 11950, United States</p><p>    <strong>Store hours:</strong></p><p>    9AM – 6PM Mon-Fri</p>",
+                    "scheduledPickup": true,
+                    "pickupPreparationTimeHours": 60,
+                    "pickupBusinessHours": "{\"MON\":[[\"09:00\",\"18:00\"]], \"TUE\":[[\"09:00\",\"18:00\"]], \"THU\":[[\"09:00\",\"10:00\"]], \"FRI\":[[\"09:00\",\"18:00\"]], \"SAT\":[[\"09:00\",\"10:30\"]]}"
+                },
+                {
+                    "id": "1095449637-1519976902346",
+                    "title": "Doba Drop Shipping",
+                    "enabled": true,
+                    "orderby": 10,
+                    "destinationZone": {
+                        "id": "WORLD",
+                        "name": "WORLD"
+                    },
+                    "fulfilmentType": "shipping",
+                    "ratesCalculationType": "app",
+                    "appClientId": "doba-integration"
+                }
+            ]
+        },
+        "zones": [
+            {
+                "id": "43-1423477610132",
+                "name": "United States",
+                "countryCodes": [
+                    "US",
+                    "UM",
+                    "VI"
+                ]
+            },
+            {
+                "id": "334-112332610739",
+                "name": "US & Canada",
+                "countryCodes": [
+                    "CA",
+                    "US",
+                    "UM",
+                    "VI"
+                ]
+            },
+            {
+                "id": "7715-1423477610739",
+                "name": "US",
+                "countryCodes": [
+                    "US"
+                ],
+                "stateOrProvinceCodes": [
+                    "US-AL",
+                    "US-AK",
+                    "US-AZ",
+                    "US-AR",
+                    "US-AA",
+                    "US-AE",
+                    "US-AP",
+                    "US-CA",
+                    "US-CO",
+                    "US-CT",
+                    "US-DE",
+                    "US-DC",
+                    "US-FL",
+                    "US-GA",
+                    "US-GU",
+                    "US-HI",
+                    "US-ID",
+                    "US-IL",
+                    "US-IN",
+                    "US-IA",
+                    "US-KS",
+                    "US-KY",
+                    "US-LA",
+                    "US-ME",
+                    "US-MD",
+                    "US-MA",
+                    "US-MI",
+                    "US-MN",
+                    "US-MS",
+                    "US-MO",
+                    "US-MT",
+                    "US-NE",
+                    "US-NV",
+                    "US-NH",
+                    "US-NJ",
+                    "US-NM",
+                    "US-NY",
+                    "US-NC",
+                    "US-ND",
+                    "US-PR",
+                    "US-RI",
+                    "US-SC",
+                    "US-SD",
+                    "US-TN",
+                    "US-TX",
+                    "US-UT",
+                    "US-VT",
+                    "US-VI",
+                    "US-VA",
+                    "US-WA",
+                    "US-WV",
+                    "US-WI",
+                    "US-WY"
+                ]
+            }
+        ],
+        "taxSettings": {
+            "automaticTaxEnabled": true,
+            "taxes": [
+                {
+                    "id": 1485869949,
+                    "name": "Tax X",
+                    "enabled": true,
+                    "includeInPrice": false,
+                    "useShippingAddress": true,
+                    "taxShipping": false,
+                    "appliedByDefault": true,
+                    "defaultTax": 7,
+                    "rules": [
+                        {
+                            "zoneId": "3",
+                            "tax": 8
+                        },
+                        {
+                            "zoneId": "2",
+                            "tax": 5
+                        }
+                    ]
+                }
+            ],
+            "pricesIncludeTax": false
+        },
+        "businessRegistrationID": {
+            "name": "VAT Reg No",
+            "value": "GB999 9999 73"
+        },
+        "legalPagesSettings": {
+            "requireTermsAgreementAtCheckout": true,
+            "legalPages": [
+                {
+                    "type": "LEGAL_INFO",
+                    "enabled": false,
+                    "title": "About Us",
+                    "display": "INLINE",
+                    "text": "",
+                    "externalUrl": ""
+                },
+                {
+                    "type": "SHIPPING_COST_PAYMENT_INFO",
+                    "enabled": true,
+                    "title": "Shipping & Payment Info",
+                    "display": "EXTERNAL_URL",
+                    "text": "",
+                    "externalUrl": "https://mycoolsite.com/shipping"
+                },
+                {
+                    "type": "PRIVACY_STATEMENT",
+                    "enabled": true,
+                    "title": "Privacy Policy",
+                    "display": "EXTERNAL_URL",
+                    "text": "",
+                    "externalUrl": "https://mycoolsite.com/privacy"
+                },
+                {
+                    "type": "TERMS",
+                    "enabled": true,
+                    "title": "Terms & Conditions",
+                    "display": "EXTERNAL_URL",
+                    "text": "",
+                    "externalUrl": "https://mycoolsite.com/terms"
+                },
+                {
+                    "type": "REVOCATION_TERMS",
+                    "enabled": false,
+                    "title": "Return Policy",
+                    "display": "INLINE",
+                    "text": "",
+                    "externalUrl": ""
+                }
+            ]
+        },
+        "payment": {
+            "paymentOptions": [
+                {
+                    "id": "1794210895-1490949002653",
+                    "enabled": true,
+                    "checkoutTitle": "Stripe",
+                    "checkoutDescription": "Pay with credit card",
+                    "paymentProcessorId": "stripe",
+                    "paymentProcessorTitle": "Stripe",
+                    "orderBy": 0,
+                    "appClientId": "",
+                    "instructionsForCustomer": {
+                        "instructionsTitle": "How to pay via Stripe",
+                        "instructions": "<p>Here are the instructions on how to pay with Stripe</p>"
+                    },
+                    "shippingSettings": {
+                        "enabledShippingMethods": [
+                            "29206-1623157111664"
+                        ]
+                    }
+                },
+                {
+                    "id": "1794210895-1490949002653",
+                    "enabled": false,
+                    "checkoutTitle": "Phone Order",
+                    "checkoutDescription": "",
+                    "paymentProcessorId": "offline",
+                    "paymentProcessorTitle": "",
+                    "orderBy": 10,
+                    "appClientId": "",
+                    "instructionsForCustomer": {
+                        "instructionsTitle": "Phone Order payment instructions",
+                        "instructions": "<p>Some instructions.</p>"
+                    }
+                },
+                {
+                    "id": "1570107140-1510749490171",
+                    "enabled": true,
+                    "checkoutTitle": "Credit or debit card (PayU Latam)",
+                    "checkoutDescription": "",
+                    "paymentProcessorId": "customPaymentApp",
+                    "paymentProcessorTitle": "CUSTOM_PAYMENT_APP-payu-latam-integration",
+                    "orderBy": 20,
+                    "appClientId": "payu-latam-integration",
+                    "instructionsForCustomer": {
+                        "instructionsTitle": "How to pay via PayU Latam",
+                        "instructions": "<p>Here are the instructions on how to pay with PayU Latam</p>"
+                    }
+                },
+                {
+                    "id": "1794210895-1490949002653",
+                    "enabled": true,
+                    "checkoutTitle": "Credit or Debit Card",
+                    "checkoutDescription": "",
+                    "paymentProcessorId": "ecwidPayments",
+                    "paymentProcessorTitle": "Ecwid Payments",
+                    "orderBy": 30,
+                    "appClientId": "",
+                    "instructionsForCustomer": {
+                        "instructionsTitle": "How to pay via PayU Latam",
+                        "instructions": "<p>Here are the instructions on how to pay with PayU Latam</p>"
+                    }
+                }
+            ]
+        },
+        "featureToggles": [
+            {
+                "name": "CONSECUTIVE_ORDER_IDS",
+                "visible": true,
+                "enabled": true
+            },
+            {
+                "name": "NEW_STARTERSITE",
+                "visible": true,
+                "enabled": true
+            },
+            {
+                "name": "CUSTOMER_LOGIN_BY_LINK",
+                "visible": true,
+                "enabled": true
+            },
+            {
+                "name": "NEW_PRODUCT_LIST",
+                "visible": true,
+                "enabled": true
+            },
+            {
+                "name": "NEW_DETAILS_PAGE",
+                "visible": true,
+                "enabled": true
+            },
+            {
+                "name": "NEW_SHOPPING_CART_PAGE",
+                "visible": false,
+                "enabled": true
+            },
+            {
+                "name": "NEW_CHECKOUT_PAGE",
+                "visible": true,
+                "enabled": true
+            },
+            {
+                "name": "REGIONAL_ADDRESS_RULES_ON_CHECKOUT",
+                "visible": true,
+                "enabled": true
+            },
+            {
+                "name": "RANDOM_ORDER_IDS",
+                "visible": true,
+                "enabled": true
+            },
+            {
+                "name": "INSTANT_SITE_V2",
+                "visible": true,
+                "enabled": false
+            }
+        ],
+        "designSettings": {
+            "product_list_image_size": "MEDIUM",
+            "product_list_image_aspect_ratio": "SQUARE",
+            "product_list_product_info_layout": "CENTER",
+            "product_list_show_additional_image_on_hover": false,
+            "product_list_title_behavior": "SHOW",
+            "product_list_price_behavior": "SHOW",
+            "product_list_sku_behavior": "HIDE",
+            "product_list_buybutton_behavior": "SHOW",
+            "product_list_category_title_behavior": "SHOW_ON_IMAGE",
+            "product_list_image_has_shadow": true,
+            "show_signin_link": true,
+            "show_footer_menu": true,
+            "show_breadcrumbs": true,
+            "product_list_show_sort_viewas_options": true,
+            "product_filters_position_search_page": "LEFT",
+            "product_filters_position_category_page": "RIGHT",
+            "product_details_show_product_sku": true,
+            "product_details_layout": "TWO_COLUMNS_SIDEBAR_ON_THE_RIGHT",
+            "product_details_two_columns_with_right_sidebar_show_product_description_on_sidebar": false,
+            "product_details_show_product_name": true,
+            "product_details_show_breadcrumbs": true,
+            "product_details_show_product_price": true,
+            "product_details_show_sale_price": true,
+            "product_details_show_tax": true,
+            "product_details_show_product_description": true,
+            "product_details_show_product_options": true,
+            "product_details_show_wholesale_prices": true,
+            "product_details_show_save_for_later": true,
+            "product_details_show_share_buttons": true,
+            "product_details_show_price_per_unit": true,
+            "product_details_show_qty": true,
+            "product_details_show_in_stock_label": true,
+            "product_details_show_number_of_items_in_stock": true,
+            "product_details_gallery_layout": "IMAGE_SINGLE_THUMBNAILS_VERTICAL",
+            "shopping_cart_show_qty_inputs_on_mobile": true,
+            "enable_page_transitions": true,
+            "product_list_subtitles_behavior": "SHOW",
+            "product_details_show_subtitle": true,
+            "product_details_position_subtitle": 500
+        },
+        "productFiltersSettings": {
+            "enabledInStorefront": true
+        },
+        "fbMessengerSettings": {
+            "enabled": true,
+            "fbMessengerPageId": "205845539462539",
+            "fbMessengerThemeColor": "",
+            "fbMessengerMessageUsButtonColor": "WHITE"
+        },
+        "orderInvoiceSettings": {
+            "displayOrderInvoices": true,
+            "attachInvoiceToOrderEmailNotifications": "DO_NOT_ATTACH",
+            "invoiceLogoUrl": "https://dqzrr9k4bjpzk.cloudfront.net/images/1003/913213215.jpg"
+        },
+        "socialLinksSettings": {
+            "facebook": {
+                "url": "https://facebook.com/0123456789012"
+            },
+            "instagram": {},
+            "twitter": {},
+            "youtube": {},
+            "vk": {
+                "url": "https://vk.com/club123456789"
+            },
+            "pinterest": {}
+        },
+        "giftCardSettings": {
+            "products": [
+                {
+                    "id": 162504297,
+                    "name": "Gift card",
+                    "url": "http://url.url/Gift-card-p162504297"
+                }
+            ],
+            "displayLocation": "CATALOG_AND_FOOTER"
+        },
+        "tipsSettings": {
+            "enabled": true,
+            "type": "PERCENT",
+            "options": [
+                0,
+                5,
+                10
+            ],
+            "defaultOption": 0,
+            "title": "Support us with a donation",
+            "subtitle": "We appreciate all donations, and even the tiniest bit helps us continue what we\u2019re doing.",
+            "titleTranslated": {
+                "en": "Support us with a donation"
+            },
+            "subtitleTranslated": {
+                "en": "We appreciate all donations, and even the tiniest bit helps us continue what we\u2019re doing."
+            }
+        },
+        "accountBilling": {
+            "channelid": "wporg",
+            "pricingPlanId": "WPORG_VENTURE",
+            "pricingPlanName": "Venture",
+            "pricingPlanPeriod": "MONTHLY",
+            "nextRecurringChargeDate": "2020-10-19 18:56:21 +0000",
+            "nextRecurringChargeAmount": 39.99,
+            "nextRecurringChargeCurrency": "USD",
+            "nextRecurringChargeAmountFormatted": "$39.99",
+            "inGracePeriod": false,
+            "willDowngradeAt": "2020-10-19 18:56:21 +0000",
+            "internalBilling": true,
+            "paymentMethod": "NONE",
+            "billingPageVisibleInCP": true,
+            "itunesSubscriptionAvailableOnChannel": false
+        }
+    }
+}

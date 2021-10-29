@@ -13,7 +13,9 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'PushkindDotCom'
     ICU_EXTENSION_PATH = os.path.join(basedir, 'libsqliteicu.so')
     SQLALCHEMY_DATABASE_URI = (
-        os.environ.get('DATABASE_URL').replace('file:', 'sqlite:///', count=1)
+        os.environ
+        .get('DATABASE_URL', 'file:' + os.path.join(basedir, 'app.db'))
+        .replace('file:', 'sqlite:///', 1)
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAIL_SERVER = os.environ.get('MAIL_SERVER')

@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <sqlite3.h>
 #include <json.h>
 
 #include "minunit.h"
@@ -23,8 +24,6 @@ char *REST_URL = NULL;
 
 char *test_HTTPcall()
 {
-
-    REST_URL = getenv("REST_URL");
 
     mu_assert(REST_URL != NULL, "REST_URL is not present in the environment.");
 
@@ -75,14 +74,17 @@ char *test_HTTPcall()
 
 char *all_tests()
 {
-    mu_suite_start();
-
+    REST_URL = getenv("REST_URL");
+    DATABASE_URL = getenv("DATABASE_URL");
+    sqlite3_initialize();
     curl_global_init(CURL_GLOBAL_ALL);
+
+    mu_suite_start();
 
     mu_run_test(test_HTTPcall);
 
     curl_global_cleanup();
-
+    sqlite3_shutdown();
     return NULL;
 }
 

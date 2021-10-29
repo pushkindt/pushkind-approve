@@ -1,22 +1,22 @@
 {
     "generalInfo": {
-        "storeId": 4870020,
-        "storeUrl": "http://www.example.com",
+        "storeId": 2,
+        "storeUrl": "http://url.url",
         "websitePlatform": "wordpress",
         "starterSite": {
-            "ecwidSubdomain": "mysuperstore",
-            "generatedUrl": "http://mysuperstore.ecwid.com/"
+            "ecwidSubdomain": "ecwidSubdomain",
+            "generatedUrl": "http://url.url"
         }
     },
     "account": {
-        "accountName": "John Smith",
-        "accountNickName": "JSmith",
-        "accountEmail": "example@example.com",
+        "accountName": "accountName",
+        "accountNickName": "accountNickName",
+        "accountEmail": "email@email",
         "whiteLabel": false
     },
     "settings": {
         "closed": false,
-        "storeName": "My Super Store",
+        "storeName": "vendor",
         "storeDescription": "<p>Welcome to my store! Check out the latest and coolest products below. </p>",
         "invoiceLogoUrl": "https://dpbfm6h358sh7.cloudfront.net/images/4870020/253584290.jpg",
         "emailLogoUrl": "https://dpbfm6h358sh7.cloudfront.net/images/4870020/298177033.jpg",
@@ -51,10 +51,9 @@
     },
     "mailNotifications": {
         "adminNotificationEmails": [
-            "john@example.com",
-            "steve@example.com"
+            "email@email"
         ],
-        "customerNotificationFromEmail": "john@example.com",
+        "customerNotificationFromEmail": "email@email",
         "customerOrderMessages": {
             "orderConfirmation": {
                 "enabled": true,
@@ -107,8 +106,8 @@
         }
     },
     "company": {
-        "companyName": "My Super Store",
-        "email": "example@example.com",
+        "companyName": "companyName",
+        "email": "email@email",
         "street": "W 3d st",
         "city": "New York",
         "countryCode": "US",
@@ -155,8 +154,8 @@
                 "description": "Silk paper wrapping"
             },
             "shippingOrigin": {
-                "companyName": "My Super Store",
-                "email": "example@example.com",
+                "companyName": "companyName",
+                "email": "email@email",
                 "street": "W 3d st",
                 "city": "New York",
                 "countryCode": "US",
@@ -794,7 +793,7 @@
                 {
                     "id": 162504297,
                     "name": "Gift card",
-                    "url": "http://mysuperstore.ecwid.com/Gift-card-p162504297"
+                    "url": "http://url.url/Gift-card-p162504297"
                 }
             ],
             "displayLocation": "CATALOG_AND_FOOTER"

@@ -1,6 +1,6 @@
 from app import create_app, db
 from app.models import User, UserRoles, Ecwid, OrderApproval, OrderStatus, Category, AppSettings, OrderEvent, Project, Site, Order, Position
-from app.models import UserCategory, UserProject, OrderPosition, OrderCategory, EventType
+from app.models import UserCategory, UserProject, OrderPosition, OrderCategory, EventType, IncomeStatement, CashflowStatement
 
 
 application = create_app()
@@ -25,5 +25,7 @@ def make_shell_context():
             'UserProject': UserProject,
             'OrderPosition': OrderPosition,
             'OrderCategory': OrderCategory,
-            'EventType':EventType
+            'EventType': EventType,
+            'IncomeStatement': IncomeStatement,
+            'CashflowStatement': CashflowStatement
             }

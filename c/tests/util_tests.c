@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include <json.h>
 #include <string.h>
+#include <curl/curl.h>
+#include <sqlite3.h>
+#include <json.h>
 
 #include "minunit.h"
 #include "util.h"
@@ -62,11 +64,19 @@ char *test_TrimWhiteSpaces()
 
 char *all_tests()
 {
+	REST_URL = getenv("REST_URL");
+	DATABASE_URL = getenv("DATABASE_URL");
+	sqlite3_initialize();
+	curl_global_init(CURL_GLOBAL_ALL);
+
 	mu_suite_start();
 
 	mu_run_test(test_FilterJSONFields);
+
 	mu_run_test(test_TrimWhiteSpaces);
 
+	curl_global_cleanup();
+	sqlite3_shutdown();
 	return NULL;
 }
 

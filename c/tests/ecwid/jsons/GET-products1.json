@@ -1,0 +1,160 @@
+{
+    "total": 1,
+    "count": 1,
+    "offset": 0,
+    "limit": 1,
+    "items": [
+        {
+            "id": 1,
+            "sku": "2-1",
+            "thumbnailUrl": "http://app.ecwid.com/default-store/00011-232-sq.jpg",
+            "quantity": 11,
+            "unlimited": false,
+            "inStock": true,
+            "name": "Orange",
+            "nameTranslated": {
+                "en": "Orange"
+            },
+            "price": 10,
+            "defaultDisplayedPrice": 10,
+            "defaultDisplayedPriceFormatted": "$10.00",
+            "tax": {
+                "defaultLocationIncludedTaxRate": 0,
+                "enabledManualTaxes": [
+                    1117939047
+                ],
+                "taxable": true
+            },
+            "wholesalePrices": [
+                {
+                    "quantity": 2,
+                    "price": 9
+                },
+                {
+                    "quantity": 4,
+                    "price": 8
+                }
+            ],
+            "compareToPrice": 23,
+            "compareToPriceFormatted": "$23.00",
+            "compareToPriceDiscount": 13,
+            "compareToPriceDiscountFormatted": "$13",
+            "compareToPriceDiscountPercent": 56,
+            "compareToPriceDiscountPercentFormatted": "56%",
+            "isShippingRequired": true,
+            "weight": 0,
+            "url": "https://mdemo.ecwid.com/Orange-p37208339",
+            "created": "2015-10-05 07:26:14 +0000",
+            "updated": "2016-02-03 10:01:02 +0000",
+            "createTimestamp": 1444029974,
+            "updateTimestamp": 1454493662,
+            "productClassId": 0,
+            "enabled": true,
+            "options": [],
+            "warningLimit": 0,
+            "fixedShippingRateOnly": true,
+            "fixedShippingRate": 0,
+            "shipping": {
+                "type": "SELECTED_METHODS",
+                "methodMarkup": 0,
+                "flatRate": 0,
+                "disabledMethods": [
+                    "1396442138-1534946367952"
+                ],
+                "enabledMethods": []
+            },
+            "defaultCombinationId": 0,
+            "description": "<p>It's a tasty fruit!</p>",
+            "descriptionTranslated": {
+                "en": "<p>It's a tasty fruit!</p>"
+            },
+            "media": {
+                "images": [
+                    {
+                        "id": "0",
+                        "isMain": true,
+                        "orderBy": 0,
+                        "image160pxUrl": "https://dqzrr9k4bjpzk.cloudfront.net/images/5035009/783930223.jpg",
+                        "image400pxUrl": "https://dqzrr9k4bjpzk.cloudfront.net/images/5035009/783930220.jpg",
+                        "image800pxUrl": "https://dqzrr9k4bjpzk.cloudfront.net/images/5035009/783930226.jpg",
+                        "image1500pxUrl": "https://dqzrr9k4bjpzk.cloudfront.net/images/5035009/783930217.jpg",
+                        "imageOriginalUrl": "https://dqzrr9k4bjpzk.cloudfront.net/images/5035009/783930216.jpg"
+                    },
+                    {
+                        "id": "1",
+                        "isMain": false,
+                        "orderBy": 1,
+                        "image160pxUrl": "https://dqzrr9k4bjpzk.cloudfront.net/images/5035009/963891776.jpg",
+                        "image400pxUrl": "https://dqzrr9k4bjpzk.cloudfront.net/images/5035009/963891779.jpg",
+                        "image800pxUrl": "https://dqzrr9k4bjpzk.cloudfront.net/images/5035009/963891778.jpg",
+                        "image1500pxUrl": "https://dqzrr9k4bjpzk.cloudfront.net/images/5035009/963891777.jpg",
+                        "imageOriginalUrl": "https://dqzrr9k4bjpzk.cloudfront.net/images/5035009/963891775.jpg"
+                    }
+                ]
+            },
+            "categoryIds": [
+                1
+            ],
+            "categories": [
+                {
+                    "id": 1,
+                    "enabled": true
+                }
+            ],
+            "seoTitle": "Orange",
+            "seoDescription": "It's a tasty orange for you and your family!",
+            "defaultCategoryId": 1,
+            "favorites": {
+                "count": 0,
+                "displayedCount": "0"
+            },
+            "attributes": [
+                {
+                    "id": 8258226,
+                    "name": "Width",
+                    "value": "61.47 mm",
+                    "type": "CUSTOM",
+                    "show": "DESCR"
+                },
+                {
+                    "id": 8258231,
+                    "name": "Height",
+                    "value": "117.09 mm",
+                    "type": "CUSTOM",
+                    "show": "DESCR"
+                },
+                {
+                    "id": 8258249,
+                    "name": "Depth",
+                    "value": "15.49 mm",
+                    "type": "CUSTOM",
+                    "show": "DESCR"
+                },
+                {
+                    "id": 8258255,
+                    "name": "Net weight",
+                    "value": "153.2 g",
+                    "type": "CUSTOM",
+                    "show": "DESCR"
+                }
+            ],
+            "files": [],
+            "relatedProducts": {
+                "productIds": [],
+                "relatedCategory": {
+                    "enabled": false,
+                    "categoryId": 1,
+                    "productCount": 1
+                }
+            },
+            "combinations": [],
+            "dimensions": {
+                "length": 0,
+                "width": 0,
+                "height": 0
+            },
+            "showOnFrontpage": 0,
+            "isSampleProduct": false
+        }
+    ]
+}
