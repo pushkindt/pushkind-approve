@@ -25,7 +25,7 @@ char *test_RESTcall()
 
     param_json = json_object_new_object();
     check_mem(param_json);
-    json_object_object_add(param_json, "productId", json_object_new_int64(10));
+    json_object_object_add(param_json, "productId", json_object_new_int64(1));
 
     mu_assert(REST_URL != NULL, "REST_URL is not present in the environment.");
 

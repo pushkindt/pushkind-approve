@@ -21,13 +21,13 @@
                 "width": 100,
                 "height": 400
             },
-            "name": "Fruit",
+            "name": "name",
             "nameTranslated": {
-                "en": "Fruit"
+                "en": "name"
             },
             "url": "http://app.ecwid.com/store/4870020#!/Fruit/c/9691094",
-            "productCount": 0,
-            "enabledProductCount": 0,
+            "productCount": 1,
+            "enabledProductCount": 1,
             "description": "",
             "descriptionTranslated": {
                 "en": ""

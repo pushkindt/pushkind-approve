@@ -122,7 +122,7 @@ char *test_OrderFunctions()
 
     mu_assert(StoreOrders(pDB, order) == 0, "The result doesn't match the expected 0.");
 
-    mu_assert(GetRecentOrderTimestamp(pDB, 1) == 0, "The result doesn't match the expected 123.");
+    mu_assert(GetRecentOrderTimestamp(pDB, 1) == 0, "The result doesn't match the expected 0.");
 
     mu_assert(StoreOrderCategory(pDB, "1", 1) == 0, "The result doesn't match the expected 0.");
 

@@ -7,6 +7,7 @@
         {
             "id": 1,
             "sku": "1",
+            "imageUrl": "http://127.0.0.1:5000/static/image.png",
             "thumbnailUrl": "http://app.ecwid.com/default-store/00011-232-sq.jpg",
             "quantity": 11,
             "unlimited": false,

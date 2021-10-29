@@ -5,6 +5,7 @@
 
 #include "minunit.h"
 #include "ecwid.h"
+#include "model.h"
 
 char *DATABASE_URL = NULL;
 char *REST_URL = NULL;
@@ -17,6 +18,24 @@ char *test_ProcessCategories()
 
     mu_assert(ProcessCategories(1) == true, "The result doesn't match the expected true.");
 
+    TDatabase *pDB = NULL;
+
+    mu_assert(OpenDatabaseConnection(&pDB) == true, "The result doesn't match the expected true.");
+
+    mu_assert(pDB != NULL, "The result must not be NULL.");
+
+    TCategory *category = GetCategoryByChildId(pDB, 1, 1);
+
+    mu_assert(category != NULL, "The result doesn't match the expected non-NULL value.");
+
+    mu_assert(strcmp(category->name, "name") == 0, "The name of the category must be \"name\".");
+
+    FreeCategory(category);
+
+    if (pDB != NULL)
+    {
+        CloseDatabaseConnection(pDB);
+    }
     return NULL;
 }
 

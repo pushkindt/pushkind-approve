@@ -5,6 +5,7 @@
 
 #include "minunit.h"
 #include "ecwid.h"
+#include "model.h"
 
 char *DATABASE_URL = NULL;
 char *REST_URL = NULL;
@@ -16,6 +17,19 @@ char *test_ProcessOrders()
     mu_assert(REST_URL != NULL, "REST_URL is not present in the environment.");
 
     mu_assert(ProcessOrders(1, NULL) == true, "The result doesn't match the expected true.");
+
+    TDatabase *pDB = NULL;
+
+    mu_assert(OpenDatabaseConnection(&pDB) == true, "The result doesn't match the expected true.");
+
+    mu_assert(pDB != NULL, "The result must not be NULL.");
+
+    mu_assert(GetRecentOrderTimestamp(pDB, 1) == 1527779316, "The result doesn't match the expected 1527779316.");
+
+    if (pDB != NULL)
+    {
+        CloseDatabaseConnection(pDB);
+    }
 
     return NULL;
 }

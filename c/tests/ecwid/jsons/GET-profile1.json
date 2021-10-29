@@ -11,7 +11,7 @@
     "account": {
         "accountName": "accountName",
         "accountNickName": "accountNickName",
-        "accountEmail": "email@email",
+        "accountEmail": "email@email.email",
         "whiteLabel": false
     },
     "settings": {
@@ -51,9 +51,9 @@
     },
     "mailNotifications": {
         "adminNotificationEmails": [
-            "email@email"
+            "email@email.email"
         ],
-        "customerNotificationFromEmail": "email@email",
+        "customerNotificationFromEmail": "email@email.email",
         "customerOrderMessages": {
             "orderConfirmation": {
                 "enabled": true,
@@ -107,7 +107,7 @@
     },
     "company": {
         "companyName": "companyName",
-        "email": "email@email",
+        "email": "email@email.email",
         "street": "W 3d st",
         "city": "New York",
         "countryCode": "US",
@@ -155,7 +155,7 @@
             },
             "shippingOrigin": {
                 "companyName": "companyName",
-                "email": "email@email",
+                "email": "email@email.email",
                 "street": "W 3d st",
                 "city": "New York",
                 "countryCode": "US",

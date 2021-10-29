@@ -165,7 +165,7 @@ TEcwid *GetStores(TDatabase *pDB, uint64_t hub_id, size_t *stores_count, uint64_
 			sql = "select `id`,`token`,`name` from `ecwid` where `hub_id` = ? and `id` = ?";
 	}
 	else
-		sql = "select `id`, `token` from `ecwid` where `id` = ?";
+		sql = "select `id`, `token`,`name` from `ecwid` where `id` = ?";
 	result = sqlite3_prepare_v2(pDB, sql, -1, &stmt, NULL);
 	check(result == SQLITE_OK, "Error while preparing SQLite statement.");
 	if (hub_id == 0)
