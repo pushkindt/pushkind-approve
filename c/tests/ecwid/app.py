@@ -1,6 +1,7 @@
 import flask
 import json
 from flask import request
+import os
 
 
 app = flask.Flask(__name__)
@@ -18,7 +19,7 @@ def index():
            defaults={'resource_id': None})
 def endpoint(store_id, endpoint, resource_id):
     with open(
-        f'tests/ecwid/jsons/{flask.request.method}-{endpoint}{store_id}.json',
+        os.path.join(app.root_path, 'jsons', f'{flask.request.method}-{endpoint}{store_id}.json'),
         mode='r',
         encoding='utf-8'
     ) as f:
@@ -37,7 +38,7 @@ def endpoint(store_id, endpoint, resource_id):
            methods=['POST'])
 def image(store_id, product_id):
     with open(
-        f'tests/ecwid/jsons/POST-image{store_id}.json',
+        os.path.join(app.root_path, 'jsons', f'POST-image{store_id}.json'),
         mode='r',
         encoding='utf-8'
     ) as f:

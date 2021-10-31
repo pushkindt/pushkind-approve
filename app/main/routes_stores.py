@@ -90,16 +90,14 @@ def RemoveStore(store_id):
 @ecwid_required
 def SyncStoreProducts(store_id):
     if store_id is None:
-        args = ('c/ecwid-api', 'products', str(current_user.hub_id))
+        args = ('c/bin/ecwid-api', 'products', str(current_user.hub_id))
     else:
-        args = ('c/ecwid-api', 'products',
+        args = ('c/bin/ecwid-api', 'products',
                 str(current_user.hub_id), '-s', str(store_id))
     popen = subprocess.Popen(args, stderr=subprocess.PIPE)
     popen.wait()
-    output = popen.stderr.read()
-    if output is not None and len(output) > 0:
-        for s in output.decode('utf-8').strip().split('\n'):
-            flash(s)
+    if popen.returncode != 0:
+        flash('Синхронизация завершена с ошибками.')
     else:
         flash('Синхронизация успешно завершена.')
     return redirect(url_for('main.ShowStores'))
@@ -112,17 +110,15 @@ def SyncStoreProducts(store_id):
 def SyncStoreOrders():
     order_id = request.args.get('id', default=None, type=str)
     if order_id is None:
-        args = ('c/ecwid-api', 'orders', str(current_user.hub_id))
+        args = ('c/bin/ecwid-api', 'orders', str(current_user.hub_id))
     else:
-        args = ('c/ecwid-api', 'orders',
+        args = ('c/bin/ecwid-api', 'orders',
                 str(current_user.hub_id), '-o', order_id)
     popen = subprocess.Popen(args, stderr=subprocess.PIPE)
     popen.wait()
-    output = popen.stderr.read()
     messages = []
-    if output is not None and len(output) > 0:
-        for s in output.decode('utf-8').strip().split('\n'):
-            messages.append(s)
+    if popen.returncode != 0:
+        messages.append('Синхронизация завершена с ошибками.')
         status = False
     else:
         messages.append('Синхронизация успешно завершена.')
