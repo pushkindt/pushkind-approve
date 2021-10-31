@@ -2,10 +2,12 @@ from app import db
 from flask_login import current_user, login_required
 from app.main import bp
 from app.models import User, UserRoles, Category, Project, Position, Order
-from flask import render_template, redirect, url_for, flash
+from flask import render_template, redirect, url_for, flash, Response
 from app.main.forms import UserRolesForm, UserSettingsForm
 from sqlalchemy import or_
 from app.main.utils import role_required, role_forbidden
+from openpyxl import Workbook
+from openpyxl.writer.excel import save_virtual_workbook
 
 '''
 ################################################################################
@@ -138,3 +140,28 @@ def RemoveUser(user_id):
 
     flash('Пользователь успешно удалён.')
     return redirect(url_for('main.ShowSettings'))
+
+
+@bp.route('/users/download')
+@login_required
+@role_required([UserRoles.admin])
+def DownloadUsers():
+    users = User.query.filter(
+        or_(User.role == UserRoles.default, User.hub_id == current_user.hub_id)
+    ).order_by(User.name, User.email).all()
+    wb = Workbook()
+    ws = wb.active
+    for i, header in enumerate(['Имя', 'Телефон', 'Email', 'Роль', 'Площадка', 'Права', 'Заметка', 'Активность'], start=1):
+        ws.cell(1, i).value = header
+    for i, user in enumerate(users, start=2):
+        ws.cell(i, 1).value = user.name
+        ws.cell(i, 2).value = user.phone
+        ws.cell(i, 3).value = user.email        
+        ws.cell(i, 4).value = user.position.name if user.position is not None else ''
+        ws.cell(i, 5).value = user.location
+        ws.cell(i, 6).value = user.role
+        ws.cell(i, 7).value = user.note
+        ws.cell(i, 8).value = user.last_seen
+
+    data = save_virtual_workbook(wb)
+    return Response(data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={'Content-Disposition': 'attachment;filename=users.xlsx'})
