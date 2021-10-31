@@ -1,0 +1,3 @@
+[submodule "c/dotenv-c"]
+	path = c/dotenv-c
+	url = git@github.com:Isty001/dotenv-c.git

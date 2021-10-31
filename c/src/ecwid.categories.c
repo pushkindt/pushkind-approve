@@ -1,9 +1,13 @@
 #include <json.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
 
 #include "rest.h"
 #include "model.h"
 #include "http.h"
 #include "util.h"
+#include "dbg.h"
 
 static bool ProcessCategoriesTree(TEcwid hub, uint64_t root_id, struct json_object *children)
 {
@@ -104,11 +108,11 @@ bool ProcessCategories(uint64_t hub_id)
 		ProcessCategoriesTree(hub[0], (int64_t)json_object_get_int64(cat_id), children);
 
 		cache->children = strdup((char *)json_object_to_json_string(children));
-		check(StoreCategories(pDB, cache) == 0, "Error while saving cache.");
+		check(StoreCategory(pDB, cache) == 0, "Error while saving cache.");
 
 		json_object_put(children);
 		children = NULL;
-		FreeCategories(cache);
+		FreeCategory(cache);
 		cache = NULL;
 	}
 
@@ -135,7 +139,7 @@ error:
 	if (children != NULL)
 		json_object_put(children);
 	if (cache != NULL)
-		FreeCategories(cache);
+		FreeCategory(cache);
 	if (json != NULL)
 		json_object_put(json);
 	if (params != NULL)

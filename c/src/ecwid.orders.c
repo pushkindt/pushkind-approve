@@ -1,41 +1,14 @@
 #include <json.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 #include "rest.h"
 #include "model.h"
 #include "http.h"
 #include "util.h"
+#include "dbg.h"
 
 static const char *_ALLOWED_PRODUCTS_FIELDS[] = {"id", "categoryId", "price", "sku", "quantity", "name", "imageUrl", "selectedOptions"};
-
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-
-static void FilterProductFields(struct json_object *product)
-{
-	if (product == NULL)
-		return;
-
-	/*****************************************************************************/
-	//	Loop through products and remove excessive product fields.
-	/*****************************************************************************/
-
-	{
-		json_object_object_foreach(product, key, val)
-		{
-
-			bool found = false;
-			for (size_t i = 0; i < ARRAY_SIZE(_ALLOWED_PRODUCTS_FIELDS); i++)
-			{
-				if (strcmp(key, _ALLOWED_PRODUCTS_FIELDS[i]) == 0)
-				{
-					found = true;
-					break;
-				}
-			}
-			if (found == false)
-				json_object_object_del(product, key);
-		}
-	}
-}
 
 static bool GetStoreOrders(TDatabase *pDB, TEcwid store, uint64_t start_from, char *order_id)
 {
@@ -129,7 +102,7 @@ static bool GetStoreOrders(TDatabase *pDB, TEcwid store, uint64_t start_from, ch
 				for (size_t j = 0; j < products_count; j++)
 				{
 					struct json_object *product = json_object_array_get_idx(products, j);
-					FilterProductFields(product);
+					FilterJSONFields(product, _ALLOWED_PRODUCTS_FIELDS, ARRAY_SIZE(_ALLOWED_PRODUCTS_FIELDS));
 					struct json_object *sku = NULL;
 					json_object_object_get_ex(product, "sku", &sku);
 					if (sku != NULL)
@@ -142,7 +115,11 @@ static bool GetStoreOrders(TDatabase *pDB, TEcwid store, uint64_t start_from, ch
 							if (dash != NULL)
 							{
 								*dash = '\0';
-								char *vendor = GetStoreNameById(pDB, sku_value);
+								errno = 0;
+								char *vendor = NULL;
+								uint64_t vendor_id = strtoul(sku_value, NULL, 10);
+								if (errno != EINVAL && errno != ERANGE)
+									vendor = GetStoreNameById(pDB, vendor_id);
 								if (vendor != NULL)
 								{
 									json_object_object_add(product, "vendor", json_object_new_string(vendor));
@@ -157,32 +134,29 @@ static bool GetStoreOrders(TDatabase *pDB, TEcwid store, uint64_t start_from, ch
 					json_object_object_get_ex(product, "categoryId", &category_id);
 					if (category_id != NULL)
 					{
-						char *cat_name = NULL;
-						uint64_t cat_income_id = 0;
-						uint64_t cat_cashflow_id = 0;
-						uint64_t root_category = GetCategoryIdByChildId(pDB, store.id, json_object_get_int64(category_id), &cat_name, &cat_income_id, &cat_cashflow_id);
-						if (root_category != 0)
+						TCategory *root_category = GetCategoryByChildId(pDB, store.id, json_object_get_int64(category_id));
+						if (root_category != NULL)
 						{
-							if (StoreOrderCategory(pDB, order.id, root_category) != 0)
+							if (StoreOrderCategory(pDB, order.id, root_category->id) != 0)
 							{
-								log_err("Cannot save order category %s %lu.", order.id, root_category);
+								log_err("Cannot save order category %s %lu.", order.id, root_category->id);
 							}
-							json_object_object_add(product, "categoryId", json_object_new_int64(root_category));
+							json_object_object_add(product, "categoryId", json_object_new_int64(root_category->id));
+							if (root_category->name != NULL)
+							{
+								json_object_object_add(product, "category", json_object_new_string(root_category->name));
+							}
+							/*****************************************************************************/
+							//	Update statements in the case they are NULL (0).
+							/*****************************************************************************/
+
+							if (order.income_id == 0)
+								order.income_id = root_category->income_id;
+							if (order.cashflow_id == 0)
+								order.cashflow_id = root_category->cashflow_id;
+
+							FreeCategory(root_category);
 						}
-						if (cat_name != NULL)
-						{
-							json_object_object_add(product, "category", json_object_new_string(cat_name));
-							free(cat_name);
-						}
-						
-						/*****************************************************************************/
-						//	Update statements in the case they are NULL (0).
-						/*****************************************************************************/
-						
-						if (order.income_id == 0)
-							order.income_id = cat_income_id;
-						if (order.cashflow_id == 0)
-							order.cashflow_id = cat_cashflow_id;
 					}
 				}
 

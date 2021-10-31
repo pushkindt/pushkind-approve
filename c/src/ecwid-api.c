@@ -2,9 +2,20 @@
 #include <sqlite3.h>
 #include <sys/file.h>
 #include <argp.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <dotenv.h>
 
+#include "ecwid-api.h"
 #include "model.h"
 #include "ecwid.h"
+#include "dbg.h"
+
+char *DATABASE_URL = NULL;
+char *REST_URL = NULL;
 
 const char *argp_program_version = "ecwid-api 1.0";
 const char *argp_program_bug_address = "<matrizaev@gmail.com>";
@@ -33,8 +44,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	{
 	case 's':
 		/* STORE_ID is an unsigned integer. */
-		arguments->store_id = atoi(arg);
-		if (arguments->store_id == 0)
+		errno = 0;
+		arguments->store_id = strtoul(arg, NULL, 10);
+		if (arguments->store_id == 0 || errno == EINVAL || errno == ERANGE)
 			argp_usage(state);
 		break;
 	case 'o':
@@ -61,8 +73,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		if (state->arg_num == 1)
 		{
 			/* HUB_ID is unsigned integer. */
-			arguments->hub_id = atoi(arg);
-			if (arguments->hub_id == 0)
+			errno = 0;
+			arguments->hub_id = strtoul(arg, NULL, 10);
+			if (arguments->hub_id == 0 || errno == EINVAL || errno == ERANGE)
 				argp_usage(state);
 		}
 		break;
@@ -87,6 +100,25 @@ int main(int argc, char *argv[])
 	int result = -1;
 	int pid_file = -1;
 	struct arguments arguments = {0};
+
+	/*****************************************************************************/
+	//	Parse .env
+	/*****************************************************************************/
+
+	if (env_load(".env", true) != 0)
+		log_info(".env couldn't be loaded. Make sure all necessary environment variables are present.");
+
+	/*****************************************************************************/
+	//	Check the environment variables.
+	/*****************************************************************************/
+
+	DATABASE_URL = getenv("DATABASE_URL");
+
+	check(DATABASE_URL != NULL, "DATABASE_URL is not present in the environment.");
+
+	REST_URL = getenv("REST_URL");
+
+	check(REST_URL != NULL, "REST_URL is not present in the environment.");
 
 	/*****************************************************************************/
 	//	Parse arguments
