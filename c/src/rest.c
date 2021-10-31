@@ -111,7 +111,6 @@ struct json_object *RESTcall(uint64_t store_id, TRESTEndpoint endpoint, struct j
 	}
 
 	debug("Predicted length of url and parameters is %zu", param_str_len);
-	debug("The url before the parameters are applied: %s", url);
 
 	/*************************************************************************
 	* Applying URL parameters                                                *

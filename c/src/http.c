@@ -96,10 +96,12 @@ int HTTPcall(THTTPMethod method, const char *url, uint8_t *payload, size_t paylo
 	switch (method)
 	{
 	case HTTP_GET:
+		debug("HTTP_GET query");
 		curl_result = curl_easy_setopt(handle, CURLOPT_HTTPGET, 1L);
 		check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
 		break;
 	case HTTP_POST:
+		debug("HTTP_POST query");
 		curl_result = curl_easy_setopt(handle, CURLOPT_POST, 1L);
 		check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
 		if (payload_size != 0 && payload != NULL)
@@ -116,6 +118,7 @@ int HTTPcall(THTTPMethod method, const char *url, uint8_t *payload, size_t paylo
 		}
 		break;
 	case HTTP_PUT:
+		debug("HTTP_PUT query");
 		curl_result = curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "PUT");
 		check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
 		if (payload_size != 0 && payload != NULL)
@@ -132,6 +135,7 @@ int HTTPcall(THTTPMethod method, const char *url, uint8_t *payload, size_t paylo
 		}
 		break;
 	case HTTP_DELETE:
+		debug("HTTP_DELETE query");
 		curl_result = curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "DELETE");
 		check(curl_result == CURLE_OK, "CURL error: %s", curl_easy_strerror(curl_result));
 		break;

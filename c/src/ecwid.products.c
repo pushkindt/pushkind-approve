@@ -127,6 +127,10 @@ static void ProcessCategories(TEcwid hub, TEcwid store, uint64_t hub_category, u
 	for (size_t i = 0; i < json_object_array_length(store_categories); i++)
 	{
 		struct json_object *category_id = NULL, *category_name = NULL, *category = json_object_array_get_idx(store_categories, i);
+
+		if (category == NULL)
+			continue;
+
 		json_object_object_get_ex(category, "name", &category_name);
 		json_object_object_get_ex(category, "id", &category_id);
 		if (category_id == NULL || category_name == NULL)
@@ -148,10 +152,97 @@ error:
 		json_object_put(store_json);
 }
 
+static bool CreateHubProduct(TEcwid hub, struct json_object *product)
+{
+	bool result = false;
+	struct json_object *params = NULL, *response = NULL;
+	struct json_object *sku = NULL, *product_id = NULL, *image_url = NULL;
+
+	check(product != NULL, "Invalid function inputs.");
+
+	json_object_object_get_ex(product, "sku", &sku);
+
+	check(sku != NULL, "Invalid function inputs.");
+
+	/*****************************************************************************/
+	//	Create non-existent product
+	/*****************************************************************************/
+
+	params = json_object_new_object();
+	check_mem(params);
+	json_object_object_add(params, "token", json_object_new_string(hub.token));
+
+	const char *buffer = json_object_to_json_string(product);
+	response = RESTcall(hub.id, POST_PRODUCT, params, (uint8_t *)buffer, strlen(buffer));
+	check(response != NULL, "Cannot create hub product %s.", (char *)json_object_get_string(sku));
+
+	json_object_object_get_ex(response, "id", &product_id);
+
+	check(product_id != NULL, "Cannot create hub product %s.", (char *)json_object_get_string(sku));
+
+	json_object_object_get_ex(product, "imageUrl", &image_url);
+	if (image_url != NULL)
+	{
+		check(SetHubProductImage(hub, (int64_t)json_object_get_int64(product_id), (char *)json_object_get_string(image_url)) == true, "Setting product %s image failed", (char *)json_object_get_string(sku));
+	}
+	result = true;
+error:
+	if (response != NULL)
+		json_object_put(response);
+	if (params != NULL)
+		json_object_put(params);
+	return result;
+}
+
+static bool UpdateHubProduct(TEcwid hub, struct json_object *hub_product, struct json_object *store_product)
+{
+
+	bool result = false;
+	struct json_object *params = NULL, *response = NULL;
+	struct json_object *sku = NULL, *product_id = NULL;
+	struct json_object *hub_image_url = NULL, *store_image_url = NULL;
+
+	check(hub_product != NULL && store_product != NULL, "Invalid function inputs.");
+
+	params = json_object_new_object();
+	check_mem(params);
+	json_object_object_add(params, "token", json_object_new_string(hub.token));
+
+	/*****************************************************************************/
+	//	Update existing product
+	/*****************************************************************************/
+	json_object_object_get_ex(hub_product, "id", &product_id);
+	json_object_object_get_ex(hub_product, "imageURL", &hub_image_url);
+	json_object_object_get_ex(store_product, "imageUrl", &store_image_url);
+	json_object_object_get_ex(hub_product, "sku", &sku);
+
+	check(product_id != NULL && sku != NULL, "Invalid function inputs.");
+
+	if (hub_image_url == NULL && store_image_url != NULL)
+	{
+		if (SetHubProductImage(hub, (int64_t)json_object_get_int64(product_id), (char *)json_object_get_string(store_image_url)) != true)
+		{
+			log_err("Setting product %s image failed", (char *)json_object_get_string(sku));
+		}
+	}
+	json_object_object_add(params, "productId", json_object_get(product_id));
+	const char *buffer = json_object_to_json_string(store_product);
+	response = RESTcall(hub.id, PUT_PRODUCT, params, (uint8_t *)buffer, strlen(buffer));
+	check(response != NULL, "Cannot create hub product %s.", (char *)json_object_get_string(sku));
+	json_object_object_add(hub_product, "processed", json_object_new_boolean(true));
+	result = true;
+error:
+	if (response != NULL)
+		json_object_put(response);
+	if (params != NULL)
+		json_object_put(params);
+	return result;
+}
+
 static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_category, uint64_t store_category, struct json_object *hub_products)
 {
 
-	struct json_object *store_json = NULL, *params = NULL, *json = NULL;
+	struct json_object *store_json = NULL, *params = NULL;
 	struct json_object *store_products = NULL;
 	char *hub_sku = NULL;
 	uint64_t hub_vendor_category = 0;
@@ -159,7 +250,7 @@ static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_categ
 	check(hub_products != NULL, "Invalid function inputs.");
 
 	/*****************************************************************************/
-	//	Get store products for given category
+	//	Get store's products for given category
 	/*****************************************************************************/
 	params = json_object_new_object();
 	check_mem(params);
@@ -172,11 +263,8 @@ static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_categ
 	json_object_put(params);
 	params = NULL;
 
-	params = json_object_new_object();
-	json_object_object_add(params, "token", json_object_new_string(hub.token));
-
 	/*****************************************************************************/
-	//	Create a vendor name category
+	//	Create a vendor name category in the hub store
 	/*****************************************************************************/
 
 	if (json_object_array_length(store_products) > 0)
@@ -192,9 +280,13 @@ static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_categ
 	for (size_t i = 0; i < json_object_array_length(store_products); i++)
 	{
 
-		struct json_object *store_product_sku = NULL, *image_url = NULL, *store_product = json_object_array_get_idx(store_products, i);
+		struct json_object *store_product_sku = NULL, *store_product = json_object_array_get_idx(store_products, i);
+
+		if (store_product == NULL)
+			continue;
+
 		json_object_object_get_ex(store_product, "sku", &store_product_sku);
-		json_object_object_get_ex(store_product, "imageUrl", &image_url);
+
 		if (store_product_sku == NULL)
 			continue;
 
@@ -202,7 +294,7 @@ static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_categ
 		//	Prepare hub sku string ("store_id"-"store_sku")
 		/*****************************************************************************/
 
-		hub_sku = calloc(strlen((char *)json_object_get_string(store_product_sku)) + ceil(log10(store.id > 0 ? store.id : 1)) + 2, 1);
+		hub_sku = calloc(strlen((char *)json_object_get_string(store_product_sku)) + ceil(log10(store.id + 1)) + 2, 1);
 		check_mem(hub_sku);
 		sprintf(hub_sku, "%ld-%s", store.id, (char *)json_object_get_string(store_product_sku));
 
@@ -223,7 +315,10 @@ static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_categ
 		{
 
 			struct json_object *hub_product_sku = NULL, *hub_product = json_object_array_get_idx(hub_products, j);
-			struct json_object *hub_product_id = NULL;
+
+			if (hub_product == NULL)
+				continue;
+
 			json_object_object_get_ex(hub_product, "sku", &hub_product_sku);
 
 			if (hub_product_sku == NULL)
@@ -231,65 +326,19 @@ static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_categ
 
 			if (strcmp((char *)json_object_get_string(hub_product_sku), hub_sku) == 0)
 			{
-
-				/*****************************************************************************/
-				//	Update existing product
-				/*****************************************************************************/
-
-				json_object_object_get_ex(hub_product, "id", &hub_product_id);
-				if (hub_product_id == NULL)
-					continue;
-				if (hub_product_id != NULL && image_url != NULL)
+				if (UpdateHubProduct(hub, hub_product, store_product) != true)
 				{
-					if (SetHubProductImage(hub, (int64_t)json_object_get_int64(hub_product_id), (char *)json_object_get_string(image_url)) != true)
-					{
-						log_err("Setting product %ld image failed", (int64_t)json_object_get_int64(hub_product_id));
-					}
-				}
-				json_object_object_add(params, "productId", json_object_get(hub_product_id));
-				const char *buffer = json_object_to_json_string(store_product);
-				json = RESTcall(hub.id, PUT_PRODUCT, params, (uint8_t *)buffer, strlen(buffer));
-				if (json == NULL)
-				{
-					log_err("Setting product %s failed", hub_sku);
-				}
-				else
-				{
-
-					json_object_put(json);
-					json = NULL;
+					log_err("There was problems while updating %s", hub_sku);
 				}
 				found = true;
-				json_object_object_del(params, "productId");
-				json_object_object_add(hub_product, "processed", json_object_new_boolean(true));
 				break;
 			}
 		}
 		if (found == false)
 		{
-			/*****************************************************************************/
-			//	Create non-existent product
-			/*****************************************************************************/
-
-			const char *buffer = json_object_to_json_string(store_product);
-			json = RESTcall(hub.id, POST_PRODUCT, params, (uint8_t *)buffer, strlen(buffer));
-			if (json == NULL)
+			if (CreateHubProduct(hub, store_product) != true)
 			{
-				log_err("Cannot create hub product %s.", hub_sku);
-			}
-			else
-			{
-				struct json_object *hub_product_id = NULL;
-				json_object_object_get_ex(json, "id", &hub_product_id);
-				if (hub_product_id != NULL && image_url != NULL)
-				{
-					if (SetHubProductImage(hub, (int64_t)json_object_get_int64(hub_product_id), (char *)json_object_get_string(image_url)) != true)
-					{
-						log_err("Setting product %ld image failed", (int64_t)json_object_get_int64(hub_product_id));
-					}
-				}
-				json_object_put(json);
-				json = NULL;
+				log_err("There was problems while creating %s", hub_sku);
 			}
 		}
 		free(hub_sku);
@@ -303,8 +352,6 @@ static void ProcessCategoryProducts(TEcwid hub, TEcwid store, uint64_t hub_categ
 	ProcessCategories(hub, store, hub_category, store_category, hub_products);
 
 error:
-	if (json != NULL)
-		json_object_put(json);
 	if (store_json != NULL)
 		json_object_put(store_json);
 	if (params != NULL)
@@ -322,9 +369,9 @@ static bool ProcessStoreProducts(TEcwid hub, TEcwid store)
 	char *search_sku = NULL;
 
 	/*****************************************************************************/
-	//	Get hub products
+	//	Get the hub products, which sku is related to the current store's id
 	/*****************************************************************************/
-	search_sku = calloc(ceil(log10(store.id > 0 ? store.id : 1)) + 3, 1);
+	search_sku = calloc(ceil(log10(store.id + 1)) + 3, 1);
 	check_mem(search_sku);
 	sprintf(search_sku, "%ld-", store.id);
 
@@ -336,6 +383,7 @@ static bool ProcessStoreProducts(TEcwid hub, TEcwid store)
 	check(json != NULL, "JSON is invalid.");
 	json_object_object_get_ex(json, "items", &hub_products);
 	check(hub_products != NULL && json_object_get_type(hub_products) == json_type_array, "JSON is invalid.");
+	json_object_object_del(params, "keyword");
 
 	/*****************************************************************************/
 	//	Process store category products
@@ -351,6 +399,10 @@ static bool ProcessStoreProducts(TEcwid hub, TEcwid store)
 
 		struct json_object *hub_product_processed = NULL, *hub_product = json_object_array_get_idx(hub_products, j);
 		struct json_object *hub_product_id = NULL;
+
+		if (hub_product == NULL)
+			continue;
+
 		json_object_object_get_ex(hub_product, "processed", &hub_product_processed);
 		json_object_object_get_ex(hub_product, "id", &hub_product_id);
 		if (hub_product_id == NULL)
