@@ -445,6 +445,7 @@ bool ProcessProducts(uint64_t hub_id, uint64_t store_id)
 	TEcwid *stores = NULL;
 	size_t stores_count = 0;
 	size_t hub_count = 0;
+	size_t failed_count = 0;
 
 	/*****************************************************************************/
 	//	Open database, get hub and stores
@@ -471,9 +472,11 @@ bool ProcessProducts(uint64_t hub_id, uint64_t store_id)
 		if (ProcessStoreProducts(hub[0], stores[i]) != true)
 		{
 			log_err("Failed to process store %lu", stores[i].id);
+			failed_count++;
 		}
 	}
-	result = true;
+	if (failed_count == 0)
+		result = true;
 error:
 	/*****************************************************************************/
 	//	Clean everything up

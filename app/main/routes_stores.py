@@ -2,7 +2,7 @@ from app import db
 from flask_login import current_user, login_required
 from app.main import bp
 from app.models import UserRoles, Ecwid, Order
-from flask import render_template, redirect, url_for, flash, jsonify, request
+from flask import render_template, redirect, url_for, flash, jsonify, request, current_app
 from app.main.forms import AddStoreForm
 from app.ecwid import EcwidAPIException
 import subprocess
@@ -97,6 +97,10 @@ def SyncStoreProducts(store_id):
     popen = subprocess.Popen(args, stderr=subprocess.PIPE)
     popen.wait()
     if popen.returncode != 0:
+        process_output = popen.stderr.read()
+        if process_output is not None and len(process_output) > 0:
+            for s in process_output.decode('utf-8').strip().split('\n'):
+                current_app.logger.error(s)
         flash('Синхронизация завершена с ошибками.')
     else:
         flash('Синхронизация успешно завершена.')
@@ -118,6 +122,10 @@ def SyncStoreOrders():
     popen.wait()
     messages = []
     if popen.returncode != 0:
+        process_output = popen.stderr.read()
+        if process_output is not None and len(process_output) > 0:
+            for s in process_output.decode('utf-8').strip().split('\n'):
+                current_app.logger.error(s)
         messages.append('Синхронизация завершена с ошибками.')
         status = False
     else:
