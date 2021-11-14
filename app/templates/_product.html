@@ -6,9 +6,7 @@
 			<div class="row m-1 selectable rounded border" data-id="{{ product.id }}">
 		{% endif %}
 			<div class="col-sm-auto overflow-hidden">
-				{% if product.imageUrl is defined %}
-					<img src="{{ product['imageUrl'] }}" height="64" width="64" alt="thumbnail">
-				{% endif %}
+				<img src="{{ product['imageUrl'] or url_for('static', filename='1.png') }}" height="64" width="64" alt="thumbnail">
 			</div>
 			<div class="col-sm overflow-hidden mt-sm-3">
 				<span class="d-sm-none fw-bold">Артикул:</span>

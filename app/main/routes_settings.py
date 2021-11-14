@@ -1,7 +1,10 @@
+from datetime import datetime
 from app import db
 from flask_login import current_user, login_required
 from app.main import bp
-from app.models import User, UserRoles, Category, Project, Position, Order
+from app.models import OrderApproval, OrderPosition, OrderStatus, User
+from app.models import UserRoles, Category, Project, Position, Order
+from app.models import OrderCategory, Site
 from flask import render_template, redirect, url_for, flash, Response
 from app.main.forms import UserRolesForm, UserSettingsForm
 from sqlalchemy import or_
@@ -151,8 +154,24 @@ def DownloadUsers():
     ).order_by(User.name, User.email).all()
     wb = Workbook()
     ws = wb.active
-    for i, header in enumerate(['Имя', 'Телефон', 'Email', 'Роль', 'Площадка', 'Права', 'Заметка', 'Активность'], start=1):
+    for i, header in enumerate([
+        'Имя',
+        'Телефон',
+        'Email',
+        'Роль',
+        'Площадка',
+        'Права',
+        'Заметка',
+        'Активность',
+        'Регистрация',
+        'Согласованных заявок пользователя',
+        'Сумма согласованных заявок пользователя',
+        'Согласовал заявок',
+        'Должен согласовать заявок',
+        'Номер для согласования'
+    ], start=1):
         ws.cell(1, i).value = header
+
     for i, user in enumerate(users, start=2):
         ws.cell(i, 1).value = user.name
         ws.cell(i, 2).value = user.phone
@@ -162,6 +181,47 @@ def DownloadUsers():
         ws.cell(i, 6).value = user.role
         ws.cell(i, 7).value = user.note
         ws.cell(i, 8).value = user.last_seen
+        ws.cell(i, 9).value = user.registered
 
+        # Orders which user is initiative for
+        if user.role == UserRoles.initiative:
+            orders = Order.query.filter_by(
+                initiative_id=user.id,
+                status=OrderStatus.approved
+            ).all()
+            ws.cell(i, 10).value = len(orders)
+            ws.cell(i, 11).value = sum([o.total for o in orders])
+
+        if user.role in [UserRoles.purchaser, UserRoles.validator]:
+            # Orders approved by user
+            orders = Order.query.filter_by(
+                hub_id=current_user.hub_id
+            ).join(OrderApproval).filter_by(
+                user_id=user.id,
+                product_id=None
+            ).all()
+            ws.cell(i, 12).value = len(orders)
+
+            # Orders to be approved
+            orders = Order.query.filter(
+                Order.hub_id == current_user.hub_id,
+                or_(
+                    Order.status == OrderStatus.new,
+                    Order.status == OrderStatus.partly_approved,
+                    Order.status == OrderStatus.modified
+                ),
+                ~Order.user_approvals.any(OrderApproval.user_id == user.id),
+                ~Order.children.any()
+            )
+            orders = orders.join(OrderPosition)
+            orders = orders.filter_by(position_id=user.position_id)
+            orders = orders.join(OrderCategory)
+            orders = orders.filter(OrderCategory.category_id.in_([cat.id for cat in user.categories]))
+            orders = orders.join(Site)
+            orders = orders.filter(Site.project_id.in_([p.id for p in user.projects]))
+            orders = orders.all()
+            ws.cell(i, 13).value = len(orders)
+            ws.cell(i, 14).value = ', '.join([o.id for o in orders])
+    
     data = save_virtual_workbook(wb)
     return Response(data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={'Content-Disposition': 'attachment;filename=users.xlsx'})

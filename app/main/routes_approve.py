@@ -489,7 +489,7 @@ def Prepare1CReport(order, excel_date):
             # Measurement
             if 'selectedOptions' in product:
                 ws.cell(i, 19).value = product['selectedOptions'][0]['value']
-                ws.cell(i, 23).value = ', '.join[product['selectedOptions'][1:]['value']]
+                ws.cell(i, 23).value = ', '.join([p['value'] for p in product['selectedOptions'][1:]])
             # Product Name
             ws.cell(i, 20).value = product.get('name', '')
             # Quantity
