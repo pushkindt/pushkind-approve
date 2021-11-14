@@ -221,6 +221,9 @@ def DownloadUsers():
             orders = orders.all()
             ws.cell(i, 13).value = len(orders)
             ws.cell(i, 14).value = ', '.join([o.id for o in orders])
+        else:
+            ws.cell(i, 12).value = 0
+            ws.cell(i, 13).value = 0
     
     data = save_virtual_workbook(wb)
     return Response(data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={'Content-Disposition': 'attachment;filename=users.xlsx'})
