@@ -184,13 +184,12 @@ def DownloadUsers():
         ws.cell(i, 9).value = user.registered
 
         # Orders which user is initiative for
-        if user.role == UserRoles.initiative:
-            orders = Order.query.filter_by(
-                initiative_id=user.id,
-                status=OrderStatus.approved
-            ).all()
-            ws.cell(i, 10).value = len(orders)
-            ws.cell(i, 11).value = sum([o.total for o in orders])
+        orders = Order.query.filter_by(
+            initiative_id=user.id,
+            status=OrderStatus.approved
+        ).all()
+        ws.cell(i, 10).value = len(orders)
+        ws.cell(i, 11).value = sum([o.total for o in orders])
 
         if user.role in [UserRoles.purchaser, UserRoles.validator]:
             # Orders approved by user
