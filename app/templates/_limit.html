@@ -15,7 +15,7 @@
             </div>
             <div class="col-sm overflow-hidden">
                 <span class="d-sm-none fw-bold">Лимит:</span>
-                {{ limit.current }}/{{ limit.value }}
+                {{ '{:,.2f}'.format(limit.current) }}/{{ limit.value }}
             </div>
         </div>
     </div>
