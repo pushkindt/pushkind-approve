@@ -165,6 +165,7 @@
 						$("#about_user-email_approved").prop("checked", user["email_approved"]);
 						$("#role").val(user["role_id"]);
 						$("#note").val(user["note"]);
+						$("#birthday").val(user["birthday"]);
 						$("#removeUserButton").attr("href", "{{ url_for('main.RemoveUser', user_id='0') }}".replace("0", user_id));
 						if (user["role"] == "validator" || user["role"] == "purchaser") {
 							$("#userDataWrapper").show();

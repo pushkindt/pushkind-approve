@@ -34,6 +34,12 @@
 				</div>
 			</div>
 			<div class="row mb-3">
+				{{ user_form.birthday.label(class_='col-md-2 col-form-label') }}
+				<div class="col-md-10">
+					{{ user_form.birthday(class_='form-control') }}
+				</div>
+			</div>
+			<div class="row mb-3">
 				{{ user_form.role.label(class_='col-md-2 col-form-label') }}
 				<div class="col-md-10">
 					{{ user_form.role(class_='form-control') }}

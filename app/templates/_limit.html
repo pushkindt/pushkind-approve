@@ -1,0 +1,25 @@
+<div class="row border-bottom py-1 limits" data-id="{{ limit.id }}">
+    <div class="col">
+        <div class="row">
+            <div class="col-sm overflow-hidden">
+                <span class="d-sm-none fw-bold">Интервал:</span>
+                {{ limit.interval }}
+            </div>
+            <div class="col-sm overflow-hidden">
+                <span class="d-sm-none fw-bold">Проект:</span>
+                {{ limit.project.name }}
+            </div>
+            <div class="col-sm overflow-hidden">
+                <span class="d-sm-none fw-bold">Объект:</span>
+                {{ limit.site.name or '' }}
+            </div>
+            <div class="col-sm overflow-hidden">
+                <span class="d-sm-none fw-bold">Лимит:</span>
+                {{ limit.current }}/{{ limit.value }}
+            </div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('main.RemoveLimit', id=limit.id) }}" class="btn btn-danger text-white" onclick="return confirm('Удалить лимит?')">Удалить</a>
+    </div>
+</div>

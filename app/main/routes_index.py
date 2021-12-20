@@ -3,8 +3,9 @@ from flask_login import current_user, login_required
 from app.main import bp
 from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval
 from flask import render_template, flash, request, redirect, url_for, Response
-from app.main.utils import ecwid_required, role_forbidden, role_required, GetFilterTimestamps, SendEmailNotification, GetNewOrderNumber
-from datetime import datetime, timedelta, timezone
+from app.main.utils import ecwid_required, role_forbidden, role_required, SendEmailNotification, GetNewOrderNumber
+from app.utils import GetFilterTimestamps
+from datetime import datetime, timezone
 from app.main.forms import MergeOrdersForm, SaveOrdersForm
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
@@ -24,7 +25,14 @@ Index page
 def ShowIndex():
 
     dates = GetFilterTimestamps()
-    filter_from = request.args.get('from', default=dates['недавно'], type=int)
+    filter_from = request.args.get('from', default=dates['recently'], type=int)
+
+    dates['сегодня'] = dates.pop('daily')
+    dates['неделя'] = dates.pop('weekly')
+    dates['месяц'] = dates.pop('monthly')
+    dates['квартал'] = dates.pop('quarterly')
+    dates['год'] = dates.pop('annually')
+    dates['недавно'] = dates.pop('recently')
 
     filter_project = request.args.get('project', default=None, type=int)
     filter_category = request.args.get('category', default=None, type=int)

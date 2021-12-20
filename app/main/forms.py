@@ -1,8 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FormField, Form, PasswordField, BooleanField, SelectMultipleField
+from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FormField, Form, PasswordField, BooleanField, SelectMultipleField, DecimalField
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired, Length, ValidationError, Email, InputRequired, Optional
-from app.models import UserRoles
+from app.models import OrderLimit, OrderLimitsIntervals, UserRoles
 from wtforms.fields.html5 import DateField
 from app.main.utils import DATE_FORMAT
 from datetime import date
@@ -41,7 +41,7 @@ Approve page
 class InitiativeForm(FlaskForm):
     project = SelectField('Проект', validators=[DataRequired(message='Название проекта - обязательное поле.')],
                           coerce=int)
-    site = SelectField('Объект', validators=[DataRequired(message='Название проекта - обязательное поле.')],
+    site = SelectField('Объект', validators=[DataRequired(message='Название объекта - обязательное поле.')],
                        coerce=int)
     categories = SelectMultipleField('Категории', validators=[DataRequired(
         message='Категории заявки - обязательное поле.')], coerce=int)
@@ -135,6 +135,7 @@ class UserRolesForm(FlaskForm):
                        choices=[(int(role), str(role)) for role in UserRoles])
     about_user = FormField(UserSettings, [DataRequired()])
     note = TextAreaField('Заметка')
+    birthday = DateField('День рождения')
     submit = SubmitField('Сохранить')
 
 
@@ -260,3 +261,33 @@ class EditCashflowForm(FlaskForm):
     cashflow_name = StringField('БДДС', validators=[DataRequired(
         message='БДДС - обязательное поле.')])
     submit = SubmitField('Изменить')
+
+
+'''
+################################################################################
+Limits page
+################################################################################
+'''
+
+class AddLimitForm(FlaskForm):
+    interval = SelectField(
+        'Интервал',
+        [InputRequired(message='Некорректный интервал лимита.')],
+        coerce=int,
+        choices=[(int(i), str(i)) for i in OrderLimitsIntervals]
+    )
+    value = DecimalField(
+        'Лимит',
+        validators=[DataRequired(message='Лимит - обязательное поле.')]
+    )
+    project = SelectField(
+        'Проект',
+        validators=[DataRequired(message='Проект - обязательное поле.')],
+        coerce=int
+    )
+    site = SelectField(
+        'Объект (необязательно)',
+        validators=[Optional()],
+        coerce=int
+    )
+    submit = SubmitField('Создать')
