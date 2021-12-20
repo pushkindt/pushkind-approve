@@ -14,6 +14,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
 from json.decoder import JSONDecodeError
 from sqlalchemy.sql import expression
+from app.utils import GetFilterTimestamps
 
 
 class EventType(enum.IntEnum):
@@ -33,37 +34,41 @@ class EventType(enum.IntEnum):
     splitted = 13
 
     def __str__(self):
-        pretty = ['комментарий',
-                  'согласование',
-                  'замечание',
-                  'изменение',
-                  'клонирование',
-                  'отправлено поставщику',
-                  'экспорт в 1С',
-                  'объединение',
-                  'законтрактовано',
-                  'изменение БДР',
-                  'изменение БДДС',
-                  'изменение объекта',
-                  'изменение ЕИ',
-                  'разделение']
+        pretty = [
+            'комментарий',
+            'согласование',
+            'замечание',
+            'изменение',
+            'клонирование',
+            'отправлено поставщику',
+            'экспорт в 1С',
+            'объединение',
+            'законтрактовано',
+            'изменение БДР',
+            'изменение БДДС',
+            'изменение объекта',
+            'изменение ЕИ',
+            'разделение'
+        ]
         return pretty[self.value]
 
     def color(self):
-        colors = ['warning',
-                  'success',
-                  'danger',
-                  'primary',
-                  'primary',
-                  'info',
-                  'info',
-                  'info',
-                  'info',
-                  'info',
-                  'info',
-                  'info',
-                  'info',
-                  'info']
+        colors = [
+            'warning',
+            'success',
+            'danger',
+            'primary',
+            'primary',
+            'info',
+            'info',
+            'info',
+            'info',
+            'info',
+            'info',
+            'info',
+            'info',
+            'info'
+        ]
         return colors[self.value]
 
 
@@ -76,8 +81,14 @@ class UserRoles(enum.IntEnum):
     supervisor = 5
 
     def __str__(self):
-        pretty = ['Без роли', 'Администратор', 'Инициатор',
-                  'Валидатор', 'Закупщик', 'Наблюдатель']
+        pretty = [
+            'Без роли',
+            'Администратор',
+            'Инициатор',
+            'Валидатор',
+            'Закупщик',
+            'Наблюдатель'
+        ]
         return pretty[self.value]
 
 
@@ -89,19 +100,23 @@ class OrderStatus(enum.IntEnum):
     modified = 4
 
     def __str__(self):
-        pretty = ['Новая',
-                  'Отклонена',
-                  'В работе',
-                  'Согласована',
-                  'Исправлена']
+        pretty = [
+            'Новая',
+            'Отклонена',
+            'В работе',
+            'Согласована',
+            'Исправлена'
+        ]
         return pretty[self.value]
 
     def color(self):
-        colors = ['white',
-                  'danger',
-                  'warning',
-                  'success',
-                  'secondary']
+        colors = [
+            'white',
+            'danger',
+            'warning',
+            'success',
+            'secondary'
+        ]
         return colors[self.value]
 
 
@@ -161,6 +176,7 @@ class User(UserMixin, db.Model):
     last_seen = db.Column(db.DateTime, nullable=True)
     note = db.Column(db.String(), nullable=True)
     registered = db.Column(db.DateTime, nullable=True)
+    birthday = db.Column(db.Date, nullable=True)
     categories = db.relationship('Category', secondary='user_category', backref='users')
     projects = db.relationship('Project', secondary='user_project', backref='users')
     events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='user')
@@ -199,6 +215,7 @@ class User(UserMixin, db.Model):
                 'email': self.email,
                 'phone': self.phone if self.phone is not None else '',
                 'note': self.note,
+                'birthday': self.birthday.isoformat() if self.birthday is not None else '',
                 'role': self.role.name,
                 'role_id': int(self.role),
                 'position': self.position.name if self.position is not None else '',
@@ -263,7 +280,7 @@ class Category(db.Model):
     code = db.Column(db.String(128), nullable=True)
     income_statement = db.relationship('IncomeStatement')
     cashflow_statement = db.relationship('CashflowStatement')
-    
+
     def __repr__(self):
         return json.dumps(self.to_dict())
 
@@ -321,11 +338,13 @@ class Project(db.Model):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        data = {'id': self.id,
-                'name': self.name,
-                'uid': self.uid,
-                'enabled': self.enabled,
-                'sites': [site.to_dict() for site in self.sites]}
+        data = {
+            'id': self.id,
+            'name': self.name,
+            'uid': self.uid,
+            'enabled': self.enabled,
+            'sites': [site.to_dict() for site in self.sites]
+        }
         return data
 
 
@@ -337,10 +356,12 @@ class Site(db.Model):
     uid = db.Column(db.String(128), nullable=True)
 
     def to_dict(self):
-        data = {'id': self.id,
-                'project_id': self.project_id,
-                'name': self.name,
-                'uid': self.uid}
+        data = {
+            'id': self.id,
+            'project_id': self.project_id,
+            'name': self.name,
+            'uid': self.uid
+            }
         return data
 
 
@@ -391,17 +412,20 @@ class Order(db.Model):
     cashflow_statement = db.relationship('CashflowStatement')
 
     def UpdateOrderStatus(self):
+        approved = [p.approved for p in self.approvals]
+        if all(approved):
+            self.status = OrderStatus.approved
+            return
         disapproved = (
             OrderApproval.query
-            .filter(OrderApproval.order_id == self.id, OrderApproval.product_id != None)
+            .filter(
+                OrderApproval.order_id == self.id,
+                OrderApproval.product_id != None
+            )
             .all()
         )
         if len(disapproved) > 0:
             self.status = OrderStatus.not_approved
-            return
-        approved = [p.approved for p in self.approvals]
-        if all(approved):
-            self.status = OrderStatus.approved
             return
         self.status = OrderStatus.partly_approved
         return
@@ -500,11 +524,13 @@ class Order(db.Model):
         self.create_timestamp = int(dt.timestamp())
 
     def to_ecwid(self):
-        data = {'email': self.initiative.email,
-                'items': self.products,
-                'total': self.total,
-                'paymentStatus': 'AWAITING_PAYMENT',
-                'fulfillmentStatus': 'AWAITING_PROCESSING'}
+        data = {
+            'email': self.initiative.email,
+            'items': self.products,
+            'total': self.total,
+            'paymentStatus': 'AWAITING_PAYMENT',
+            'fulfillmentStatus': 'AWAITING_PROCESSING'
+        }
         return data
 
 
@@ -562,3 +588,72 @@ class CashflowStatement(db.Model):
     def to_dict(self):
         data = {'id': self.id, 'name': self.name}
         return data
+
+
+class OrderLimitsIntervals(enum.IntEnum):
+    daily = 0
+    weekly = 1
+    monthly = 2
+    quarterly = 3
+    annually = 4
+
+    def __str__(self):
+        pretty = [
+            'День',
+            'Неделя',
+            'Месяц',
+            'Квартал',
+            'Год'
+        ]
+        return pretty[self.value]
+
+
+class OrderLimit(db.Model):
+    __tablename__ = 'order_limit'
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+    value = db.Column(db.Float, nullable=False, default=0.0, server_default='0.0')
+    current = db.Column(db.Float, nullable=False, default=0.0, server_default='0.0')
+    site_id = db.Column(db.Integer, db.ForeignKey('site.id', ondelete='CASCADE'), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id', ondelete='CASCADE'), nullable=False)
+    interval = db.Column(
+        db.Enum(OrderLimitsIntervals),
+        index=True,
+        nullable=False,
+        default=OrderLimitsIntervals.monthly,
+        server_default='monthly'
+    )
+    site = db.relationship('Site')
+    project = db.relationship('Project')
+
+    @classmethod
+    def update_current(cls, hub_id):
+        limits = OrderLimit.query.filter_by(hub_id=hub_id).all()
+        filters = GetFilterTimestamps()
+        for limit in limits:
+            result = db.session.query(func.sum(Order.total).label('current'))
+            result = result.select_from(Order)
+            
+
+            if limit.interval == OrderLimitsIntervals.daily:
+                result = result.filter(Order.create_timestamp > filters['daily'])
+            elif limit.interval == OrderLimitsIntervals.weekly:
+                result = result.filter(Order.create_timestamp > filters['weekly'])
+            elif limit.interval == OrderLimitsIntervals.monthly:
+                result = result.filter(Order.create_timestamp > filters['monthly'])
+            elif limit.interval == OrderLimitsIntervals.quarterly:
+                result = result.filter(Order.create_timestamp > filters['quarterly'])
+            elif limit.interval == OrderLimitsIntervals.annually:
+                result = result.filter(Order.create_timestamp > filters['annually'])
+
+            if limit.site is not None:
+                result.filter(Order.site_id == limit.site_id)
+            else:
+                result = result.join(Site)
+                result = result.filter(Site.project_id == limit.project_id)
+            result = result.first()
+            limit.current = result.current if result.current is not None else 0.0
+
+        db.session.commit()
+        return
+

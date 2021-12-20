@@ -4,6 +4,21 @@ CREATE TABLE IF NOT EXISTS "alembic_version" (
 	"version_num"	VARCHAR(32) NOT NULL,
 	CONSTRAINT "alembic_version_pkc" PRIMARY KEY("version_num")
 );
+DROP TABLE IF EXISTS "order_limit";
+CREATE TABLE IF NOT EXISTS  "order_limit" (
+	"id"	INTEGER NOT NULL,
+	"hub_id"	INTEGER NOT NULL,
+	"value"		FLOAT NOT NULL DEFAULT "0.0",
+	"current"		FLOAT NOT NULL DEFAULT "0.0",
+	"site_id"	INTEGER NULL,
+	"project_id"	INTEGER NOT NULL,
+	"interval"	VARCHAR(10) NOT NULL DEFAULT 'monthly',
+	FOREIGN KEY("hub_id") REFERENCES "ecwid"("id"),
+	FOREIGN KEY("site_id") REFERENCES "site"("id") ON DELETE CASCADE,
+	FOREIGN KEY("project_id") REFERENCES "project"("id") ON DELETE CASCADE,
+	CONSTRAINT "orderlimitintervals" CHECK("interval" IN ('daily', 'weekly', 'monthly', 'quarterly', 'annually')),
+	PRIMARY KEY("id")
+);
 DROP TABLE IF EXISTS "ecwid";
 CREATE TABLE IF NOT EXISTS "ecwid" (
 	"id"	INTEGER NOT NULL,
@@ -107,6 +122,7 @@ CREATE TABLE IF NOT EXISTS "user" (
 	"last_seen"	DATETIME,
 	"note"	VARCHAR,
 	"registered"	DATETIME,
+	"birthday"	DATE,
 	FOREIGN KEY("hub_id") REFERENCES "ecwid"("id"),
 	FOREIGN KEY("position_id") REFERENCES "position"("id") ON DELETE SET NULL,
 	CHECK("email_disapproved" IN (0, 1)),
@@ -223,6 +239,7 @@ INSERT INTO "category" ("id","name","children","hub_id","responsible","functiona
 INSERT INTO "site" ("id","name","project_id","uid") VALUES (1,'name',1,'uid');
 INSERT INTO "user" ("id","email","password","role","name","phone","position_id","location","hub_id","email_new","email_modified","email_disapproved","email_approved","last_seen","note","registered") VALUES (1,'email@email.email','pbkdf2:sha256:150000$UoJZNku2$101f30eba5ae59618526af9d6db8483d7a5341a2b723ac7627aba7c040be8ec1','admin','name','phone',1,'location',1,1,1,1,1,'2021-10-29 04:43:13','note','2021-10-29 04:43:13');
 INSERT INTO "order" ("id","initiative_id","create_timestamp","products","total","status","site_id","income_id","cashflow_id","hub_id","purchased","exported","dealdone") VALUES ('1',1,0,'[]',1.0,'new',1,1,1,1,1,1,1);
+INSERT INTO "order" ("id","initiative_id","create_timestamp","products","total","status","site_id","income_id","cashflow_id","hub_id","purchased","exported","dealdone") VALUES ('2',1,1639980342,'[]',1.0,'new',1,1,1,1,1,1,1);
 INSERT INTO "user_category" ("user_id","category_id") VALUES (1,1);
 INSERT INTO "user_project" ("user_id","project_id") VALUES (1,1);
 INSERT INTO "order_approval" ("id","order_id","product_id","user_id","remark") VALUES (1,'1',NULL,1,'remark');
@@ -230,6 +247,11 @@ INSERT INTO "order_category" ("order_id","category_id") VALUES ('1',1);
 INSERT INTO "order_event" ("id","order_id","user_id","timestamp","type","data") VALUES (1,'1',1,'2021-10-28 17:09:41','approved','data');
 INSERT INTO "order_position" ("order_id","position_id","approved","user_id","timestamp") VALUES ('1',1,1,1,'2021-10-29 05:02:03');
 INSERT INTO "order_relationship" ("order_id","child_id") VALUES ('1','1');
+INSERT INTO "order_limit" ("hub_id", "value", "current", "site_id", "project_id", "interval") VALUES (1, 10.0,   0.0, NULL, 1, "daily");
+INSERT INTO "order_limit" ("hub_id", "value", "current", "site_id", "project_id", "interval") VALUES (1, 70.0,   0.0, NULL, 1, "weekly");
+INSERT INTO "order_limit" ("hub_id", "value", "current", "site_id", "project_id", "interval") VALUES (1, 300.0,  0.0, NULL, 1, "monthly");
+INSERT INTO "order_limit" ("hub_id", "value", "current", "site_id", "project_id", "interval") VALUES (1, 1200.0, 0.0, NULL, 1, "quarterly");
+INSERT INTO "order_limit" ("hub_id", "value", "current", "site_id", "project_id", "interval") VALUES (1, 3650.0, 0.0, NULL, 1, "annually");
 DROP INDEX IF EXISTS "ix_cashflow_statement_name";
 CREATE INDEX IF NOT EXISTS "ix_cashflow_statement_name" ON "cashflow_statement" (
 	"name"

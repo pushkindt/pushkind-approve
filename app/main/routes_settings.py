@@ -62,6 +62,7 @@ def ShowSettings():
                 user.hub_id = current_user.hub_id
                 user.role = user_form.role.data
                 user.note = user_form.note.data
+                user.birthday = user_form.birthday.data
             else:
                 user = current_user
 
@@ -168,7 +169,8 @@ def DownloadUsers():
         'Сумма согласованных заявок пользователя',
         'Согласовал заявок',
         'Должен согласовать заявок',
-        'Номер для согласования'
+        'Номер для согласования',
+        'День рождения'
     ], start=1):
         ws.cell(1, i).value = header
 
@@ -182,6 +184,7 @@ def DownloadUsers():
         ws.cell(i, 7).value = user.note
         ws.cell(i, 8).value = user.last_seen
         ws.cell(i, 9).value = user.registered
+        ws.cell(i, 15).value = user.birthday
 
         # Orders which user is initiative for
         orders = Order.query.filter_by(
