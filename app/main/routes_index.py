@@ -229,6 +229,7 @@ def SaveOrders():
         ws['J1'] = 'Статья БДДС'
         ws['K1'] = 'Кем согласована'
         ws['L1'] = 'Ждём согласования'
+        ws['M1'] = 'Категории'
 
         for i, order in enumerate(orders, start=2):
             ws.cell(row=i, column=1, value=order.id)
@@ -244,6 +245,7 @@ def SaveOrders():
             ws.cell(row=i, column=10, value=order.cashflow_statement.name if order.cashflow_statement is not None else '')
             ws.cell(row=i, column=11, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is True]))
             ws.cell(row=i, column=12, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is False]))
+            ws.cell(row=i, column=13, value=', '.join([cat.name for cat in order.categories]))
 
         data = save_virtual_workbook(wb)
         return Response(data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={'Content-Disposition': 'attachment;filename=export.xlsx'})
