@@ -13,9 +13,9 @@
                 <span class="d-sm-none fw-bold">Объект:</span>
                 {{ limit.site.name or '' }}
             </div>
-            <div class="col-sm overflow-hidden">
+            <div class="col-sm overflow-hidden {% if limit.current > limit.value %}text-danger{% endif %}">
                 <span class="d-sm-none fw-bold">Лимит:</span>
-                {{ '{:,.2f}'.format(limit.current) }}/{{ limit.value }}
+                {{ '{:,.2f}'.format(limit.current) }} из {{ limit.value }}
             </div>
         </div>
     </div>
