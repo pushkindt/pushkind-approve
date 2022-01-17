@@ -544,12 +544,6 @@ def GetExcelReport1C(order_id):
         flash('Не удалось получить выгрузку.')
         return redirect(url_for('main.ShowOrder', order_id=order_id))
     if excel_send is False:
-        message = 'выгружена в Excel-файл'
-        event = OrderEvent(user_id=current_user.id, order_id=order.id,
-                           type=EventType.exported, data=message, timestamp=datetime.now(tz=timezone.utc))
-        db.session.add(event)
-        order.exported = True
-        db.session.commit()
         return Response(data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={'Content-Disposition': 'attachment;filename=pushkind_{}.xlsx'.format(order.id)})
     else:
         app_data = AppSettings.query.filter_by(
