@@ -5,7 +5,7 @@ from app.models import UserRoles, Order, OrderEvent, EventType
 from flask import render_template, request
 from app.main.utils import ecwid_required, role_forbidden
 from datetime import datetime as dt
-from app.utils import GetFilterTimestamps
+from app.utils import get_filter_timestamps
 
 '''
 ################################################################################
@@ -19,7 +19,7 @@ Responibility page
 @role_forbidden([UserRoles.default])
 @ecwid_required
 def ShowHistory():
-    dates = GetFilterTimestamps()
+    dates = get_filter_timestamps()
     filter_from = request.args.get('from', default=dates['recently'], type=int)
     dates['сегодня'] = dates.pop('daily')
     dates['неделя'] = dates.pop('weekly')

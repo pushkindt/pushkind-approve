@@ -35,6 +35,11 @@
 						</select>
 					</div>
 				</div>
+				<div class="d-none" id="limits">
+					{% for limit in limits %}
+						{% include '_limit.html' %}
+					{% endfor %}
+				</div>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" disabled id="siteProjectDismiss">Продолжить</button>
@@ -62,7 +67,7 @@
 
 {% endblock %}
 {% block scripts %}
-<script data-cfasync="false" type="text/javascript" src="https://app.shopsettings.com/script.js?{{current_user.hub.id}}&data_platform=code&data_date=2020-10-28" charset="utf-8"></script>
+<script data-cfasync="false" type="text/javascript" src="{{config['ECWID_JS_URL']}}?{{current_user.hub.id}}&data_platform=code&data_date=2020-10-28" charset="utf-8"></script>
 <script>
 	xProductBrowser("categoriesPerRow=3", "views=grid(20,3) list(60) table(60)", "categoryView=grid", "searchView=list", "id=my-store-{{current_user.hub.id}}");
 	$(document).ready(function () {
@@ -96,6 +101,11 @@
 						for (j = 0; j < loc["sites"].length; j++) {
 							sitesList.append($("<option>").text(loc["sites"][j]["name"]));
 						}
+						$("#limits").removeClass("d-none");
+						$(".limit").filter(function () {
+							let show = $(this).data("project") == loc["id"];
+							$(this).toggle(show);
+						});
 						break;
 					}
 				}
@@ -103,7 +113,7 @@
 			});
 			$("#siteSelect").change(function () {
 				let val = $(this).val();
-				Ecwid.Cart.setOrderComments(JSON.stringify({ 'object': val, 'comment': '', 'budget': '', 'cashflow': '' }));
+				Ecwid.Cart.setOrderComments(JSON.stringify({ 'object': val }));
 				$(this).removeClass("border-danger");
 				$("#siteProjectDismiss").prop("disabled", false);
 			});

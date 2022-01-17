@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from app.main import bp
 from app.models import User, UserRoles, Ecwid, OrderApproval, OrderEvent, EventType, OrderStatus
 from app.models import Project, Category, Order, OrderCategory, Site, AppSettings, OrderPosition
-from app.models import IncomeStatement, CashflowStatement
+from app.models import IncomeStatement, CashflowStatement, OrderLimit
 from flask import render_template, redirect, url_for, flash, Response, request
 from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, InitiativeForm
 from app.main.forms import ApproverForm, SplitOrderForm
@@ -188,6 +188,8 @@ def SplitOrder(order_id):
 
         Order.UpdateOrdersPositions(current_user.hub_id)
 
+        OrderLimit.update_current(current_user.hub_id)
+
         flash(message_flash)
             
     else:
@@ -233,10 +235,18 @@ def DuplicateOrder(order_id):
                        type=EventType.duplicated, data=message, timestamp=datetime.now(tz=timezone.utc))
     db.session.add(event)
     db.session.commit()
-    flash(f'Заявка успешно клонирована. Номер новой заявки {new_order.id}. Вы перемещены в новую заявку.')
 
     Order.UpdateOrdersPositions(current_user.hub_id)
+
+    if order.project_id is not None and order.cashflow_id is not None:
+        OrderLimit.update_current(
+            current_user.hub_id,
+            project_id=order.project_id,
+            cashflow_id=order.cashflow_id
+        )
     
+    flash(f'Заявка успешно клонирована. Номер новой заявки {new_order.id}. Вы перемещены в новую заявку.')
+
     SendEmailNotification('new', new_order)
 
     return redirect(url_for('main.ShowOrder', order_id=order_id))
@@ -304,8 +314,17 @@ def SaveQuantity(order_id):
 
         flag_modified(order, 'products')
 
-        flash('Позиция {} была изменена.'.format(product['sku']))
         db.session.commit()
+
+        if order.project_id is not None and order.cashflow_id is not None:
+            OrderLimit.update_current(
+                current_user.hub_id,
+                project_id=order.project_id,
+                cashflow_id=order.cashflow_id
+            )
+
+        flash('Позиция {} была изменена.'.format(product['sku']))
+
     else:
         for error in form.product_id.errors + form.product_quantity.errors + form.product_measurement.errors:
             flash(error)
@@ -682,7 +701,16 @@ def SaveStatements(order_id):
                                type=EventType.cashflow_statement, data=message, timestamp=datetime.now(tz=timezone.utc))
             db.session.add(event)
         db.session.commit()
+
+        if order.project_id is not None and order.cashflow_id is not None:
+            OrderLimit.update_current(
+                current_user.hub_id,
+                project_id=order.project_id,
+                cashflow_id=order.cashflow_id
+            )
+
         flash('Статьи БДДР и БДДС успешно сохранены.')
+
     else:
         for error in form.income_statement.errors + form.cashflow_statement.errors:
             flash(error)
@@ -730,6 +758,12 @@ def SaveParameters(order_id):
             form.categories.data), Category.hub_id == current_user.hub_id).all()
         db.session.commit()
         Order.UpdateOrdersPositions(current_user.hub_id, order_id)
+        if order.project_id is not None and order.cashflow_id is not None:
+            OrderLimit.update_current(
+                current_user.hub_id,
+                project_id=order.project_id,
+                cashflow_id=order.cashflow_id
+            )
         flash('Параметры заявки успешно сохранены.')
     else:
         for error in form.project.errors + form.site.errors + form.categories.errors:
@@ -749,8 +783,13 @@ def LeaveComment(order_id):
     if form.validate_on_submit():
         stripped = form.comment.data.strip()
         if len(stripped) > 0:
-            comment = OrderEvent(user_id=current_user.id, order_id=order_id,
-                                 type=EventType.commented, data=stripped, timestamp=datetime.now(tz=timezone.utc))
+            comment = OrderEvent(
+                user_id=current_user.id,
+                order_id=order_id,
+                type=EventType.commented,
+                data=stripped,
+                timestamp=datetime.now(tz=timezone.utc)
+            )
             db.session.add(comment)
             flash('Комментарий успешно добавлен.')
         else:
@@ -796,23 +835,28 @@ def ProcessHubOrder(order_id):
             result = store.SetStoreOrder(template)
             got_orders[store.name] = result['id']
         except EcwidAPIException as e:
-            flash('Не удалось перезаказать товары у {}.'.format(store.name))
+            flash(f'Не удалось перезаказать товары у {store.name}.')
         template['items'] = items
 
     if len(got_orders) > 0:
         message = ', '.join(
-            f'{vendor} (#{order_id})' for vendor, order_id in got_orders.items())
+            f'{vendor} (#{order_id})' for vendor, order_id in got_orders.items()
+        )
 
-        referer = current_user.name if current_user.name else current_user.email
-        event = OrderEvent(user_id=current_user.id, order_id=order_id,
-                           type=EventType.purchased, data=message, timestamp=datetime.now(tz=timezone.utc))
+        event = OrderEvent(
+            user_id=current_user.id,
+            order_id=order_id,
+            type=EventType.purchased,
+            data=message,
+            timestamp=datetime.now(tz=timezone.utc)
+        )
 
         order.purchased = True
 
         db.session.add(event)
         db.session.commit()
 
-        flash('Заявка была отправлена поставщикам: {}'.format(message))
+        flash(f'Заявка была отправлена поставщикам: {message}')
     else:
         flash('Не удалось перезаказать данные товары у зарегистрованных поставщиков.')
 

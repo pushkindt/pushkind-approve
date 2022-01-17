@@ -14,7 +14,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
 from json.decoder import JSONDecodeError
 from sqlalchemy.sql import expression
-from app.utils import GetFilterTimestamps
+from app.utils import get_filter_timestamps
 
 
 class EventType(enum.IntEnum):
@@ -391,6 +391,7 @@ class Order(db.Model):
     purchased = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
     exported = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
     dealdone = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    over_limit = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
     categories = db.relationship('Category', secondary='order_category')
     events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='order')
     positions = db.relationship('Position', secondary='order_position')
@@ -596,6 +597,7 @@ class OrderLimitsIntervals(enum.IntEnum):
     monthly = 2
     quarterly = 3
     annually = 4
+    all_time = 5
 
     def __str__(self):
         pretty = [
@@ -603,7 +605,8 @@ class OrderLimitsIntervals(enum.IntEnum):
             'Неделя',
             'Месяц',
             'Квартал',
-            'Год'
+            'Год',
+            'Всё время'
         ]
         return pretty[self.value]
 
@@ -614,7 +617,7 @@ class OrderLimit(db.Model):
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
     value = db.Column(db.Float, nullable=False, default=0.0, server_default='0.0')
     current = db.Column(db.Float, nullable=False, default=0.0, server_default='0.0')
-    site_id = db.Column(db.Integer, db.ForeignKey('site.id', ondelete='CASCADE'), nullable=True)
+    cashflow_id = db.Column(db.Integer, db.ForeignKey('cashflow_statement.id', ondelete='CASCADE'), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id', ondelete='CASCADE'), nullable=False)
     interval = db.Column(
         db.Enum(OrderLimitsIntervals),
@@ -623,17 +626,24 @@ class OrderLimit(db.Model):
         default=OrderLimitsIntervals.monthly,
         server_default='monthly'
     )
-    site = db.relationship('Site')
+    cashflow_statement = db.relationship('CashflowStatement')
     project = db.relationship('Project')
 
     @classmethod
-    def update_current(cls, hub_id):
-        limits = OrderLimit.query.filter_by(hub_id=hub_id).all()
-        filters = GetFilterTimestamps()
+    def update_current(cls, hub_id, project_id = None, cashflow_id=None):
+        limits = OrderLimit.query.filter_by(hub_id=hub_id)
+
+        if project_id is not None and cashflow_id is not None:
+            limits = limits.filter_by(
+                project_id=project_id,
+                cashflow_id=cashflow_id
+            )
+
+        limits = limits.all()
+
+        filters = get_filter_timestamps()
         for limit in limits:
-            result = db.session.query(func.sum(Order.total).label('current'))
-            result = result.select_from(Order)
-            
+            result = Order.query
 
             if limit.interval == OrderLimitsIntervals.daily:
                 result = result.filter(Order.create_timestamp > filters['daily'])
@@ -646,13 +656,13 @@ class OrderLimit(db.Model):
             elif limit.interval == OrderLimitsIntervals.annually:
                 result = result.filter(Order.create_timestamp > filters['annually'])
 
-            if limit.site is not None:
-                result.filter(Order.site_id == limit.site_id)
-            else:
-                result = result.join(Site)
-                result = result.filter(Site.project_id == limit.project_id)
-            result = result.first()
-            limit.current = result.current if result.current is not None else 0.0
+            result = result.filter(Order.cashflow_id == limit.cashflow_id)
+            result = result.join(Site)
+            result = result.filter(Site.project_id == limit.project_id)
+            result = result.order_by(Order.create_timestamp.desc()).all()
+            limit.current = sum([o.total for o in result])
+            if limit.current > limit.value and len(result) > 0:
+                result[0].over_limit = True
 
         db.session.commit()
         return

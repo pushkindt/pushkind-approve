@@ -4,7 +4,7 @@ from app.main import bp
 from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval
 from flask import render_template, flash, request, redirect, url_for, Response
 from app.main.utils import ecwid_required, role_forbidden, role_required, SendEmailNotification, GetNewOrderNumber
-from app.utils import GetFilterTimestamps
+from app.utils import get_filter_timestamps
 from datetime import datetime, timezone
 from app.main.forms import MergeOrdersForm, SaveOrdersForm
 from openpyxl import Workbook
@@ -24,7 +24,7 @@ Index page
 @ecwid_required
 def ShowIndex():
 
-    dates = GetFilterTimestamps()
+    dates = get_filter_timestamps()
     filter_from = request.args.get('from', default=dates['recently'], type=int)
 
     dates['сегодня'] = dates.pop('daily')

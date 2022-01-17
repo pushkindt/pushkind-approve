@@ -1,26 +1,29 @@
 {% if order.children | length == 1 %}
-	<span class="badge bg-white text-muted border fw-normal">&sum; {{ order.child_id }}</span>
+	<span class="badge bg-white text-muted border fw-normal" title="Объединена">&sum; {{ order.child_id }}</span>
 {% elif order.children | length > 1 %}
 	<span class="badge bg-white text-muted border fw-normal">Разделена</span>
 {% else %}
 	{% if order['status'].name == 'new' %}
-		<span class="badge bg-white text-secondary border fw-normal">{{ order.status }}</span>
+		<span class="badge bg-white text-secondary border fw-normal" title="Статус">{{ order.status }}</span>
 	{% elif order['status'].name == 'partly_approved' %}
-		<span class="badge bg-{{order['status'].color()}} fw-normal">
+		<span class="badge bg-{{order['status'].color()}} fw-normal" title="Согласовали">
 			{{ order.approvals|selectattr('approved')|list|length }}
 			из
 			{{ order.approvals|length }}
 		</span>
 	{% else %}
-		<span class="badge bg-{{order['status'].color()}} fw-normal">{{ order.status }}</span>
+		<span class="badge bg-{{order['status'].color()}} fw-normal" title="Статус">{{ order.status }}</span>
+	{% endif %}
+	{% if order.over_limit %}
+		<span class="badge bg-danger text-dark border fw-normal" title="Превышен лимит"><i class="bi bi-bar-chart-fill"></i></span>
 	{% endif %}
 	{% if order.purchased %}
-		<span class="badge bg-white text-dark border fw-normal"><i class="bi bi-envelope"></i></span>
+		<span class="badge bg-white text-dark border fw-normal" title="Отправлена поставщику"><i class="bi bi-envelope"></i></span>
 	{% endif %}
 	{% if order.exported %}
-		<span class="badge bg-white text-dark border fw-normal">1C</span>
+		<span class="badge bg-white text-dark border fw-normal" title="Отправлена в 1С">1C</span>
 	{% endif %}
 	{% if order.dealdone %}
-		<span class="badge bg-white text-dark border fw-normal">законтрактовано</span>
+		<span class="badge bg-white text-dark border fw-normal" title="законтрактовано">законтрактовано</span>
 	{% endif %}
 {% endif %}

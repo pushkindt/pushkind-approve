@@ -3,7 +3,7 @@ echo "Starting fake ecwid server:"
 
 tests/ecwid/venv/bin/python3 tests/ecwid/app.py &
 FLASK_PID=$!
-export REST_URL=http://127.0.0.1:5000/api/v3
+export REST_URL=http://127.0.0.1:8000/api/v3
 DATABASE_FILE=test.db
 export DATABASE_URL=file:$DATABASE_FILE
 

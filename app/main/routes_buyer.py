@@ -1,7 +1,7 @@
 from app import db
 from flask_login import login_required, current_user
 from app.main import bp
-from app.models import UserRoles, Project
+from app.models import UserRoles, Project, OrderLimit
 from flask import render_template
 from app.main.utils import role_required
 
@@ -15,4 +15,5 @@ def ShowEcwid():
         projects = projects.filter_by(enabled=True)
     projects = projects.filter_by(hub_id=current_user.hub_id)
     projects = projects.order_by(Project.name).all()
-    return render_template('buyer.html', projects=projects)
+    limits = OrderLimit.query.filter_by(hub_id=current_user.hub_id).all()
+    return render_template('buyer.html', projects=projects, limits=limits)

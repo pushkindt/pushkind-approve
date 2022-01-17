@@ -2,6 +2,8 @@
 
 {% block content %}
 
+{% set show_remove_limit = current_user.role.name in ['admin', 'purchaser'] %}
+
 <div class="container">
 	<div class="row justify-content-center">
 		<div class="col-md-8">
@@ -45,9 +47,9 @@
                 </div>
             </div>
             <div class="row mb-3">
-                {{ form.site.label(class_='col-md-2 col-form-label') }}
+                {{ form.cashflow.label(class_='col-md-2 col-form-label') }}
                 <div class="col-md-10">
-                    {{ form.site(class_='form-select') }}
+                    {{ form.cashflow(class_='form-select') }}
                 </div>
             </div>
             <div class="row mb-3">
@@ -71,16 +73,18 @@
                         Проект
                     </div>
                     <div class="col overflow-hidden">
-                        Объект
+                        БДДС
                     </div>
                     <div class="col overflow-hidden">
                         Лимит
                     </div>
                 </div>
             </div>
-            <div class="col-auto overflow-hidden">
-                Удалить
-            </div>
+            {% if show_remove_limit %}
+                <div class="col-auto overflow-hidden">
+                    Удалить
+                </div>
+            {% endif %}
         </div>
         {% for limit in limits %}
             {% include '_limit.html' %}
@@ -94,44 +98,13 @@
 <script>
     $(document).ready(function () {
 
-        var projects = [{% for project in projects %}{{ project| safe }},{% endfor %}];
-
-        $("#site option[value='0']").prop("disabled", true);
-
 		$("#limitFilter").on("keyup", function () {
 			let value = $(this).val().toLowerCase();
-			$(".limits").filter(function () {
+			$(".limit").filter(function () {
 				let show = $(this).text().toLowerCase().indexOf(value) > -1;
 				$(this).toggle(show);
 			});
 		});
-
-        $("#project").change(function () {
-            let val = Number($(this).val());
-            let sitesList = $("#site");
-            sitesList.empty();
-            let defaultSite = $("<option>").text("Выберите объект...");
-            defaultSite.prop("disabled", true);
-            defaultSite.prop("selected", true);
-            defaultSite.val(0);
-            sitesList.append(defaultSite);
-
-            for (let i = 0; i < projects.length; i++) {
-                let proj = projects[i];
-                if (proj["id"] === val) {
-                    for (j = 0; j < proj["sites"].length; j++) {
-                        let siteOption = $("<option>").text(proj["sites"][j]["name"])
-                        siteOption.val(proj["sites"][j]["id"]);
-                        sitesList.append(siteOption);
-                    }
-                    break;
-                }
-            }
-
-        });
-
-        $("#project").trigger("change");
-
     });
 </script>
 

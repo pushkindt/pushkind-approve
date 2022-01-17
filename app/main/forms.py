@@ -285,9 +285,9 @@ class AddLimitForm(FlaskForm):
         validators=[DataRequired(message='Проект - обязательное поле.')],
         coerce=int
     )
-    site = SelectField(
-        'Объект (необязательно)',
-        validators=[Optional()],
+    cashflow = SelectField(
+        'БДДС',
+        validators=[DataRequired(message='БДДС - обязательное поле.')],
         coerce=int
     )
     submit = SubmitField('Создать')

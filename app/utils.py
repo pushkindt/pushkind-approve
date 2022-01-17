@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-def GetFilterTimestamps():
+def get_filter_timestamps():
     now = datetime.now(tz=timezone.utc)
     today = datetime(now.year, now.month, now.day)
     week = today - timedelta(days=today.weekday())
@@ -14,6 +14,6 @@ def GetFilterTimestamps():
         'monthly': int(month.timestamp()),
         'recently': int(recently.timestamp()),
         'quarterly': int(quarter.timestamp()),
-        'annually': int(year.timestamp())
+        'annually': int(year.timestamp()),
     }
     return dates
