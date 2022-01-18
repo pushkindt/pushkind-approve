@@ -18,8 +18,8 @@
 				<h5 class="modal-title" id="siteProjectModalLabel">Проект и объект</h5>
 			</div>
 			<div class="modal-body">
-				<div class="row my-1">
-					<div class="col-sm">
+				<div class="row">
+					<div class="col-sm my-1">
 						<select class="form-select border-danger" id="projectSelect">
 							<option value="" disabled selected>Выберите проект...</option>
 							{% for project in projects %}
@@ -27,10 +27,13 @@
 							{% endfor %}
 						</select>
 					</div>
-					<div class="col-sm">
+					<div class="col-sm my-1">
 						<select class="form-select border-danger" id="siteSelect">
 							<option value="" disabled selected>Выберите объект...</option>
 						</select>
+					</div>
+					<div class="col-sm-auto my-1">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" disabled id="siteProjectDismiss">Продолжить</button>
 					</div>
 				</div>
 				<div class="alert alert-warning my-1 d-none" role="alert" id="limitAlert">
@@ -69,9 +72,6 @@
 						{% include '_limit.html' %}
 					{% endfor %}
 				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" disabled id="siteProjectDismiss">Продолжить</button>
 			</div>
 		</div>
 	</div>
