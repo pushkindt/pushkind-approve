@@ -47,8 +47,8 @@
 								{% include 'navigation.html' %}
 								<span class="navbar-text">
 									<a tabindex="0" role="button" data-bs-toggle="popover" data-bs-trigger="focus"
-										title="{{current_user.name}}" data-bs-html="true"
-										data-bs-content="{{current_user.role}}<br>{{current_user.email}}<br><a href='{{url_for('auth.PerformLogout')}}'>выйти</a>">
+										title="{{current_user.name or ''}}" data-bs-html="true"
+										data-bs-content="{{current_user.role}}<br>{{current_user.email}}<br><a href='{{url_for('auth.logout')}}'>выйти</a>">
 										<img class="person rounded-circle" src="{{ url_for('static', filename='person.png') }}"
 											alt="Person">
 									</a>

@@ -7,9 +7,11 @@
 			<a class="nav-link {% if request.endpoint == 'main.ShowEcwid' %} active {% endif %}" href="{{ url_for('main.ShowEcwid') }}">Заказать</a>
 		</li>
 	{% endif %}
-	<li class="nav-item">
-		<a class="nav-link {% if request.endpoint == 'main.ShowLimits' %} active {% endif %}" href="{{ url_for('main.ShowLimits') }}">Лимиты</a>
-	</li>
+	{% if current_user.role.name != 'default' %}
+		<li class="nav-item">
+			<a class="nav-link {% if request.endpoint == 'main.ShowLimits' %} active {% endif %}" href="{{ url_for('main.ShowLimits') }}">Лимиты</a>
+		</li>
+	{% endif %}
 	{% if current_user.role.name in ['admin', 'purchaser'] %}
 		<li class="nav-item">
 			<a class="nav-link {% if request.endpoint == 'main.ShowStores' %} active {% endif %}" href="{{ url_for('main.ShowStores') }}">Поставщики</a>
@@ -26,7 +28,9 @@
 	<li class="nav-item">
 		<a class="nav-link {% if request.endpoint == 'main.ShowHelp' %} active {% endif %}" href="{{ url_for('main.ShowHelp') }}">Справка</a>
 	</li>
-	<li class="nav-item">
-		<a class="nav-link {% if request.endpoint == 'main.ShowHistory' %} active {% endif %}" href="{{ url_for('main.ShowHistory') }}">История</a>
-	</li>
+	{% if current_user.role.name != 'default' %}
+		<li class="nav-item">
+			<a class="nav-link {% if request.endpoint == 'main.ShowHistory' %} active {% endif %}" href="{{ url_for('main.ShowHistory') }}">История</a>
+		</li>
+	{% endif %}
 </ul>

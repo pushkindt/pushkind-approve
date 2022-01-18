@@ -35,7 +35,7 @@
 						<div class="row mb-3">
 							<div class="col-md-6 offset-md-4">
 								{{ form.submit(class_ = 'btn btn-primary text-white') }}
-								<a href="{{ url_for('auth.PerformRegistration') }}" class="btn btn-link">
+								<a href="{{ url_for('auth.signup') }}" class="btn btn-link">
 									Регистрация
 								</a>
 							</div>
@@ -43,7 +43,7 @@
 					</form>
 				</div>
 				<div class="card-footer">
-					<a href="{{ url_for('auth.RequestPaswordReset') }}">Не помню пароль</a>
+					<a href="{{ url_for('auth.request_password_reset') }}">Не помню пароль</a>
 				</div>
 			</div>
 		</div>

@@ -1,18 +1,17 @@
-from flask import render_template, redirect, url_for, flash, request
-from app import db
-from app.auth import bp
+from datetime import datetime, timezone
+
+from flask import render_template, redirect, url_for, flash, current_app
 from flask_login import login_user, logout_user, current_user
-from werkzeug.urls import url_parse
+
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.models import User, UserRoles
-from app.auth.email import SendPasswordResetEmail, SendUserRegisteredEmail
-from flask import current_app
-
-from datetime import datetime, timezone
+from app.auth.email import send_password_reset_email, send_user_registered_email
+from app import db
+from app.auth import bp
 
 
 @bp.route('/login/', methods=['GET', 'POST'])
-def PerformLogin():
+def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.ShowIndex'))
     form = LoginForm()
@@ -21,19 +20,18 @@ def PerformLogin():
         user = User.query.filter_by(email=email).first()
         if user is None or not user.CheckPassword(form.password.data):
             flash('Некорректный логин или пароль')
-            return redirect(url_for('auth.PerformLogin'))
+            return redirect(url_for('auth.login'))
         login_user(user, remember=form.remember_me.data)
-        current_app.logger.info('{} logged'.format(user.email))
+        current_app.logger.info('%s logged', user.email)
         db.session.commit()
         return redirect(url_for('main.ShowIndex'))
-    else:
-        for error in form.email.errors + form.password.errors + form.remember_me.errors:
-            flash(error)
+    for error in form.email.errors + form.password.errors + form.remember_me.errors:
+        flash(error)
     return render_template('auth/login.html', form=form)
 
 
-@bp.route('/register/', methods=['GET', 'POST'])
-def PerformRegistration():
+@bp.route('/signup/', methods=['GET', 'POST'])
+def signup():
     if current_user.is_authenticated and current_user.role != UserRoles.admin:
         return redirect(url_for('main.ShowIndex'))
     form = RegistrationForm()
@@ -44,27 +42,25 @@ def PerformRegistration():
         user.registered = datetime.now(tz=timezone.utc)
         db.session.add(user)
         db.session.commit()
-        SendUserRegisteredEmail(user)
+        send_user_registered_email(user)
         flash('Теперь пользователь может войти.')
-        current_app.logger.info('{} registered'.format(user.email))
+        current_app.logger.info('%s registered', user.email)
         if current_user.is_authenticated and current_user.role == UserRoles.admin:
             return redirect(url_for('main.ShowSettings'))
-        else:
-            return redirect(url_for('auth.PerformLogin'))
-    else:
-        for error in form.email.errors + form.password.errors + form.password2.errors:
-            flash(error)
+        return redirect(url_for('auth.login'))
+    for error in form.email.errors + form.password.errors + form.password2.errors:
+        flash(error)
     return render_template('auth/register.html', form=form)
 
 
 @bp.route('/logout/')
-def PerformLogout():
+def logout():
     logout_user()
-    return redirect(url_for('auth.PerformLogin'))
+    return redirect(url_for('auth.login'))
 
 
 @bp.route('/request/', methods=['GET', 'POST'])
-def RequestPaswordReset():
+def request_password_reset():
     if current_user.is_authenticated:
         return redirect(url_for('main.ShowIndex'))
     form = ResetPasswordRequestForm()
@@ -72,11 +68,10 @@ def RequestPaswordReset():
         email = form.email.data.lower()
         user = User.query.filter_by(email=email).first()
         if user:
-            SendPasswordResetEmail(user)
+            send_password_reset_email(user)
             flash('На вашу электронную почту отправлен запрос на сброс пароля.')
-            return redirect(url_for('auth.PerformLogin'))
-        else:
-            flash('Такой пользователь не обнаружен.')
+            return redirect(url_for('auth.login'))
+        flash('Такой пользователь не обнаружен.')
     else:
         for error in form.email.errors:
             flash(error)
@@ -84,7 +79,7 @@ def RequestPaswordReset():
 
 
 @bp.route('/reset/<token>', methods=['GET', 'POST'])
-def ResetPassword(token):
+def reset_password(token):
     if current_user.is_authenticated:
         return redirect(url_for('main.ShowIndex'))
     user = User.VerifyPasswordResetToken(token)
@@ -95,8 +90,7 @@ def ResetPassword(token):
         user.SetPassword(form.password.data)
         db.session.commit()
         flash('Ваш пароль был изменён.')
-        return redirect(url_for('auth.PerformLogin'))
-    else:
-        for error in form.password.errors + form.password2.errors:
-            flash(error)
+        return redirect(url_for('auth.login'))
+    for error in form.password.errors + form.password2.errors:
+        flash(error)
     return render_template('auth/reset.html', form=form)
