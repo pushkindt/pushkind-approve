@@ -645,9 +645,17 @@ def SaveApproval(order_id):
                 SendEmailNotification('approved', order)
                 app_data = AppSettings.query.filter_by(hub_id = current_user.hub_id).first()
                 if app_data is not None and app_data.email_1C is not None and app_data.notify_1C is True:
-                    data = Prepare1CReport(data, date.today() + timedelta(days = 14))
+                    data = Prepare1CReport(order, date.today() + timedelta(days = 14))
                     if data is not None:
                         SendEmail1C([app_data.email_1C], order, data)
+
+            if order.project_id is not None and order.cashflow_id is not None:
+                OrderLimit.update_current(
+                    current_user.hub_id,
+                    project_id=order.project_id,
+                    cashflow_id=order.cashflow_id
+                )
+
             elif order.status == OrderStatus.not_approved:
                 SendEmailNotification('disapproved', order)
         

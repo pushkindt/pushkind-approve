@@ -12,27 +12,56 @@
 
 
 <div class="modal fade" id="siteProjectModal" tabindex="-1" aria-labelledby="siteProjectModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="siteProjectModalLabel">Проект и объект</h5>
 			</div>
 			<div class="modal-body">
 				<div class="row my-1">
-					<div class="col">
-						<select class="form-control border-danger" id="projectSelect">
+					<div class="col-sm">
+						<select class="form-select border-danger" id="projectSelect">
 							<option value="" disabled selected>Выберите проект...</option>
 							{% for project in projects %}
 								<option value="{{ project.id }}">{{ project.name }}</option>
 							{% endfor %}
 						</select>
 					</div>
-				</div>
-				<div class="row my-1">
-					<div class="col">
-						<select class="form-control border-danger" id="siteSelect">
+					<div class="col-sm">
+						<select class="form-select border-danger" id="siteSelect">
 							<option value="" disabled selected>Выберите объект...</option>
 						</select>
+					</div>
+				</div>
+				<div class="alert alert-warning my-1 d-none" role="alert" id="limitAlert">
+					Внимание! Для выбранного проекта сумма ранее полученных заявок
+					по некоторым статьям бюджета превысила 95% от лимита.
+					Вы можете продолжить создание заявки, но учтите возможность её
+					отклонения на этапе согласования. Возможно необходимо инициировать
+					увеличение бюджета.
+				</div>
+				<div class="row d-none d-sm-flex fw-bold">
+					<div class="col">
+						<div class="row">
+							<div class="col overflow-hidden">
+								Проект
+							</div>
+							<div class="col overflow-hidden">
+								БДДС
+							</div>
+							<div class="col overflow-hidden">
+								Интервал
+							</div>
+							<div class="col overflow-hidden">
+								Лимит
+							</div>
+							<div class="col overflow-hidden">
+								Сумма
+							</div>
+							<div class="col overflow-hidden">
+								Остаток
+							</div>
+						</div>
 					</div>
 				</div>
 				<div class="d-none" id="limits">
@@ -95,6 +124,8 @@
 				defaultSite.prop("selected", true);
 				sitesList.append(defaultSite);
 
+				let show_limit_alert = false;
+
 				for (let i = 0; i < projects.length; i++) {
 					loc = projects[i];
 					if (loc["id"] === val) {
@@ -105,11 +136,16 @@
 						$(".limit").filter(function () {
 							let show = $(this).data("project") == loc["id"];
 							$(this).toggle(show);
+							if (show)
+								show_limit_alert |= $(this).data("overlimit");
 						});
 						break;
 					}
 				}
-
+				if (show_limit_alert)
+					$("#limitAlert").removeClass("d-none");
+				else
+					$("#limitAlert").addClass("d-none");
 			});
 			$("#siteSelect").change(function () {
 				let val = $(this).val();

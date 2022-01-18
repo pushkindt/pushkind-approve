@@ -643,26 +643,28 @@ class OrderLimit(db.Model):
 
         filters = get_filter_timestamps()
         for limit in limits:
-            result = Order.query
+            orders = Order.query
 
             if limit.interval == OrderLimitsIntervals.daily:
-                result = result.filter(Order.create_timestamp > filters['daily'])
+                orders = orders.filter(Order.create_timestamp > filters['daily'])
             elif limit.interval == OrderLimitsIntervals.weekly:
-                result = result.filter(Order.create_timestamp > filters['weekly'])
+                orders = orders.filter(Order.create_timestamp > filters['weekly'])
             elif limit.interval == OrderLimitsIntervals.monthly:
-                result = result.filter(Order.create_timestamp > filters['monthly'])
+                orders = orders.filter(Order.create_timestamp > filters['monthly'])
             elif limit.interval == OrderLimitsIntervals.quarterly:
-                result = result.filter(Order.create_timestamp > filters['quarterly'])
+                orders = orders.filter(Order.create_timestamp > filters['quarterly'])
             elif limit.interval == OrderLimitsIntervals.annually:
-                result = result.filter(Order.create_timestamp > filters['annually'])
+                orders = orders.filter(Order.create_timestamp > filters['annually'])
 
-            result = result.filter(Order.cashflow_id == limit.cashflow_id)
-            result = result.join(Site)
-            result = result.filter(Site.project_id == limit.project_id)
-            result = result.order_by(Order.create_timestamp.desc()).all()
-            limit.current = sum([o.total for o in result])
-            if limit.current > limit.value and len(result) > 0:
-                result[0].over_limit = True
+            orders = orders.filter(Order.cashflow_id == limit.cashflow_id)
+            orders = orders.join(Site)
+            orders = orders.filter(Site.project_id == limit.project_id).all()
+            limit.current = sum(
+                o.total for o in orders if o.status == OrderStatus.approved
+            )
+            if limit.current > 0.95 * limit.value:
+                for order in orders:
+                    order.over_limit = not (order.status == OrderStatus.approved)
 
         db.session.commit()
         return
