@@ -39,35 +39,35 @@
 				<div class="alert alert-warning my-1 d-none" role="alert" id="limitAlert">
 					Внимание! Для выбранного проекта сумма ранее полученных заявок
 					по некоторым статьям бюджета превысила 95% от лимита.
-					Вы можете продолжить создание заявки, но учтите возможность её
+					Вы можете продолжить создание заявки, но учтите риск её
 					отклонения на этапе согласования. Возможно необходимо инициировать
 					увеличение бюджета.
 				</div>
-				<div class="row d-none d-sm-flex fw-bold">
-					<div class="col">
-						<div class="row">
-							<div class="col overflow-hidden">
-								Проект
-							</div>
-							<div class="col overflow-hidden">
-								БДДС
-							</div>
-							<div class="col overflow-hidden">
-								Интервал
-							</div>
-							<div class="col overflow-hidden">
-								Лимит
-							</div>
-							<div class="col overflow-hidden">
-								Сумма
-							</div>
-							<div class="col overflow-hidden">
-								Остаток
+				<div class="d-none" id="limits">
+					<div class="row d-none d-sm-flex fw-bold">
+						<div class="col">
+							<div class="row">
+								<div class="col overflow-hidden">
+									Проект
+								</div>
+								<div class="col overflow-hidden">
+									БДДС
+								</div>
+								<div class="col overflow-hidden">
+									Интервал
+								</div>
+								<div class="col overflow-hidden">
+									Лимит
+								</div>
+								<div class="col overflow-hidden">
+									Сумма
+								</div>
+								<div class="col overflow-hidden">
+									Остаток
+								</div>
 							</div>
 						</div>
 					</div>
-				</div>
-				<div class="d-none" id="limits">
 					{% for limit in limits %}
 						{% include '_limit.html' %}
 					{% endfor %}
@@ -117,6 +117,8 @@
 				ec.order.referer_id = decodeEntities($("#projectSelect option:selected").text());
 				$(this).removeClass("border-danger");
 				$("#siteProjectDismiss").prop("disabled", true);
+				$("#siteProjectDismiss").addClass("btn-secondary");
+				$("#siteProjectDismiss").removeClass("btn-primary");
 				let sitesList = $("#siteSelect");
 				sitesList.empty();
 				let defaultSite = $("<option>").text("Выберите объект...");
@@ -139,6 +141,8 @@
 							if (show)
 								show_limit_alert |= $(this).data("overlimit");
 						});
+						if ($(".limit:visible").length == 0)
+							$("#limits").addClass("d-none");
 						break;
 					}
 				}
@@ -152,6 +156,8 @@
 				Ecwid.Cart.setOrderComments(JSON.stringify({ 'object': val }));
 				$(this).removeClass("border-danger");
 				$("#siteProjectDismiss").prop("disabled", false);
+				$("#siteProjectDismiss").removeClass("btn-secondary");
+				$("#siteProjectDismiss").addClass("btn-primary");
 			});
 		});
 
