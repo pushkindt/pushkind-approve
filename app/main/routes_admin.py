@@ -6,7 +6,8 @@ from app import db
 from app.main import bp
 from app.models import UserRoles, Ecwid, Category, Project, Site
 from app.models import AppSettings, IncomeStatement, CashflowStatement
-from app.main.forms import EcwidSettingsForm, AddProjectForm, AddSiteForm, EditProjectForm, EditSiteForm
+from app.main.forms import EcwidSettingsForm, AddProjectForm, AddSiteForm, EditProjectForm
+from app.main.forms import EditSiteForm
 from app.main.forms import Notify1CSettingsForm, CategoryResponsibilityForm
 from app.main.forms import AddIncomeForm, AddCashflowForm, EditIncomeForm, EditCashflowForm
 from app.ecwid import EcwidAPIException
@@ -43,19 +44,25 @@ def ShowAdminPage():
     categories = Category.query.filter(
         Category.hub_id == current_user.hub_id).all()
 
-    incomes = IncomeStatement.query.filter(IncomeStatement.hub_id == current_user.hub_id).order_by(IncomeStatement.name).all()
-    cashflows = CashflowStatement.query.filter(CashflowStatement.hub_id == current_user.hub_id).order_by(CashflowStatement.name).all()
-    
+    incomes = IncomeStatement.query.filter(IncomeStatement.hub_id == current_user.hub_id)
+    incomes = incomes.order_by(IncomeStatement.name).all()
+    cashflows = CashflowStatement.query.filter(CashflowStatement.hub_id == current_user.hub_id)
+    cashflows = cashflows.order_by(CashflowStatement.name).all()
+
     forms['category'].income_statement.choices = [(i.id, i.name) for i in incomes]
     forms['category'].cashflow_statement.choices = [(c.id, c.name) for c in cashflows]
     forms['category'].income_statement.choices.append((0, 'Выберите БДР...'))
     forms['category'].cashflow_statement.choices.append((0, 'Выберите БДДС...'))
     forms['category'].process()
 
-    return render_template('admin.html',
-                           forms=forms,
-                           projects=projects, categories=categories,
-                           incomes=incomes, cashflows=cashflows)
+    return render_template(
+        'admin.html',
+        forms=forms,
+        projects=projects,
+        categories=categories,
+        incomes=incomes,
+        cashflows=cashflows
+    )
 
 
 @bp.route('/admin/1C/', methods=['POST'])
@@ -93,7 +100,7 @@ def ConfigureEcwid():
         current_user.hub.id = ecwid_form.store_id.data
         try:
             current_user.hub.GetStoreToken()
-            profile = current_user.hub.GetStoreProfile()
+            current_user.hub.GetStoreProfile()
             db.session.commit()
             flash('Данные успешно сохранены.')
         except (SQLAlchemyError, EcwidAPIException):
@@ -101,12 +108,15 @@ def ConfigureEcwid():
             flash('Ошибка API или магазин уже используется.')
             flash('Возможно неверные настройки?')
         return redirect(url_for('main.ShowAdminPage'))
-    else:
-        errors_list = role_form.user_id.errors + role_form.role.errors + role_form.about_user.full_name.errors + \
-            role_form.about_user.phone.errors + role_form.about_user.categories.errors + \
-            role_form.about_user.projects.errors
-        for error in errors_list:
-            flash(error)
+
+    errors_list = (
+        ecwid_form.partners_key.errors +
+        ecwid_form.client_id.errors +
+        ecwid_form.client_secret.errors +
+        ecwid_form.store_id.errors
+    )
+    for error in errors_list:
+        flash(error)
     return redirect(url_for('main.ShowAdminPage'))
 
 
@@ -116,8 +126,14 @@ def ConfigureEcwid():
 def SaveCategoryResponsibility():
     form = CategoryResponsibilityForm()
     print(form)
-    incomes = IncomeStatement.query.filter_by(id=form.income_statement.data, hub_id=current_user.hub_id).all()
-    cashflows = CashflowStatement.query.filter_by(id=form.cashflow_statement.data, hub_id=current_user.hub_id).all()
+    incomes = IncomeStatement.query.filter_by(
+        id=form.income_statement.data,
+        hub_id=current_user.hub_id
+    ).all()
+    cashflows = CashflowStatement.query.filter_by(
+        id=form.cashflow_statement.data,
+        hub_id=current_user.hub_id
+    ).all()
     form.income_statement.choices = [(i.id, i.name) for i in incomes]
     form.cashflow_statement.choices = [(c.id, c.name) for c in cashflows]
     if form.validate_on_submit():
@@ -133,8 +149,16 @@ def SaveCategoryResponsibility():
             category.cashflow_id = form.cashflow_statement.data
             db.session.commit()
     else:
-        for error in form.category_id.errors + form.responsible.errors + form.functional_budget.errors + form.income_statement.errors + form.cashflow_statement.errors + form.code.errors:
-            flash(error) 
+        errors = (
+            form.category_id.errors +
+            form.responsible.errors +
+            form.functional_budget.errors +
+            form.income_statement.errors +
+            form.cashflow_statement.errors +
+            form.code.errors
+        )
+        for error in errors:
+            flash(error)
     return redirect(url_for('main.ShowAdminPage'))
 
 
@@ -184,11 +208,11 @@ def AddSite():
     return redirect(url_for('main.ShowAdminPage'))
 
 
-@bp.route('/admin/project/remove/<int:id>')
+@bp.route('/admin/project/remove/<int:project_id>')
 @login_required
 @role_required([UserRoles.admin])
-def RemoveProject(id):
-    project = Project.query.filter_by(id=id).first()
+def RemoveProject(project_id):
+    project = Project.query.filter_by(id=project_id).first()
     if project is not None:
         db.session.delete(project)
         db.session.commit()
@@ -224,11 +248,11 @@ def EditProject():
     return redirect(url_for('main.ShowAdminPage'))
 
 
-@bp.route('/admin/site/remove/<int:id>')
+@bp.route('/admin/site/remove/<int:site_id>')
 @login_required
 @role_required([UserRoles.admin])
-def RemoveSite(id):
-    site = Site.query.filter_by(id=id).first()
+def RemoveSite(site_id):
+    site = Site.query.filter_by(id=site_id).first()
     if site is not None:
         db.session.delete(site)
         db.session.commit()
@@ -270,7 +294,10 @@ def AddIncome():
     form = AddIncomeForm()
     if form.validate_on_submit():
         income_name = form.income_name.data.strip()
-        income = IncomeStatement.query.filter_by(name=income_name, hub_id=current_user.hub_id).first()
+        income = IncomeStatement.query.filter_by(
+            name=income_name,
+            hub_id=current_user.hub_id
+        ).first()
         if income is None:
             income = IncomeStatement(name=income_name, hub_id=current_user.hub_id)
             db.session.add(income)
@@ -282,8 +309,8 @@ def AddIncome():
         for error in form.income_name.errors:
             flash(error)
     return redirect(url_for('main.ShowAdminPage'))
-    
-    
+
+
 @bp.route('/admin/cashflow/add', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin])
@@ -291,7 +318,10 @@ def AddCashflow():
     form = AddCashflowForm()
     if form.validate_on_submit():
         cashflow_name = form.cashflow_name.data.strip()
-        cashflow = CashflowStatement.query.filter_by(name=cashflow_name, hub_id=current_user.hub_id).first()
+        cashflow = CashflowStatement.query.filter_by(
+            name=cashflow_name,
+            hub_id=current_user.hub_id
+        ).first()
         if cashflow is None:
             cashflow = CashflowStatement(name=cashflow_name, hub_id=current_user.hub_id)
             db.session.add(cashflow)
@@ -303,13 +333,13 @@ def AddCashflow():
         for error in form.cashflow_name.errors:
             flash(error)
     return redirect(url_for('main.ShowAdminPage'))
-    
-    
-@bp.route('/admin/income/remove/<int:id>')
+
+
+@bp.route('/admin/income/remove/<int:income_id>')
 @login_required
 @role_required([UserRoles.admin])
-def RemoveIncome(id):
-    income = IncomeStatement.query.filter_by(id=id).first()
+def RemoveIncome(income_id):
+    income = IncomeStatement.query.filter_by(id=income_id).first()
     if income is not None:
         db.session.delete(income)
         db.session.commit()
@@ -317,13 +347,13 @@ def RemoveIncome(id):
     else:
         flash('Такой БДР не существует.')
     return redirect(url_for('main.ShowAdminPage'))
-    
-    
-@bp.route('/admin/cashflow/remove/<int:id>')
+
+
+@bp.route('/admin/cashflow/remove/<int:cashflow_id>')
 @login_required
 @role_required([UserRoles.admin])
-def RemoveCashflow(id):
-    cashflow = CashflowStatement.query.filter_by(id=id).first()
+def RemoveCashflow(cashflow_id):
+    cashflow = CashflowStatement.query.filter_by(id=cashflow_id).first()
     if cashflow is not None:
         db.session.delete(cashflow)
         db.session.commit()
@@ -331,8 +361,8 @@ def RemoveCashflow(id):
     else:
         flash('Такой БДДС не существует.')
     return redirect(url_for('main.ShowAdminPage'))
-    
-    
+
+
 @bp.route('/admin/income/edit/', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin])
@@ -342,7 +372,10 @@ def EditIncome():
         income = IncomeStatement.query.filter_by(id=form.income_id.data).first()
         if income is not None:
             income_name = form.income_name.data.strip()
-            existed = IncomeStatement.query.filter_by(name=income_name, hub_id=current_user.hub_id).first()
+            existed = IncomeStatement.query.filter_by(
+                name=income_name,
+                hub_id=current_user.hub_id
+            ).first()
             if existed is None or existed.id == income.id:
                 income.name = income_name
                 db.session.commit()
@@ -355,8 +388,8 @@ def EditIncome():
         for error in form.income_id.errors + form.income_name.errors:
             flash(error)
     return redirect(url_for('main.ShowAdminPage'))
-    
-    
+
+
 @bp.route('/admin/cashflow/edit/', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin])
@@ -366,7 +399,10 @@ def EditCashflow():
         cashflow = CashflowStatement.query.filter_by(id=form.cashflow_id.data).first()
         if cashflow is not None:
             cashflow_name = form.cashflow_name.data.strip()
-            existed = CashflowStatement.query.filter_by(name=cashflow_name, hub_id=current_user.hub_id).first()
+            existed = CashflowStatement.query.filter_by(
+                name=cashflow_name,
+                hub_id=current_user.hub_id
+            ).first()
             if existed is None or existed.id == cashflow.id:
                 cashflow.name = cashflow_name
                 db.session.commit()

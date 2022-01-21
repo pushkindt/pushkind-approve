@@ -1,11 +1,11 @@
 import enum
 import json
-import jwt
 from time import time
 from datetime import datetime, timezone
 from json.decoder import JSONDecodeError
 from hashlib import md5
 
+import jwt
 from flask import current_app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -123,8 +123,8 @@ class OrderStatus(enum.IntEnum):
 
 
 @login.user_loader
-def load_user(id):
-    return User.query.get(int(id))
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 
 class Ecwid(db.Model, EcwidAPI):
@@ -144,8 +144,7 @@ class JsonType(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is not None:
             return json.dumps(value)
-        else:
-            return None
+        return None
 
     def process_result_value(self, value, dialect):
         try:
@@ -168,13 +167,37 @@ class User(UserMixin, db.Model):
     )
     name = db.Column(db.String(128), nullable=True)
     phone = db.Column(db.String(128), nullable=True)
-    position_id = db.Column(db.Integer, db.ForeignKey('position.id', ondelete='SET NULL'), nullable=True)
+    position_id = db.Column(
+        db.Integer,
+        db.ForeignKey('position.id', ondelete='SET NULL'),
+        nullable=True
+    )
     location = db.Column(db.String(128), nullable=True)
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=True)
-    email_new = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
-    email_modified = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
-    email_disapproved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
-    email_approved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+    email_new = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+        server_default=expression.true()
+    )
+    email_modified = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+        server_default=expression.true()
+    )
+    email_disapproved = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+        server_default=expression.true()
+    )
+    email_approved = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+        server_default=expression.true()
+    )
     last_seen = db.Column(db.DateTime, nullable=True)
     note = db.Column(db.String(), nullable=True)
     registered = db.Column(db.DateTime, nullable=True)
@@ -182,7 +205,11 @@ class User(UserMixin, db.Model):
     categories = db.relationship('Category', secondary='user_category', backref='users')
     projects = db.relationship('Project', secondary='user_project', backref='users')
     events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='user')
-    approvals = db.relationship('OrderApproval', cascade='all, delete-orphan', backref='user', lazy='dynamic')
+    approvals = db.relationship(
+        'OrderApproval',
+        cascade='all, delete-orphan',
+        backref='user', lazy='dynamic'
+    )
     orders = db.relationship('Order', backref='initiative')
 
     @property
@@ -210,7 +237,7 @@ class User(UserMixin, db.Model):
 
     def GetAvatar(self, size):
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
-        return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(digest, size)
+        return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
 
     def to_dict(self):
         data = {'id': self.id,
@@ -233,18 +260,26 @@ class User(UserMixin, db.Model):
         return data
 
     def GetPasswordResetToken(self, expires_in=600):
-        return jwt.encode({'reset_password': self.id, 'exp': time() + expires_in},
-                          current_app.config['SECRET_KEY'],
-                          algorithm='HS256').decode('utf-8')
+        return jwt.encode(
+            {
+                'reset_password': self.id,
+                'exp': time() + expires_in
+            },
+            current_app.config['SECRET_KEY'],
+            algorithm='HS256'
+        ).decode('utf-8')
 
     @staticmethod
     def VerifyPasswordResetToken(token):
         try:
-            id = jwt.decode(token, current_app.config['SECRET_KEY'],
-                            algorithms=['HS256'])['reset_password']
+            user_id = jwt.decode(
+                token,
+                current_app.config['SECRET_KEY'],
+                algorithms=['HS256']
+            )['reset_password']
         except:
-            return
-        return User.query.get(id)
+            return None
+        return User.query.get(user_id)
 
 
 class Position(db.Model):
@@ -273,7 +308,11 @@ class Category(db.Model):
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
     responsible = db.Column(db.String(128), nullable=True)
     functional_budget = db.Column(db.String(128), nullable=True)
-    income_id = db.Column(db.Integer, db.ForeignKey('income_statement.id', ondelete='SET NULL'), nullable=True)  # БДР
+    income_id = db.Column(  # БДР
+        db.Integer,
+        db.ForeignKey('income_statement.id', ondelete='SET NULL'),
+        nullable=True
+    )
     cashflow_id = db.Column(  # БДДС
         db.Integer,
         db.ForeignKey('cashflow_statement.id', ondelete='SET NULL'),
@@ -309,7 +348,12 @@ class Category(db.Model):
 class AppSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False, unique=True)
-    notify_1C = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+    notify_1C = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+        server_default=expression.true()
+    )
     email_1C = db.Column(db.String(128), nullable=True)
 
 
@@ -381,19 +425,48 @@ class Order(db.Model):
     create_timestamp = db.Column(db.Integer, nullable=False)
     products = db.Column(JsonType(), nullable=False)
     total = db.Column(db.Float, nullable=False)
-    status = db.Column(db.Enum(OrderStatus), nullable=False, default=OrderStatus.new, server_default='new')
+    status = db.Column(
+        db.Enum(OrderStatus),
+        nullable=False,
+        default=OrderStatus.new,
+        server_default='new'
+    )
     site_id = db.Column(db.Integer, db.ForeignKey('site.id', ondelete='SET NULL'), nullable=True)
-    income_id = db.Column(db.Integer, db.ForeignKey('income_statement.id', ondelete='SET NULL'), nullable=True)  # БДР
+    income_id = db.Column(  # БДР
+        db.Integer,
+        db.ForeignKey('income_statement.id', ondelete='SET NULL'),
+        nullable=True
+    )
     cashflow_id = db.Column(  # БДДС
         db.Integer,
         db.ForeignKey('cashflow_statement.id', ondelete='SET NULL'),
         nullable=True
     )
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
-    purchased = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
-    exported = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
-    dealdone = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
-    over_limit = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    purchased = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False,
+        server_default=expression.false()
+    )
+    exported = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False,
+        server_default=expression.false()
+    )
+    dealdone = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False,
+        server_default=expression.false()
+    )
+    over_limit = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False,
+        server_default=expression.false()
+    )
     categories = db.relationship('Category', secondary='order_category')
     events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='order')
     positions = db.relationship('Position', secondary='order_position')
@@ -423,7 +496,7 @@ class Order(db.Model):
             OrderApproval.query
             .filter(
                 OrderApproval.order_id == self.id,
-                OrderApproval.product_id != None
+                OrderApproval.product_id.is_not(None)
             )
             .all()
         )
@@ -437,7 +510,6 @@ class Order(db.Model):
     def categories_list(self):
         return [c.id for c in self.categories]
 
-    @property
     def validators(self, position_id=None):
         if self.site is None or len(self.categories) == 0:
             return []
@@ -456,7 +528,7 @@ class Order(db.Model):
         return validators.all()
 
     @property
-    def purchasers(self, position_id=None):
+    def purchasers(self):
         if self.site is None or len(self.categories) == 0:
             return []
         purchasers = (
@@ -488,7 +560,8 @@ class Order(db.Model):
             # Orders with no site and categories binding have no responsible positions
             if order.site is None or len(order.categories) == 0:
                 continue
-            # Query positions which have validators with the same project and categories bindings as the order
+            # Query positions which have validators with the same project
+            # and categories bindings as the order
             # Update the order's responsible positions
             order.positions = (
                 Position.query
@@ -506,7 +579,7 @@ class Order(db.Model):
             for position in order.approvals:
                 approval = (
                     OrderApproval.query
-                    .filter(OrderApproval.order_id == order.id, OrderApproval.product_id == None)
+                    .filter(OrderApproval.order_id == order.id, OrderApproval.product_id.is_(None))
                     .join(User)
                     .filter(User.position_id == position.position_id)
                     .first()
@@ -547,7 +620,12 @@ class OrderPosition(db.Model):
     __tablename__ = 'order_position'
     order_id = db.Column(db.String(128), db.ForeignKey('order.id'), primary_key=True)
     position_id = db.Column(db.Integer, db.ForeignKey('position.id'), primary_key=True)
-    approved = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    approved = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False,
+        server_default=expression.false()
+    )
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True)
     timestamp = db.Column(db.DateTime, nullable=True)
     user = db.relationship('User')
@@ -619,8 +697,16 @@ class OrderLimit(db.Model):
     hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
     value = db.Column(db.Float, nullable=False, default=0.0, server_default='0.0')
     current = db.Column(db.Float, nullable=False, default=0.0, server_default='0.0')
-    cashflow_id = db.Column(db.Integer, db.ForeignKey('cashflow_statement.id', ondelete='CASCADE'), nullable=False)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id', ondelete='CASCADE'), nullable=False)
+    cashflow_id = db.Column(
+        db.Integer,
+        db.ForeignKey('cashflow_statement.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    project_id = db.Column(
+        db.Integer,
+        db.ForeignKey('project.id', ondelete='CASCADE'),
+        nullable=False
+    )
     interval = db.Column(
         db.Enum(OrderLimitsIntervals),
         index=True,
@@ -666,8 +752,6 @@ class OrderLimit(db.Model):
             )
             if limit.current > 0.95 * limit.value:
                 for order in orders:
-                    order.over_limit = not (order.status == OrderStatus.approved)
+                    order.over_limit = order.status != OrderStatus.approved
 
         db.session.commit()
-        return
-

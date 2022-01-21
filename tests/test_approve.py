@@ -21,6 +21,20 @@ class TestConfig:
     MAIL_PASSWORD = ''
     MOMENT_DEFAULT_FORMAT = 'DD.MM.YYYY HH:mm'
 
+def login(client, username, password):
+    return client.post(
+        '/login',
+        data=dict(
+            username=username,
+            password=password
+        ),
+        follow_redirects=True
+    )
+
+
+def logout(client):
+    return client.get('/logout', follow_redirects=True)
+
 @pytest.fixture
 def client():
     db_fd, db_path = tempfile.mkstemp()
@@ -30,3 +44,10 @@ def client():
         yield client
     os.close(db_fd)
     os.unlink(db_path)
+
+
+def test_empty_db(client):
+    """Start with a blank database."""
+
+    rv = client.get('/')
+    assert b'Redirecting...' in rv.data

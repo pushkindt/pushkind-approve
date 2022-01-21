@@ -8,12 +8,10 @@ from app.models import UserRoles, Order, OrderEvent, EventType
 from app.main.utils import ecwid_required, role_forbidden
 from app.utils import get_filter_timestamps
 
-'''
-################################################################################
-Responibility page
-################################################################################
-'''
 
+################################################################################
+# Responibility page
+################################################################################
 
 @bp.route('/history/', methods=['GET', 'POST'])
 @login_required
@@ -29,5 +27,12 @@ def ShowHistory():
     dates['год'] = dates.pop('annually')
     dates['недавно'] = dates.pop('recently')
     events = OrderEvent.query.filter(OrderEvent.timestamp > dt.fromtimestamp(filter_from))
-    events = events.join(Order).filter_by(hub_id=current_user.hub_id).order_by(OrderEvent.timestamp.desc()).all()
-    return render_template('history.html', events=events, EventType=EventType, filter_from=filter_from, dates=dates)
+    events = events.join(Order).filter_by(hub_id=current_user.hub_id)
+    events = events.order_by(OrderEvent.timestamp.desc()).all()
+    return render_template(
+        'history.html',
+        events=events,
+        EventType=EventType,
+        filter_from=filter_from,
+        dates=dates
+    )

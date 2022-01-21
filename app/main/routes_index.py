@@ -7,18 +7,17 @@ from openpyxl.writer.excel import save_virtual_workbook
 
 from app import db
 from app.main import bp
-from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval
-from app.main.utils import ecwid_required, role_forbidden, role_required, SendEmailNotification, GetNewOrderNumber
+from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site
+from app.models import Category, OrderCategory, OrderApproval
+from app.main.utils import ecwid_required, role_forbidden, role_required
+from app.main.utils import SendEmailNotification, GetNewOrderNumber
 from app.utils import get_filter_timestamps
 from app.main.forms import MergeOrdersForm, SaveOrdersForm
 
 
-'''
 ################################################################################
-Index page
+# Index page
 ################################################################################
-'''
-
 
 @bp.route('/')
 @bp.route('/index/')
@@ -36,9 +35,6 @@ def ShowIndex():
     dates['квартал'] = dates.pop('quarterly')
     dates['год'] = dates.pop('annually')
     dates['недавно'] = dates.pop('recently')
-
-    filter_project = request.args.get('project', default=None, type=int)
-    filter_category = request.args.get('category', default=None, type=int)
 
     if current_user.role in [UserRoles.purchaser, UserRoles.validator]:
         filter_focus = request.args.get('focus', default=None, type=str)
@@ -69,7 +65,9 @@ def ShowIndex():
             orders = orders.filter(~Order.children.any())
 
         orders = orders.join(OrderCategory)
-        orders = orders.filter(OrderCategory.category_id.in_([cat.id for cat in current_user.categories]))
+        orders = orders.filter(
+            OrderCategory.category_id.in_([cat.id for cat in current_user.categories])
+        )
         orders = orders.join(Site)
         orders = orders.filter(Site.project_id.in_([p.id for p in current_user.projects]))
 
@@ -104,9 +102,10 @@ def MergeOrders():
             flash('Некорректный список заявок.')
             return redirect(url_for('main.ShowIndex'))
 
-        orders = list()
+        orders = []
 
-        orders = Order.query.filter(Order.id.in_(orders_list), Order.hub_id == current_user.hub_id).filter(~Order.children.any())
+        orders = Order.query.filter(Order.id.in_(orders_list), Order.hub_id == current_user.hub_id)
+        orders = orders.filter(~Order.children.any())
         if current_user.role == UserRoles.initiative:
             orders = orders.filter(Order.initiative_id == current_user.id)
 
@@ -123,17 +122,19 @@ def MergeOrders():
                 flash('Нельзя объединять заявки с разными объектами, БДДР или БДДС.')
                 return redirect(url_for('main.ShowIndex'))
 
-        products = dict()
-        categories = list()
+        products = {}
+        categories = []
         for order in orders:
             categories += [cat.id for cat in order.categories]
             for product in order.products:
                 if 'selectedOptions' in product and len(product['selectedOptions']) > 1:
-                    product_id = product['sku'] + ''.join(sorted([k['value'] for k in product['selectedOptions']]))
+                    product_id = product['sku'] + ''.join(sorted(
+                        [k['value'] for k in product['selectedOptions']]
+                    ))
                 else:
                     product_id = product['sku']
                 if product_id not in products:
-                    products[product_id] = dict()
+                    products[product_id] = {}
                     products[product_id]['sku'] = product['sku']
                     products[product_id]['id'] = abs(hash(product_id))
                     products[product_id]['name'] = product['name']
@@ -149,7 +150,7 @@ def MergeOrders():
                         products[product_id]['category'] = product['category']
                 else:
                     products[product_id]['quantity'] += product['quantity']
-                    
+
         order_id = GetNewOrderNumber()
         order = Order(id = order_id)
         db.session.add(order)
@@ -157,30 +158,43 @@ def MergeOrders():
 
         now = datetime.now(tz=timezone.utc)
 
-        order.products = [products[sku] for sku in products.keys()]
+        order.products = [product for _,product in products.items()]
         order.total = sum([product['quantity']*product['price'] for product in order.products])
         order.income_id = orders[0].income_id
         order.cashflow_id = orders[0].cashflow_id
         order.site_id = orders[0].site_id
         order.status = OrderStatus.new
         order.create_timestamp = int(now.timestamp())
-      
+
         order.hub_id = current_user.hub_id
-        order.categories = Category.query.filter(Category.id.in_(categories), Category.hub_id == current_user.hub_id).all()
+        order.categories = Category.query.filter(
+            Category.id.in_(categories),
+            Category.hub_id == current_user.hub_id
+        ).all()
 
         order.parents = orders
 
         message = 'заявка объединена из заявок'
 
         for o in orders:
-            message += ' {}'.format(o.id)
-            message2 = 'заявка объединена в заявку {}'.format(order.id)
-            event = OrderEvent(user_id=current_user.id, order_id=o.id, type=EventType.merged,
-                               data=message2, timestamp=datetime.now(tz=timezone.utc))
+            message += f' {o.id}'
+            message2 = f'заявка объединена в заявку {order.id}'
+            event = OrderEvent(
+                user_id=current_user.id,
+                order_id=o.id,
+                type=EventType.merged,
+                data=message2,
+                timestamp=datetime.now(tz=timezone.utc)
+            )
             db.session.add(event)
 
-        event = OrderEvent(user_id=current_user.id, order_id=order.id,
-                           type=EventType.merged, data=message, timestamp=datetime.now(tz=timezone.utc))
+        event = OrderEvent(
+            user_id=current_user.id,
+            order_id=order.id,
+            type=EventType.merged,
+            data=message,
+            timestamp=datetime.now(tz=timezone.utc)
+        )
         db.session.add(event)
 
         db.session.commit()
@@ -188,7 +202,7 @@ def MergeOrders():
         Order.UpdateOrdersPositions(current_user.hub_id)
 
         flash(f'Объединено заявок: {len(orders)}. Идентификатор новой заявки {order.id}')
-            
+
         SendEmailNotification('new', order)
     else:
         for error in form.orders.errors:
@@ -208,7 +222,7 @@ def SaveOrders():
             flash('Некорректный список заявок.')
             return redirect(url_for('main.ShowIndex'))
 
-        orders = list()
+        orders = []
 
         orders = Order.query.filter(Order.id.in_(orders_list), Order.hub_id == current_user.hub_id)
         if current_user.role == UserRoles.initiative:
@@ -244,15 +258,39 @@ def SaveOrders():
             ws.cell(row=i, column=6, value=len(order.products))
             ws.cell(row=i, column=7, value=str(order.status))
             ws.cell(row=i, column=8, value=order.initiative.name)
-            ws.cell(row=i, column=9, value=order.income_statement.name if order.income_statement is not None else '')
-            ws.cell(row=i, column=10, value=order.cashflow_statement.name if order.cashflow_statement is not None else '')
-            ws.cell(row=i, column=11, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is True]))
-            ws.cell(row=i, column=12, value=', '.join([pos.position.name for pos in order.approvals if pos.approved is False]))
+            ws.cell(
+                row=i,
+                column=9,
+                value=order.income_statement.name if order.income_statement is not None else ''
+            )
+            ws.cell(
+                row=i,
+                column=10,
+                value=order.cashflow_statement.name if order.cashflow_statement is not None else ''
+            )
+            ws.cell(
+                row=i,
+                column=11,
+                value=', '.join(
+                    pos.position.name for pos in order.approvals if pos.approved is True
+                )
+            )
+            ws.cell(
+                row=i,
+                column=12,
+                value=', '.join(
+                    pos.position.name for pos in order.approvals if pos.approved is False
+                )
+            )
             ws.cell(row=i, column=13, value=', '.join([cat.name for cat in order.categories]))
 
         data = save_virtual_workbook(wb)
-        return Response(data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={'Content-Disposition': 'attachment;filename=export.xlsx'})
-    else:
-        for error in form.orders.errors:
-            flash(error)
+        return Response(
+            data,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={'Content-Disposition': 'attachment;filename=export.xlsx'}
+        )
+
+    for error in form.orders.errors:
+        flash(error)
     return redirect(url_for('main.ShowIndex'))

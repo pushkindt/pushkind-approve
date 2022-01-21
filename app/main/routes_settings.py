@@ -13,15 +13,13 @@ from app.main.forms import UserRolesForm, UserSettingsForm
 from app.main.utils import role_required, role_forbidden
 
 
-'''
 ################################################################################
-Settings page
+# Settings page
 ################################################################################
-'''
 
 
 def RemoveExcessivePosition():
-    positions = Position.query.filter(Position.users == None).all()
+    positions = Position.query.filter(Position.users.is_(None)).all()
     for position in positions:
         position.approvals = []
         db.session.delete(position)
@@ -67,7 +65,10 @@ def ShowSettings():
             else:
                 user = current_user
 
-            if user_form.about_user.position.data is not None and user_form.about_user.position.data != '':
+            if (
+                user_form.about_user.position.data is not None and
+                user_form.about_user.position.data != ''
+            ):
                 position_name = user_form.about_user.position.data.strip().lower()
                 position = Position.query.filter_by(
                     name=position_name, hub_id=user.hub_id).first()
@@ -78,12 +79,18 @@ def ShowSettings():
                 user.position = None
 
             if user.role in [UserRoles.purchaser, UserRoles.validator]:
-                if user_form.about_user.categories.data is not None and len(user_form.about_user.categories.data) > 0:
+                if (
+                    user_form.about_user.categories.data is not None and
+                    len(user_form.about_user.categories.data) > 0
+                ):
                     user.categories = Category.query.filter(
                         Category.id.in_(user_form.about_user.categories.data)).all()
                 else:
                     user.categories = []
-                if user_form.about_user.projects.data is not None and len(user_form.about_user.projects.data) > 0:
+                if (
+                    user_form.about_user.projects.data is not None and
+                    len(user_form.about_user.projects.data) > 0
+                ):
                     user.projects = Project.query.filter(
                         Project.id.in_(user_form.about_user.projects.data)).all()
                 else:
@@ -108,18 +115,23 @@ def ShowSettings():
 
             flash('Данные успешно сохранены.')
         else:
-            errors_list = user_form.about_user.full_name.errors + user_form.about_user.phone.errors + \
-                user_form.about_user.categories.errors + user_form.about_user.projects.errors
-            for error in errors_list:
+            errors = (
+                user_form.about_user.full_name.errors +
+                user_form.about_user.phone.errors +
+                user_form.about_user.categories.errors +
+                user_form.about_user.projects.errors
+            )
+            for error in errors:
                 flash(error)
         return redirect(url_for('main.ShowSettings'))
 
     if current_user.role == UserRoles.admin:
-        users = User.query.filter(or_(User.role == UserRoles.default, User.hub_id ==
-                                  current_user.hub_id)).order_by(User.name, User.email).all()
+        users = User.query.filter(
+            or_(User.role == UserRoles.default, User.hub_id == current_user.hub_id)
+        )
+        users = users.order_by(User.name, User.email).all()
         return render_template('settings.html', user_form=user_form, users=users)
-    else:
-        return render_template('settings.html', user_form=user_form)
+    return render_template('settings.html', user_form=user_form)
 
 
 @bp.route('/users/remove/<int:user_id>')
@@ -178,7 +190,7 @@ def DownloadUsers():
     for i, user in enumerate(users, start=2):
         ws.cell(i, 1).value = user.name
         ws.cell(i, 2).value = user.phone
-        ws.cell(i, 3).value = user.email        
+        ws.cell(i, 3).value = user.email
         ws.cell(i, 4).value = user.position.name if user.position is not None else ''
         ws.cell(i, 5).value = user.location
         ws.cell(i, 6).value = user.role
@@ -219,7 +231,9 @@ def DownloadUsers():
             orders = orders.join(OrderPosition)
             orders = orders.filter_by(position_id=user.position_id)
             orders = orders.join(OrderCategory)
-            orders = orders.filter(OrderCategory.category_id.in_([cat.id for cat in user.categories]))
+            orders = orders.filter(
+                OrderCategory.category_id.in_([cat.id for cat in user.categories])
+            )
             orders = orders.join(Site)
             orders = orders.filter(Site.project_id.in_([p.id for p in user.projects]))
             orders = orders.all()
@@ -228,6 +242,9 @@ def DownloadUsers():
         else:
             ws.cell(i, 12).value = 0
             ws.cell(i, 13).value = 0
-    
     data = save_virtual_workbook(wb)
-    return Response(data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={'Content-Disposition': 'attachment;filename=users.xlsx'})
+    return Response(
+        data,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': 'attachment;filename=users.xlsx'}
+    )

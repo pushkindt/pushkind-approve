@@ -8,14 +8,12 @@ from app.main import bp
 from app.models import UserRoles, Ecwid, Order
 from app.main.forms import AddStoreForm
 from app.ecwid import EcwidAPIException
-from app.main.utils import role_required, ecwid_required, role_forbidden, role_forbidden_ajax, ecwid_required_ajax, SendEmailNotification
+from app.main.utils import role_required, ecwid_required, role_forbidden, role_forbidden_ajax
+from app.main.utils import ecwid_required_ajax, SendEmailNotification
 
-'''
 ################################################################################
-Stores page
+# Stores page
 ################################################################################
-'''
-
 
 @bp.route('/stores/', methods=['GET', 'POST'])
 @login_required
@@ -28,18 +26,37 @@ def ShowStores():
             try:
                 store_name = store_form.name.data.strip()
                 store_email = store_form.email.data.strip().lower()
-                store_id = current_user.hub.CreateStore(name=store_name, email=store_email, password=store_form.password.data, plan=store_form.plan.data,
-                                                        defaultlanguage='ru')
-                store = Ecwid(id=store_id, hub_id=current_user.hub_id, partners_key=current_user.hub.partners_key,
-                              client_id=current_user.hub.client_id, client_secret=current_user.hub.client_secret,
-                              name=store_name, email=store_email)
+                store_id = current_user.hub.CreateStore(
+                    name=store_name,
+                    email=store_email,
+                    password=store_form.password.data,
+                    plan=store_form.plan.data,
+                    defaultlanguage='ru'
+                )
+                store = Ecwid(
+                    id=store_id,
+                    hub_id=current_user.hub_id,
+                    partners_key=current_user.hub.partners_key,
+                    client_id=current_user.hub.client_id,
+                    client_secret=current_user.hub.client_secret,
+                    name=store_name,
+                    email=store_email
+                )
                 db.session.add(store)
                 store.GetStoreToken()
-                store.UpdateStoreProfile({'settings': {'storeName': store_name}, 'company': {
-                                         'companyName': store_name, 'city': 'Москва', 'countryCode': 'RU'}})
+                store.UpdateStoreProfile(
+                    {
+                        'settings': {'storeName': store_name},
+                        'company': {
+                            'companyName': store_name,
+                            'city': 'Москва',
+                            'countryCode': 'RU'
+                        }
+                    }
+                )
                 db.session.commit()
                 flash('Магазин успешно добавлен.')
-            except EcwidAPIException as e:
+            except EcwidAPIException:
                 db.session.rollback()
                 flash('Ошибка API или магазин уже используется.')
                 flash('Возможно неверные настройки?')
@@ -62,20 +79,20 @@ def RemoveStore(store_id):
         try:
             store.DeleteStore()
         except EcwidAPIException as e:
-            flash('Ошибка удаления магазина: {}'.format(e))
+            flash(f'Ошибка удаления магазина: {e}')
 
         try:
             json = current_user.hub.GetStoreProducts(keyword=store.store_id)
             products = json.get('items', [])
         except EcwidAPIException as e:
-            flash('Ошибка удаления товаров: {}'.format(e))
+            flash(f'Ошибка удаления товаров: {e}')
             products = []
 
         for product in products:
             try:
                 current_user.hub.DeleteStoreProduct(product['id'])
             except EcwidAPIException as e:
-                flash('Ошибка удаления товаров: {}'.format(e))
+                flash(f'Ошибка удаления товаров: {e}')
                 continue
         db.session.delete(store)
         db.session.commit()

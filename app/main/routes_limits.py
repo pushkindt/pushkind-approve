@@ -1,4 +1,3 @@
-from sqlalchemy.sql.functions import current_user
 from flask_login import login_required, current_user
 from flask import render_template, flash, redirect, url_for, request
 
@@ -81,9 +80,9 @@ def AddLimit():
         flash('Лимит успешно добавлен.')
     else:
         for error in (
-            form.interval.errors + 
-            form.value.errors + 
-            form.project.errors + 
+            form.interval.errors +
+            form.value.errors +
+            form.project.errors +
             form.cashflow.errors
         ):
             flash(error)
@@ -95,12 +94,12 @@ def AddLimit():
     return redirect(url_for('main.ShowLimits'))
 
 
-@bp.route('/limits/remove/<int:id>', methods=['GET'])
+@bp.route('/limits/remove/<int:limit_id>', methods=['GET'])
 @login_required
 @role_forbidden([UserRoles.default])
 @ecwid_required
-def RemoveLimit(id):
-    limit = OrderLimit.query.filter_by(hub_id=current_user.hub_id, id=id).first()
+def RemoveLimit(limit_id):
+    limit = OrderLimit.query.filter_by(hub_id=current_user.hub_id, id=limit_id).first()
     if limit is not None:
         db.session.delete(limit)
         db.session.commit()

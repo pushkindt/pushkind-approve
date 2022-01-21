@@ -12,6 +12,8 @@ venv/
 __pycache__/
 *.py[cod]
 .env
+dist/
+app.egg-info/
 
 #Flask
 app.db
