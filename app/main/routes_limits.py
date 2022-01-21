@@ -2,12 +2,12 @@ from sqlalchemy.sql.functions import current_user
 from flask_login import login_required, current_user
 from flask import render_template, flash, redirect, url_for, request
 
-from approve.app import db
-from approve.app.main import bp
-from approve.app.models import UserRoles, OrderLimit, Project, CashflowStatement
-from approve.app.models import OrderLimitsIntervals
-from approve.app.main.utils import ecwid_required, role_forbidden
-from approve.app.main.forms import AddLimitForm
+from app import db
+from app.main import bp
+from app.models import UserRoles, OrderLimit, Project, CashflowStatement
+from app.models import OrderLimitsIntervals
+from app.main.utils import ecwid_required, role_forbidden
+from app.main.forms import AddLimitForm
 
 
 @bp.route('/limits/', methods=['GET'])

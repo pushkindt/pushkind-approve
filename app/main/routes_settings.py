@@ -4,13 +4,13 @@ from sqlalchemy import or_
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
 
-from approve.app import db
-from approve.app.main import bp
-from approve.app.models import OrderApproval, OrderPosition, OrderStatus, User
-from approve.app.models import UserRoles, Category, Project, Position, Order
-from approve.app.models import OrderCategory, Site
-from approve.app.main.forms import UserRolesForm, UserSettingsForm
-from approve.app.main.utils import role_required, role_forbidden
+from app import db
+from app.main import bp
+from app.models import OrderApproval, OrderPosition, OrderStatus, User
+from app.models import UserRoles, Category, Project, Position, Order
+from app.models import OrderCategory, Site
+from app.main.forms import UserRolesForm, UserSettingsForm
+from app.main.utils import role_required, role_forbidden
 
 
 '''

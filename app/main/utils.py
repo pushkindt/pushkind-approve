@@ -4,9 +4,9 @@ from flask import current_app
 from flask_login import current_user
 from flask import render_template, flash, jsonify
 
-from approve.app import db
-from approve.app.models import Order
-from approve.app.email import SendEmail
+from app import db
+from app.models import Order
+from app.email import SendEmail
 
 
 '''

@@ -1,8 +1,9 @@
 from threading import Thread
+
 from flask import current_app
 from flask_mail import Message
 
-from approve.app import mail
+from app import mail
 
 
 def SendEmailAsync(app, msg):

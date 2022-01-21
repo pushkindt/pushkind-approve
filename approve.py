@@ -1,9 +1,9 @@
-from approve.app import create_app, db
-from approve.app.models import User, UserRoles, Ecwid, OrderApproval, OrderStatus
-from approve.app.models import UserCategory, UserProject, OrderPosition, OrderCategory
-from approve.app.models import EventType, IncomeStatement, CashflowStatement
-from approve.app.models import Category, AppSettings, OrderEvent, Project, Site, Order
-from approve.app.models import Position, OrderLimit
+from app import create_app, db
+from app.models import User, UserRoles, Ecwid, OrderApproval, OrderStatus
+from app.models import UserCategory, UserProject, OrderPosition, OrderCategory
+from app.models import EventType, IncomeStatement, CashflowStatement
+from app.models import Category, AppSettings, OrderEvent, Project, Site, Order
+from app.models import Position, OrderLimit
 
 
 application = create_app()

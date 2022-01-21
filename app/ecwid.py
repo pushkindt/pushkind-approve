@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 from requests import post, get, delete, put
 from requests.exceptions import RequestException
 
-from approve.app import db
+from app import db
 
 
 _REST_API_URL = 'https://app.ecwid.com/api/v3/{store_id}/{endpoint}'

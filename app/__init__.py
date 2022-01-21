@@ -6,11 +6,11 @@ from flask import Flask, current_app
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
-from sqlalchemy.event import listen
 from flask_mail import Mail
 from flask_moment import Moment
+from sqlalchemy.event import listen
 
-from approve.config import Config
+from config import Config
 
 
 DB_COLLATE = 'ru_RU.UTF-8'
@@ -42,16 +42,16 @@ def create_app(config_class=Config):
     mail.init_app(app)
     moment.init_app(app)
 
-    from approve.app.errors import bp as errors_bp
+    from app.errors import bp as errors_bp
     app.register_blueprint(errors_bp)
 
-    from approve.app.auth import bp as auth_bp
+    from app.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
-    from approve.app.main import bp as main_bp
+    from app.main import bp as main_bp
     app.register_blueprint(main_bp)
 
-    from approve.app.api import bp as api_bp
+    from app.api import bp as api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
 
     if app.debug is False:
@@ -79,4 +79,4 @@ def create_app(config_class=Config):
 
     return app
 
-from approve.app import models
+from app import models

@@ -1,9 +1,9 @@
 from flask_login import current_user, login_required
 from flask import render_template
 
-from approve.app.main import bp
-from approve.app.models import UserRoles, Project, Category, User, UserProject, UserCategory
-from approve.app.main.utils import ecwid_required, role_forbidden
+from app.main import bp
+from app.models import UserRoles, Project, Category, User, UserProject, UserCategory
+from app.main.utils import ecwid_required, role_forbidden
 
 '''
 ################################################################################

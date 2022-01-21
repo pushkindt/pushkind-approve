@@ -1,20 +1,22 @@
-from approve.app import db
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin
-from approve.app import login
-from hashlib import md5
-from approve.app.ecwid import EcwidAPI
 import enum
 import json
 import jwt
 from time import time
-from flask import current_app
 from datetime import datetime, timezone
+from json.decoder import JSONDecodeError
+from hashlib import md5
+
+from flask import current_app
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
-from json.decoder import JSONDecodeError
 from sqlalchemy.sql import expression
-from approve.app.utils import get_filter_timestamps
+
+from app import db
+from app import login
+from app.ecwid import EcwidAPI
+from app.utils import get_filter_timestamps
 
 
 class EventType(enum.IntEnum):

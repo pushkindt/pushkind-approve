@@ -7,15 +7,15 @@ from openpyxl import load_workbook
 from openpyxl.writer.excel import save_virtual_workbook
 from sqlalchemy.orm.attributes import flag_modified
 
-from approve.app import db
-from approve.app.main import bp
-from approve.app.models import User, UserRoles, Ecwid, OrderApproval, OrderEvent, EventType, OrderStatus
-from approve.app.models import Project, Category, Order, OrderCategory, Site, AppSettings, OrderPosition
-from approve.app.models import IncomeStatement, CashflowStatement, OrderLimit
-from approve.app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, InitiativeForm
-from approve.app.main.forms import ApproverForm, SplitOrderForm
-from approve.app.ecwid import EcwidAPIException
-from approve.app.main.utils import role_required, ecwid_required, role_forbidden, SendEmailNotification, SendEmail1C, GetNewOrderNumber
+from app import db
+from app.main import bp
+from app.models import User, UserRoles, Ecwid, OrderApproval, OrderEvent, EventType, OrderStatus
+from app.models import Project, Category, Order, OrderCategory, Site, AppSettings, OrderPosition
+from app.models import IncomeStatement, CashflowStatement, OrderLimit
+from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, InitiativeForm
+from app.main.forms import ApproverForm, SplitOrderForm
+from app.ecwid import EcwidAPIException
+from app.main.utils import role_required, ecwid_required, role_forbidden, SendEmailNotification, SendEmail1C, GetNewOrderNumber
 
 
 

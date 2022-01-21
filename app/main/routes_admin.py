@@ -2,15 +2,15 @@ from flask_login import current_user, login_required
 from flask import render_template, redirect, url_for, flash
 from sqlalchemy.exc import SQLAlchemyError
 
-from approve.app import db
-from approve.app.main import bp
-from approve.app.models import UserRoles, Ecwid, Category, Project, Site
-from approve.app.models import AppSettings, IncomeStatement, CashflowStatement
-from approve.app.main.forms import EcwidSettingsForm, AddProjectForm, AddSiteForm, EditProjectForm, EditSiteForm
-from approve.app.main.forms import Notify1CSettingsForm, CategoryResponsibilityForm
-from approve.app.main.forms import AddIncomeForm, AddCashflowForm, EditIncomeForm, EditCashflowForm
-from approve.app.ecwid import EcwidAPIException
-from approve.app.main.utils import role_required, role_forbidden
+from app import db
+from app.main import bp
+from app.models import UserRoles, Ecwid, Category, Project, Site
+from app.models import AppSettings, IncomeStatement, CashflowStatement
+from app.main.forms import EcwidSettingsForm, AddProjectForm, AddSiteForm, EditProjectForm, EditSiteForm
+from app.main.forms import Notify1CSettingsForm, CategoryResponsibilityForm
+from app.main.forms import AddIncomeForm, AddCashflowForm, EditIncomeForm, EditCashflowForm
+from app.ecwid import EcwidAPIException
+from app.main.utils import role_required, role_forbidden
 
 
 @bp.route('/admin/', methods=['GET', 'POST'])

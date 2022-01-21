@@ -3,10 +3,10 @@ from datetime import datetime as dt
 from flask import render_template, request
 from flask_login import current_user, login_required
 
-from approve.app.main import bp
-from approve.app.models import UserRoles, Order, OrderEvent, EventType
-from approve.app.main.utils import ecwid_required, role_forbidden
-from approve.app.utils import get_filter_timestamps
+from app.main import bp
+from app.models import UserRoles, Order, OrderEvent, EventType
+from app.main.utils import ecwid_required, role_forbidden
+from app.utils import get_filter_timestamps
 
 '''
 ################################################################################

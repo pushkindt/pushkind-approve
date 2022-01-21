@@ -1,9 +1,9 @@
 from flask import g
 
-from approve.app.api import bp
-from approve.app.api.auth import basic_auth
-from approve.app.api.errors import error_response
-from approve.app.models import User, UserRoles, OrderLimit
+from app.api import bp
+from app.api.auth import basic_auth
+from app.api.errors import error_response
+from app.models import User, UserRoles, OrderLimit
 
 
 @bp.route('/daily/limits', methods=['GET'])

@@ -3,12 +3,12 @@ import subprocess
 from flask_login import current_user, login_required
 from flask import render_template, redirect, url_for, flash, jsonify, request, current_app
 
-from approve.app import db
-from approve.app.main import bp
-from approve.app.models import UserRoles, Ecwid, Order
-from approve.app.main.forms import AddStoreForm
-from approve.app.ecwid import EcwidAPIException
-from approve.app.main.utils import role_required, ecwid_required, role_forbidden, role_forbidden_ajax, ecwid_required_ajax, SendEmailNotification
+from app import db
+from app.main import bp
+from app.models import UserRoles, Ecwid, Order
+from app.main.forms import AddStoreForm
+from app.ecwid import EcwidAPIException
+from app.main.utils import role_required, ecwid_required, role_forbidden, role_forbidden_ajax, ecwid_required_ajax, SendEmailNotification
 
 '''
 ################################################################################

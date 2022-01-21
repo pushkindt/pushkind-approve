@@ -6,8 +6,8 @@ from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired, Length, ValidationError, Email, InputRequired, Optional
 from wtforms.fields.html5 import DateField
 
-from approve.app.models import OrderLimitsIntervals, UserRoles
-from approve.app.main.utils import DATE_FORMAT
+from app.models import OrderLimitsIntervals, UserRoles
+from app.main.utils import DATE_FORMAT
 
 
 

@@ -3,11 +3,11 @@ from datetime import datetime, timezone
 from flask import render_template, redirect, url_for, flash, current_app
 from flask_login import login_user, logout_user, current_user
 
-from approve.app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
-from approve.app.models import User, UserRoles
-from approve.app.auth.email import send_password_reset_email, send_user_registered_email
-from approve.app import db
-from approve.app.auth import bp
+from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
+from app.models import User, UserRoles
+from app.auth.email import send_password_reset_email, send_user_registered_email
+from app import db
+from app.auth import bp
 
 
 @bp.route('/login/', methods=['GET', 'POST'])

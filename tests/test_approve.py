@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from approve.app import create_app
+from app import create_app
 
 class TestConfig:
     APPLICATION_TITLE = 'test'

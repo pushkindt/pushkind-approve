@@ -5,12 +5,12 @@ from flask_login import current_user, login_required
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
 
-from approve.app import db
-from approve.app.main import bp
-from approve.app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval
-from approve.app.main.utils import ecwid_required, role_forbidden, role_required, SendEmailNotification, GetNewOrderNumber
-from approve.app.utils import get_filter_timestamps
-from approve.app.main.forms import MergeOrdersForm, SaveOrdersForm
+from app import db
+from app.main import bp
+from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site, Category, OrderCategory, OrderApproval
+from app.main.utils import ecwid_required, role_forbidden, role_required, SendEmailNotification, GetNewOrderNumber
+from app.utils import get_filter_timestamps
+from app.main.forms import MergeOrdersForm, SaveOrdersForm
 
 
 '''

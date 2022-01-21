@@ -1,9 +1,9 @@
 from flask import render_template
 from flask_login import login_required, current_user
 
-from approve.app.main import bp
-from approve.app.models import UserRoles, Project, OrderLimit
-from approve.app.main.utils import role_required
+from app.main import bp
+from app.models import UserRoles, Project, OrderLimit
+from app.main.utils import role_required
 
 
 @bp.route('/buyer/')
