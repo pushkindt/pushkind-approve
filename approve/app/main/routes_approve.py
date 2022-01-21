@@ -191,7 +191,12 @@ def SplitOrder(order_id):
 
         Order.UpdateOrdersPositions(current_user.hub_id)
 
-        OrderLimit.update_current(current_user.hub_id)
+        if order.site is not None and order.cashflow_statement is not None:
+            OrderLimit.update_current(
+                current_user.hub_id,
+                project_id=order.site.project_id,
+                cashflow_id=order.cashflow_id
+            )
 
         flash(message_flash)
             
@@ -241,10 +246,10 @@ def DuplicateOrder(order_id):
 
     Order.UpdateOrdersPositions(current_user.hub_id)
 
-    if order.project_id is not None and order.cashflow_id is not None:
+    if order.site is not None and order.cashflow_statement is not None:
         OrderLimit.update_current(
             current_user.hub_id,
-            project_id=order.project_id,
+            project_id=order.site.project_id,
             cashflow_id=order.cashflow_id
         )
     
@@ -319,10 +324,10 @@ def SaveQuantity(order_id):
 
         db.session.commit()
 
-        if order.project_id is not None and order.cashflow_id is not None:
+        if order.site is not None and order.cashflow_statement is not None:
             OrderLimit.update_current(
                 current_user.hub_id,
-                project_id=order.project_id,
+                project_id=order.site.project_id,
                 cashflow_id=order.cashflow_id
             )
 
@@ -707,10 +712,10 @@ def SaveStatements(order_id):
             db.session.add(event)
         db.session.commit()
 
-        if order.project_id is not None and order.cashflow_id is not None:
+        if order.site is not None and order.cashflow_statement is not None:
             OrderLimit.update_current(
                 current_user.hub_id,
-                project_id=order.project_id,
+                project_id=order.site.project_id,
                 cashflow_id=order.cashflow_id
             )
 
@@ -763,10 +768,10 @@ def SaveParameters(order_id):
             form.categories.data), Category.hub_id == current_user.hub_id).all()
         db.session.commit()
         Order.UpdateOrdersPositions(current_user.hub_id, order_id)
-        if order.project_id is not None and order.cashflow_id is not None:
+        if order.site is not None and order.cashflow_statement is not None:
             OrderLimit.update_current(
                 current_user.hub_id,
-                project_id=order.project_id,
+                project_id=order.site.project_id,
                 cashflow_id=order.cashflow_id
             )
         flash('Параметры заявки успешно сохранены.')
