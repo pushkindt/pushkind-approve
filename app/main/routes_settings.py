@@ -19,7 +19,7 @@ from app.main.utils import role_required, role_forbidden
 
 
 def RemoveExcessivePosition():
-    positions = Position.query.filter(Position.users.is_(None)).all()
+    positions = Position.query.filter(Position.users == None).all()
     for position in positions:
         position.approvals = []
         db.session.delete(position)
@@ -119,8 +119,21 @@ def ShowSettings():
                 user_form.about_user.full_name.errors +
                 user_form.about_user.phone.errors +
                 user_form.about_user.categories.errors +
-                user_form.about_user.projects.errors
+                user_form.about_user.projects.errors +
+                user_form.about_user.position.errors +
+                user_form.about_user.location.errors +
+                user_form.about_user.email_new.errors +
+                user_form.about_user.email_modified.errors +
+                user_form.about_user.email_approved.errors +
+                user_form.about_user.email_disapproved.errors
             )
+            if isinstance(user_form, UserRolesForm):
+                errors += (
+                    user_form.user_id.errors +
+                    user_form.role.errors +
+                    user_form.note.errors +
+                    user_form.birthday.errors
+                )
             for error in errors:
                 flash(error)
         return redirect(url_for('main.ShowSettings'))

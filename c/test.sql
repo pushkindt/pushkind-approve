@@ -241,7 +241,6 @@ INSERT INTO "category" ("id","name","children","hub_id","responsible","functiona
 INSERT INTO "site" ("id","name","project_id","uid") VALUES (1,'name',1,'uid');
 INSERT INTO "user" ("id","email","password","role","name","phone","position_id","location","hub_id","email_new","email_modified","email_disapproved","email_approved","last_seen","note","registered") VALUES (1,'email@email.email','pbkdf2:sha256:150000$UoJZNku2$101f30eba5ae59618526af9d6db8483d7a5341a2b723ac7627aba7c040be8ec1','admin','name','phone',1,'location',1,1,1,1,1,'2021-10-29 04:43:13','note','2021-10-29 04:43:13');
 INSERT INTO "order" ("id","initiative_id","create_timestamp","products","total","status","site_id","income_id","cashflow_id","hub_id","purchased","exported","dealdone", "over_limit") VALUES ('1',1,0,'[]',1.0,'new',1,1,1,1,1,1,1,1);
-INSERT INTO "order" ("id","initiative_id","create_timestamp","products","total","status","site_id","income_id","cashflow_id","hub_id","purchased","exported","dealdone", "over_limit") VALUES ('2',1,1639980342,'[]',1.0,'new',1,1,1,1,1,1,1,1);
 INSERT INTO "user_category" ("user_id","category_id") VALUES (1,1);
 INSERT INTO "user_project" ("user_id","project_id") VALUES (1,1);
 INSERT INTO "order_approval" ("id","order_id","product_id","user_id","remark") VALUES (1,'1',NULL,1,'remark');

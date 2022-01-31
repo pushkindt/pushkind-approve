@@ -1,15 +1,15 @@
 import os
 import tempfile
+from sqlalchemy.sql import text
 
 import pytest
 
-from app import create_app
+from app import create_app, db
 
 class TestConfig:
     APPLICATION_TITLE = 'test'
     ADMIN_EMAIL = 'email@email.email'
     SECRET_KEY = 'you-will-never-guess'
-    ICU_EXTENSION_PATH = 'libsqliteicu.so'
     SQLALCHEMY_DATABASE_URI = ''
     ECWID_JS_URL = ''
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -20,26 +20,42 @@ class TestConfig:
     MAIL_USERNAME = ''
     MAIL_PASSWORD = ''
     MOMENT_DEFAULT_FORMAT = 'DD.MM.YYYY HH:mm'
+    PASSWORD = 'password'
+    WTF_CSRF_ENABLED = False
 
-def login(client, username, password):
+
+def signup(client, email, password):
     return client.post(
-        '/login',
+        '/auth/signup',
         data=dict(
-            username=username,
+            email=email,
+            password=password,
+            password2=password
+        ),
+        follow_redirects=True
+    )
+
+def login(client, email, password):
+    return client.post(
+        '/auth/login',
+        data=dict(
+            email=email,
             password=password
         ),
         follow_redirects=True
     )
 
-
 def logout(client):
-    return client.get('/logout', follow_redirects=True)
+    return client.get('/auth/logout', follow_redirects=True)
 
 @pytest.fixture
 def client():
     db_fd, db_path = tempfile.mkstemp()
     TestConfig.SQLALCHEMY_DATABASE_URI = 'sqlite:///' + db_path
     app = create_app(TestConfig)
+    app_context = app.app_context()
+    app_context.push()
+    db.create_all()
     with app.test_client() as client:
         yield client
     os.close(db_fd)
@@ -48,6 +64,23 @@ def client():
 
 def test_empty_db(client):
     """Start with a blank database."""
-
     rv = client.get('/')
     assert b'Redirecting...' in rv.data
+
+def test_auth_module(client):
+    """Make sure login and logout works."""
+
+    email = TestConfig.ADMIN_EMAIL
+    password = TestConfig.PASSWORD
+
+    rv = login(client, email, password)
+    assert 'Некорректный логин или пароль.' in rv.data.decode('utf-8')
+
+    rv = signup(client, email, password)
+    assert 'Теперь пользователь может войти.' in rv.data.decode('utf-8')
+
+    rv = login(client, email, password)
+    assert '403 FORBIDDEN' == rv.status
+
+    rv = logout(client)
+    assert 'Авторизация' in rv.data.decode('utf-8')

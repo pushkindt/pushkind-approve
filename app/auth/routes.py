@@ -19,7 +19,7 @@ def login():
         email = form.email.data.lower()
         user = User.query.filter_by(email=email).first()
         if user is None or not user.CheckPassword(form.password.data):
-            flash('Некорректный логин или пароль')
+            flash('Некорректный логин или пароль.')
             return redirect(url_for('auth.login'))
         login_user(user, remember=form.remember_me.data)
         current_app.logger.info('%s logged', user.email)

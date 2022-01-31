@@ -180,7 +180,7 @@ class UserRolesForm(FlaskForm):
     )
     about_user = FormField(UserSettings, [DataRequired()])
     note = TextAreaField('Заметка')
-    birthday = DateField('День рождения')
+    birthday = DateField('День рождения', validators=[Optional()])
     submit = SubmitField('Сохранить')
 
 

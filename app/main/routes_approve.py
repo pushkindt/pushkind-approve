@@ -4,6 +4,7 @@ from datetime import datetime, timezone, date, timedelta
 from flask import render_template, redirect, url_for, flash, Response, request
 from flask_login import current_user, login_required
 from openpyxl import load_workbook
+from openpyxl.styles import Font
 from openpyxl.writer.excel import save_virtual_workbook
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -527,6 +528,7 @@ def Prepare1CReport(order, excel_date):
         ).all()
         starting_row = 3
         wb = load_workbook(filename='template1C.xlsx')
+        wb.iso_dates = True
         ws = wb['Заявка']
         for merged_cell in ws.merged_cells.ranges:
             if merged_cell.bounds[1] >= starting_row:
@@ -587,6 +589,25 @@ def Prepare1CReport(order, excel_date):
             ws.cell(i, 31).value = product.get('price', '')
 
             ws.cell(i, 30).value = product.get('vendor', '')
+
+        i = i + 3
+        ws.cell(i, 1).value = 'Заявка #'
+        ft = Font(bold=True)
+        ws.cell(i, 1).font = ft
+        ws.cell(i, 2).value = order.id
+        ws.cell(i + 1, 1).value = "Создана"
+        ws.cell(i + 1, 1).font = ft
+        ws.cell(i + 1, 2).value = datetime.fromtimestamp(order.create_timestamp)
+        if order.status == OrderStatus.approved:
+            i = i + 2
+            ws.cell(i, 1).value = "Согласована"
+            ws.cell(i, 1).font = ft
+            for i, approval in enumerate(order.approvals, start=i):
+                if approval.approved is not True:
+                    continue
+                ws.cell(i, 2).value = datetime.fromtimestamp(order.create_timestamp)
+                ws.cell(i, 3).value = approval.user.position.name
+                ws.cell(i, 4).value = approval.user.name
         data = save_virtual_workbook(wb)
         return data
     return None

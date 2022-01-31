@@ -74,8 +74,9 @@ def create_app(config_class=Config):
         app.logger.setLevel(logging.INFO)
         app.logger.info('%s startup', __name__)
 
-    with app.app_context():
-        listen(db.engine, 'connect', load_extension)
+    if 'ICU_EXTENSION_PATH' in app.config and os.path.exists(app.config['ICU_EXTENSION_PATH']):
+        with app.app_context():
+            listen(db.engine, 'connect', load_extension)
 
     return app
 

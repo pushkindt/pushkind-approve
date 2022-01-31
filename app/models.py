@@ -496,7 +496,7 @@ class Order(db.Model):
             OrderApproval.query
             .filter(
                 OrderApproval.order_id == self.id,
-                OrderApproval.product_id.is_not(None)
+                OrderApproval.product_id != None
             )
             .all()
         )
@@ -579,7 +579,7 @@ class Order(db.Model):
             for position in order.approvals:
                 approval = (
                     OrderApproval.query
-                    .filter(OrderApproval.order_id == order.id, OrderApproval.product_id.is_(None))
+                    .filter(OrderApproval.order_id == order.id, OrderApproval.product_id == None)
                     .join(User)
                     .filter(User.position_id == position.position_id)
                     .first()
