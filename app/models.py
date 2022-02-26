@@ -488,6 +488,8 @@ class Order(db.Model):
     cashflow_statement = db.relationship('CashflowStatement')
 
     def UpdateOrderStatus(self):
+        if self.site is None or self.site.project.enabled is False:
+            return
         approved = [p.approved for p in self.approvals]
         if all(approved):
             self.status = OrderStatus.approved

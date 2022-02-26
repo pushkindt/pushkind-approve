@@ -4,7 +4,6 @@ from datetime import datetime, timezone, date, timedelta
 from flask import render_template, redirect, url_for, flash, Response, request
 from flask_login import current_user, login_required
 from openpyxl import load_workbook
-from openpyxl.styles import Font
 from openpyxl.writer.excel import save_virtual_workbook
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -431,6 +430,25 @@ def GetExcelReport1(order_id):
         c2 = ws.cell(i, 10).coordinate
         ws.cell(i, 12).value = f"={c1}*{c2}"
 
+    ws = wb['электронное согласование']
+    i = 3
+    ws.cell(i, 3).value = order.id
+    i += 1
+    ws.cell(i, 3).value = datetime.fromtimestamp(
+        order.create_timestamp,
+        tz = timezone(timedelta(hours=3), name='Europe/Moscow')
+    )
+    if order.status == OrderStatus.approved:
+        i += 1
+        for i, approval in enumerate(order.approvals, start=i):
+            if approval.approved is not True:
+                continue
+            ws.cell(i, 3).value = approval.timestamp.astimezone(
+                timezone(timedelta(hours=3), name='Europe/Moscow')
+            )
+            ws.cell(i, 4).value = approval.user.position.name
+            ws.cell(i, 5).value = approval.user.name
+
     data = save_virtual_workbook(wb)
     return Response(
         data,
@@ -467,6 +485,24 @@ def GetExcelReport2(order_id):
         ws.cell(i, 5).value = product['quantity']
         ws.cell(i, 6).value = product['price'] * product['quantity']
         i += 1
+
+    i = 3
+    ws.cell(i, 9).value = order.id
+    i += 1
+    ws.cell(i, 9).value = datetime.fromtimestamp(
+        order.create_timestamp,
+        tz = timezone(timedelta(hours=3), name='Europe/Moscow')
+    )
+    if order.status == OrderStatus.approved:
+        i += 1
+        for i, approval in enumerate(order.approvals, start=i):
+            if approval.approved is not True:
+                continue
+            ws.cell(i, 9).value = approval.timestamp.astimezone(
+                timezone(timedelta(hours=3), name='Europe/Moscow')
+            )
+            ws.cell(i, 10).value = approval.user.position.name
+            ws.cell(i, 11).value = approval.user.name
 
     data = save_virtual_workbook(wb)
     return Response(
@@ -590,24 +626,23 @@ def Prepare1CReport(order, excel_date):
 
             ws.cell(i, 30).value = product.get('vendor', '')
 
-        i = i + 3
-        ws.cell(i, 1).value = 'Заявка #'
-        ft = Font(bold=True)
-        ws.cell(i, 1).font = ft
-        ws.cell(i, 2).value = order.id
-        ws.cell(i + 1, 1).value = "Создана"
-        ws.cell(i + 1, 1).font = ft
-        ws.cell(i + 1, 2).value = datetime.fromtimestamp(order.create_timestamp)
+        i += 6
+        ws.cell(i, 20).value = order.id
+        i += 1
+        ws.cell(i, 20).value = datetime.fromtimestamp(
+            order.create_timestamp,
+            tz = timezone(timedelta(hours=3), name='Europe/Moscow')
+        )
         if order.status == OrderStatus.approved:
-            i = i + 2
-            ws.cell(i, 1).value = "Согласована"
-            ws.cell(i, 1).font = ft
+            i += 1
             for i, approval in enumerate(order.approvals, start=i):
                 if approval.approved is not True:
                     continue
-                ws.cell(i, 2).value = datetime.fromtimestamp(order.create_timestamp)
-                ws.cell(i, 3).value = approval.user.position.name
-                ws.cell(i, 4).value = approval.user.name
+                ws.cell(i, 20).value = approval.timestamp.astimezone(
+                    timezone(timedelta(hours=3), name='Europe/Moscow')
+                )
+                ws.cell(i, 21).value = approval.user.position.name
+                ws.cell(i, 22).value = approval.user.name
         data = save_virtual_workbook(wb)
         return data
     return None
