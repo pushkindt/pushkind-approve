@@ -800,7 +800,7 @@ def SaveApproval(order_id):
                     )
                     db.session.add(product_approval)
                 product_approval.remark = message
-                message = f"к позиции \"{product['name']}\" " + message
+                message = f"к позиции \"{product['name']}\" {message or ''}"
                 event = OrderEvent(
                     user_id=current_user.id,
                     order_id=order_id,
