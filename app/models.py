@@ -368,7 +368,7 @@ class OrderEvent(db.Model):
         server_default=func.datetime('now')
     )
     type = db.Column(db.Enum(EventType), nullable=False, default=EventType.commented)
-    data = db.Column(db.String(), nullable=False, default='', server_default='')
+    data = db.Column(db.String(), nullable=True)
 
 
 class Project(db.Model):

@@ -713,11 +713,14 @@ def SaveApproval(order_id):
         last_status = order.status
 
         position_approval = OrderPosition.query.filter_by(
-            order_id=order_id, position_id=current_user.position_id).first()
-        if form.comment.data != '':
-            message = form.comment.data.strip()
-        else:
-            message = 'без комментария'
+            order_id=order_id,
+            position_id=current_user.position_id
+        ).first()
+
+        message = form.comment.data.strip()
+        if len(message) == 0:
+            message = None
+
         if form.product_id.data is None:
             OrderApproval.query.filter_by(
                 order_id=order_id,

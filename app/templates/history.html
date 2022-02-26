@@ -59,7 +59,7 @@
 				</div>
 				<div class="col-sm overflow-hidden mt-sm-3">
 					<span class="d-sm-none fw-bold">Описание:</span>
-					{{ event.data|safe }}
+					{{ event.data or '' }}
 				</div>
 			</div>
 		{% endfor %}
