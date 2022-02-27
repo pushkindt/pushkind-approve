@@ -68,6 +68,10 @@
 					{{ user_form.about_user.email_approved(class_='form-check-input', checked=current_user.email_approved) }}
 					{{ user_form.about_user.email_approved.label(class_='form-check-label') }}
 				</div>
+				<div class="form-check form-check-inline">
+					{{ user_form.about_user.email_comment(class_='form-check-input', checked=current_user.email_comment) }}
+					{{ user_form.about_user.email_comment.label(class_='form-check-label') }}
+				</div>
 			</div>
 		</div>
 		{% if current_user.role.name in ['validator', 'purchaser', 'admin'] %}

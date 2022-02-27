@@ -108,6 +108,7 @@ def ShowSettings():
             user.email_modified = user_form.about_user.email_modified.data
             user.email_disapproved = user_form.about_user.email_disapproved.data
             user.email_approved = user_form.about_user.email_approved.data
+            user.email_comment = user_form.about_user.email_comment.data
             user.name = user_form.about_user.full_name.data.strip()
             db.session.commit()
 

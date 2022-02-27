@@ -261,6 +261,7 @@ class User(UserMixin, db.Model):
                 'email_modified': self.email_modified,
                 'email_disapproved': self.email_disapproved,
                 'email_approved': self.email_approved,
+                'email_comment': self.email_comment,
                 'projects': self.projects_list,
                 'categories': self.categories_list}
         return data

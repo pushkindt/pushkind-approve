@@ -339,7 +339,6 @@
 							{{ comment_form.notify_reviewers.label(class_='form-label notifyReviewersDropDown') }}
 							<a class="notifyReviewersDropDown" href="#">добавить из списка</a>
 							{{ comment_form.notify_reviewers(class_='form-control', style="width:100%") }}
-							<a id="notifyAllReviewers" href="#">выделить все</a>
 							<a id="notifyNoneReviewers" href="#" class="text-danger">удалить все</a>
 						</div>
 					</div>
@@ -736,10 +735,6 @@
 
 			$('.notifyReviewersDropDown').click(function(e) {
 				notifyReviewersSelectize.focus();
-			});
-
-			$('#notifyAllReviewers').click(function() {
-				notifyReviewersSelectize.setValue(Object.keys(notifyReviewersSelectize.options));
 			});
 
 			$('#notifyNoneReviewers').click(function() {

@@ -166,6 +166,7 @@ class UserSettings(Form):
     email_modified = BooleanField('Заявка изменена')
     email_disapproved = BooleanField('Заявка отклонена')
     email_approved = BooleanField('Заявка согласована')
+    email_comment = BooleanField('Комментарий к заявке')
 
 
 class UserRolesForm(FlaskForm):
