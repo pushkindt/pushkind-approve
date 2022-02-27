@@ -513,7 +513,7 @@
 		$(".editIncomeButton").click(function () {
 			let incomeId = Number($(this).data("id"));
 			$("#editIncomeId").val(incomeId);
-			$("#removeIncomeButton").prop("href", "{{ url_for('main.RemoveIncome', id=0) }}".replace(0, incomeId));
+			$("#removeIncomeButton").prop("href", "{{ url_for('main.RemoveIncome', income_id=0) }}".replace(0, incomeId));
 			incomes.some(function (income) {
 				if (income["id"] == incomeId) {
 					$("#editIncomeName").val(income["name"]);
@@ -525,7 +525,7 @@
 		$(".editCashflowButton").click(function () {
 			let cashflowId = Number($(this).data("id"));
 			$("#editCashflowId").val(cashflowId);
-			$("#removeCashflowButton").prop("href", "{{ url_for('main.RemoveCashflow', id=0) }}".replace(0, cashflowId));
+			$("#removeCashflowButton").prop("href", "{{ url_for('main.RemoveCashflow', cashflow_id=0) }}".replace(0, cashflowId));
 			cashflows.some(function (cashflow) {
 				if (cashflow["id"] == cashflowId) {
 					$("#editCashflowName").val(cashflow["name"]);
@@ -538,7 +538,7 @@
 		$(".editProjectButton").click(function () {
 			let projectId = Number($(this).data("id"));
 			$("#editProjectId").val(projectId);
-			$("#removeProjectButton").prop("href", "{{ url_for('main.RemoveProject', id=0) }}".replace(0, projectId));
+			$("#removeProjectButton").prop("href", "{{ url_for('main.RemoveProject', project_id=0) }}".replace(0, projectId));
 			projects.some(function (project) {
 				if (project["id"] == projectId) {
 					$("#editProjectName").val(project["name"]);
@@ -563,7 +563,7 @@
 		$(".editSiteButton").click(function () {
 			let siteId = Number($(this).data("id"));
 			$("#editSiteId").val(siteId);
-			$("#removeSiteButton").prop("href", "{{ url_for('main.RemoveSite', id=0) }}".replace(0, siteId));
+			$("#removeSiteButton").prop("href", "{{ url_for('main.RemoveSite', site_id=0) }}".replace(0, siteId));
 			projects.some(function (project) {
 				let found = false;
 				project["sites"].some(function (site) {

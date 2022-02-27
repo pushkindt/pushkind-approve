@@ -198,6 +198,12 @@ class User(UserMixin, db.Model):
         default=True,
         server_default=expression.true()
     )
+    email_comment = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+        server_default=expression.true()
+    )
     last_seen = db.Column(db.DateTime, nullable=True)
     note = db.Column(db.String(), nullable=True)
     registered = db.Column(db.DateTime, nullable=True)
@@ -545,9 +551,11 @@ class Order(db.Model):
 
     @property
     def reviewers(self):
+        result = User.query.filter_by(id=self.initiative_id).all()
         if self.site is None or len(self.categories) == 0:
-            return []
-        return self.validators + self.purchasers
+            return result
+        result += self.validators() + self.purchasers
+        return result
 
     @classmethod
     def UpdateOrdersPositions(cls, hub_id, order_id=None):

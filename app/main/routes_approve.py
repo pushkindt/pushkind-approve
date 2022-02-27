@@ -60,6 +60,10 @@ def ShowOrder(order_id):
     initiative_form = InitiativeForm()
     approver_form = ApproverForm()
 
+    comment_form.notify_reviewers.choices = [
+        (r.id, r.name) for r in order.reviewers
+    ]
+
     incomes = IncomeStatement.query.filter(IncomeStatement.hub_id == current_user.hub_id)
     incomes = incomes.order_by(IncomeStatement.name).all()
     cashflows = CashflowStatement.query.filter(CashflowStatement.hub_id == current_user.hub_id)
@@ -72,7 +76,8 @@ def ShowOrder(order_id):
     projects = projects.order_by(Project.name).all()
 
     categories = Category.query.filter(
-        Category.hub_id == current_user.hub_id).all()
+        Category.hub_id == current_user.hub_id
+    ).all()
 
     initiative_form.categories.choices = [(c.id, c.name) for c in categories]
     initiative_form.categories.default = order.categories_list
@@ -992,6 +997,9 @@ def LeaveComment(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
     form = LeaveCommentForm()
+    form.notify_reviewers.choices = [
+        (r.id, r.name) for r in order.reviewers
+    ]
     if form.validate_on_submit():
         stripped = form.comment.data.strip()
         if len(stripped) > 0:
@@ -1007,6 +1015,9 @@ def LeaveComment(order_id):
         else:
             flash('Комментарий не может быть пустым.')
         db.session.commit()
+
+        SendEmailNotification('comment', order, form.notify_reviewers.data)
+
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
 

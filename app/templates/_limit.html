@@ -38,7 +38,7 @@
     </div>
     {% if show_remove_limit %}
         <div class="col-auto">
-            <a href="{{ url_for('main.RemoveLimit', id=limit.id) }}" class="btn btn-danger text-white" onclick="return confirm('Удалить лимит?')">Удалить</a>
+            <a href="{{ url_for('main.RemoveLimit', limit_id=limit.id) }}" class="btn btn-danger text-white" onclick="return confirm('Удалить лимит?')">Удалить</a>
         </div>
     {% endif %}
 </div>

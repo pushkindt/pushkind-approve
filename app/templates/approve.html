@@ -335,6 +335,13 @@
 							{{ comment_form.comment.label(class_ = 'form-label') }}
 							{{ comment_form.comment(class_ = 'form-control') }}
 						</div>
+						<div class="mb-3">
+							{{ comment_form.notify_reviewers.label(class_='form-label notifyReviewersDropDown') }}
+							<a class="notifyReviewersDropDown" href="#">добавить из списка</a>
+							{{ comment_form.notify_reviewers(class_='form-control', style="width:100%") }}
+							<a id="notifyAllReviewers" href="#">выделить все</a>
+							<a id="notifyNoneReviewers" href="#" class="text-danger">удалить все</a>
+						</div>
 					</div>
 					<div class="modal-footer">
 						{{ comment_form.submit(class_ = 'btn btn-primary text-white', id=False) }}
@@ -721,6 +728,24 @@
 					$("#splitProducts").val(JSON.stringify(splitProducts));
 				}
 			});
+		{% endif %}
+		{% if current_user.role.name in ['admin', 'initiative', 'validator', 'purchaser'] %}
+			let notifyReviewers = $("#notify_reviewers");
+			notifyReviewers.selectize({});
+			let notifyReviewersSelectize = notifyReviewers[0].selectize;
+
+			$('.notifyReviewersDropDown').click(function(e) {
+				notifyReviewersSelectize.focus();
+			});
+
+			$('#notifyAllReviewers').click(function() {
+				notifyReviewersSelectize.setValue(Object.keys(notifyReviewersSelectize.options));
+			});
+
+			$('#notifyNoneReviewers').click(function() {
+				notifyReviewersSelectize.clear(false);
+			});
+
 		{% endif %}
 	});
 </script>

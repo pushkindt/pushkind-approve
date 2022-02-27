@@ -38,7 +38,8 @@ def ShowSettings():
     projects = projects.order_by(Project.name).all()
 
     categories = Category.query.filter(
-        Category.hub_id == current_user.hub_id).all()
+        Category.hub_id == current_user.hub_id
+    ).all()
     if current_user.role == UserRoles.admin:
         user_form = UserRolesForm()
     else:
@@ -46,9 +47,11 @@ def ShowSettings():
 
     if current_user.role in [UserRoles.admin, UserRoles.purchaser, UserRoles.validator]:
         user_form.about_user.categories.choices = [
-            (c.id, c.name) for c in categories]
+            (c.id, c.name) for c in categories
+        ]
         user_form.about_user.projects.choices = [
-            (p.id, p.name) for p in projects]
+            (p.id, p.name) for p in projects
+        ]
 
     if user_form.submit.data:
         if user_form.validate_on_submit():

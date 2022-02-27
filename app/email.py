@@ -19,10 +19,10 @@ def SendEmail(subject, sender, recipients, text_body, html_body,
     if attachments is not None:
         for attachment in attachments:
             msg.attach(*attachment)
-    # if sync is True:
-    #     mail.send(msg)
-    # else:
-    #     Thread(
-    #         target=SendEmailAsync,
-    #         args=(current_app._get_current_object(), msg)
-    #     ).start()
+    if sync is True:
+        mail.send(msg)
+    else:
+        Thread(
+            target=SendEmailAsync,
+            args=(current_app._get_current_object(), msg)
+        ).start()

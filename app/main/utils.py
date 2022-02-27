@@ -5,7 +5,7 @@ from flask import render_template, flash, jsonify
 from flask_login import current_user
 
 from app import db
-from app.models import Order
+from app.models import Order, User
 from app.email import SendEmail
 
 
@@ -82,12 +82,19 @@ def ecwid_required_ajax(function):
     return wrapper
 
 
-def SendEmailNotification(kind, order):
-    recipients = [
-        r.email for r in order.reviewers if getattr(r, f'email_{kind}', False) is True
-    ]
-    if getattr(order.initiative, f'email_{kind}', False) is True:
-        recipients.append(order.initiative.email)
+def SendEmailNotification(kind, order, recipients_id=None):
+    if recipients_id is None:
+        recipients = [
+            r.email for r in order.reviewers if getattr(r, f'email_{kind}', False) is True
+        ]
+    else:
+        recipients = [
+            r.email for r in order.reviewers if (
+                getattr(r, f'email_{kind}', False) is True and r.id in recipients_id
+            )
+        ]
+    if len(recipients) == 0:
+        return
     current_app.logger.info(
         '"%s" email about order %s has been sent to %s',
         kind,
