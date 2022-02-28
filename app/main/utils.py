@@ -104,7 +104,7 @@ def SendEmailNotification(kind, order, recipients_id=None):
     if len(recipients) > 0:
         SendEmail(
             f'Уведомление по заявке #{order.id}',
-            sender=current_app.config['MAIL_USERNAME'],
+            sender=(current_app.config['MAIL_SENDERNAME'], current_app.config['MAIL_USERNAME']),
             recipients=recipients,
             text_body=render_template(f'email/{kind}.txt', order=order),
             html_body=render_template(f'email/{kind}.html', order=order)
@@ -131,7 +131,7 @@ def SendEmail1C(recipients, order, data):
 
     SendEmail(
         subject,
-        sender=current_app.config['MAIL_USERNAME'],
+        sender=(current_app.config['MAIL_SENDERNAME'], current_app.config['MAIL_USERNAME']),
         recipients=recipients,
         text_body=render_template('email/export1C.txt', order=order),
         html_body=render_template('email/export1C.html', order=order),

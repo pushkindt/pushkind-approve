@@ -24,6 +24,7 @@ class Config:
     MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL') is not None
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS') is not None
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_SENDERNAME=os.environ.get('MAIL_SENDERNAME') or 'Sender'
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MOMENT_DEFAULT_FORMAT = (
         os.environ.get('MOMENT_DEFAULT_FORMAT') or 'DD.MM.YYYY HH:mm'
