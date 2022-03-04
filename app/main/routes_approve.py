@@ -318,7 +318,7 @@ def SaveQuantity(order_id):
 
         if product['quantity'] != form.product_quantity.data:
             message = f"{product['sku']} количество было {product['quantity']} "\
-                       "стало {form.product_quantity.data}"
+                      f"стало {form.product_quantity.data}"
             product['quantity'] = form.product_quantity.data
             event = OrderEvent(
                 user_id=current_user.id,
@@ -344,7 +344,7 @@ def SaveQuantity(order_id):
                     {'name': 'Единица измерения', 'value': form.product_measurement.data}]
             if changed is True:
                 message = f"{product['sku']} единицы были {old_measurement} "\
-                           "стали {form.product_measurement.data}"
+                          f"стали {form.product_measurement.data}"
                 event = OrderEvent(
                     user_id=current_user.id,
                     order_id=order_id,
