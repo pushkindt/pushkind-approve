@@ -414,7 +414,7 @@ class Site(db.Model):
             'project_id': self.project_id,
             'name': self.name,
             'uid': self.uid
-            }
+        }
         return data
 
 
@@ -729,7 +729,7 @@ class OrderLimit(db.Model):
     project = db.relationship('Project')
 
     @classmethod
-    def update_current(cls, hub_id, project_id = None, cashflow_id=None):
+    def update_current(cls, hub_id, project_id=None, cashflow_id=None):
         limits = OrderLimit.query.filter_by(hub_id=hub_id)
 
         if project_id is not None and cashflow_id is not None:
@@ -766,3 +766,15 @@ class OrderLimit(db.Model):
                     order.over_limit = order.status != OrderStatus.approved
 
         db.session.commit()
+
+
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    vendor_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+    name = db.Column(db.String(128), nullable=False, index=True)
+    sku = db.Column(db.String(128), nullable=False, index=True)
+    price = db.Column(db.Float, nullable=False)
+    image = db.Column(db.String(128), nullable=True)
+    measurement = db.Column(db.String(128), nullable=True)
+    cat_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
+    description = db.Column(db.String(), nullable=True)
