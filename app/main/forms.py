@@ -3,9 +3,9 @@ import json
 from flask_wtf import FlaskForm
 from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField
 from wtforms import FormField, Form, PasswordField, BooleanField, SelectMultipleField, DecimalField
-from wtforms.fields.html5 import EmailField
+from wtforms.fields import EmailField
 from wtforms.validators import DataRequired, Length, ValidationError, Email, InputRequired, Optional
-from wtforms.fields.html5 import DateField
+from wtforms.fields import DateField
 
 from app.models import OrderLimitsIntervals, UserRoles
 

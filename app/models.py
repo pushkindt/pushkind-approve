@@ -779,5 +779,9 @@ class Product(db.Model):
     measurement = db.Column(db.String(128), nullable=True)
     cat_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     description = db.Column(db.String(), nullable=True)
-    vendor = db.relationship('Ecwid')
-    category = db.relationship('Category')
+    input_required =  db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False,
+        server_default=expression.false()
+    )
