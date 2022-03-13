@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block styles%}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container bg-white border rounded">
+
+    <nav class="navbar navbar-light bg-white">
+        <div class="container">
+            <a class="navbar-brand" href="{{url_for('main.ShopCart')}}">
+                <i class="bi bi-cart"></i>
+            </a>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{url_for('main.ShopCategories')}}" id="siteProjectSelect">Выбор проекта и объекта</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{url_for('main.ShopCategories')}}">Категории</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Корзина</li>
+        </ol>
+    </nav>
+
+    <form method="POST" action="{{url_for('main.ShopCart')}}" id="shoppingCartForm">
+        {{ form.csrf_token }}
+        {{ form.project_id(class_='d-none') }}
+        {{ form.site_id(class_='d-none') }}
+        <div class="row bg-light d-none d-sm-flex border">
+            <div class="col overflow-hidden">
+                Артикул
+            </div>
+            <div class="col overflow-hidden">
+                Название
+            </div>		
+            <div class="col-2 overflow-hidden">
+                Количество
+            </div>
+            <div class="col-2 overflow-hidden">
+                Удаление
+            </div>
+        </div>
+        <div class="alert alert-secondary my-1" id="emptyCartAlert">
+            Корзина пуста
+        </div>
+        <div id="shoppingCartItems">
+        </div>
+        <div class="row my-3">
+            <div class="col">
+                {{ form.submit(class_='btn btn-primary text-white d-none') }}
+            </div>
+        </div>
+    </form>
+
+</div>
+
+{% endblock %}
+
+{% block templates %}
+<div class="row my-1 border-bottom" id="cartItemTemplate">
+    <div class="col-sm my-1">
+        <span class="d-sm-none fw-bold">Артикул:</span>
+        <span id="productSkuTemplate"></span>
+    </div>
+    <div class="col-sm my-1">
+        <span class="d-sm-none fw-bold">Название:</span>
+        <span id="productNameTemplate"></span>
+    </div>
+    <div class="col-sm-2 my-1">
+        <input type="number" class="d-none" name="cart-_-product" hidden id="productIdTemplate">
+        <input type="number" value="0" min="0" step="1" class="form-control" name="cart-_-quantity" id="productQuantityTemplate">
+    </div>
+    <div class="col-sm-2 my-1">
+        <button class="btn btn-danger removeFromCart" id="productRemoveTemplate">
+            Удалить
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+
+        var shoppingCart = sessionStorage.getItem('shoppingCart');
+        var shoppingCartItems = $("#shoppingCartItems");
+        if (!shoppingCart){
+            shoppingCart = [];
+            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+        }
+        else {
+
+            try {
+                shoppingCart = JSON.parse(shoppingCart);
+            } catch(e) {
+                shoppingCart = [];
+                sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+            }
+        }
+
+        let project_id = Number(sessionStorage.getItem('project_id'));
+        let site_id = Number(sessionStorage.getItem('site_id'));
+        let site_name = sessionStorage.getItem('site_name');
+        let project_name = sessionStorage.getItem('project_name');
+        if (!project_id || !site_id || !project_name || !site_name)
+            window.location = "{{url_for('main.ShopCategories')}}";
+        $("#siteProjectSelect").text(project_name + ', ' + site_name);
+
+        $("#project_id").val(project_id);
+        $("#site_id").val(site_id);
+
+        $("#siteProjectSelect").click(function(){
+            sessionStorage.removeItem("project_id");
+            sessionStorage.removeItem("project_name");
+            sessionStorage.removeItem("site_id");
+            sessionStorage.removeItem("site_name");
+        });
+
+        if (shoppingCart.length > 0){
+            $("#submit").removeClass('d-none');
+            $("#emptyCartAlert").addClass("d-none");
+        }
+
+        let i = 0;
+        shoppingCart.forEach(item => {
+            let content = $('#cartItemTemplate').clone();
+            content.removeAttr('id');
+            let sku = content.find('#productSkuTemplate');
+            sku.text(item['sku']);
+            sku.removeAttr('id');
+            let name = content.find('#productNameTemplate');
+            name.text(item['name']);
+            name.removeAttr('id');
+            let remove = content.find('#productRemoveTemplate');
+            remove.data('id', item['id']);
+            remove.removeAttr('id');
+            let product = content.find('#productIdTemplate');
+            product.val(item['id']);
+            product.removeAttr('id');
+            let form_name = product.attr('name').replace('_', i);
+            product.attr('name', form_name);
+            let quantity = content.find('#productQuantityTemplate');
+            quantity.val(item['quantity']);
+            quantity.removeAttr('id');
+            form_name = quantity.attr('name').replace('_', i);
+            quantity.attr('name', form_name);
+            shoppingCartItems.append(content);
+            i++;
+        });
+
+        $(".removeFromCart").click(function(){
+            let itemId = Number($(this).data('id'));
+            shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
+            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+            $(this).parent('.row').remove();
+            if (shoppingCartItems.children.length == 0){
+                $("#submit").addClass('d-none');
+                $("#emptyCartAlert").removeClass("d-none");
+            }
+        });
+
+        $("#submit").click(function(){
+            shoppingCart = [];
+            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+        });
+
+    });
+
+</script>
+{%endblock %}

@@ -18,6 +18,7 @@ class Config:
         .replace('file:', 'sqlite:///', 1)
     )
     ECWID_JS_URL = os.environ.get('ECWID_JS_URL')
+    IMAGE_HOSTING_URL = os.environ.get('IMAGE_HOSTING_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
     MAIL_PORT = int(os.environ.get('MAIL_PORT') or 25)

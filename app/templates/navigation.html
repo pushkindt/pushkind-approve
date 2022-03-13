@@ -4,7 +4,7 @@
 	</li>
 	{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
 		<li class="nav-item">
-			<a class="nav-link {% if request.endpoint == 'main.ShowEcwid' %} active {% endif %}" href="{{ url_for('main.ShowEcwid') }}">Заказать</a>
+			<a class="nav-link {% if request.endpoint in ('main.ShopCategories', 'main.ShopVendors', 'main.ShopProducts', 'main.ShopCart') %} active {% endif %}" href="{{ url_for('main.ShopCategories') }}">Заказать</a>
 		</li>
 	{% endif %}
 	{% if current_user.role.name != 'default' %}

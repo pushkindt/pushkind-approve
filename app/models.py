@@ -560,7 +560,7 @@ class Order(db.Model):
         return result
 
     @classmethod
-    def UpdateOrdersPositions(cls, hub_id, order_id=None):
+    def UpdateOrdersPositions(cls, hub_id, order_id=None, update_status=False):
 
         # Query orders from the hub
         orders = Order.query.filter(Order.hub_id == hub_id, Order.status != OrderStatus.approved)
@@ -599,8 +599,8 @@ class Order(db.Model):
                 if approval is not None:
                     position.approved = True
                     position.user = approval.user
-
-            order.UpdateOrderStatus()
+            if update_status is True:
+                order.UpdateOrderStatus()
         db.session.commit()
 
     @property
@@ -785,3 +785,5 @@ class Product(db.Model):
         default=False,
         server_default=expression.false()
     )
+    vendor = db.relationship('Ecwid')
+    category = db.relationship('Category')

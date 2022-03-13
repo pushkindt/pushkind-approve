@@ -1,7 +1,7 @@
 import json
 
 from flask_wtf import FlaskForm
-from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField
+from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FieldList
 from wtforms import FormField, Form, PasswordField, BooleanField, SelectMultipleField, DecimalField
 from wtforms.fields import EmailField
 from wtforms.validators import DataRequired, Length, ValidationError, Email, InputRequired, Optional
@@ -276,9 +276,9 @@ class EditProjectForm(FlaskForm):
 
 class EditSiteForm(FlaskForm):
     site_id = IntegerField(
-        'ID проекта',
+        'ID объекта',
         validators=[DataRequired(
-        message='ID проекта - обязательное поле.')]
+        message='ID объекта - обязательное поле.')]
     )
     site_name = StringField(
         'Название',
@@ -385,4 +385,38 @@ class AddLimitForm(FlaskForm):
         validators=[DataRequired(message='БДДС - обязательное поле.')],
         coerce=int
     )
+    submit = SubmitField('Создать')
+
+################################################################################
+# Shop page
+################################################################################
+
+class CartItemForm(Form):
+    product = IntegerField(
+        'Идентификатор товара',
+        validators=[DataRequired(message='ID товара - обязательное поле.')],
+        render_kw={'hidden': ''}
+    )
+    quantity = IntegerField(
+        'Количество товара',
+        validators=[InputRequired(message='Невозможное значение количества.')],
+        render_kw={'type': 'number', 'step': 1, 'min': 0}
+    )
+    def validate_quantity(self, quantity):
+        if quantity.data < 0:
+            raise ValidationError('Количество не может быть меньше нуля.')
+
+class CreateOrderForm(FlaskForm):
+    project_id = IntegerField(
+        'ID проекта',
+        validators=[DataRequired(message='ID проекта - обязательное поле.')],
+        render_kw={'hidden': ''}
+    )
+    site_id = IntegerField(
+        'ID объекта',
+        validators=[DataRequired(
+        message='ID объекта - обязательное поле.')],
+        render_kw={'hidden': ''}
+    )
+    cart = FieldList(FormField(CartItemForm))
     submit = SubmitField('Создать')
