@@ -326,6 +326,7 @@ class Category(db.Model):
         nullable=True
     )
     code = db.Column(db.String(128), nullable=True)
+    image = db.Column(db.String(128), nullable=True)
     income_statement = db.relationship('IncomeStatement')
     cashflow_statement = db.relationship('CashflowStatement')
 
