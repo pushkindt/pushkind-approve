@@ -6,6 +6,16 @@
 
 {% block content %}
 
+<div class="container my-2">
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <input class="form-control" id="categoryFilter" type="text" placeholder="Фильтр..">
+        </div>
+    </div>
+
+</div>
+
 <div class="container bg-white border rounded">
 
     <nav class="navbar navbar-light bg-white">
@@ -20,31 +30,24 @@
             </ul>
         </div>
     </nav>
-
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-1 m-2">
+    <div id="categoryList">
         {% for category in categories %}
-            <div class="col">
-                <div class="card h-100" style="width: 15rem;">
-                    <a href="{{ url_for('main.ShopVendors', cat_id=category.id) }}">
-                        <img src="https://backend.pushkind.com/{{category.image}}" class="card-img-top" alt="Category image" style="width: 15rem;">
-                    </a>
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <a href="{{ url_for('main.ShopVendors', cat_id=category.id) }}">
-                                {{category.name}}
-                            </a>
-                        </h5>
-                        <p class="card-text">
-                            <strong>ФДБ:</strong> {{category.functional_budget or ''}}
-                            <br>
-                            <strong>БДР:</strong> {{category.income_statement.name}}
-                            <br>
-                            <strong>БДДС:</strong> {{category.cashflow_statement.name}}
-                        </p>
-                    </div>
-                    <div class="card-footer">
-                        <small class="text-muted">{{category.code}}</small>
-                    </div>
+            <div class="row selectable rounded border my-1" data-id="{{category.id}}">
+                <div class="col">
+                    <img src="https://backend.pushkind.com/{{category.image}}" height="96" width="96" alt="thumbnail">
+                </div>
+                <div class="col mt-3">
+                    <h5>{{category.name}}</h5>
+                </div>
+                <div class="col-sm">
+                    <strong>ФДБ:</strong> {{category.functional_budget or ''}}
+                    <br>
+                    <strong>БДР:</strong> {{category.income_statement.name}}
+                    <br>
+                    <strong>БДДС:</strong> {{category.cashflow_statement.name}}
+                </div>
+                <div class="col-sm">
+                    <small class="text-muted">{{category.code or ''}}</small>
                 </div>
             </div>
         {% endfor %}
@@ -206,6 +209,17 @@
             $("#siteProjectDismiss").prop("disabled", false);
             $("#siteProjectDismiss").removeClass("btn-secondary");
             $("#siteProjectDismiss").addClass("btn-primary");
+        });
+        $(".selectable").click(function (event) {
+            let categoryId = $(this).attr('data-id');
+            document.location.href = "{{ url_for('main.ShopVendors', cat_id=0) }}".replace("0", categoryId);
+        });
+        $("#categoryFilter").on("keyup", function () {
+            let value = $(this).val().toLowerCase();
+            $("#categoryList > .row").filter(function () {
+                let show = $(this).text().toLowerCase().indexOf(value) > -1;
+                $(this).toggle(show);
+            });
         });
     });
 
