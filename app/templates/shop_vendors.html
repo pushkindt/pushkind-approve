@@ -6,6 +6,16 @@
 
 {% block content %}
 
+<div class="container my-2">
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <input class="form-control" id="vendorFilter" type="text" placeholder="Фильтр..">
+        </div>
+    </div>
+
+</div>
+
 <div class="container bg-white border rounded">
 
     <nav class="navbar navbar-light bg-white">
@@ -30,18 +40,14 @@
         </ol>
     </nav>
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-1 m-2">
+    <div id="vendorList">
         {% for vendor in vendors %}
-            <div class="col">
-                <div class="card h-100" style="width: 15rem;">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <a href="{{url_for('main.ShopProducts', cat_id=category.id, vendor_id=vendor.id)}}">{{vendor.name}}</a>
-                        </h5>
-                    </div>
-                    <div class="card-footer">
-                        <small class="text-muted">{{vendor.email}}</small>
-                    </div>
+            <div class="row selectable border-top border-bottom my-1 py-3" data-id="{{vendor.id}}">
+                <div class="col">
+                    <h5>{{vendor.name}}</h5>
+                </div>
+                <div class="col">
+                    <small class="text-muted">{{vendor.email}}</small>
                 </div>
             </div>
         {% endfor %}
@@ -65,6 +71,18 @@
             sessionStorage.removeItem("project_name");
             sessionStorage.removeItem("site_id");
             sessionStorage.removeItem("site_name");
+        });
+
+        $(".selectable").click(function (event) {
+            let vendorId = $(this).attr('data-id');
+            document.location.href = "{{ url_for('main.ShopProducts', cat_id=category.id, vendor_id=-1) }}".replace("-1", vendorId);
+        });
+        $("#vendorFilter").on("keyup", function () {
+            let value = $(this).val().toLowerCase();
+            $("#vendorList > .row").filter(function () {
+                let show = $(this).text().toLowerCase().indexOf(value) > -1;
+                $(this).toggle(show);
+            });
         });
     });
 
