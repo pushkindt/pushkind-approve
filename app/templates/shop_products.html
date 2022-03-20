@@ -6,6 +6,16 @@
 
 {% block content %}
 
+<div class="container my-2">
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <input class="form-control" id="productFilter" type="text" placeholder="Фильтр..">
+        </div>
+    </div>
+
+</div>
+
 <div class="container bg-white border rounded">
 
     <nav class="navbar navbar-light bg-white">
@@ -33,27 +43,38 @@
         </ol>
     </nav>
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-1 m-2">
+    <div id="productList">
         {% for product in products %}
-            <div class="col">
-                <div class="card h-100" style="width: 15rem;">
-                    <img src="{{config['IMAGE_HOSTING_URL']}}{{product.image}}" class="card-img-top" alt="Product image" style="width: 15rem;">
-                    <div class="card-body">
-                        <h5 class="card-title">{{product.name}}</h5>
-                        <p class="card-text">
-                            <strong>Артикул:</strong> {{product.sku}}
-                            <br>
-                            <strong>Цена:</strong> {{product.price}}
-                            <br>
-                            <strong>Единицы:</strong> {{product.measurement}}
-                            <br>
-                            <strong>Описание:</strong> {{product.description}}
-                        </p>
+            <div class="row border-top border-bottom my-1 py-3" data-id="{{product.id}}">
+                <div class="col selectable">
+                    <img src="{{config['IMAGE_HOSTING_URL']}}{{product.image}}" height="96" width="96" alt="thumbnail">
+                </div>
+                <div class="col mt-2 selectable">
+                    <h5>{{product.name}}</h5>
+                </div>
+                <div class="col-sm selectable">
+                    <strong>Артикул:</strong> {{product.sku}}
+                    <br>
+                    <strong>Цена:</strong> {{product.price}}
+                    <br>
+                    <strong>Единицы:</strong> {{product.measurement}}
+                </div>
+                <div class="col-sm">
+                    <div class="input-group">
+                        <input type="number" class="form-control" min="0" step="1" aria-label="Количество" aria-describedby="button-addon{{product.id}}" id="input-addon{{product.id}}">
+                        <button class="btn btn-outline-primary addToCart" type="button" id="button-addon{{product.id}}" data-id="{{product.id}}" data-name="{{product.name}}" data-sku="{{product.sku}}">Заявить</button>
                     </div>
-                    <div class="card-footer">
-                        <div class="input-group">
-                            <input type="number" class="form-control" value="0" min="0" step="1" aria-label="Количество" aria-describedby="button-addon{{product.id}}">
-                            <button class="btn btn-outline-secondary addToCart" type="button" id="button-addon{{product.id}}" data-id="{{product.id}}" data-name="{{product.name}}" data-sku="{{product.sku}}">Заявить</button>
+                </div>
+            </div>
+            <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1" aria-labelledby="#descriptionModalLabel{{product.id}}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="descriptionModalLabel{{product.id}}">{{product.name}}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <strong>Описание:</strong> {{product.description}}
                         </div>
                     </div>
                 </div>
@@ -76,6 +97,18 @@
 
             try {
                 shoppingCart = JSON.parse(shoppingCart);
+                shoppingCart.forEach(element => {
+                    let input = $('#input-addon'+element['id']);
+                    if (input){
+                        input.val(element['quantity']);
+                        let button = $('#button-addon'+element['id']);
+                        if (button){
+                            button.addClass('btn-success');
+                            button.removeClass('btn-outline-primary');
+                            button.text("В заявке");
+                        }
+                    }
+                });
             } catch(e) {
                 shoppingCart = [];
                 sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
@@ -112,12 +145,31 @@
                 }
                 cartItem["quantity"] = itemQuantity;
                 $(this).addClass('btn-success');
+                $(this).removeClass('btn-outline-primary');
+                $(this).text("В заявке");
             }
             else {
                 shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
+                $(this).addClass('btn-outline-primary');
                 $(this).removeClass('btn-success');
+                $(this).text("Заявить");
             }
             sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+        });
+        $("#productFilter").on("keyup", function () {
+            let value = $(this).val().toLowerCase();
+            $("#productList > .row").filter(function () {
+                let show = $(this).text().toLowerCase().indexOf(value) > -1;
+                $(this).toggle(show);
+            });
+        });
+        $(".selectable").click(function (event) {
+            let productId = $(this).parent('.row').attr('data-id');
+            let modalElement = document.getElementById('descriptionModal'+productId);
+            let descriptionModal = bootstrap.Modal.getInstance(modalElement);
+            if (!descriptionModal)
+                descriptionModal= new bootstrap.Modal(modalElement, {});
+            descriptionModal.show();
         });
     });
 

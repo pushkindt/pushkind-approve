@@ -34,7 +34,7 @@
         {% for category in categories %}
             <div class="row selectable border-top border-bottom my-1" data-id="{{category.id}}">
                 <div class="col">
-                    <img src="https://backend.pushkind.com/{{category.image}}" height="96" width="96" alt="thumbnail">
+                    <img src="{{config['IMAGE_HOSTING_URL']}}{{category.image}}" height="96" width="96" alt="thumbnail">
                 </div>
                 <div class="col mt-3">
                     <h5>{{category.name}}</h5>
