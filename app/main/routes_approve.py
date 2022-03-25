@@ -442,7 +442,7 @@ def GetExcelReport1(order_id):
     ws.cell(i, 3).value = datetime.fromtimestamp(
         order.create_timestamp,
         tz = timezone(timedelta(hours=3), name='Europe/Moscow')
-    )
+    ).strftime('%Y-%m-%d')
     if order.status == OrderStatus.approved:
         i += 1
         for i, approval in enumerate(order.approvals, start=i):
@@ -450,7 +450,7 @@ def GetExcelReport1(order_id):
                 continue
             ws.cell(i, 3).value = approval.timestamp.astimezone(
                 timezone(timedelta(hours=3), name='Europe/Moscow')
-            )
+            ).strftime('%Y-%m-%d')
             ws.cell(i, 4).value = approval.user.position.name
             ws.cell(i, 5).value = approval.user.name
 
@@ -497,7 +497,7 @@ def GetExcelReport2(order_id):
     ws.cell(i, 9).value = datetime.fromtimestamp(
         order.create_timestamp,
         tz = timezone(timedelta(hours=3), name='Europe/Moscow')
-    )
+    ).strftime('%Y-%m-%d')
     if order.status == OrderStatus.approved:
         i += 1
         for i, approval in enumerate(order.approvals, start=i):
@@ -505,7 +505,7 @@ def GetExcelReport2(order_id):
                 continue
             ws.cell(i, 9).value = approval.timestamp.astimezone(
                 timezone(timedelta(hours=3), name='Europe/Moscow')
-            )
+            ).strftime('%Y-%m-%d')
             ws.cell(i, 10).value = approval.user.position.name
             ws.cell(i, 11).value = approval.user.name
 
@@ -637,7 +637,7 @@ def Prepare1CReport(order, excel_date):
         ws.cell(i, 20).value = datetime.fromtimestamp(
             order.create_timestamp,
             tz = timezone(timedelta(hours=3), name='Europe/Moscow')
-        )
+        ).strftime('%Y-%m-%d')
         if order.status == OrderStatus.approved:
             i += 1
             for i, approval in enumerate(order.approvals, start=i):
@@ -645,7 +645,7 @@ def Prepare1CReport(order, excel_date):
                     continue
                 ws.cell(i, 20).value = approval.timestamp.astimezone(
                     timezone(timedelta(hours=3), name='Europe/Moscow')
-                )
+                ).strftime('%Y-%m-%d')
                 ws.cell(i, 21).value = approval.user.position.name
                 ws.cell(i, 22).value = approval.user.name
         data = save_virtual_workbook(wb)
