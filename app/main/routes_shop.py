@@ -31,25 +31,7 @@ def ShopCategories():
         categories=categories
     )
 
-@bp.route('/shop/<int:cat_id>')
-@login_required
-@role_required([UserRoles.initiative, UserRoles.purchaser, UserRoles.admin])
-def ShopVendors(cat_id):
-    category = Category.query.filter_by(
-        id=cat_id,
-        hub_id=current_user.hub_id
-    ).first()
-    if category is None:
-        return redirect(url_for('main.ShopCategories'))
-    products = Product.query.filter_by(cat_id=cat_id).all()
-    vendor_ids = [p.vendor_id for p in products]
-    vendors = Ecwid.query.filter(Ecwid.id.in_(vendor_ids)).all()
-    return render_template(
-        'shop_vendors.html',
-        category=category,
-        vendors=vendors
-    )
-
+@bp.route('/shop/<int:cat_id>', defaults={'vendor_id': None})
 @bp.route('/shop/<int:cat_id>/<int:vendor_id>')
 @login_required
 @role_required([UserRoles.initiative, UserRoles.purchaser, UserRoles.admin])
@@ -60,15 +42,18 @@ def ShopProducts(cat_id, vendor_id):
     ).first()
     if category is None:
         return redirect(url_for('main.ShopCategories'))
-    vendor = Ecwid.query.filter_by(id = vendor_id).first()
-    if vendor is None:
-        return redirect(url_for('main.ShopVendors'))
-    products = Product.query.filter_by(cat_id=cat_id, vendor_id=vendor_id).all()
+    products = Product.query.filter_by(cat_id=cat_id)
+    if vendor_id is not None:
+        products = products.filter_by(vendor_id=vendor_id)
+    products = products.all()
+    vendor_ids = [p.vendor_id for p in products]
+    vendors = Ecwid.query.filter(Ecwid.id.in_(vendor_ids)).all()
     return render_template(
         'shop_products.html',
         category=category,
-        vendor = vendor,
-        products = products
+        vendors=vendors,
+        products=products,
+        vendor_id=vendor_id
     )
 
 @bp.route('/shop/cart', methods=['GET', 'POST'])
@@ -117,6 +102,12 @@ def ShopCart():
                 for cart_item in form.cart.data:
                     if cart_item['product'] == product.id:
                         order_product['quantity'] = cart_item['quantity']
+                        if product.input_required is True and cart_item['text'] is not None:
+                            order_product['selectedOptions'].append(
+                                {
+                                    'value': cart_item['text']
+                                }
+                            )
                 order_products.append(order_product)
             order_id = GetNewOrderNumber()
             now = datetime.now(tz=timezone.utc)

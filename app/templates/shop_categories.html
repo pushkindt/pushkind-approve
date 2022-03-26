@@ -212,7 +212,7 @@
         });
         $(".selectable").click(function (event) {
             let categoryId = $(this).attr('data-id');
-            document.location.href = "{{ url_for('main.ShopVendors', cat_id=0) }}".replace("0", categoryId);
+            document.location.href = "{{ url_for('main.ShopProducts', cat_id=0) }}".replace("0", categoryId);
         });
         $("#categoryFilter").on("keyup", function () {
             let value = $(this).val().toLowerCase();

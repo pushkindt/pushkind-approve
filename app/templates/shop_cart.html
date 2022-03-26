@@ -71,8 +71,15 @@
         <span id="productSkuTemplate"></span>
     </div>
     <div class="col-sm my-1">
-        <span class="d-sm-none fw-bold">Название:</span>
-        <span id="productNameTemplate"></span>
+        <div class="row">
+            <div class="col">
+                <span class="d-sm-none fw-bold">Название:</span>
+                <span id="productNameTemplate"></span><br>
+            </div>
+            <div class="col">
+                <textarea class="form-control" name="cart-_-text" id="productTextTemplate" rows="2"></textarea>                
+            </div>
+        </div>
     </div>
     <div class="col-sm-2 my-1">
         <input type="number" class="d-none" name="cart-_-product" hidden id="productIdTemplate">
@@ -139,13 +146,23 @@
             let name = content.find('#productNameTemplate');
             name.text(item['name']);
             name.removeAttr('id');
+            let text = content.find('#productTextTemplate');
+            let form_name;
+            if (item['text']){
+                text.val(item['text']);
+                text.removeAttr('id');
+                form_name = text.attr('name').replace('_', i);
+                text.attr('name', form_name);
+            }
+            else
+                text.remove();
             let remove = content.find('#productRemoveTemplate');
             remove.data('id', item['id']);
             remove.removeAttr('id');
             let product = content.find('#productIdTemplate');
             product.val(item['id']);
             product.removeAttr('id');
-            let form_name = product.attr('name').replace('_', i);
+            form_name = product.attr('name').replace('_', i);
             product.attr('name', form_name);
             let quantity = content.find('#productQuantityTemplate');
             quantity.val(item['quantity']);
