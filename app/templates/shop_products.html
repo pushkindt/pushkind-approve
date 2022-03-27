@@ -75,16 +75,17 @@
                     <strong>Единицы:</strong> {{product.measurement}}
                 </div>
                 <div class="col-sm">
-                    <div class="input-group">
-                        <input type="number" class="form-control" min="0" step="1" aria-label="Количество" aria-describedby="button-addon{{product.id}}" id="input-addon{{product.id}}">
-                        <button class="btn btn-outline-primary addToCart" type="button" id="button-addon{{product.id}}" data-id="{{product.id}}" data-name="{{product.name}}" data-sku="{{product.sku}}">Заявить</button>
-                    </div>
-                    {% if product.input_required %}
-                        <div class="mb-3">
-                            <label for="text-addon{{product.id}}" class="form-label">Текст баннера:</label>
-                            <textarea class="form-control" id="text-addon{{product.id}}" rows="2" placeholder="Введите текст"></textarea>
+                    <form class="cartItem" data-id="{{product.id}}" data-name="{{product.name}}" data-sku="{{product.sku}}">
+                        <div class="input-group">
+                            <input type="number" class="form-control addToCart" min="0" step="1" aria-label="Количество" id="input-addon{{product.id}}">
                         </div>
-                    {% endif %}
+                        {% if product.input_required %}
+                            <div class="mb-3">
+                                <label for="text-addon{{product.id}}" class="form-label">Текст баннера:</label>
+                                <textarea class="form-control addToCart" id="text-addon{{product.id}}" rows="2" placeholder="Введите текст"></textarea>
+                            </div>
+                        {% endif %}
+                    </form>
                 </div>
             </div>
             <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1" aria-labelledby="#descriptionModalLabel{{product.id}}" aria-hidden="true">
@@ -143,12 +144,7 @@
                     let text = $('#text-addon'+element['id']);
                     if (input){
                         input.val(element['quantity']);
-                        let button = $('#button-addon'+element['id']);
-                        if (button){
-                            button.addClass('btn-success');
-                            button.removeClass('btn-outline-primary');
-                            button.text("В заявке");
-                        }
+                        input.addClass('border-success')
                     }
                     if (text)
                         text.val(element['text']);
@@ -172,35 +168,40 @@
             sessionStorage.removeItem("site_id");
             sessionStorage.removeItem("site_name");
         });
-        $(".addToCart").click(function(){
-            let itemId = Number($(this).data('id'));
-            let itemName = $(this).data('name');
-            let itemSku = $(this).data('sku');
-            let itemQuantity = Number($(this).siblings('input').val());
-            let itemText = $("#text-addon" + itemId).val()
-            if (itemQuantity > 0) {
-                let cartItem = shoppingCart.find(obj => {return obj['id'] === itemId});
-                if (!cartItem){
-                    cartItem = {
-                        "id": itemId,
-                        "name": itemName,
-                        "sku": itemSku,
-                        "text": itemText
+        $(".addToCart").keyup(function(){
+            let form = $(this).closest('.cartItem');
+            let timerId = form.data('timer');
+            if (timerId)
+                clearTimeout(timerId);
+            timerId = setTimeout(function(form){
+                let itemId = Number(form.data('id'));
+                let itemName = form.data('name');
+                let itemSku = form.data('sku');
+                let input = form.find('input.addToCart');
+                let itemQuantity = Number(input.val());
+                let itemText = form.find('textarea.addToCart').val();
+                if (itemQuantity > 0) {
+                    let cartItem = shoppingCart.find(obj => {return obj['id'] === itemId});
+                    if (!cartItem){
+                        cartItem = {
+                            "id": itemId,
+                            "name": itemName,
+                            "sku": itemSku
+                        }
+                        shoppingCart.push(cartItem);
                     }
-                    shoppingCart.push(cartItem);
+                    if (itemText)
+                        cartItem["text"] = itemText;
+                    cartItem["quantity"] = itemQuantity;
+                    input.addClass('border-success');
                 }
-                cartItem["quantity"] = itemQuantity;
-                $(this).addClass('btn-success');
-                $(this).removeClass('btn-outline-primary');
-                $(this).text("В заявке");
-            }
-            else {
-                shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
-                $(this).addClass('btn-outline-primary');
-                $(this).removeClass('btn-success');
-                $(this).text("Заявить");
-            }
+                else {
+                    shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
+                    input.removeClass('border-success');
+                }
             sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+            }, 500, form);
+            form.data('timer', timerId);
         });
         $("#productFilter").on("keyup", function () {
             let value = $(this).val().toLowerCase();

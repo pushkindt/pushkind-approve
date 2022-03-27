@@ -65,7 +65,7 @@
 {% endblock %}
 
 {% block templates %}
-<div class="row my-1 border-bottom" id="cartItemTemplate">
+<div class="row my-1 border-bottom cartItem" id="cartItemTemplate">
     <div class="col-sm my-1">
         <span class="d-sm-none fw-bold">Артикул:</span>
         <span id="productSkuTemplate"></span>
@@ -77,13 +77,13 @@
                 <span id="productNameTemplate"></span><br>
             </div>
             <div class="col">
-                <textarea class="form-control" name="cart-_-text" id="productTextTemplate" rows="2"></textarea>                
+                <textarea class="form-control addToCart" name="cart-_-text" id="productTextTemplate" rows="2"></textarea>                
             </div>
         </div>
     </div>
     <div class="col-sm-2 my-1">
-        <input type="number" class="d-none" name="cart-_-product" hidden id="productIdTemplate">
-        <input type="number" value="0" min="0" step="1" class="form-control" name="cart-_-quantity" id="productQuantityTemplate">
+        <input required type="number" class="d-none" name="cart-_-product" hidden id="productIdTemplate">
+        <input required type="number" value="1" min="1" step="1" class="form-control addToCart" name="cart-_-quantity" id="productQuantityTemplate">
     </div>
     <div class="col-sm-2 my-1">
         <button class="btn btn-danger removeFromCart" id="productRemoveTemplate">
@@ -139,6 +139,9 @@
         let i = 0;
         shoppingCart.forEach(item => {
             let content = $('#cartItemTemplate').clone();
+            content.data('id', item['id']);
+            content.data('name', item['name']);
+            content.data('sku', item['sku']);
             content.removeAttr('id');
             let sku = content.find('#productSkuTemplate');
             sku.text(item['sku']);
@@ -183,12 +186,43 @@
                 $("#emptyCartAlert").removeClass("d-none");
             }
         });
-
         $("#submit").click(function(){
             shoppingCart = [];
             sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
         });
-
+        $(".addToCart").keyup(function(){
+            let form = $(this).closest('.cartItem');
+            let timerId = form.data('timer');
+            if (timerId)
+                clearTimeout(timerId);
+            timerId = setTimeout(function(form){
+                let itemId = Number(form.data('id'));
+                console.log(itemId);
+                let itemName = form.data('name');
+                let itemSku = form.data('sku');
+                let input = form.find('input.addToCart');
+                let itemQuantity = Number(input.val());
+                let itemText = form.find('textarea.addToCart').val();
+                if (!itemQuantity || itemQuantity == 0){
+                    itemQuantity = 1;
+                    input.val(itemQuantity);
+                }
+                let cartItem = shoppingCart.find(obj => {return obj['id'] === itemId});
+                if (!cartItem){
+                    cartItem = {
+                        "id": itemId,
+                        "name": itemName,
+                        "sku": itemSku
+                    }
+                    shoppingCart.push(cartItem);
+                }
+                if (itemText)
+                    cartItem["text"] = itemText;
+                cartItem["quantity"] = itemQuantity;
+            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+            }, 500, form);
+            form.data('timer', timerId);
+        });
     });
 
 </script>
