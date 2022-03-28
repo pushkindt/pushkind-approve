@@ -196,6 +196,7 @@
             if (timerId)
                 clearTimeout(timerId);
             timerId = setTimeout(function(form){
+                form.removeData('timer');
                 let itemId = Number(form.data('id'));
                 console.log(itemId);
                 let itemName = form.data('name');
