@@ -66,6 +66,7 @@
                 </div>
                 <div class="col mt-2 overflow-hidden selectable">
                     <h5>{{product.name}}</h5>
+                    <a href="{{ url_for('main.ShopProducts', vendor_id=product.vendor.id, cat_id=category.id) }}" class="text-decoration-none badge bg-white fw-normal text-secondary border">{{ product.vendor.name }}</a>
                 </div>
                 <div class="col-sm-2 overflow-hidden selectable">
                     Артикул: {{product.sku}}

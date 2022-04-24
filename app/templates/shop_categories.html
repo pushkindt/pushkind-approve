@@ -31,24 +31,20 @@
         </div>
     </nav>
     <div id="categoryList">
-        {% for category in categories %}
-            <div class="row selectable border-top border-bottom my-1" data-id="{{category.id}}">
-                <div class="col">
-                    <img src="{{config['IMAGE_HOSTING_URL']}}{{category.image}}" height="96" width="96" alt="thumbnail">
-                </div>
-                <div class="col mt-3">
-                    <h5>{{category.name}}</h5>
-                </div>
-                <div class="col-sm">
-                    <strong>ФДБ:</strong> {{category.functional_budget or ''}}
-                    <br>
-                    <strong>БДР:</strong> {{category.income_statement.name}}
-                    <br>
-                    <strong>БДДС:</strong> {{category.cashflow_statement.name}}
-                </div>
-                <div class="col-sm">
-                    <small class="text-muted">{{category.code or ''}}</small>
-                </div>
+        {% for rows in categories|batch(3) %}
+            <div class="row">
+                {% for category in rows %}
+                    <div class="col-sm m-1">
+                        <div class="card shadow text-center selectable" data-id="{{category.id}}">
+                            <div class="card-header">
+                                {{category.name}}
+                            </div>
+                            <div class="card-body">
+                                <img src="{{config['IMAGE_HOSTING_URL']}}{{category.image}}" height="164" width="164" alt="thumbnail">
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
         {% endfor %}
     </div>
@@ -216,7 +212,7 @@
         });
         $("#categoryFilter").on("keyup", function () {
             let value = $(this).val().toLowerCase();
-            $("#categoryList > .row").filter(function () {
+            $("#categoryList .card").filter(function () {
                 let show = $(this).text().toLowerCase().indexOf(value) > -1;
                 $(this).toggle(show);
             });
