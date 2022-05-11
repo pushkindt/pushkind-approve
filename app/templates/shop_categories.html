@@ -40,7 +40,7 @@
                                 {{category.name}}
                             </div>
                             <div class="card-body">
-                                <img src="{{config['IMAGE_HOSTING_URL']}}{{category.image}}" height="164" width="164" alt="thumbnail">
+                                <img src="{{config['IMAGE_HOSTING_URL']}}{{category.image or 'placeholder.png'}}" height="164" width="164" alt="thumbnail">
                             </div>
                         </div>
                     </div>

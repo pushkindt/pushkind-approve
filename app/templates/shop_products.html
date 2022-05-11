@@ -62,7 +62,7 @@
         {% for product in products %}
             <div class="row border-top border-bottom my-1 py-3" data-id="{{product.id}}">
                 <div class="col-auto selectable">
-                    <img src="{{config['IMAGE_HOSTING_URL']}}{{product.image}}" height="96" width="96" alt="thumbnail">
+                    <img src="{{config['IMAGE_HOSTING_URL']}}{{product.image or 'placeholder.png'}}" height="96" width="96" alt="thumbnail">
                 </div>
                 <div class="col mt-2 overflow-hidden selectable">
                     <h5>{{product.name}}</h5>
@@ -80,12 +80,10 @@
                         <div class="input-group">
                             <input type="number" class="form-control addToCart" min="0" step="1" aria-label="Количество" id="input-addon{{product.id}}">
                         </div>
-                        {% if product.input_required %}
-                            <div class="mb-3">
-                                <label for="text-addon{{product.id}}" class="form-label">Текст баннера:</label>
-                                <textarea class="form-control addToCart" id="text-addon{{product.id}}" rows="2" placeholder="Введите текст"></textarea>
-                            </div>
-                        {% endif %}
+                        <div class="mb-3">
+                            <label for="text-addon{{product.id}}" class="form-label">Комментарий:</label>
+                            <textarea class="form-control addToCart" id="text-addon{{product.id}}" rows="2" placeholder="Комментарий, ссылка на файл в облаке или текст баннера"></textarea>
+                        </div>
                     </form>
                     <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1" aria-labelledby="#descriptionModalLabel{{product.id}}" aria-hidden="true">
                         <div class="modal-dialog">
@@ -98,10 +96,10 @@
                                     <div id="carouselControls{{product.id}}" class="carousel carousel-dark slide" data-bs-ride="carousel">
                                         <div class="carousel-inner">
                                             <div class="carousel-item active">
-                                                <img src="{{config['IMAGE_HOSTING_URL']}}{{product.image}}" class="d-block w-100" alt="Main image">
+                                                <img src="{{config['IMAGE_HOSTING_URL']}}{{product.image or 'placeholder.png'}}" class="d-block w-100" alt="Main image">
                                             </div>
                                             <div class="carousel-item">
-                                                <img src="{{config['IMAGE_HOSTING_URL']}}{{product.image}}" class="d-block w-100" alt="Media image">
+                                                <img src="{{config['IMAGE_HOSTING_URL']}}{{product.image or 'placeholder.png'}}" class="d-block w-100" alt="Media image">
                                             </div>
                                         </div>
                                         <button class="carousel-control-prev" type="button" data-bs-target="#carouselControls{{product.id}}" data-bs-slide="prev">
@@ -113,9 +111,8 @@
                                             <span class="visually-hidden">Next</span>
                                         </button>
                                     </div>
-                                    <p>
-                                        <strong>Описание:</strong> {{product.description}}
-                                    </p>
+                                    <strong>Описание:</strong>
+                                    <pre>{{product.description}}</pre>
                                 </div>
                             </div>
                         </div>
@@ -201,7 +198,7 @@
                     shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
                     input.removeClass('border-success');
                 }
-            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+                sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
             }, 500, form);
             form.data('timer', timerId);
         });

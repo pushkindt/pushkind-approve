@@ -102,7 +102,7 @@ def ShopCart():
                 for cart_item in form.cart.data:
                     if cart_item['product'] == product.id:
                         order_product['quantity'] = cart_item['quantity']
-                        if product.input_required is True and cart_item['text'] is not None:
+                        if cart_item['text'] is not None:
                             order_product['selectedOptions'].append(
                                 {
                                     'value': cart_item['text']
