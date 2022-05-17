@@ -17,8 +17,8 @@ class Config:
         .get('DATABASE_URL', 'file:' + os.path.join(basedir, 'app.db'))
         .replace('file:', 'sqlite:///', 1)
     )
-    ECWID_JS_URL = os.environ.get('ECWID_JS_URL')
     IMAGE_HOSTING_URL = os.environ.get('IMAGE_HOSTING_URL')
+    PLACEHOLDER_IMAGE = os.environ.get('IMAGE_HOSTING_URL') + '/placeholder.png'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
     MAIL_PORT = int(os.environ.get('MAIL_PORT') or 25)

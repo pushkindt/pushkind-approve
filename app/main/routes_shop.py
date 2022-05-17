@@ -1,12 +1,11 @@
 from datetime import datetime, timezone
-from urllib.parse import urljoin
 
-from flask import render_template, redirect, url_for, flash, current_app
+from flask import render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
 
 from app import db
 from app.main import bp
-from app.models import UserRoles, Project, OrderLimit, Category, Product, Ecwid
+from app.models import UserRoles, Project, OrderLimit, Category, Product, Vendor
 from app.models import Order, Site, OrderStatus
 from app.main.utils import role_required
 from app.main.forms import CreateOrderForm
@@ -47,7 +46,7 @@ def ShopProducts(cat_id, vendor_id):
         products = products.filter_by(vendor_id=vendor_id)
     products = products.all()
     vendor_ids = [p.vendor_id for p in products]
-    vendors = Ecwid.query.filter(Ecwid.id.in_(vendor_ids)).all()
+    vendors = Vendor.query.filter(Vendor.id.in_(vendor_ids)).all()
     return render_template(
         'shop_products.html',
         category=category,
@@ -72,8 +71,7 @@ def ShopCart():
                 flash('Заявка не может быть пуста.')
                 return render_template(
                     'shop_cart.html',
-                    form=form,
-                    clear_cart=clear_cart
+                    form=form
                 )
             site = Site.query.filter_by(
                 id=form.site_id.data,
@@ -83,13 +81,15 @@ def ShopCart():
                 flash('Такой площадки не существует.')
                 return redirect(url_for('main.ShopCart'))
             order_products = []
+            order_vendors = []
             for product in products:
+                order_vendors.append(product.vendor)
                 order_product = {
                     'id': product.id,
                     'sku': product.sku,
                     'price': product.price,
                     'name': product.name,
-                    'imageUrl': urljoin(current_app.config['IMAGE_HOSTING_URL'], product.image),
+                    'imageUrl': product.image,
                     'categoryId': product.cat_id,
                     'vendor': product.vendor.name,
                     'category': product.category.name,
@@ -123,6 +123,7 @@ def ShopCart():
                 site_id = site.id,
                 hub_id = current_user.hub_id,
                 products = order_products,
+                vendors=list(set(order_vendors)),
                 total = sum([p['quantity']*p['price'] for p in order_products]),
                 status = OrderStatus.new
             )

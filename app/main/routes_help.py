@@ -3,7 +3,7 @@ from flask import render_template
 
 from app.main import bp
 from app.models import UserRoles, Project, Category, User, UserProject, UserCategory
-from app.main.utils import ecwid_required, role_forbidden
+from app.main.utils import role_forbidden
 
 
 ################################################################################
@@ -13,8 +13,7 @@ from app.main.utils import ecwid_required, role_forbidden
 
 @bp.route('/help/', methods=['GET', 'POST'])
 @login_required
-@role_forbidden([UserRoles.default])
-@ecwid_required
+@role_forbidden([UserRoles.default, UserRoles.vendor])
 def ShowHelp():
     project_responsibility = {}
     projects = Project.query.filter_by(hub_id=current_user.hub_id).join(UserProject)

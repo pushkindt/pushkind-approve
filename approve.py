@@ -1,5 +1,5 @@
-from app import create_app, db
-from app.models import User, UserRoles, Ecwid, OrderApproval, OrderStatus
+from app import create_app, db, cli
+from app.models import User, UserRoles, Vendor, OrderApproval, OrderStatus
 from app.models import UserCategory, UserProject, OrderPosition, OrderCategory
 from app.models import EventType, IncomeStatement, CashflowStatement
 from app.models import Category, AppSettings, OrderEvent, Project, Site, Order
@@ -7,6 +7,7 @@ from app.models import Position, OrderLimit
 
 
 application = create_app()
+cli.register(application)
 
 @application.shell_context_processor
 def make_shell_context():
@@ -14,7 +15,7 @@ def make_shell_context():
         'db': db,
         'User': User,
         'UserRoles': UserRoles,
-        'Ecwid': Ecwid,
+        'Vendor': Vendor,
         'OrderApproval': OrderApproval,
         'OrderStatus': OrderStatus,
         'Category': Category,

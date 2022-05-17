@@ -5,15 +5,14 @@ from app import db
 from app.main import bp
 from app.models import UserRoles, OrderLimit, Project, CashflowStatement
 from app.models import OrderLimitsIntervals
-from app.main.utils import ecwid_required, role_forbidden
+from app.main.utils import role_forbidden
 from app.main.forms import AddLimitForm
 
 
 @bp.route('/limits/', methods=['GET'])
 @bp.route('/limits/show', methods=['GET'])
 @login_required
-@role_forbidden([UserRoles.default])
-@ecwid_required
+@role_forbidden([UserRoles.default, UserRoles.vendor])
 def ShowLimits():
     filter_from = request.args.get('from', default=None, type=int)
     try:
@@ -51,8 +50,7 @@ def ShowLimits():
 
 @bp.route('/limits/add', methods=['POST'])
 @login_required
-@role_forbidden([UserRoles.default])
-@ecwid_required
+@role_forbidden([UserRoles.default, UserRoles.vendor, UserRoles.supervisor])
 def AddLimit():
     projects = Project.query
     if current_user.role != UserRoles.admin:
@@ -96,8 +94,7 @@ def AddLimit():
 
 @bp.route('/limits/remove/<int:limit_id>', methods=['GET'])
 @login_required
-@role_forbidden([UserRoles.default])
-@ecwid_required
+@role_forbidden([UserRoles.default, UserRoles.vendor, UserRoles.supervisor])
 def RemoveLimit(limit_id):
     limit = OrderLimit.query.filter_by(hub_id=current_user.hub_id, id=limit_id).first()
     if limit is not None:

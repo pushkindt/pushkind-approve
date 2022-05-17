@@ -2,26 +2,19 @@
 	<div class="row">
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none fw-bold">Номер:</span>
-			{% if store.url %}
-				<a href="{{ store.url }}" target="blank">{{ store.id }}</a>
-			{% else %}
-				{{ store.id }}
-			{% endif %}
+			{{ store.id }}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none fw-bold">Название:</span>
-			{{ store.name or '' }}
+			{{ store.name }}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none fw-bold">Электронная почта:</span>
-			{{ store.email or '' }}
+			{{ store.email }}
 		</div>
 		<div class="col-sm overflow-hidden">
 			{% if current_user.role.name == 'admin' %}
-				<a href="{{ url_for('main.RemoveStore', store_id=store.id) }}" class="btn btn-danger text-white" onclick="return confirm('Удалить поставщика?')">Удалить</a><br>
-			{% endif %}
-			{% if current_user.role.name in ['admin','purchaser'] %}
-				<a href="{{ url_for('main.SyncStoreProducts', store_id=store.id) }}" class="btn btn-warning my-1">Синхронизация</a>
+				<a href="{{ url_for('main.RemoveStore', store_id=store.id) }}" class="btn btn-danger text-white mb-1" onclick="return confirm('Удалить поставщика?')">Удалить</a>
 			{% endif %}
 		</div>
 	</div>

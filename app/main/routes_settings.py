@@ -28,7 +28,7 @@ def RemoveExcessivePosition():
 
 @bp.route('/settings/', methods=['GET', 'POST'])
 @login_required
-@role_forbidden([UserRoles.default])
+@role_forbidden([UserRoles.default, UserRoles.vendor])
 def ShowSettings():
 
     projects = Project.query

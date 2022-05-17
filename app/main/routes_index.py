@@ -8,8 +8,8 @@ from openpyxl.writer.excel import save_virtual_workbook
 from app import db
 from app.main import bp
 from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site
-from app.models import Category, OrderCategory, OrderApproval
-from app.main.utils import ecwid_required, role_forbidden, role_required
+from app.models import Category, OrderCategory, OrderApproval, OrderVendor, Vendor
+from app.main.utils import role_forbidden, role_required
 from app.main.utils import SendEmailNotification, GetNewOrderNumber
 from app.utils import get_filter_timestamps
 from app.main.forms import MergeOrdersForm, SaveOrdersForm
@@ -23,7 +23,6 @@ from app.main.forms import MergeOrdersForm, SaveOrdersForm
 @bp.route('/index/')
 @login_required
 @role_forbidden([UserRoles.default])
-@ecwid_required
 def ShowIndex():
 
     dates = get_filter_timestamps()
@@ -66,14 +65,21 @@ def ShowIndex():
 
         orders = orders.join(OrderCategory)
         orders = orders.filter(
-            OrderCategory.category_id.in_([cat.id for cat in current_user.categories])
+            OrderCategory.category_id.in_(cat.id for cat in current_user.categories)
         )
         orders = orders.join(Site)
-        orders = orders.filter(Site.project_id.in_([p.id for p in current_user.projects]))
+        orders = orders.filter(Site.project_id.in_(p.id for p in current_user.projects))
 
-    elif current_user.role == UserRoles.supervisor:
+    if current_user.role == UserRoles.supervisor:
         orders = orders.join(Site)
         orders = orders.join(Project).filter(Project.enabled == True)
+
+    if current_user.role == UserRoles.vendor:
+        vendor = Vendor.query.filter_by(hub_id=current_user.hub_id, admin_id=current_user.id).first()
+        orders = orders.filter(
+            Order.purchased == True,
+            Order.vendors.any(OrderVendor.vendor_id == vendor.id)
+        )
 
     orders = orders.order_by(Order.create_timestamp.desc())
 
@@ -82,18 +88,22 @@ def ShowIndex():
     categories = Category.query.filter_by(hub_id=current_user.hub.id).all()
     merge_form = MergeOrdersForm()
     save_form = SaveOrdersForm(orders=[order.id for order in orders])
-    return render_template('index.html',
-                           orders=orders, dates=dates, projects=projects, categories=categories,
-                           filter_from=filter_from,
-                           filter_focus=filter_focus,
-                           merge_form=merge_form,
-                           save_form=save_form)
+    return render_template(
+        'index.html',
+        orders=orders, 
+        dates=dates, 
+        projects=projects, 
+        categories=categories,
+        filter_from=filter_from,
+        filter_focus=filter_focus,
+        merge_form=merge_form,
+        save_form=save_form
+    )
 
 
 @bp.route('/orders/merge/', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
-@ecwid_required
 def MergeOrders():
     form = MergeOrdersForm()
     if form.validate_on_submit():
@@ -124,8 +134,10 @@ def MergeOrders():
 
         products = {}
         categories = []
+        vendors = []
         for order in orders:
             categories += [cat.id for cat in order.categories]
+            vendors += [v.id for v in order.vendors]
             for product in order.products:
                 if 'selectedOptions' in product and len(product['selectedOptions']) > 1:
                     product_id = product['sku'] + ''.join(sorted(
@@ -171,7 +183,10 @@ def MergeOrders():
             Category.id.in_(categories),
             Category.hub_id == current_user.hub_id
         ).all()
-
+        order.vendors = Vendor.query.filter(
+            Vendor.name.in_(vendors),
+            Vendor.hub_id == current_user.hub_id
+        ).all()
         order.parents = orders
 
         message = 'заявка объединена из заявок'
@@ -213,7 +228,6 @@ def MergeOrders():
 @bp.route('/orders/save/', methods=['POST'])
 @login_required
 @role_forbidden([UserRoles.default])
-@ecwid_required
 def SaveOrders():
     form = SaveOrdersForm()
     if form.validate_on_submit():

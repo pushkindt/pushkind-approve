@@ -5,7 +5,7 @@ from flask_login import current_user, login_required
 
 from app.main import bp
 from app.models import UserRoles, Order, OrderEvent, EventType
-from app.main.utils import ecwid_required, role_forbidden
+from app.main.utils import role_forbidden
 from app.utils import get_filter_timestamps
 
 
@@ -15,8 +15,7 @@ from app.utils import get_filter_timestamps
 
 @bp.route('/history/', methods=['GET', 'POST'])
 @login_required
-@role_forbidden([UserRoles.default])
-@ecwid_required
+@role_forbidden([UserRoles.default, UserRoles.vendor])
 def ShowHistory():
     dates = get_filter_timestamps()
     filter_from = request.args.get('from', default=dates['recently'], type=int)
