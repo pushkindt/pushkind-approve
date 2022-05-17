@@ -1,27 +1,27 @@
+import os
+
 from flask_login import current_user, login_required
-from flask import render_template, redirect, url_for, flash
-from sqlalchemy.exc import SQLAlchemyError
+from flask import render_template, redirect, url_for, flash, current_app
 
 from app import db
 from app.main import bp
-from app.models import UserRoles, Ecwid, Category, Project, Site
+from app.models import UserRoles, Category, Project, Site
 from app.models import AppSettings, IncomeStatement, CashflowStatement
-from app.main.forms import EcwidSettingsForm, AddProjectForm, AddSiteForm, EditProjectForm
+from app.main.forms import AddCategoryForm, AddProjectForm, AddSiteForm, EditProjectForm
 from app.main.forms import EditSiteForm
 from app.main.forms import Notify1CSettingsForm, CategoryResponsibilityForm
 from app.main.forms import AddIncomeForm, AddCashflowForm, EditIncomeForm, EditCashflowForm
-from app.ecwid import EcwidAPIException
-from app.main.utils import role_required, role_forbidden
+from app.main.utils import role_required
 
 
 @bp.route('/admin/', methods=['GET', 'POST'])
 @login_required
-@role_forbidden([UserRoles.default])
+@role_required([UserRoles.admin])
 def ShowAdminPage():
 
     forms = {
-        'ecwid': EcwidSettingsForm(),
-        'category': CategoryResponsibilityForm(),
+        'add_category': AddCategoryForm(),
+        'edit_category': CategoryResponsibilityForm(),
         'add_project': AddProjectForm(),
         'edit_project': EditProjectForm(),
         'add_site': AddSiteForm(),
@@ -49,11 +49,11 @@ def ShowAdminPage():
     cashflows = CashflowStatement.query.filter(CashflowStatement.hub_id == current_user.hub_id)
     cashflows = cashflows.order_by(CashflowStatement.name).all()
 
-    forms['category'].income_statement.choices = [(i.id, i.name) for i in incomes]
-    forms['category'].cashflow_statement.choices = [(c.id, c.name) for c in cashflows]
-    forms['category'].income_statement.choices.append((0, 'Выберите БДР...'))
-    forms['category'].cashflow_statement.choices.append((0, 'Выберите БДДС...'))
-    forms['category'].process()
+    forms['edit_category'].income_statement.choices = [(i.id, i.name) for i in incomes]
+    forms['edit_category'].cashflow_statement.choices = [(c.id, c.name) for c in cashflows]
+    forms['edit_category'].income_statement.choices.append((0, 'Выберите БДР...'))
+    forms['edit_category'].cashflow_statement.choices.append((0, 'Выберите БДДС...'))
+    forms['edit_category'].process()
 
     return render_template(
         'admin.html',
@@ -86,46 +86,11 @@ def Notify1CSettings():
     return redirect(url_for('main.ShowAdminPage'))
 
 
-@bp.route('/admin/ecwid/', methods=['POST'])
-@login_required
-@role_required([UserRoles.admin])
-def ConfigureEcwid():
-    ecwid_form = EcwidSettingsForm()
-    if ecwid_form.validate_on_submit():
-        if current_user.hub is None:
-            current_user.hub = Ecwid()
-        current_user.hub.partners_key = ecwid_form.partners_key.data
-        current_user.hub.client_id = ecwid_form.client_id.data
-        current_user.hub.client_secret = ecwid_form.client_secret.data
-        current_user.hub.id = ecwid_form.store_id.data
-        try:
-            current_user.hub.GetStoreToken()
-            current_user.hub.GetStoreProfile()
-            db.session.commit()
-            flash('Данные успешно сохранены.')
-        except (SQLAlchemyError, EcwidAPIException):
-            db.session.rollback()
-            flash('Ошибка API или магазин уже используется.')
-            flash('Возможно неверные настройки?')
-        return redirect(url_for('main.ShowAdminPage'))
-
-    errors_list = (
-        ecwid_form.partners_key.errors +
-        ecwid_form.client_id.errors +
-        ecwid_form.client_secret.errors +
-        ecwid_form.store_id.errors
-    )
-    for error in errors_list:
-        flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
-
-
-@bp.route('/admin/categories/', methods=['POST'])
+@bp.route('/admin/category/edit/', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin])
 def SaveCategoryResponsibility():
     form = CategoryResponsibilityForm()
-    print(form)
     incomes = IncomeStatement.query.filter_by(
         id=form.income_statement.data,
         hub_id=current_user.hub_id
@@ -147,7 +112,18 @@ def SaveCategoryResponsibility():
             category.code = form.code.data.strip()
             category.income_id = form.income_statement.data
             category.cashflow_id = form.cashflow_statement.data
+            if form.image.data:
+                f = form.image.data
+                file_name, file_ext = os.path.splitext(f.filename)
+                file_name = f'category-{category.id}{file_ext}'
+                full_path = os.path.join(
+                    'app', 'static', 'upload', file_name
+                )
+                f.save(full_path)
+                category.image = url_for('static', filename=os.path.join('upload', file_name))
+
             db.session.commit()
+            flash("Категория успешно отредактирована.")
     else:
         errors = (
             form.category_id.errors +
@@ -155,6 +131,7 @@ def SaveCategoryResponsibility():
             form.functional_budget.errors +
             form.income_statement.errors +
             form.cashflow_statement.errors +
+            form.image.errors +
             form.code.errors
         )
         for error in errors:
@@ -414,4 +391,43 @@ def EditCashflow():
     else:
         for error in form.cashflow_id.errors + form.cashflow_name.errors:
             flash(error)
+    return redirect(url_for('main.ShowAdminPage'))
+
+
+@bp.route('/admin/category/add/', methods=['POST'])
+@login_required
+@role_required([UserRoles.admin])
+def AddCategory():
+    form = AddCategoryForm()
+    if form.validate_on_submit():
+        category_name = form.category_name.data.strip()
+        category = Category.query.filter_by(name=category_name).first()
+        if category is None:
+            category = Category(
+                name=category_name,
+                hub_id=current_user.hub_id,
+                children=[]
+            )
+            db.session.add(category)
+            db.session.commit()
+            flash(f'Категория {category_name} добавлена.')
+        else:
+            flash(f'Категория {category_name} уже существует.')
+    else:
+        for error in form.category_name.errors:
+            flash(error)
+    return redirect(url_for('main.ShowAdminPage'))
+
+
+@bp.route('/admin/category/remove/<int:category_id>')
+@login_required
+@role_required([UserRoles.admin])
+def RemoveCategory(category_id):
+    category = Category.query.filter_by(id=category_id).first()
+    if category is not None:
+        db.session.delete(category)
+        db.session.commit()
+        flash(f'Категория "{category.name}" удалена.')
+    else:
+        flash('Такой категории не существует.')
     return redirect(url_for('main.ShowAdminPage'))

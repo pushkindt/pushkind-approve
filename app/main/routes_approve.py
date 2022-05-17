@@ -9,13 +9,12 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from app import db
 from app.main import bp
-from app.models import User, UserRoles, Ecwid, OrderApproval, OrderEvent, EventType, OrderStatus
+from app.models import User, UserRoles, Vendor, OrderApproval, OrderEvent, EventType, OrderStatus
 from app.models import Project, Category, Order, OrderCategory, Site, AppSettings, OrderPosition
-from app.models import IncomeStatement, CashflowStatement, OrderLimit
+from app.models import IncomeStatement, CashflowStatement, OrderLimit, OrderVendor
 from app.main.forms import LeaveCommentForm, OrderApprovalForm, ChangeQuantityForm, InitiativeForm
 from app.main.forms import ApproverForm, SplitOrderForm
-from app.ecwid import EcwidAPIException
-from app.main.utils import role_required, ecwid_required, role_forbidden, SendEmailNotification
+from app.main.utils import role_required, role_forbidden, SendEmailNotification
 from app.main.utils import SendEmail1C, GetNewOrderNumber
 
 
@@ -39,6 +38,12 @@ def GetOrder(order_id):
         order = order.join(Site).filter(
             Site.project_id.in_([p.id for p in current_user.projects])
         )
+    elif current_user.role == UserRoles.vendor:
+        vendor = Vendor.query.filter_by(hub_id=current_user.hub_id, admin_id=current_user.id).first()
+        order = order.filter(
+            Order.status == OrderStatus.approved,
+            Order.vendors.any(OrderVendor.vendor_id == vendor.id)
+        )
     order = order.first()
     return order
 
@@ -46,7 +51,6 @@ def GetOrder(order_id):
 @bp.route('/orders/<order_id>')
 @login_required
 @role_forbidden([UserRoles.default])
-@ecwid_required
 def ShowOrder(order_id):
 
     order = GetOrder(order_id)
@@ -130,7 +134,6 @@ def ShowOrder(order_id):
 @bp.route('/orders/split/<order_id>', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
-@ecwid_required
 def SplitOrder(order_id):
 
     order = GetOrder(order_id)
@@ -185,6 +188,11 @@ def SplitOrder(order_id):
                 Category.id.in_(categories),
                 Category.hub_id == current_user.hub_id
             ).all()
+            vendors = [product.get('vendor') for product in new_order.products]
+            new_order.vendors = Vendor.query.filter(
+                Vendor.name.in_(vendors),
+                Vendor.hub_id == current_user.hub_id
+            ).all()
             new_order.parents = [order]
             message = f'заявка получена разделением из заявки {order_id}'
             event = OrderEvent(
@@ -228,7 +236,6 @@ def SplitOrder(order_id):
 @bp.route('/orders/duplicate/<order_id>')
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
-@ecwid_required
 def DuplicateOrder(order_id):
     order = GetOrder(order_id)
     if order is None:
@@ -253,6 +260,7 @@ def DuplicateOrder(order_id):
 
     new_order.hub_id = current_user.hub_id
     new_order.categories = order.categories
+    new_order.vendors = order.vendors
 
     message = f'заявка клонирована с номером {new_order.id}'
     event = OrderEvent(
@@ -294,7 +302,6 @@ def DuplicateOrder(order_id):
 @bp.route('/orders/quantity/<order_id>', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
-@ecwid_required
 def SaveQuantity(order_id):
 
     order = GetOrder(order_id)
@@ -391,7 +398,6 @@ def SaveQuantity(order_id):
 @bp.route('/orders/excel1/<order_id>')
 @login_required
 @role_forbidden([UserRoles.default])
-@ecwid_required
 def GetExcelReport1(order_id):
     order = GetOrder(order_id)
     if order is None:
@@ -442,7 +448,7 @@ def GetExcelReport1(order_id):
     ws.cell(i, 3).value = datetime.fromtimestamp(
         order.create_timestamp,
         tz = timezone(timedelta(hours=3), name='Europe/Moscow')
-    )
+    ).strftime('%Y-%m-%d')
     if order.status == OrderStatus.approved:
         i += 1
         for i, approval in enumerate(order.approvals, start=i):
@@ -450,7 +456,7 @@ def GetExcelReport1(order_id):
                 continue
             ws.cell(i, 3).value = approval.timestamp.astimezone(
                 timezone(timedelta(hours=3), name='Europe/Moscow')
-            )
+            ).strftime('%Y-%m-%d')
             ws.cell(i, 4).value = approval.user.position.name
             ws.cell(i, 5).value = approval.user.name
 
@@ -465,7 +471,6 @@ def GetExcelReport1(order_id):
 @bp.route('/orders/excel2/<order_id>')
 @login_required
 @role_forbidden([UserRoles.default])
-@ecwid_required
 def GetExcelReport2(order_id):
     order = GetOrder(order_id)
     if order is None:
@@ -497,7 +502,7 @@ def GetExcelReport2(order_id):
     ws.cell(i, 9).value = datetime.fromtimestamp(
         order.create_timestamp,
         tz = timezone(timedelta(hours=3), name='Europe/Moscow')
-    )
+    ).strftime('%Y-%m-%d')
     if order.status == OrderStatus.approved:
         i += 1
         for i, approval in enumerate(order.approvals, start=i):
@@ -505,7 +510,7 @@ def GetExcelReport2(order_id):
                 continue
             ws.cell(i, 9).value = approval.timestamp.astimezone(
                 timezone(timedelta(hours=3), name='Europe/Moscow')
-            )
+            ).strftime('%Y-%m-%d')
             ws.cell(i, 10).value = approval.user.position.name
             ws.cell(i, 11).value = approval.user.name
 
@@ -520,7 +525,6 @@ def GetExcelReport2(order_id):
 @bp.route('/orders/notify/<order_id>')
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
-@ecwid_required
 def NotifyApprovers(order_id):
     order = GetOrder(order_id)
     if order is None:
@@ -534,7 +538,6 @@ def NotifyApprovers(order_id):
 @bp.route('/orders/dealdone/<order_id>')
 @login_required
 @role_required([UserRoles.admin, UserRoles.purchaser])
-@ecwid_required
 def SetDealDone(order_id):
     order = GetOrder(order_id)
     if order is None:
@@ -637,7 +640,7 @@ def Prepare1CReport(order, excel_date):
         ws.cell(i, 20).value = datetime.fromtimestamp(
             order.create_timestamp,
             tz = timezone(timedelta(hours=3), name='Europe/Moscow')
-        )
+        ).strftime('%Y-%m-%d')
         if order.status == OrderStatus.approved:
             i += 1
             for i, approval in enumerate(order.approvals, start=i):
@@ -645,7 +648,7 @@ def Prepare1CReport(order, excel_date):
                     continue
                 ws.cell(i, 20).value = approval.timestamp.astimezone(
                     timezone(timedelta(hours=3), name='Europe/Moscow')
-                )
+                ).strftime('%Y-%m-%d')
                 ws.cell(i, 21).value = approval.user.position.name
                 ws.cell(i, 22).value = approval.user.name
         data = save_virtual_workbook(wb)
@@ -656,7 +659,6 @@ def Prepare1CReport(order, excel_date):
 @bp.route('/orders/excel1C/<order_id>')
 @login_required
 @role_required([UserRoles.admin, UserRoles.validator, UserRoles.purchaser])
-@ecwid_required
 def GetExcelReport1C(order_id):
     order = GetOrder(order_id)
     if order is None:
@@ -854,7 +856,6 @@ def SaveApproval(order_id):
 @bp.route('/orders/statements/<order_id>', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.validator, UserRoles.purchaser])
-@ecwid_required
 def SaveStatements(order_id):
     order = GetOrder(order_id)
     if order is None:
@@ -929,7 +930,6 @@ def SaveStatements(order_id):
 @bp.route('/orders/parameters/<order_id>', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.validator, UserRoles.purchaser])
-@ecwid_required
 def SaveParameters(order_id):
     order = GetOrder(order_id)
     if order is None:
@@ -1020,67 +1020,29 @@ def LeaveComment(order_id):
 
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
-
 @bp.route('/orders/process/<order_id>')
 @login_required
 @role_required([UserRoles.admin, UserRoles.purchaser])
-@ecwid_required
 def ProcessHubOrder(order_id):
     order = GetOrder(order_id)
     if order is None:
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
 
-    template = order.to_ecwid()
-    template['email'] = current_user.email
-    stores = Ecwid.query.filter(Ecwid.hub_id == current_user.hub_id).all()
-    got_orders = {}
-    for store in stores:
-        products = []
-        total = 0
-        for product in template['items']:
-            try:
-                dash = product['sku'].index('-')
-            except ValueError:
-                continue
-            if product['sku'][:dash] == str(store.id):
-                product_new = product.copy()
-                product_new['sku'] = product_new['sku'][dash+1:]
-                products.append(product_new)
-                total += product_new['price'] * product_new['quantity']
-        if len(products) == 0:
-            continue
-        items = template['items']
-        template['items'] = products
-        template['total'] = total
+    message = f'Заявка была отправлена поставщикам: '
+    message += ', '.join(vendor.name for vendor in order.vendors)
 
-        try:
-            result = store.SetStoreOrder(template)
-            got_orders[store.name] = result['id']
-        except EcwidAPIException:
-            flash(f'Не удалось перезаказать товары у {store.name}.')
-        template['items'] = items
+    event = OrderEvent(
+        user_id=current_user.id,
+        order_id=order_id,
+        type=EventType.purchased,
+        data=message,
+        timestamp=datetime.now(tz=timezone.utc)
+    )
+    db.session.add(event)
+    order.purchased = True
+    db.session.commit()
 
-    if len(got_orders) > 0:
-        message = ', '.join(
-            f'{vendor} (#{order_id})' for vendor, order_id in got_orders.items()
-        )
-
-        event = OrderEvent(
-            user_id=current_user.id,
-            order_id=order_id,
-            type=EventType.purchased,
-            data=message,
-            timestamp=datetime.now(tz=timezone.utc)
-        )
-
-        order.purchased = True
-
-        db.session.add(event)
-        db.session.commit()
-
-        flash(f'Заявка была отправлена поставщикам: {message}')
-    else:
-        flash('Не удалось перезаказать данные товары у зарегистрованных поставщиков.')
+    flash(message)
 
     return redirect(url_for('main.ShowOrder', order_id=order_id))

@@ -4,10 +4,10 @@
 	</li>
 	{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
 		<li class="nav-item">
-			<a class="nav-link {% if request.endpoint == 'main.ShowEcwid' %} active {% endif %}" href="{{ url_for('main.ShowEcwid') }}">Заказать</a>
+			<a class="nav-link {% if request.endpoint in ('main.ShopCategories', 'main.ShopVendors', 'main.ShopProducts', 'main.ShopCart') %} active {% endif %}" href="{{ url_for('main.ShopCategories') }}">Заказать</a>
 		</li>
 	{% endif %}
-	{% if current_user.role.name != 'default' %}
+	{% if current_user.role.name not in ['default', 'vendor'] %}
 		<li class="nav-item">
 			<a class="nav-link {% if request.endpoint == 'main.ShowLimits' %} active {% endif %}" href="{{ url_for('main.ShowLimits') }}">Лимиты</a>
 		</li>
@@ -17,18 +17,27 @@
 			<a class="nav-link {% if request.endpoint == 'main.ShowStores' %} active {% endif %}" href="{{ url_for('main.ShowStores') }}">Поставщики</a>
 		</li>
 	{% endif %}
-	<li class="nav-item">
-		<a class="nav-link {% if request.endpoint == 'main.ShowSettings' %} active {% endif %}" href="{{ url_for('main.ShowSettings') }}">Настройки</a>
-	</li>
+	{% if current_user.role.name in ['admin', 'vendor'] %}
+		<li class="nav-item">
+			<a class="nav-link {% if request.endpoint == 'main.ShowProducts' %} active {% endif %}" href="{{ url_for('main.ShowProducts') }}">Товары</a>
+		</li>
+	{% endif %}
+	{% if current_user.role.name not in ['vendor'] %}
+		<li class="nav-item">
+			<a class="nav-link {% if request.endpoint == 'main.ShowSettings' %} active {% endif %}" href="{{ url_for('main.ShowSettings') }}">Настройки</a>
+		</li>
+	{% endif %}
 	{% if current_user.role.name in ['admin'] %}
 		<li class="nav-item">
 			<a class="nav-link {% if request.endpoint == 'main.ShowAdminPage' %} active {% endif %}" href="{{ url_for('main.ShowAdminPage') }}">Администрирование</a>
 		</li>
 	{% endif %}
-	<li class="nav-item">
-		<a class="nav-link {% if request.endpoint == 'main.ShowHelp' %} active {% endif %}" href="{{ url_for('main.ShowHelp') }}">Справка</a>
-	</li>
-	{% if current_user.role.name != 'default' %}
+	{% if current_user.role.name not in ['default', 'vendor'] %}
+		<li class="nav-item">
+			<a class="nav-link {% if request.endpoint == 'main.ShowHelp' %} active {% endif %}" href="{{ url_for('main.ShowHelp') }}">Справка</a>
+		</li>
+	{% endif %}
+	{% if current_user.role.name not in ['default', 'vendor'] %}
 		<li class="nav-item">
 			<a class="nav-link {% if request.endpoint == 'main.ShowHistory' %} active {% endif %}" href="{{ url_for('main.ShowHistory') }}">История</a>
 		</li>

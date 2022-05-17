@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block styles%}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container my-2">
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <input class="form-control" id="categoryFilter" type="text" placeholder="Фильтр..">
+        </div>
+    </div>
+
+</div>
+
+<div class="container bg-white border rounded">
+
+    <nav class="navbar navbar-light bg-white">
+        <div class="container">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="siteProjectSelect">Выбор проекта и объекта</a>
+                </li>
+            </ul>
+            <a class="navbar-text h4" href="{{url_for('main.ShopCart')}}">
+                <i class="bi bi-cart"></i>
+            </a>
+        </div>
+    </nav>
+    <div id="categoryList">
+        {% for rows in categories|batch(3) %}
+            <div class="row">
+                {% for category in rows %}
+                    <div class="col-sm m-1">
+                        <div class="card shadow text-center selectable" data-id="{{category.id}}">
+                            <div class="card-header">
+                                {{category.name}}
+                            </div>
+                            <div class="card-body">
+                                <img src="{{category.image or config['PLACEHOLDER_IMAGE']}}" height="164" width="164" alt="thumbnail">
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% for i in range(3 - rows|length) %}
+                    <div class="col-sm m-1">
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+<div class="modal fade" id="siteProjectModal" tabindex="-1" aria-labelledby="siteProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="siteProjectModalLabel">Проект и объект</h5>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm my-1">
+                        <select class="form-select border-danger" id="projectSelect">
+                            <option value="" disabled selected>Выберите проект...</option>
+                            {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm my-1">
+                        <select class="form-select border-danger" id="siteSelect">
+                            <option value="" disabled selected>Выберите объект...</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-auto my-1">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" disabled
+                            id="siteProjectDismiss">Продолжить</button>
+                    </div>
+                </div>
+                <div class="alert alert-warning my-1 d-none" role="alert" id="limitAlert">
+                    Внимание! Для выбранного проекта сумма ранее полученных заявок
+                    по некоторым статьям бюджета превысила 95% от лимита.
+                    Вы можете продолжить создание заявки, но учтите риск её
+                    отклонения на этапе согласования. Возможно необходимо инициировать
+                    увеличение бюджета.
+                </div>
+                <div class="d-none" id="limits">
+                    <div class="row d-none d-sm-flex fw-bold">
+                        <div class="col">
+                            <div class="row">
+                                <div class="col overflow-hidden">
+                                    Проект
+                                </div>
+                                <div class="col overflow-hidden">
+                                    БДДС
+                                </div>
+                                <div class="col overflow-hidden">
+                                    Интервал
+                                </div>
+                                <div class="col overflow-hidden">
+                                    Лимит
+                                </div>
+                                <div class="col overflow-hidden">
+                                    Сумма
+                                </div>
+                                <div class="col overflow-hidden">
+                                    Остаток
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% for limit in limits %}
+                    {% include '_limit.html' %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+
+        var siteProjectModal = new bootstrap.Modal(document.getElementById('siteProjectModal'), { 'backdrop': 'static' });
+
+        var projects = [{% for project in projects %}{{ project| safe }}, {% endfor %}];
+
+        var project_id = Number(sessionStorage.getItem('project_id'));
+        var site_id = Number(sessionStorage.getItem('site_id'));
+
+        var project = projects.find(obj => {return obj['id'] === project_id});
+        var site = undefined;
+        if (project){
+            site = project['sites'].find(obj => {return obj['id'] === site_id});
+        }
+
+        if (!project || !site){
+            sessionStorage.removeItem("project_id");
+            sessionStorage.removeItem("project_name");
+            sessionStorage.removeItem("site_id");
+            sessionStorage.removeItem("site_name");
+            siteProjectModal.show();
+        }
+        else
+            $("#siteProjectSelect").text(project["name"] + ', ' + site["name"])
+
+        $("#siteProjectSelect").click(function(){
+            siteProjectModal.show();
+        });
+
+        $("#projectSelect").change(function () {
+            project_id = Number($(this).val());
+            project = projects.find(obj => {return obj['id'] === project_id});
+            sessionStorage.setItem("project_id", project['id']);
+            sessionStorage.setItem("project_name", project['name']);
+            site = undefined;
+            site_id = undefined;
+            sessionStorage.removeItem('site_id');
+            sessionStorage.removeItem('site_name');
+            $("#siteProjectSelect").text("Выбор проекта и объекта")
+
+            $(this).removeClass("border-danger");
+            $("#siteProjectDismiss").prop("disabled", true);
+            $("#siteProjectDismiss").addClass("btn-secondary");
+            $("#siteProjectDismiss").removeClass("btn-primary");
+            let sitesList = $("#siteSelect");
+            sitesList.empty();
+            let defaultSite = $("<option>").text("Выберите объект...");
+            defaultSite.prop("disabled", true);
+            defaultSite.prop("selected", true);
+            sitesList.append(defaultSite);
+
+            let show_limit_alert = false;
+
+            for (j = 0; j < project["sites"].length; j++) {
+                let siteOption = $("<option>")
+                siteOption.text(project["sites"][j]["name"])
+                siteOption.val(project["sites"][j]["id"])
+                sitesList.append(siteOption);
+            }
+            $("#limits").removeClass("d-none");
+            $(".limit").filter(function () {
+                let show = $(this).data("project") == project["id"];
+                $(this).toggle(show);
+                if (show)
+                    show_limit_alert |= $(this).data("overlimit");
+            });
+            if ($(".limit:visible").length == 0)
+                $("#limits").addClass("d-none");
+            if (show_limit_alert)
+                $("#limitAlert").removeClass("d-none");
+            else
+                $("#limitAlert").addClass("d-none");
+        });
+        $("#siteSelect").change(function () {
+            site_id = Number($(this).val());
+            site = project['sites'].find(obj => {return obj['id'] === site_id});
+            sessionStorage.setItem("site_id", site['id']);
+            sessionStorage.setItem("site_name", site['name']);
+            $("#siteProjectSelect").text(project["name"] + ', ' + site["name"])
+            $(this).removeClass("border-danger");
+            $("#siteProjectDismiss").prop("disabled", false);
+            $("#siteProjectDismiss").removeClass("btn-secondary");
+            $("#siteProjectDismiss").addClass("btn-primary");
+        });
+        $(".selectable").click(function (event) {
+            let categoryId = $(this).attr('data-id');
+            document.location.href = "{{ url_for('main.ShopProducts', cat_id=0) }}".replace("0", categoryId);
+        });
+        $("#categoryFilter").on("keyup", function () {
+            let value = $(this).val().toLowerCase();
+            $("#categoryList .card").filter(function () {
+                let show = $(this).text().toLowerCase().indexOf(value) > -1;
+                $(this).toggle(show);
+            });
+        });
+    });
+
+</script>
+{%endblock %}

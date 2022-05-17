@@ -5,7 +5,7 @@ from flask import render_template, flash, jsonify
 from flask_login import current_user
 
 from app import db
-from app.models import Order, User
+from app.models import Order
 from app.email import SendEmail
 
 
@@ -59,27 +59,6 @@ def role_forbidden_ajax(roles_list):
             return function(*args, **kwargs)
         return wrapper
     return decorator
-
-
-def ecwid_required(function):
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        if current_user.hub is None:
-            flash('Взаимодействие с ECWID не настроено.')
-            return render_template('errors/400.html'), 400
-        return function(*args, **kwargs)
-    return wrapper
-
-
-def ecwid_required_ajax(function):
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        if current_user.hub is None:
-            return jsonify(
-                {'status': False, 'flash': ['Взаимодействие с ECWID не настроено.']}
-            ), 400
-        return function(*args, **kwargs)
-    return wrapper
 
 
 def SendEmailNotification(kind, order, recipients_id=None):

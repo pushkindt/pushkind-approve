@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block styles%}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container my-2">
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <input class="form-control" id="productFilter" type="text" placeholder="Фильтр..">
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            {% set glob={} %}
+            {% for vendor in vendors %}
+                {% if vendor_id == vendor.id %}
+                    {% set _ = glob.update({'vendor_name':vendor.name}) %}
+                    <a href="{{ url_for('main.ShopProducts', vendor_id=vendor.id, cat_id=category.id) }}" class="text-decoration-none badge bg-primary">{{ vendor.name }}</a>
+                {% else %}
+                    <a href="{{ url_for('main.ShopProducts', vendor_id=vendor.id, cat_id=category.id) }}" class="text-decoration-none badge bg-white fw-normal text-secondary border">{{ vendor.name }}</a>
+                {% endif %}
+            {% endfor %}
+            <a href="{{ url_for('main.ShopProducts',cat_id=category.id) }}" class="text-decoration-none badge {% if vendor_id is none %}bg-primary{% else %}bg-white fw-normal text-secondary border{% endif %}">все</a>
+        </div>
+    </div>
+</div>
+
+<div class="container bg-white border rounded">
+
+    <nav class="navbar navbar-light bg-white">
+        <div class="container">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{url_for('main.ShopCategories')}}" id="siteProjectSelect">Выбор проекта и объекта</a>
+                </li>
+            </ul>
+            <a class="navbar-text h4" href="{{url_for('main.ShopCart')}}">
+                <i class="bi bi-cart"></i>
+            </a>
+        </div>
+    </nav>
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{url_for('main.ShopCategories')}}">Категории</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{{url_for('main.ShopProducts', cat_id=category.id)}}">{{category.name}}</a>
+            </li>
+            {% if 'vendor_name' in glob %}
+                <li class="breadcrumb-item active" aria-current="page">{{glob['vendor_name']}}</li>
+            {% endif %}
+        </ol>
+    </nav>
+
+    <div id="productList">
+        {% for product in products %}
+            <form class="cartItem" data-id="{{product.id}}" data-name="{{product.name}}" data-sku="{{product.sku}}">
+                <div class="row border-top border-bottom my-1 py-3" data-id="{{product.id}}">
+                    <div class="col-auto selectable">
+                        <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="96" width="96" alt="thumbnail">
+                    </div>
+                    <div class="col mt-2 overflow-hidden selectable">
+                        <h5>{{product.name}}</h5>
+                        <small>Артикул: {{product.sku}}</small>
+                        <pre style="height: 3pc; overflow: hidden;">{{product.description}}</pre>
+                    </div>
+                    <div class="col-sm-2 overflow-hidden">
+                        Цена: <strong>{{product.price}}</strong>
+                        <a href="{{ url_for('main.ShopProducts', vendor_id=product.vendor.id, cat_id=category.id) }}" class="text-decoration-none badge bg-white fw-normal text-secondary border">{{ product.vendor.name }}</a>
+                        <br>
+                        Единицы: <strong>{{product.measurement}}</strong>
+                        <br>
+                        <div class="input-group my-1">
+                            <span class="input-group-text">Кол-во</span>
+                            <input type="number" class="form-control addToCart" min="0" step="1" aria-label="Количество" id="input-addon{{product.id}}">
+                        </div>
+                    </div>
+                    <div class="col-sm-3 overflow-hidden">
+                        <textarea class="form-control addToCart" id="text-addon{{product.id}}" rows="4" placeholder="Комментарий, ссылка на файл в облаке или текст баннера"></textarea>
+                    </div>
+                </div>
+            </form>
+            <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1" aria-labelledby="#descriptionModalLabel{{product.id}}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="descriptionModalLabel{{product.id}}">{{product.name}}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="carouselControls{{product.id}}" class="carousel carousel-dark slide" data-bs-ride="carousel">
+                                <div class="carousel-inner">
+                                    <div class="carousel-item active">
+                                        <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" class="d-block w-100" alt="Main image">
+                                    </div>
+                                    <div class="carousel-item">
+                                        <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" class="d-block w-100" alt="Media image">
+                                    </div>
+                                </div>
+                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselControls{{product.id}}" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#carouselControls{{product.id}}" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            </div>
+                            <strong>Описание:</strong>
+                            <pre>{{product.description}}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+
+        var shoppingCart = sessionStorage.getItem('shoppingCart');
+        if (!shoppingCart){
+            shoppingCart = [];
+            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+        }
+        else {
+
+            try {
+                shoppingCart = JSON.parse(shoppingCart);
+                shoppingCart.forEach(element => {
+                    let input = $('#input-addon'+element['id']);
+                    let text = $('#text-addon'+element['id']);
+                    if (input){
+                        input.val(element['quantity']);
+                        input.addClass('border-success')
+                    }
+                    if (text)
+                        text.val(element['text']);
+                });
+            } catch(e) {
+                shoppingCart = [];
+                sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+            }
+        }
+
+        let project_id = sessionStorage.getItem('project_id');
+        let site_id = sessionStorage.getItem('site_id');
+        let site_name = sessionStorage.getItem('site_name');
+        let project_name = sessionStorage.getItem('project_name');
+        if (!project_id || !site_id || !project_name || !site_name)
+            window.location = "{{url_for('main.ShopCategories')}}";
+        $("#siteProjectSelect").text(project_name + ', ' + site_name);
+        $("#siteProjectSelect").click(function(){
+            sessionStorage.removeItem("project_id");
+            sessionStorage.removeItem("project_name");
+            sessionStorage.removeItem("site_id");
+            sessionStorage.removeItem("site_name");
+        });
+        $(".addToCart").keyup(function(){
+            let form = $(this).closest('.cartItem');
+            let timerId = form.data('timer');
+            if (timerId)
+                clearTimeout(timerId);
+            timerId = setTimeout(function(form){
+                form.removeData('timer');
+                let itemId = Number(form.data('id'));
+                let itemName = form.data('name');
+                let itemSku = form.data('sku');
+                let input = form.find('input.addToCart');
+                let itemQuantity = Number(input.val());
+                let itemText = form.find('textarea.addToCart').val();
+                if (itemQuantity > 0) {
+                    let cartItem = shoppingCart.find(obj => {return obj['id'] === itemId});
+                    if (!cartItem){
+                        cartItem = {
+                            "id": itemId,
+                            "name": itemName,
+                            "sku": itemSku
+                        }
+                        shoppingCart.push(cartItem);
+                    }
+                    if (itemText)
+                        cartItem["text"] = itemText;
+                    cartItem["quantity"] = itemQuantity;
+                    input.addClass('border-success');
+                }
+                else {
+                    shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
+                    input.removeClass('border-success');
+                }
+                sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+            }, 500, form);
+            form.data('timer', timerId);
+        });
+        $("#productFilter").on("keyup", function () {
+            let value = $(this).val().toLowerCase();
+            $("#productList > .row").filter(function () {
+                let show = $(this).text().toLowerCase().indexOf(value) > -1;
+                $(this).toggle(show);
+            });
+        });
+        $(".selectable").click(function (event) {
+            let productId = $(this).parent('.row').attr('data-id');
+            let modalElement = document.getElementById('descriptionModal'+productId);
+            let descriptionModal = bootstrap.Modal.getInstance(modalElement);
+            if (!descriptionModal)
+                descriptionModal= new bootstrap.Modal(modalElement, {});
+            descriptionModal.show();
+        });
+    });
+
+</script>
+{%endblock %}

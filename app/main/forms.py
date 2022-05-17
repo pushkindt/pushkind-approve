@@ -1,11 +1,12 @@
 import json
 
 from flask_wtf import FlaskForm
-from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField
+from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FieldList
 from wtforms import FormField, Form, PasswordField, BooleanField, SelectMultipleField, DecimalField
-from wtforms.fields.html5 import EmailField
+from wtforms.fields import EmailField
 from wtforms.validators import DataRequired, Length, ValidationError, Email, InputRequired, Optional
-from wtforms.fields.html5 import DateField
+from wtforms.fields import DateField
+from flask_wtf.file import FileField, FileRequired, FileAllowed
 
 from app.models import OrderLimitsIntervals, UserRoles
 
@@ -137,11 +138,6 @@ class AddStoreForm(FlaskForm):
         'Пароль',
         validators=[DataRequired(message='Пароль - обязательное поле.')]
     )
-    plan = StringField(
-        'Платежный план',
-        default='J_PUSHKIND_FREEDEMO',
-        validators=[DataRequired(message='Платежный план - обязательное поле.')]
-    )
     submit = SubmitField('Создать')
 
 
@@ -214,26 +210,6 @@ class SaveOrdersForm(FlaskForm):
 # Admin page
 ################################################################################
 
-class EcwidSettingsForm(FlaskForm):
-    partners_key = StringField(
-        'Ключ partners_key',
-        validators=[DataRequired(message='Ключ partners_key - обязательное поле.')]
-    )
-    client_id = StringField(
-        'Ключ client_id',
-        validators=[DataRequired(message='Ключ client_id - обязательное поле.')]
-    )
-    client_secret = StringField(
-        'Ключ client_secret',
-        validators=[DataRequired(message='Ключ client_secret - обязательное поле.')]
-    )
-    store_id = IntegerField(
-        'ID магазина',
-        validators=[DataRequired(message='ID магазина - обязательное поле.')]
-    )
-    submit = SubmitField('Сохранить')
-
-
 class Notify1CSettingsForm(FlaskForm):
     email = EmailField('Электронная почта')
     enable = BooleanField('Включить рассылку 1С')
@@ -276,20 +252,32 @@ class EditProjectForm(FlaskForm):
 
 class EditSiteForm(FlaskForm):
     site_id = IntegerField(
-        'ID проекта',
-        validators=[DataRequired(
-        message='ID проекта - обязательное поле.')]
+        'ID объекта',
+        validators=[
+            DataRequired(message='ID объекта - обязательное поле.')
+        ]
     )
     site_name = StringField(
         'Название',
-        validators=[DataRequired(
-        message='Название объекта - обязательное поле.')]
+        validators=[
+            DataRequired(message='Название объекта - обязательное поле.')
+        ]
     )
     uid = StringField(
         'Код',
         validators=[Optional()]
     )
     submit = SubmitField('Изменить')
+
+
+class AddCategoryForm(FlaskForm):
+    category_name = StringField(
+        'Название',
+        validators=[
+            DataRequired(message='Название категории - обязательное поле.')
+        ]
+    )
+    submit = SubmitField('Создать')
 
 
 class CategoryResponsibilityForm(FlaskForm):
@@ -319,6 +307,9 @@ class CategoryResponsibilityForm(FlaskForm):
         'Код',
         validators=[DataRequired(message='Код категории - обязательное поле.')]
     )
+    image = FileField(label = 'Изображение', validators=[
+        FileAllowed(['jpg', 'png'], 'Разрешены только изображения JPG и PNG!')
+    ])
     submit = SubmitField('Сохранить')
 
 
@@ -386,3 +377,60 @@ class AddLimitForm(FlaskForm):
         coerce=int
     )
     submit = SubmitField('Создать')
+
+
+################################################################################
+# Shop page
+################################################################################
+
+class CartItemForm(Form):
+    product = IntegerField(
+        'Идентификатор товара',
+        validators=[DataRequired(message='ID товара - обязательное поле.')],
+        render_kw={'hidden': ''}
+    )
+    quantity = IntegerField(
+        'Количество товара',
+        validators=[InputRequired(message='Невозможное значение количества.')],
+        render_kw={'type': 'number', 'step': 1, 'min': 0}
+    )
+    text = TextAreaField(
+        'Текст баннера'
+    )
+    def validate_quantity(self, quantity):
+        if quantity.data < 0:
+            raise ValidationError('Количество не может быть меньше нуля.')
+
+class CreateOrderForm(FlaskForm):
+    project_id = IntegerField(
+        'ID проекта',
+        validators=[DataRequired(message='ID проекта - обязательное поле.')],
+        render_kw={'hidden': ''}
+    )
+    site_id = IntegerField(
+        'ID объекта',
+        validators=[DataRequired(
+        message='ID объекта - обязательное поле.')],
+        render_kw={'hidden': ''}
+    )
+    cart = FieldList(FormField(CartItemForm))
+    submit = SubmitField('Создать')
+
+
+################################################################################
+# Shop page
+################################################################################
+
+class UploadProductsForm(FlaskForm):
+    products = FileField(label = 'Продукты', validators=[
+        FileRequired('Разрешены только XLSX.'),
+        FileAllowed(['xlsx'], 'Разрешены только XLSX.')
+    ])
+    submit = SubmitField('Загрузить')
+
+class UploadImagesForm(FlaskForm):
+    images = FileField(label = 'Изображения', validators=[
+        FileRequired('Разрешены только zip архивы.'),
+        FileAllowed(['zip'], 'Разрешены только zip архивы.')
+    ])
+    submit = SubmitField('Загрузить')

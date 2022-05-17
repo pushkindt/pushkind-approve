@@ -8,6 +8,7 @@ from hashlib import md5
 import jwt
 from flask import current_app
 from flask_login import UserMixin
+from sqlalchemy import ForeignKey
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
@@ -15,7 +16,6 @@ from sqlalchemy.sql import expression
 
 from app import db
 from app import login
-from app.ecwid import EcwidAPI
 from app.utils import get_filter_timestamps
 
 
@@ -81,6 +81,7 @@ class UserRoles(enum.IntEnum):
     validator = 3
     purchaser = 4
     supervisor = 5
+    vendor = 6
 
     def __str__(self):
         pretty = [
@@ -89,7 +90,8 @@ class UserRoles(enum.IntEnum):
             'Инициатор',
             'Валидатор',
             'Закупщик',
-            'Наблюдатель'
+            'Наблюдатель',
+            'Поставщик'
         ]
         return pretty[self.value]
 
@@ -127,10 +129,13 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-class Ecwid(db.Model, EcwidAPI):
-    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=True)
-    hub = db.relationship('Ecwid')
-    users = db.relationship('User', backref='hub')
+class Vendor(db.Model):
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    name = db.Column(db.String(128), nullable=False)
+    email = db.Column(db.String(128), nullable=False)
+    hub = db.relationship('Vendor')
     positions = db.relationship('Position', backref='hub')
     categories = db.relationship('Category', backref='hub')
     settings = db.relationship('AppSettings', backref='hub')
@@ -173,7 +178,7 @@ class User(UserMixin, db.Model):
         nullable=True
     )
     location = db.Column(db.String(128), nullable=True)
-    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=True)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=True)
     email_new = db.Column(
         db.Boolean,
         nullable=False,
@@ -217,6 +222,7 @@ class User(UserMixin, db.Model):
         backref='user', lazy='dynamic'
     )
     orders = db.relationship('Order', backref='initiative')
+    hub = db.relationship('Vendor', foreign_keys=[hub_id])
 
     @property
     def projects_list(self):
@@ -292,7 +298,7 @@ class User(UserMixin, db.Model):
 class Position(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
     users = db.relationship('User', backref='position')
     approvals = db.relationship('OrderPosition', cascade='all, delete-orphan', backref='position')
 
@@ -312,7 +318,7 @@ class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
     children = db.Column(JsonType(), nullable=False)
-    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
     responsible = db.Column(db.String(128), nullable=True)
     functional_budget = db.Column(db.String(128), nullable=True)
     income_id = db.Column(  # БДР
@@ -326,6 +332,7 @@ class Category(db.Model):
         nullable=True
     )
     code = db.Column(db.String(128), nullable=True)
+    image = db.Column(db.String(128), nullable=True)
     income_statement = db.relationship('IncomeStatement')
     cashflow_statement = db.relationship('CashflowStatement')
 
@@ -354,7 +361,7 @@ class Category(db.Model):
 
 class AppSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False, unique=True)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False, unique=True)
     notify_1C = db.Column(
         db.Boolean,
         nullable=False,
@@ -381,7 +388,7 @@ class OrderEvent(db.Model):
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
     sites = db.relationship('Site', cascade='all, delete-orphan', backref='project')
     enabled = db.Column(db.Boolean, nullable=False, default=True,
                         server_default=expression.true(), index=True)
@@ -414,7 +421,7 @@ class Site(db.Model):
             'project_id': self.project_id,
             'name': self.name,
             'uid': self.uid
-            }
+        }
         return data
 
 
@@ -449,7 +456,7 @@ class Order(db.Model):
         db.ForeignKey('cashflow_statement.id', ondelete='SET NULL'),
         nullable=True
     )
-    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
     purchased = db.Column(
         db.Boolean,
         nullable=False,
@@ -475,6 +482,7 @@ class Order(db.Model):
         server_default=expression.false()
     )
     categories = db.relationship('Category', secondary='order_category')
+    vendors = db.relationship('Vendor', secondary='order_vendor')
     events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='order')
     positions = db.relationship('Position', secondary='order_position')
     approvals = db.relationship('OrderPosition', backref='order')
@@ -559,7 +567,7 @@ class Order(db.Model):
         return result
 
     @classmethod
-    def UpdateOrdersPositions(cls, hub_id, order_id=None):
+    def UpdateOrdersPositions(cls, hub_id, order_id=None, update_status=False):
 
         # Query orders from the hub
         orders = Order.query.filter(Order.hub_id == hub_id, Order.status != OrderStatus.approved)
@@ -598,8 +606,8 @@ class Order(db.Model):
                 if approval is not None:
                     position.approved = True
                     position.user = approval.user
-
-            order.UpdateOrderStatus()
+            if update_status is True:
+                order.UpdateOrderStatus()
         db.session.commit()
 
     @property
@@ -610,21 +618,17 @@ class Order(db.Model):
     def create_date(self, dt):
         self.create_timestamp = int(dt.timestamp())
 
-    def to_ecwid(self):
-        data = {
-            'email': self.initiative.email,
-            'items': self.products,
-            'total': self.total,
-            'paymentStatus': 'AWAITING_PAYMENT',
-            'fulfillmentStatus': 'AWAITING_PROCESSING'
-        }
-        return data
-
 
 class OrderCategory(db.Model):
     __tablename__ = 'order_category'
     order_id = db.Column(db.String(128), db.ForeignKey('order.id'), primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), primary_key=True)
+
+
+class OrderVendor(db.Model):
+    __tablename__ = 'order_vendor'
+    order_id = db.Column(db.String(128), db.ForeignKey('order.id'), primary_key=True)
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), primary_key=True)
 
 
 class OrderPosition(db.Model):
@@ -658,7 +662,7 @@ class IncomeStatement(db.Model):
     __tablename__ = 'income_statement'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
 
     def __repr__(self):
         return json.dumps(self.to_dict())
@@ -672,7 +676,7 @@ class CashflowStatement(db.Model):
     __tablename__ = 'cashflow_statement'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
 
     def __repr__(self):
         return json.dumps(self.to_dict())
@@ -705,7 +709,7 @@ class OrderLimitsIntervals(enum.IntEnum):
 class OrderLimit(db.Model):
     __tablename__ = 'order_limit'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    hub_id = db.Column(db.Integer, db.ForeignKey('ecwid.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
     value = db.Column(db.Float, nullable=False, default=0.0, server_default='0.0')
     current = db.Column(db.Float, nullable=False, default=0.0, server_default='0.0')
     cashflow_id = db.Column(
@@ -729,7 +733,7 @@ class OrderLimit(db.Model):
     project = db.relationship('Project')
 
     @classmethod
-    def update_current(cls, hub_id, project_id = None, cashflow_id=None):
+    def update_current(cls, hub_id, project_id=None, cashflow_id=None):
         limits = OrderLimit.query.filter_by(hub_id=hub_id)
 
         if project_id is not None and cashflow_id is not None:
@@ -766,3 +770,23 @@ class OrderLimit(db.Model):
                     order.over_limit = order.status != OrderStatus.approved
 
         db.session.commit()
+
+
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
+    name = db.Column(db.String(128), nullable=False, index=True)
+    sku = db.Column(db.String(128), nullable=False, index=True)
+    price = db.Column(db.Float, nullable=False)
+    image = db.Column(db.String(128), nullable=True)
+    measurement = db.Column(db.String(128), nullable=True)
+    cat_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
+    description = db.Column(db.String(), nullable=True)
+    input_required =  db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False,
+        server_default=expression.false()
+    )
+    vendor = db.relationship('Vendor', backref='products')
+    category = db.relationship('Category')
