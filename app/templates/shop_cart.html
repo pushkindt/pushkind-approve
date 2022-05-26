@@ -8,18 +8,18 @@
 
 <div class="container bg-white border rounded">
 
-    <nav class="navbar navbar-light bg-white">
-        <div class="container">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{url_for('main.ShopCategories')}}" id="siteProjectSelect">Выбор проекта и объекта</a>
-                </li>
-            </ul>
-            <a class="navbar-text h4" href="{{url_for('main.ShopCart')}}">
-                <i class="bi bi-cart"></i>
+    <div class="row">
+        <div class="col overflow-hidden">
+            Создание заявки для:<br>
+            <a class="text-muted text-decoration-none" href="{{url_for('main.ShopCategories')}}" id="siteProjectSelect">Выбор проекта и объекта</a>
+        </div>
+        <div class="col-auto text-end overflow-hidden">
+            <a class="text-muted" href="{{url_for('main.ShopCart')}}">
+                <i class="bi bi-cart fs-4"></i><br>
+                <small class="text-muted" id="inCartItems"></small>
             </a>
         </div>
-    </nav>
+    </div>
 
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -34,20 +34,6 @@
         {{ form.csrf_token }}
         {{ form.project_id(class_='d-none') }}
         {{ form.site_id(class_='d-none') }}
-        <div class="row bg-light d-none d-sm-flex border">
-            <div class="col overflow-hidden">
-                Артикул
-            </div>
-            <div class="col overflow-hidden">
-                Название
-            </div>		
-            <div class="col-2 overflow-hidden">
-                Количество
-            </div>
-            <div class="col-2 overflow-hidden">
-                Удаление
-            </div>
-        </div>
         <div class="alert alert-secondary my-1" id="emptyCartAlert">
             Корзина пуста
         </div>
@@ -65,30 +51,33 @@
 {% endblock %}
 
 {% block templates %}
-<div class="row my-1 border-bottom cartItem" id="cartItemTemplate">
-    <div class="col-sm my-1">
-        <span class="d-sm-none fw-bold">Артикул:</span>
-        <span id="productSkuTemplate"></span>
-    </div>
-    <div class="col-sm my-1">
-        <div class="row">
-            <div class="col">
-                <span class="d-sm-none fw-bold">Название:</span>
-                <span id="productNameTemplate"></span><br>
-            </div>
-            <div class="col">
-                <textarea class="form-control addToCart" name="cart-_-text" id="productTextTemplate" rows="2"></textarea>                
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-2 my-1">
+<div class="row rounded border-top border-bottom my-1 py-1 cartItem" id="cartItemTemplate">
+    <div class="col-auto">
         <input required type="number" class="d-none" name="cart-_-product" hidden id="productIdTemplate">
-        <input required type="number" value="1" min="1" step="1" class="form-control addToCart" name="cart-_-quantity" id="productQuantityTemplate">
+        <img id="productImageTemplate" src="{{ config['PLACEHOLDER_IMAGE'] }}" height="64" width="64" alt="thumbnail">
     </div>
-    <div class="col-sm-2 my-1">
-        <button class="btn btn-danger removeFromCart" id="productRemoveTemplate">
+    <div class="col overflow-hidden">
+        <h5 id="productNameTemplate"></h5>
+        <small>Артикул: <span id="productSkuTemplate"></span></small>
+    </div>
+    <div class="col-sm-1 overflow-hidden">
+        <span id="productVendorTemplate"></span>
+    </div>
+    <div class="col-sm-2 overflow-hidden">
+        Цена: <strong id="productPriceTemplate"></strong>
+        <br>
+        Единицы: <strong id="productMeasurementTemplate"></strong>
+        <br>
+        <div class="input-group my-1">
+            <span class="input-group-text">Кол-во</span>
+            <input required type="number" value="1" min="1" step="1" class="form-control addToCart" name="cart-_-quantity" id="productQuantityTemplate">
+        </div>
+        <button class="btn btn-danger removeFromCart mb-1" id="productRemoveTemplate">
             Удалить
         </button>
+    </div>
+    <div class="col-sm-3 overflow-hidden">
+        <textarea style="height: 100%;" class="form-control addToCart" name="cart-_-text" id="productTextTemplate" rows="3" placeholder="Комментарий, ссылка на файл в облаке или текст баннера"></textarea>
     </div>
 </div>
 {% endblock %}
@@ -98,6 +87,17 @@
     $(document).ready(function () {
 
         var shoppingCart = sessionStorage.getItem('shoppingCart');
+
+        function SetInCartText(){
+            let numItems = shoppingCart.length;
+            if (numItems > 0){
+                let totalPrice = shoppingCart.reduce((a, b) => a + (b['price']|| 0) * (b["quantity"] || 0), 0);
+                $("#inCartItems").text(numItems + ' позиции на сумму ' + totalPrice.toFixed(2));
+            }
+            else
+                $("#inCartItems").text('');
+        }
+
         var shoppingCartItems = $("#shoppingCartItems");
         if (!shoppingCart){
             shoppingCart = [];
@@ -112,6 +112,7 @@
                 sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
             }
         }
+        SetInCartText();
 
         let project_id = Number(sessionStorage.getItem('project_id'));
         let site_id = Number(sessionStorage.getItem('site_id'));
@@ -139,39 +140,46 @@
         let i = 0;
         shoppingCart.forEach(item => {
             let content = $('#cartItemTemplate').clone();
-            content.data('id', item['id']);
-            content.data('name', item['name']);
-            content.data('sku', item['sku']);
-            content.removeAttr('id');
             let sku = content.find('#productSkuTemplate');
-            sku.text(item['sku']);
-            sku.removeAttr('id');
             let name = content.find('#productNameTemplate');
-            name.text(item['name']);
-            name.removeAttr('id');
             let text = content.find('#productTextTemplate');
-            let form_name;
-            if (item['text']){
-                text.val(item['text']);
-                text.removeAttr('id');
-                form_name = text.attr('name').replace('_', i);
-                text.attr('name', form_name);
-            }
-            else
-                text.remove();
+            let image = content.find('#productImageTemplate');
+            let vendor = content.find('#productVendorTemplate');
+            let price = content.find('#productPriceTemplate');
             let remove = content.find('#productRemoveTemplate');
-            remove.data('id', item['id']);
-            remove.removeAttr('id');
             let product = content.find('#productIdTemplate');
-            product.val(item['id']);
-            product.removeAttr('id');
-            form_name = product.attr('name').replace('_', i);
-            product.attr('name', form_name);
             let quantity = content.find('#productQuantityTemplate');
-            quantity.val(item['quantity']);
+            let measurement = content.find('#productMeasurementTemplate');
+
+            content.removeAttr('id');
+            sku.removeAttr('id');
+            name.removeAttr('id');
+            text.removeAttr('id');
+            image.removeAttr('id');
+            vendor.removeAttr('id');
+            price.removeAttr('id');
+            remove.removeAttr('id');
+            product.removeAttr('id');
             quantity.removeAttr('id');
-            form_name = quantity.attr('name').replace('_', i);
-            quantity.attr('name', form_name);
+            measurement.removeAttr('id');
+
+            content.data('id', item['id']);
+            sku.text(item['sku']);
+            name.text(item['name']);
+            text.val(item['text']);
+            if (item['image'])
+                image.attr('src', item['image']);
+            vendor.text(item['vendor']);
+            price.text(item['price'].toFixed(2));
+            product.val(item['id']);
+            quantity.val(item['quantity']);
+            measurement.text(item['measurement']);
+            remove.data('id', item['id']);
+
+            text.attr('name', text.attr('name').replace('_', i));
+            product.attr('name', product.attr('name').replace('_', i));
+            quantity.attr('name', quantity.attr('name').replace('_', i));
+
             shoppingCartItems.append(content);
             i++;
         });
@@ -180,17 +188,18 @@
             let itemId = Number($(this).data('id'));
             shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
             sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-            $(this).parent('.row').remove();
+            $(this).parent('.cartItem').remove();
             if (shoppingCartItems.children.length == 0){
                 $("#submit").addClass('d-none');
                 $("#emptyCartAlert").removeClass("d-none");
             }
+            SetInCartText();
         });
         $("#submit").click(function(){
             shoppingCart = [];
             sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
         });
-        $(".addToCart").keyup(function(){
+        $(".addToCart").on("keyup change", function(){
             let form = $(this).closest('.cartItem');
             let timerId = form.data('timer');
             if (timerId)
@@ -198,29 +207,19 @@
             timerId = setTimeout(function(form){
                 form.removeData('timer');
                 let itemId = Number(form.data('id'));
-                console.log(itemId);
-                let itemName = form.data('name');
-                let itemSku = form.data('sku');
-                let input = form.find('input.addToCart');
-                let itemQuantity = Number(input.val());
+                let itemQuantity = Number(form.find('input.addToCart').val());
                 let itemText = form.find('textarea.addToCart').val();
                 if (!itemQuantity || itemQuantity == 0){
                     itemQuantity = 1;
                     input.val(itemQuantity);
                 }
                 let cartItem = shoppingCart.find(obj => {return obj['id'] === itemId});
-                if (!cartItem){
-                    cartItem = {
-                        "id": itemId,
-                        "name": itemName,
-                        "sku": itemSku
-                    }
-                    shoppingCart.push(cartItem);
-                }
-                if (itemText)
+                if (cartItem){
                     cartItem["text"] = itemText;
-                cartItem["quantity"] = itemQuantity;
-            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+                    cartItem["quantity"] = itemQuantity;
+                }
+                sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+                SetInCartText();
             }, 500, form);
             form.data('timer', timerId);
         });

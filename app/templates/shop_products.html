@@ -31,18 +31,18 @@
 
 <div class="container bg-white border rounded">
 
-    <nav class="navbar navbar-light bg-white">
-        <div class="container">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{url_for('main.ShopCategories')}}" id="siteProjectSelect">Выбор проекта и объекта</a>
-                </li>
-            </ul>
-            <a class="navbar-text h4" href="{{url_for('main.ShopCart')}}">
-                <i class="bi bi-cart"></i>
+    <div class="row">
+        <div class="col overflow-hidden">
+            Создание заявки для:<br>
+            <a class="text-muted text-decoration-none" href="{{url_for('main.ShopCategories')}}" id="siteProjectSelect">Выбор проекта и объекта</a>
+        </div>
+        <div class="col-auto text-end overflow-hidden">
+            <a class="text-muted" href="{{url_for('main.ShopCart')}}">
+                <i class="bi bi-cart fs-4"></i><br>
+                <small class="text-muted" id="inCartItems"></small>
             </a>
         </div>
-    </nav>
+    </div>
 
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -60,19 +60,23 @@
 
     <div id="productList">
         {% for product in products %}
-            <form class="cartItem" data-id="{{product.id}}" data-name="{{product.name}}" data-sku="{{product.sku}}">
-                <div class="row border-top border-bottom my-1 py-3" data-id="{{product.id}}">
+            <form class="cartItem" data-id="{{product.id}}" data-name="{{product.name}}" data-sku="{{product.sku}}" data-price="{{product.price}}"  data-vendor="{{product.vendor.name}}"  data-image="{{product.image}}" data-measurement="{{product.measurement}}">
+                <div class="row border-top border-bottom my-1 py-1" data-id="{{product.id}}">
                     <div class="col-auto selectable">
                         <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="96" width="96" alt="thumbnail">
                     </div>
-                    <div class="col mt-2 overflow-hidden selectable">
+                    <div class="col overflow-hidden selectable">
                         <h5>{{product.name}}</h5>
                         <small>Артикул: {{product.sku}}</small>
-                        <pre style="height: 3pc; overflow: hidden;">{{product.description}}</pre>
+                        {% if product.description %}
+                            <pre style="height: 3pc; overflow: hidden;" class="mb-0">{{product.description}}</pre>
+                        {% endif %}
+                    </div>
+                    <div class="col-sm-1 overflow-hidden">
+                        {{ product.vendor.name }}
                     </div>
                     <div class="col-sm-2 overflow-hidden">
-                        Цена: <strong>{{product.price}}</strong>
-                        <a href="{{ url_for('main.ShopProducts', vendor_id=product.vendor.id, cat_id=category.id) }}" class="text-decoration-none badge bg-white fw-normal text-secondary border">{{ product.vendor.name }}</a>
+                        Цена: <strong>{{'{:,.2f}'.format(product['price'])}}</strong>
                         <br>
                         Единицы: <strong>{{product.measurement}}</strong>
                         <br>
@@ -82,7 +86,7 @@
                         </div>
                     </div>
                     <div class="col-sm-3 overflow-hidden">
-                        <textarea class="form-control addToCart" id="text-addon{{product.id}}" rows="4" placeholder="Комментарий, ссылка на файл в облаке или текст баннера"></textarea>
+                        <textarea style="height: 100%" class="form-control addToCart" id="text-addon{{product.id}}" rows="3" placeholder="Комментарий, ссылка на файл в облаке или текст баннера"></textarea>
                     </div>
                 </div>
             </form>
@@ -128,6 +132,18 @@
     $(document).ready(function () {
 
         var shoppingCart = sessionStorage.getItem('shoppingCart');
+
+        function SetInCartText(){
+            let numItems = shoppingCart.length;
+            if (numItems > 0){
+                let totalPrice = shoppingCart.reduce((a, b) => a + (b['price']|| 0) * (b["quantity"] || 0), 0);
+                $("#inCartItems").text(numItems + ' позиции на сумму ' + totalPrice.toFixed(2));
+            }
+            else
+                $("#inCartItems").text('');
+        }
+
+
         if (!shoppingCart){
             shoppingCart = [];
             sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
@@ -151,6 +167,7 @@
                 sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
             }
         }
+        SetInCartText();
 
         let project_id = sessionStorage.getItem('project_id');
         let site_id = sessionStorage.getItem('site_id');
@@ -165,7 +182,7 @@
             sessionStorage.removeItem("site_id");
             sessionStorage.removeItem("site_name");
         });
-        $(".addToCart").keyup(function(){
+        $(".addToCart").on("keyup change", function(){
             let form = $(this).closest('.cartItem');
             let timerId = form.data('timer');
             if (timerId)
@@ -174,17 +191,25 @@
                 form.removeData('timer');
                 let itemId = Number(form.data('id'));
                 let itemName = form.data('name');
+                let itemVendor = form.data('vendor');
+                let itemImage = form.data('image');
                 let itemSku = form.data('sku');
+                let itemPrice = Number(form.data('price'));
                 let input = form.find('input.addToCart');
                 let itemQuantity = Number(input.val());
                 let itemText = form.find('textarea.addToCart').val();
+                let itemMeasurement = form.data('measurement');
                 if (itemQuantity > 0) {
                     let cartItem = shoppingCart.find(obj => {return obj['id'] === itemId});
                     if (!cartItem){
                         cartItem = {
                             "id": itemId,
                             "name": itemName,
-                            "sku": itemSku
+                            "sku": itemSku,
+                            "price": itemPrice,
+                            "vendor": itemVendor,
+                            "image": itemImage,
+                            "measurement": itemMeasurement
                         }
                         shoppingCart.push(cartItem);
                     }
@@ -198,6 +223,7 @@
                     input.removeClass('border-success');
                 }
                 sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+                SetInCartText();
             }, 500, form);
             form.data('timer', timerId);
         });

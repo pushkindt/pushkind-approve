@@ -77,7 +77,7 @@ def ShowIndex():
     if current_user.role == UserRoles.vendor:
         vendor = Vendor.query.filter_by(hub_id=current_user.hub_id, admin_id=current_user.id).first()
         orders = orders.filter(
-            Order.purchased == True,
+            # Order.purchased == True,
             Order.vendors.any(OrderVendor.vendor_id == vendor.id)
         )
 

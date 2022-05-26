@@ -120,6 +120,4 @@ def SendEmail1C(recipients, order, data):
 
 def GetNewOrderNumber():
     count = db.session.query(Order).count()
-    letter = chr(int(count / 1000) + 97)
-    count = count % 1000
-    return f'{letter}{count:04d}'
+    return f'{count}'

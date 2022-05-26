@@ -41,7 +41,7 @@ def GetOrder(order_id):
     elif current_user.role == UserRoles.vendor:
         vendor = Vendor.query.filter_by(hub_id=current_user.hub_id, admin_id=current_user.id).first()
         order = order.filter(
-            Order.status == OrderStatus.approved,
+            # Order.purchased == True,
             Order.vendors.any(OrderVendor.vendor_id == vendor.id)
         )
     order = order.first()

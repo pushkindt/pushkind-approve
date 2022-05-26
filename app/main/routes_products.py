@@ -56,14 +56,14 @@ def UploadProducts():
         flash('Такой поставщик не найден.')
     else:
         if form.validate_on_submit():
-            df = pd.read_excel(form.products.data)
+            df = pd.read_excel(form.products.data, engine='openpyxl')
             df.columns= df.columns.str.lower()
             df['vendor_id'] = vendor.id
             categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
             categories = {c.name.lower():c.id for c in categories}
             df['cat_id'] = df['category'].apply(lambda x: categories.get(x.lower()))
             df.drop(df.columns.difference(['name','sku', 'price', 'measurement', 'cat_id', 'vendor_id', 'description']), axis=1, inplace=True)
-            df.dropna(subset='cat_id', inplace=True)
+            df.dropna(subset=['cat_id'], inplace=True)
             Product.query.filter_by(vendor_id=vendor.id).delete()
             db.session.commit()
             df.to_sql(name = 'product', con = db.engine, if_exists = 'append', index = False)
