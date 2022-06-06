@@ -1,6 +1,6 @@
 Заявка #{{ order.id }} была отклонена
 
 Нажмите на ссылку для перехода в Личный Кабинет
-{{ url_for('main.ShowOrder', order_id = order.id, _external=True) }}
+{{ url_for('auth.login_token', token=token, next=next_page, _external=True) }}
 
 Это автоматическое уведомление, не отвечайте на него.

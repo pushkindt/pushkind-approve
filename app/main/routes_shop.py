@@ -132,6 +132,7 @@ def ShopCart():
             db.session.commit()
             Order.UpdateOrdersPositions(current_user.hub_id, order_id)
             flash('Заявка успешно создана.')
+            SendEmailNotification('new', order)
             return redirect(url_for('main.ShowOrder', order_id=order_id))
         else:
             flash('Что-то пошло не так.')

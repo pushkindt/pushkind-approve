@@ -1,7 +1,7 @@
 from functools import wraps
 
 from flask import current_app
-from flask import render_template, flash, jsonify
+from flask import render_template, url_for, jsonify
 from flask_login import current_user
 
 from app import db
@@ -61,32 +61,28 @@ def role_forbidden_ajax(roles_list):
     return decorator
 
 
-def SendEmailNotification(kind, order, recipients_id=None):
-    if recipients_id is None:
-        recipients = [
-            r.email for r in order.reviewers if getattr(r, f'email_{kind}', False) is True
-        ]
-    else:
-        recipients = [
-            r.email for r in order.reviewers if (
-                getattr(r, f'email_{kind}', False) is True and r.id in recipients_id
-            )
-        ]
-    if len(recipients) == 0:
-        return
-    current_app.logger.info(
-        '"%s" email about order %s has been sent to %s',
-        kind,
-        order.id,
-        recipients
+def SendEmailNotification(kind, order, recipients_id=[]):
+    recipients = (
+        r for r in order.reviewers if (
+            getattr(r, f'email_{kind}', False) is True and
+            (r.id in recipients_id or len(recipients_id) == 0)
+        )
     )
-    if len(recipients) > 0:
+    for recipient in recipients:
+        current_app.logger.info(
+            '"%s" email about order %s has been sent to %s',
+            kind,
+            order.id,
+            recipient.email
+        )
+        token = recipient.get_jwt_token()
+        next_page=url_for('main.ShowOrder', order_id=order.id)
         SendEmail(
             f'Уведомление по заявке #{order.id}',
             sender=(current_app.config['MAIL_SENDERNAME'], current_app.config['MAIL_USERNAME']),
-            recipients=recipients,
-            text_body=render_template(f'email/{kind}.txt', order=order),
-            html_body=render_template(f'email/{kind}.html', order=order)
+            recipients=[recipient.email],
+            text_body=render_template(f'email/{kind}.txt', next_page=next_page, token=token, order=order),
+            html_body=render_template(f'email/{kind}.html', next_page=next_page, token=token, order=order)
         )
 
 

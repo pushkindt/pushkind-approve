@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 
 from flask import render_template, redirect, url_for, flash, current_app
 from flask_login import login_user, logout_user, current_user
+from flask import request
+from werkzeug.urls import url_parse
 
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.models import User, UserRoles
@@ -18,7 +20,7 @@ def login():
     if form.validate_on_submit():
         email = form.email.data.lower()
         user = User.query.filter_by(email=email).first()
-        if user is None or not user.CheckPassword(form.password.data):
+        if user is None or not user.check_password(form.password.data):
             flash('Некорректный логин или пароль.')
             return redirect(url_for('auth.login'))
         login_user(user, remember=form.remember_me.data)
@@ -30,6 +32,24 @@ def login():
     return render_template('auth/login.html', form=form)
 
 
+@bp.route('/login/<token>/', methods=['GET'])
+def login_token(token):
+    next_page = request.args.get('next')
+    if not next_page or url_parse(next_page).netloc != '':
+        next_page = url_for('main.ShowIndex')
+
+    user = User.verify_jwt_token(token)
+    if not user:
+        flash('Некорректный токен авторизации.')
+        return redirect(url_for('auth.login'))
+
+    if not current_user.is_authenticated:
+        login_user(user, remember=False)
+        current_app.logger.info('%s logged', user.email)
+
+    return redirect(next_page)
+
+
 @bp.route('/signup/', methods=['GET', 'POST'])
 def signup():
     if current_user.is_authenticated and current_user.role != UserRoles.admin:
@@ -38,7 +58,7 @@ def signup():
     if form.validate_on_submit():
         email = form.email.data.lower()
         user = User(email=email)
-        user.SetPassword(form.password.data)
+        user.set_password(form.password.data)
         user.registered = datetime.now(tz=timezone.utc)
         db.session.add(user)
         db.session.commit()
@@ -82,15 +102,17 @@ def request_password_reset():
 def reset_password(token):
     if current_user.is_authenticated:
         return redirect(url_for('main.ShowIndex'))
-    user = User.VerifyPasswordResetToken(token)
+    user = User.verify_jwt_token(token)
     if not user:
-        return redirect(url_for('main.ShowIndex'))
+        return redirect(url_for('auth.login'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
-        user.SetPassword(form.password.data)
+        user.set_passwors(form.password.data)
         db.session.commit()
         flash('Ваш пароль был изменён.')
         return redirect(url_for('auth.login'))
     for error in form.password.errors + form.password2.errors:
         flash(error)
     return render_template('auth/reset.html', form=form)
+
+

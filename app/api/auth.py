@@ -13,7 +13,7 @@ def verify_password(email, password):
     if user is None:
         return False
     g.user_id = user.id
-    return user.CheckPassword(password)
+    return user.check_password(password)
 
 
 @basic_auth.error_handler

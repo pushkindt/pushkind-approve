@@ -2,7 +2,7 @@
     Заявка #{{ order.id }} была отклонена
 </p>
 <p>
-    Нажмите на <a href="{{ url_for('main.ShowOrder', order_id = order.id, _external=True) }}">ссылку</a> для
+    Нажмите на <a href="{{ url_for('auth.login_token', token=token, next=next_page, _external=True) }}">ссылку</a> для
     перехода в Личный Кабинет.
 </p>
 <p>

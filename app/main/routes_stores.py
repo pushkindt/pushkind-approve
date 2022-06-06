@@ -29,7 +29,7 @@ def ShowStores():
                 role=UserRoles.vendor,
                 hub_id=current_user.hub_id
             )
-            vendor_admin.SetPassword(store_form.password.data)
+            vendor_admin.set_password(store_form.password.data)
             vendor_admin.registered = datetime.now(tz=timezone.utc)
             db.session.add(vendor_admin)
             db.session.commit()

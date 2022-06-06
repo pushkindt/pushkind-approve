@@ -7,7 +7,7 @@
 	{% endfor %}
 {% endif %}
 
-Перейдите по ссылке {{ url_for('main.ShowOrder', order_id = order.id, _external=True) }} для
+Перейдите по ссылке {{ url_for('auth.login_token', token=token, next=next_page, _external=True) }} для
 перехода в Личный Кабинет.
 
 Это автоматическое уведомление, не отвечайте на него. В случае возникновения вопросов по заявке - свяжитесь с

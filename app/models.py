@@ -241,13 +241,13 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return json.dumps(self.to_dict())
 
-    def SetPassword(self, password):
+    def set_password(self, password):
         self.password = generate_password_hash(password)
 
-    def CheckPassword(self, password):
+    def check_password(self, password):
         return check_password_hash(self.password, password)
 
-    def GetAvatar(self, size):
+    def get_avatar(self, size):
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
         return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
 
@@ -272,24 +272,24 @@ class User(UserMixin, db.Model):
                 'categories': self.categories_list}
         return data
 
-    def GetPasswordResetToken(self, expires_in=600):
+    def get_jwt_token(self, expires_in=600):
         return jwt.encode(
             {
-                'reset_password': self.id,
+                'user_id': self.id,
                 'exp': time() + expires_in
             },
             current_app.config['SECRET_KEY'],
             algorithm='HS256'
-        ).decode('utf-8')
+        )
 
     @staticmethod
-    def VerifyPasswordResetToken(token):
+    def verify_jwt_token(token):
         try:
             user_id = jwt.decode(
                 token,
                 current_app.config['SECRET_KEY'],
                 algorithms=['HS256']
-            )['reset_password']
+            )['user_id']
         except:
             return None
         return User.query.get(user_id)

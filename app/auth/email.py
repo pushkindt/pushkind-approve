@@ -4,7 +4,7 @@ from app.email import SendEmail
 
 
 def send_password_reset_email(user):
-    token = user.GetPasswordResetToken()
+    token = user.get_jwt_token()
     SendEmail(
         'Сброс пароля для "Согласования заявок"',
         sender=current_app.config['MAIL_USERNAME'],
