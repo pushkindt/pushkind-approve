@@ -133,7 +133,7 @@ def ShopCart():
             Order.UpdateOrdersPositions(current_user.hub_id, order_id)
             flash('Заявка успешно создана.')
             SendEmailNotification('new', order)
-            return redirect(url_for('main.ShowOrder', order_id=order_id))
+            return redirect(url_for('main.ShowIndex'))
         else:
             flash('Что-то пошло не так.')
     return render_template(
