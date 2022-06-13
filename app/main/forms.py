@@ -414,11 +414,11 @@ class CreateOrderForm(FlaskForm):
         render_kw={'hidden': ''}
     )
     cart = FieldList(FormField(CartItemForm))
-    submit = SubmitField('Создать')
+    submit = SubmitField('Отправить заявку на согласование')
 
 
 ################################################################################
-# Shop page
+# Vendor page
 ################################################################################
 
 class UploadProductsForm(FlaskForm):

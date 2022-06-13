@@ -6,29 +6,45 @@
 
 {% block content %}
 
-<div class="container bg-white border rounded">
+<div class="container bg-yellow border rounded">
 
-    <div class="row">
+    <div class="row my-2">
         <div class="col overflow-hidden">
-            Создание заявки для:<br>
-            <a class="text-muted text-decoration-none" href="{{url_for('main.ShopCategories')}}" id="siteProjectSelect">Выбор проекта и объекта</a>
+            <strong>ЗАЯВКА</strong>
+            от {{ moment().format('DD.MM.YYYY') }}
         </div>
         <div class="col-auto text-end overflow-hidden">
-            <a class="text-muted" href="{{url_for('main.ShopCart')}}">
-                <i class="bi bi-cart fs-4"></i><br>
-                <small class="text-muted" id="inCartItems"></small>
+            <a class="text-muted" href="{{url_for('main.ShopCategories')}}">
+                Вернуться в каталог
             </a>
         </div>
     </div>
-
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="{{url_for('main.ShopCategories')}}">Категории</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Корзина</li>
-        </ol>
-    </nav>
+    <div class="row">
+        <div class="col">
+            <strong>Проект:</strong>
+            <a href="{{url_for('main.ShopCategories')}}" id="projectSelect" class="siteProjectSelect">Не указан</a><br>
+            <strong>Объект:</strong>
+            <a href="{{url_for('main.ShopCategories')}}" id="siteSelect" class="siteProjectSelect">Не указан</a>
+        </div>
+    </div>
+	<div class="row">
+		<div class="col">
+			<strong>Инициатор:</strong>
+			{% set user = current_user %}
+			{% include '_user.popover.html' %}
+			{{ user.name }}
+		</div>
+	</div>
+    <div class="row mt-2">
+        <div class="col">
+            <span id="inCartItems"></span>
+        </div>
+        <div class="col text-end">
+            <strong>
+                Проверьте заявку перед отправкой
+            </strong>
+        </div>
+    </div>
 
     <form method="POST" action="{{url_for('main.ShopCart')}}" id="shoppingCartForm">
         {{ form.csrf_token }}
@@ -40,7 +56,7 @@
         <div id="shoppingCartItems">
         </div>
         <div class="row my-3">
-            <div class="col">
+            <div class="col text-center">
                 {{ form.submit(class_='btn btn-primary text-white d-none') }}
             </div>
         </div>
@@ -72,12 +88,9 @@
             <span class="input-group-text">Кол-во</span>
             <input required type="number" value="1" min="1" step="1" class="form-control addToCart" name="cart-_-quantity" id="productQuantityTemplate">
         </div>
-        <button class="btn btn-danger removeFromCart mb-1" id="productRemoveTemplate">
-            Удалить
-        </button>
     </div>
     <div class="col-sm-3 overflow-hidden">
-        <textarea style="height: 100%;" class="form-control addToCart" name="cart-_-text" id="productTextTemplate" rows="3" placeholder="Комментарий, ссылка на файл в облаке или текст баннера"></textarea>
+        <textarea style="height: 100%;" class="form-control addToCart" name="cart-_-text" id="productTextTemplate" rows="3" placeholder="место для комментария или ссылки на файл в облаке"></textarea>
     </div>
 </div>
 {% endblock %}
@@ -92,7 +105,7 @@
             let numItems = shoppingCart.length;
             if (numItems > 0){
                 let totalPrice = shoppingCart.reduce((a, b) => a + (b['price']|| 0) * (b["quantity"] || 0), 0);
-                $("#inCartItems").text(numItems + ' позиции на сумму ' + totalPrice.toFixed(2));
+                $("#inCartItems").text('Всего позиций: ' + numItems + ' на сумму ' + totalPrice.toFixed(2));
             }
             else
                 $("#inCartItems").text('');
@@ -120,12 +133,13 @@
         let project_name = sessionStorage.getItem('project_name');
         if (!project_id || !site_id || !project_name || !site_name)
             window.location = "{{url_for('main.ShopCategories')}}";
-        $("#siteProjectSelect").text(project_name + ', ' + site_name);
+        $("#projectSelect").text(project_name);
+        $("#siteSelect").text(site_name);
 
         $("#project_id").val(project_id);
         $("#site_id").val(site_id);
 
-        $("#siteProjectSelect").click(function(){
+        $(".siteProjectSelect").click(function(){
             sessionStorage.removeItem("project_id");
             sessionStorage.removeItem("project_name");
             sessionStorage.removeItem("site_id");
@@ -146,7 +160,6 @@
             let image = content.find('#productImageTemplate');
             let vendor = content.find('#productVendorTemplate');
             let price = content.find('#productPriceTemplate');
-            let remove = content.find('#productRemoveTemplate');
             let product = content.find('#productIdTemplate');
             let quantity = content.find('#productQuantityTemplate');
             let measurement = content.find('#productMeasurementTemplate');
@@ -158,7 +171,6 @@
             image.removeAttr('id');
             vendor.removeAttr('id');
             price.removeAttr('id');
-            remove.removeAttr('id');
             product.removeAttr('id');
             quantity.removeAttr('id');
             measurement.removeAttr('id');
@@ -174,7 +186,6 @@
             product.val(item['id']);
             quantity.val(item['quantity']);
             measurement.text(item['measurement']);
-            remove.data('id', item['id']);
 
             text.attr('name', text.attr('name').replace('_', i));
             product.attr('name', product.attr('name').replace('_', i));
@@ -184,17 +195,6 @@
             i++;
         });
 
-        $(".removeFromCart").click(function(){
-            let itemId = Number($(this).data('id'));
-            shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
-            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-            $(this).parent('.cartItem').remove();
-            if (shoppingCartItems.children.length == 0){
-                $("#submit").addClass('d-none');
-                $("#emptyCartAlert").removeClass("d-none");
-            }
-            SetInCartText();
-        });
         $("#submit").click(function(){
             shoppingCart = [];
             sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
@@ -207,11 +207,12 @@
             timerId = setTimeout(function(form){
                 form.removeData('timer');
                 let itemId = Number(form.data('id'));
-                let itemQuantity = Number(form.find('input.addToCart').val());
+                let itemQuantityInput = form.find('input.addToCart');
+                let itemQuantity = Number(itemQuantityInput.val());
                 let itemText = form.find('textarea.addToCart').val();
                 if (!itemQuantity || itemQuantity == 0){
                     itemQuantity = 1;
-                    input.val(itemQuantity);
+                    itemQuantityInput.val(itemQuantity);
                 }
                 let cartItem = shoppingCart.find(obj => {return obj['id'] === itemId});
                 if (cartItem){
