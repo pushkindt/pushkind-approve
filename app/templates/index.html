@@ -35,7 +35,7 @@
 <div class="container">
 	<div class="row my-2 fs-7">
 		<div class="col">
-			Выбрано заявок: <span id="orderCount">{{ orders|length }}</span> на сумму <span id="orderTotal">{{"%.2f"|format(orders| sum(attribute='total')) }}</span>
+			Выбрано заявок: <span id="orderCount">{{ orders|length }}</span> на сумму <span id="orderTotal">{{"%.2f"|format(orders| sum(attribute='total') / 1000000 ) }}</span> млн.
 		</div>
 		<div class="col text-end">
 			<a href="#" id="saveOrdersButton">скачать</a><br>
@@ -154,6 +154,7 @@
 					orderTotal += Number($(this).data("total"));
 				}
 			});
+			orderTotal /= 1000000;
 			$("#orderCount").text(order_list.length);
 			$("#orderTotal").text(orderTotal.toFixed(2));
 			$("#saveOrders").val(JSON.stringify(order_list));
