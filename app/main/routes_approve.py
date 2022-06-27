@@ -206,6 +206,7 @@ def SplitOrder(order_id):
             db.session.commit()
             SendEmailNotification('new', new_order)
 
+        order.total = 0.0
         event = OrderEvent(
             user_id=current_user.id,
             order_id=order_id,

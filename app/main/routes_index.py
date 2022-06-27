@@ -192,6 +192,7 @@ def MergeOrders():
         message = 'заявка объединена из заявок'
 
         for o in orders:
+            o.total = 0.0
             message += f' {o.id}'
             message2 = f'заявка объединена в заявку {order.id}'
             event = OrderEvent(
