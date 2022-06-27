@@ -30,3 +30,5 @@ class Config:
     MOMENT_DEFAULT_FORMAT = (
         os.environ.get('MOMENT_DEFAULT_FORMAT') or 'DD.MM.YYYY HH:mm'
     )
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB limit for uploading
+    MAX_ZIP_FILE_SIZE = 1 * 1024 * 1024  # 1MB limit for a file in a zip archive

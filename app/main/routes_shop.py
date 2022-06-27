@@ -26,7 +26,7 @@ def ShopCategories():
     return render_template(
         'shop_categories.html',
         projects=projects,
-        limits=limits, 
+        limits=limits,
         categories=categories
     )
 
@@ -44,6 +44,7 @@ def ShopProducts(cat_id, vendor_id):
     products = Product.query.filter_by(cat_id=cat_id)
     if vendor_id is not None:
         products = products.filter_by(vendor_id=vendor_id)
+    products = products.join(Vendor).filter_by(enabled=True)
     products = products.all()
     vendor_ids = [p.vendor_id for p in products]
     vendors = Vendor.query.filter(Vendor.id.in_(vendor_ids)).all()

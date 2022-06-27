@@ -67,3 +67,19 @@ def RemoveStore(store_id):
     else:
         flash('Этот поставщик не зарегистрован в системе.')
     return redirect(url_for('main.ShowStores'))
+
+@bp.route('/stores/activate/<int:store_id>')
+@login_required
+@role_required([UserRoles.admin])
+def ActivateStore(store_id):
+    store = Vendor.query.filter(
+        Vendor.id == store_id,
+        Vendor.hub_id == current_user.hub_id
+    ).first()
+    if store is not None:
+        store.enabled = not store.enabled
+        db.session.commit()
+        flash('Поставщик успешно изменён.')
+    else:
+        flash('Этот поставщик не зарегистрован в системе.')
+    return redirect(url_for('main.ShowStores'))

@@ -1,3 +1,4 @@
+from email.policy import default
 import enum
 import json
 from time import time
@@ -135,6 +136,12 @@ class Vendor(db.Model):
     admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     name = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(128), nullable=False)
+    enabled = db.Column(        
+        db.Boolean,
+        nullable=False,
+        default=True,
+        server_default=expression.true()
+    )
     hub = db.relationship('Vendor')
     positions = db.relationship('Position', backref='hub')
     categories = db.relationship('Category', backref='hub')

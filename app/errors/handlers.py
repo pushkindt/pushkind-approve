@@ -12,6 +12,7 @@ def wants_json_response():
 
 @bp.app_errorhandler(403)
 @bp.app_errorhandler(404)
+@bp.app_errorhandler(413)
 @bp.app_errorhandler(500)
 def not_found_error(error):
     if error.code == 500:

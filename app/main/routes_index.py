@@ -90,9 +90,9 @@ def ShowIndex():
     save_form = SaveOrdersForm(orders=[order.id for order in orders])
     return render_template(
         'index.html',
-        orders=orders, 
-        dates=dates, 
-        projects=projects, 
+        orders=orders,
+        dates=dates,
+        projects=projects,
         categories=categories,
         filter_from=filter_from,
         filter_focus=filter_focus,

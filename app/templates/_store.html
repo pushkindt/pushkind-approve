@@ -3,6 +3,16 @@
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none fw-bold">Номер:</span>
 			{{ store.id }}
+			{% if current_user.role.name == 'admin' %}
+				<br>
+				<a href="{{ url_for('main.ActivateStore', store_id=store.id) }}">
+					{% if store.enabled %}
+						включен
+					{% else %}
+						отключен
+					{% endif %}
+				</a>
+			{% endif %}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none fw-bold">Название:</span>
@@ -14,7 +24,7 @@
 		</div>
 		<div class="col-sm overflow-hidden">
 			{% if current_user.role.name == 'admin' %}
-				<a href="{{ url_for('main.RemoveStore', store_id=store.id) }}" class="btn btn-danger text-white mb-1" onclick="return confirm('Удалить поставщика?')">Удалить</a>
+				<a href="{{ url_for('main.RemoveStore', store_id=store.id) }}" class="btn btn-danger text-white my-1" onclick="return confirm('Удалить поставщика?')">Удалить</a>
 			{% endif %}
 		</div>
 	</div>

@@ -92,7 +92,7 @@ def UploadImages():
             products = [p.sku for p in products]
             with ZipFile(form.images.data, 'r') as zip_file:
                 for zip_info in zip_file.infolist():
-                    if zip_info.filename[-1] == '/':
+                    if zip_info.is_dir() or zip_info.file_size > current_app.config['MAX_ZIP_FILE_SIZE']:
                         continue
                     sku, file_ext = os.path.splitext(os.path.basename(zip_info.filename))
                     if sku not in products:
