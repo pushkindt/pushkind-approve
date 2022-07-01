@@ -488,6 +488,8 @@ class Order(db.Model):
         default=False,
         server_default=expression.false()
     )
+    dealdone_responsible_name = db.Column(db.String(128))
+    dealdone_responsible_comment = db.Column(db.String(128))
     categories = db.relationship('Category', secondary='order_category')
     vendors = db.relationship('Vendor', secondary='order_vendor')
     events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='order')

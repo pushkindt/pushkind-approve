@@ -68,25 +68,18 @@
                     <div class="col overflow-hidden selectable">
                         <h5>{{product.name}}</h5>
                         <small>Артикул: {{product.sku}}</small>
-                        {% if product.description %}
-                            <pre style="height: 3pc; overflow: hidden;" class="mb-0">{{product.description}}</pre>
-                        {% endif %}
                     </div>
-                    <div class="col-sm-1 overflow-hidden">
+                    <div class="col-sm-2 overflow-hidden py-1">
                         {{ product.vendor.name }}
                     </div>
-                    <div class="col-sm-2 overflow-hidden">
-                        Цена: <strong>{{'{:,.2f}'.format(product['price'])}}</strong>
-                        <br>
-                        Единицы: <strong>{{product.measurement}}</strong>
-                        <br>
-                        <div class="input-group my-1">
-                            <span class="input-group-text">Кол-во</span>
-                            <input type="number" class="form-control addToCart" min="0" step="1" aria-label="Количество" id="input-addon{{product.id}}">
-                        </div>
+                    <div class="col-sm-2 overflow-hidden py-1">
+                        Цена:&nbsp;<strong>{{'{:,.2f}'.format(product['price'])}}</strong>
                     </div>
-                    <div class="col-sm-3 overflow-hidden">
-                        <textarea style="height: 100%" class="form-control addToCart" id="text-addon{{product.id}}" rows="3" placeholder="Комментарий, ссылка на файл в облаке или текст баннера"></textarea>
+                    <div class="col-sm-1 overflow-hidden py-1">
+                        <strong>{{product.measurement}}</strong>
+                    </div>
+                    <div class="col-sm-2 overflow-hidden py-1">
+                        <input type="number" class="form-control addToCart" min="0" step="1" aria-label="Количество" id="input-addon{{product.id}}">
                     </div>
                 </div>
             </form>

@@ -35,7 +35,7 @@
 <div class="container">
 	<div class="row my-2 fs-7">
 		<div class="col">
-			Выбрано заявок: <span id="orderCount">{{ orders|length }}</span> на сумму <span id="orderTotal">{{"%.2f"|format(orders| sum(attribute='total') / 1000000 ) }}</span> млн.
+			Выбрано заявок: <span id="orderCount">{{ orders|length }}</span> на сумму <span id="orderTotal">{{"%.2f"|format(orders| sum(attribute='total') / 1000000 ) }}</span> млн руб.
 		</div>
 		<div class="col text-end">
 			<a href="#" id="saveOrdersButton">скачать</a><br>

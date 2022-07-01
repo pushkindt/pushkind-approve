@@ -6,7 +6,22 @@
 
 {% block content %}
 
-<div class="container bg-yellow border rounded">
+<div class="container my-2">
+
+    <div class="row justify-content-center">
+        <div class="col">
+            <div class="alert bg-yellow">
+                Проверьте заявку. Вы можете исправить количество или вернуться
+                в каталог, чтобы добавить товары. Для удаление позиции просто
+                укажите 0 в поле количества. Если заявка готова - нажмите "отправить"
+                внизу экрана.
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="container border rounded">
 
     <div class="row my-2">
         <div class="col overflow-hidden">
@@ -38,11 +53,6 @@
     <div class="row mt-2">
         <div class="col">
             <span id="inCartItems"></span>
-        </div>
-        <div class="col text-end">
-            <strong>
-                Проверьте заявку перед отправкой
-            </strong>
         </div>
     </div>
 

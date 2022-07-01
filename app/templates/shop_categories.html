@@ -32,21 +32,20 @@
     </div>
 
     <div id="categoryList">
-        {% for rows in categories|batch(3) %}
+        {% for rows in categories|batch(5) %}
             <div class="row">
                 {% for category in rows %}
                     <div class="col-sm m-1">
                         <div class="card shadow text-center selectable" data-id="{{category.id}}">
-                            <div class="card-header">
+                             <!-- <img src="{{category.image or config['PLACEHOLDER_IMAGE']}}" height="128" width="128" alt="thumbnail"> -->
+                            <img class="card-img-top" src="https://admin.pushkind.com/static/placeholder.jpg" alt="thumbnail">
+                            <div class="card-footer">
                                 {{category.name}}
-                            </div>
-                            <div class="card-body">
-                                <img src="{{category.image or config['PLACEHOLDER_IMAGE']}}" height="164" width="164" alt="thumbnail">
                             </div>
                         </div>
                     </div>
                 {% endfor %}
-                {% for i in range(3 - rows|length) %}
+                {% for i in range(5 - rows|length) %}
                     <div class="col-sm m-1">
                     </div>
                 {% endfor %}
