@@ -37,8 +37,7 @@
                 {% for category in rows %}
                     <div class="col-sm m-1">
                         <div class="card shadow text-center selectable" data-id="{{category.id}}">
-                             <!-- <img src="{{category.image or config['PLACEHOLDER_IMAGE']}}" height="128" width="128" alt="thumbnail"> -->
-                            <img class="card-img-top" src="https://admin.pushkind.com/static/placeholder.jpg" alt="thumbnail">
+                            <img class="card-img-top" src="{{category.image or config['PLACEHOLDER_IMAGE']}}" alt="thumbnail">
                             <div class="card-footer">
                                 {{category.name}}
                             </div>
