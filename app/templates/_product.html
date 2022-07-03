@@ -15,7 +15,7 @@
             {% endfor %}
         {% endif %}
     </div>
-    <div class="col-sm-1 overflow-hidden">
+    <div class="col-sm-2 overflow-hidden">
         {{ product['vendor'] }}
     </div>
     <div class="col-sm-2 overflow-hidden">
@@ -27,7 +27,7 @@
                 {{ quantity_form.product_id(class_='d-none', hidden='', value=product['id'], id=False) }}
                 <div class="input-group my-1">
                     <span class="input-group-text" style="width: 91px;">Единицы</span>
-                    <input name="product_measurement" type="text" class="form-control" aria-label="Единицы" value="{{product['selectedOptions'][0]['value']}}">
+                    <input name="product_measurement" type="text" class="form-control" aria-label="Единицы" value="{{product['selectedOptions'][0]['value'] if 'selectedOptions' in product else ''}}">
                 </div>
                 <div class="input-group my-1">
                     <span class="input-group-text" style="width: 91px;">Кол-во</span>
