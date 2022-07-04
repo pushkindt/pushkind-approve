@@ -162,7 +162,8 @@ def RemoveUser(user_id):
         return redirect(url_for('main.ShowSettings'))
 
     for order in user.orders:
-        order.initiative = current_user
+        order.initiative_id = current_user.id
+    db.session.commit()
 
     db.session.delete(user)
     db.session.commit()
