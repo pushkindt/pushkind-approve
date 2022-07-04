@@ -23,6 +23,10 @@ def ShowStores():
         if store_form.validate_on_submit():
             store_name = store_form.name.data.strip()
             store_email = store_form.email.data.strip().lower()
+            vendor_admin = User.query.filter_by(email=store_email).first()
+            if vendor_admin:
+                flash('Невозможно создать поставщика, так как электронный адрес занят.')
+                return redirect(url_for('main.ShowStores'))
             vendor_admin = User(
                 email=store_email,
                 name=store_name,
