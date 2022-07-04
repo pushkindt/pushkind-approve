@@ -38,6 +38,19 @@
 				<input id="uploadImagesButton" type="file" name="images" class="d-none" accept=".zip">
 			</form>
 		</div>
+		<div class="col-auto">
+			<a class="btn btn-primary" href="{{url_for('main.DownloadProducts', vendor_id=vendor.id)}}">
+				<i class="bi bi-cloud-download"></i>
+			</a>
+		</div>
+	</div>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            {% for category in categories %}
+            	<span class="text-decoration-none badge bg-primary">{{ category.name }}</span>
+            {% endfor %}
+        </div>
+    </div>
 </div>
 
 <div class="container">
@@ -83,7 +96,7 @@
 						</div>
 						<div class="col-sm">
 							<span class="d-sm-none fw-bold">Описание:</span>
-							{{ product.description }}
+							{{ product.description or '' }}
 						</div>
 					</div>
 				</div>
