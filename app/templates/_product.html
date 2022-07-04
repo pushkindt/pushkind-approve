@@ -36,7 +36,7 @@
                 {{ quantity_form.submit(id=False, class_='d-none btn btn-primary w-100 my-1 text-white') }}
             </form>
         {% else %}
-            Единицы: <strong>{{product['selectedOptions'][0]['value']}}</strong>
+            Единицы: <strong>{{product['selectedOptions'][0]['value'] if 'selectedOptions' in product else ''}}</strong>
             <br>
             Кол-во: <strong>{{product['quantity']}}</strong>
         {% endif %}
