@@ -45,7 +45,7 @@ def ShopProducts(cat_id, vendor_id):
     if vendor_id is not None:
         products = products.filter_by(vendor_id=vendor_id)
     products = products.join(Vendor).filter_by(enabled=True)
-    products = products.all()
+    products = products.order_by(Product.name).all()
     vendor_ids = [p.vendor_id for p in products]
     vendors = Vendor.query.filter(Vendor.id.in_(vendor_ids)).all()
     return render_template(
