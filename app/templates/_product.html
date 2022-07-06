@@ -15,40 +15,30 @@
             {% endfor %}
         {% endif %}
     </div>
-    <div class="col-sm-2 overflow-hidden">
+    <div class="col-sm-2 overflow-hidden pt-sm-4">
         {{ product['vendor'] }}
     </div>
-    <div class="col-sm-2 overflow-hidden">
+    <div class="col-sm-2 overflow-hidden pt-sm-4">
         Цена: <strong>{{ '{:,.2f}'.format(product['price']) }}</strong>
-        <br>
+    </div>
+    <div class="col-sm-1 overflow-hidden pt-sm-4">
+        <strong>{{product['selectedOptions'][0]['value'] if 'selectedOptions' in product else ''}}</strong>
+    </div>
+    <div class="col-sm-2 overflow-hidden pt-sm-3 text-end">
         {% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
             <form class="changeQuantityForm" action="{{ url_for('main.SaveQuantity', order_id=order.id) }}" method="POST">
                 {{ quantity_form.csrf_token(id=False) }}
                 {{ quantity_form.product_id(class_='d-none', hidden='', value=product['id'], id=False) }}
-                <div class="input-group my-1">
-                    <span class="input-group-text" style="width: 91px;">Единицы</span>
-                    <input name="product_measurement" type="text" class="form-control" aria-label="Единицы" value="{{product['selectedOptions'][0]['value'] if 'selectedOptions' in product else ''}}">
-                </div>
-                <div class="input-group my-1">
-                    <span class="input-group-text" style="width: 91px;">Кол-во</span>
-                    <input name="product_quantity" type="number" class="form-control" min="0" step="1" aria-label="Количество" value="{{product['quantity']}}">
-                </div>
-                {{ quantity_form.submit(id=False, class_='d-none btn btn-primary w-100 my-1 text-white') }}
+                <input name="product_quantity" type="number" class="form-control" min="0" step="1" aria-label="Количество" value="{{product['quantity']}}">
             </form>
         {% else %}
-            Единицы: <strong>{{product['selectedOptions'][0]['value'] if 'selectedOptions' in product else ''}}</strong>
-            <br>
-            Кол-во: <strong>{{product['quantity']}}</strong>
+            <input readonly type="number" class="form-control" aria-label="Количество" value="{{product['quantity']}}">
         {% endif %}
-    </div>
-    <div class="col-sm-2 overflow-hidden">
         {% if product['id'] in order.user_approvals|map(attribute='product_id')|list %}
             <a class="showRemarks text-danger fs-4" href="#" data-bs-toggle="modal" data-bs-target="#remarksModal" data-id="{{ product.id }}"><i class="bi bi-chat-left"></i></a>
-        {% else %}
-            <span class="text-white"><i class="bi bi-chat-left"></i></span>
+			<br>
         {% endif %}
         {% if current_user.role.name in ['validator'] %}
-            <br>
             <a href="#" class="approveButton text-decoration-none" data-id="{{ product['id'] }}" data-target="product">
                 +замечание
             </a>

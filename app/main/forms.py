@@ -103,10 +103,6 @@ class ChangeQuantityForm(FlaskForm):
         validators=[InputRequired(message='Невозможное значение количества.')],
         render_kw={'type': 'number', 'step': 1, 'min': 0}
     )
-    product_measurement = StringField(
-        'Единица измерения',
-        validators=[Length(max=10, message='Единицы измерения должны быть аббревиатурой.')]
-    )
     submit = SubmitField('Сохранить')
 
     def validate_product_quantity(self, product_quantity):

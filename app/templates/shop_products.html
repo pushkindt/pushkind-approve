@@ -69,16 +69,16 @@
                         <h5>{{product.name}}</h5>
                         <small>Артикул: {{product.sku}}</small>
                     </div>
-                    <div class="col-sm-2 overflow-hidden py-1">
+                    <div class="col-sm-2 overflow-hidden pt-sm-4">
                         {{ product.vendor.name }}
                     </div>
-                    <div class="col-sm-2 overflow-hidden py-1">
-                        Цена:&nbsp;<strong>{{'{:,.2f}'.format(product['price'])}}</strong>
+                    <div class="col-sm-2 overflow-hidden pt-sm-4">
+                        Цена: <strong>{{'{:,.2f}'.format(product['price'])}}</strong>
                     </div>
-                    <div class="col-sm-1 overflow-hidden py-1">
+                    <div class="col-sm-1 overflow-hidden pt-sm-4">
                         <strong>{{product.measurement}}</strong>
                     </div>
-                    <div class="col-sm-2 overflow-hidden py-1">
+                    <div class="col-sm-2 overflow-hidden pt-sm-3">
                         <input type="number" class="form-control addToCart" min="0" step="1" aria-label="Количество" id="input-addon{{product.id}}">
                     </div>
                 </div>

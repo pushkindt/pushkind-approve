@@ -337,31 +337,6 @@ def SaveQuantity(order_id):
             )
             db.session.add(event)
 
-        if form.product_measurement.data != '':
-            changed = False
-            old_measurement = ''
-            if 'selectedOptions' in product:
-                if product['selectedOptions'][0]['value'] != form.product_measurement.data:
-                    old_measurement = product['selectedOptions'][0]['value']
-                    product['selectedOptions'][0]['value'] = form.product_measurement.data
-                    changed = True
-                product['selectedOptions'][0]['name'] = 'Единица измерения'
-            else:
-                changed = True
-                product['selectedOptions'] = [
-                    {'name': 'Единица измерения', 'value': form.product_measurement.data}]
-            if changed is True:
-                message = f"{product['sku']} единицы были {old_measurement} "\
-                          f"стали {form.product_measurement.data}"
-                event = OrderEvent(
-                    user_id=current_user.id,
-                    order_id=order_id,
-                    type=EventType.measurement,
-                    data=message,
-                    timestamp=datetime.now(tz=timezone.utc)
-                )
-                db.session.add(event)
-
         approvals = OrderApproval.query.join(User).filter(
             OrderApproval.order_id == order_id,
             User.hub_id == current_user.hub_id
@@ -388,8 +363,7 @@ def SaveQuantity(order_id):
     else:
         errors = (
             form.product_id.errors +
-            form.product_quantity.errors +
-            form.product_measurement.errors
+            form.product_quantity.errors
         )
         for error in errors:
             flash(error)

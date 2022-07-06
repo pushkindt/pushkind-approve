@@ -623,15 +623,12 @@
 
 		{% if current_user.role.name == 'admin' or current_user.id == order.initiative_id %}
 			var focusOutTimer = null;
-			$(".changeQuantityForm input").focus(function () {
+			$(".changeQuantityForm input").on("keyup change", function(){
 				if (focusOutTimer != null)
 					clearTimeout(focusOutTimer);
-				$(this).closest("form").find(":submit").removeClass("d-none");
-			});
-			$(".changeQuantityForm input").focusout(function () {
 				focusOutTimer = setTimeout(() =>
-					$(this).closest("form").find(":submit").addClass("d-none"),
-					1000
+					$(this).closest("form").submit(),
+					1500
 				);
 			});
 		{% endif %}
