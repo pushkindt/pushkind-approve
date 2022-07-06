@@ -12,7 +12,7 @@
         <div class="col">
             <div class="alert bg-yellow">
                 Проверьте заявку. Вы можете исправить количество или вернуться
-                в каталог, чтобы добавить товары. Для удаление позиции просто
+                в каталог, чтобы добавить товары. Для удаления позиции просто
                 укажите 0 в поле количества. Если заявка готова - нажмите "отправить"
                 внизу экрана.
             </div>
@@ -96,7 +96,7 @@
         <br>
         <div class="input-group my-1">
             <span class="input-group-text">Кол-во</span>
-            <input required type="number" value="1" min="1" step="1" class="form-control addToCart" name="cart-_-quantity" id="productQuantityTemplate">
+            <input required type="number" value="1" min="0" step="1" class="form-control addToCart" name="cart-_-quantity" id="productQuantityTemplate">
         </div>
     </div>
     <div class="col-sm-3 overflow-hidden">
@@ -223,11 +223,19 @@
                 if (!itemQuantity || itemQuantity == 0){
                     itemQuantity = 1;
                     itemQuantityInput.val(itemQuantity);
+                    shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
+                    form.remove();
+                    if (shoppingCart.length == 0){
+                        $("#submit").addClass('d-none');
+                        $("#emptyCartAlert").removeClass("d-none");
+                    }
                 }
-                let cartItem = shoppingCart.find(obj => {return obj['id'] === itemId});
-                if (cartItem){
-                    cartItem["text"] = itemText;
-                    cartItem["quantity"] = itemQuantity;
+                else {
+                    let cartItem = shoppingCart.find(obj => {return obj['id'] === itemId});
+                    if (cartItem){
+                        cartItem["text"] = itemText;
+                        cartItem["quantity"] = itemQuantity;
+                    }
                 }
                 sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
                 SetInCartText();
