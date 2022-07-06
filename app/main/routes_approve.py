@@ -862,6 +862,11 @@ def SaveStatements(order_id):
     if order is None:
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
+
+    if order.status == OrderStatus.approved:
+        flash('Нельзя модифицировать согласованную заявку.')
+        return redirect(url_for('main.ShowIndex'))
+
     form = ApproverForm()
 
     incomes = IncomeStatement.query.filter(IncomeStatement.hub_id == current_user.hub_id).all()
@@ -936,6 +941,11 @@ def SaveParameters(order_id):
     if order is None:
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
+
+    if order.status == OrderStatus.approved:
+        flash('Нельзя модифицировать согласованную заявку.')
+        return redirect(url_for('main.ShowIndex'))
+
     form = InitiativeForm()
 
     projects = Project.query.filter(
