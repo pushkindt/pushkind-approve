@@ -916,7 +916,8 @@ def SaveParameters(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
 
-    if order.status == OrderStatus.approved:
+
+    if order.status == OrderStatus.approved and current_user.role != UserRoles.admin:
         flash('Нельзя модифицировать согласованную заявку.')
         return redirect(url_for('main.ShowIndex'))
 
