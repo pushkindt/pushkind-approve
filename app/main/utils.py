@@ -75,7 +75,7 @@ def SendEmailNotification(kind, order, recipients_id=[]):
             order.id,
             recipient.email
         )
-        token = recipient.get_jwt_token(expires_in=3600)
+        token = recipient.get_jwt_token(expires_in=86400)
         next_page=url_for('main.ShowOrder', order_id=order.id)
         SendEmail(
             f'Уведомление по заявке #{order.id}',
