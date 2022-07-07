@@ -38,12 +38,13 @@ def login_token(token):
     if not next_page or url_parse(next_page).netloc != '':
         next_page = url_for('main.ShowIndex')
 
-    user = User.verify_jwt_token(token)
-    if not user:
-        flash('Некорректный токен авторизации.')
-        return redirect(url_for('auth.login'))
-
     if not current_user.is_authenticated:
+
+        user = User.verify_jwt_token(token)
+        if not user:
+            flash('Некорректный токен авторизации.')
+            return redirect(url_for('auth.login'))
+
         login_user(user, remember=False)
         current_app.logger.info('%s logged', user.email)
 
