@@ -3,135 +3,135 @@
 {% block content %}
 
 <div class="container my-2">
-	<div class="row gx-1 justify-content-center">
-		<div class="col-5 mb-1">
-			<input class="form-control" id="productFilter" type="text" placeholder="Фильтр..">
-		</div>
-	{% if current_user.role.name == 'admin' %}
-		<div class="col-3 mb-1">
-			<select class="form-select" aria-label="Vendor select" id="vendorSelect">
-				{% for v in vendors %}
-					<option {% if v.id == vendor.id %}selected{% endif %} value="{{ v.id }}">{{ v.name }}</option>
-				{% endfor %}
-			</select>
-		</div>
-	{% endif %}
-		<div class="col-auto">
-			<a class="btn btn-primary" href="{{url_for('main.DownloadProducts', vendor_id=vendor.id)}}">
-				<i class="bi bi-cloud-download"></i>
-			</a>
-		</div>
-		<div class="col-auto">
-			<form method="POST" enctype="multipart/form-data" id="uploadProductsForm" action="{{url_for('main.UploadProducts', vendor_id=vendor.id)}}">
-				{{ products_form.csrf_token }}
-				<label for="uploadProductsButton">
-					<span class="btn btn-warning mb-1">
-						<i class="bi bi-cloud-upload"></i>
-					</span>
-				</label>
-				<input id="uploadProductsButton" type="file" name="products" class="d-none" accept=".xlsx">
-			</form>
-		</div>
-		<div class="col-auto">
-			<form method="POST" enctype="multipart/form-data" id="uploadImagesForm" action="{{url_for('main.UploadImages', vendor_id=vendor.id)}}">
-				{{ images_form.csrf_token }}
-				<label for="uploadImagesButton">
-					<span class="btn btn-success mb-1">
-						<i class="bi bi-card-image"></i>
-					</span>
-				</label>
-				<input id="uploadImagesButton" type="file" name="images" class="d-none" accept=".zip">
-			</form>
-		</div>
-	</div>
+    <div class="row gx-1 justify-content-center">
+        <div class="col-5 mb-1">
+            <input class="form-control" id="productFilter" type="text" placeholder="Фильтр..">
+        </div>
+    {% if current_user.role.name == 'admin' %}
+        <div class="col-3 mb-1">
+            <select class="form-select" aria-label="Vendor select" id="vendorSelect">
+                {% for v in vendors %}
+                    <option {% if v.id == vendor.id %}selected{% endif %} value="{{ v.id }}">{{ v.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    {% endif %}
+        <div class="col-auto">
+            <a class="btn btn-primary" href="{{url_for('main.DownloadProducts', vendor_id=vendor.id)}}">
+                <i class="bi bi-cloud-download"></i>
+            </a>
+        </div>
+        <div class="col-auto">
+            <form method="POST" enctype="multipart/form-data" id="uploadProductsForm" action="{{url_for('main.UploadProducts', vendor_id=vendor.id)}}">
+                {{ products_form.csrf_token }}
+                <label for="uploadProductsButton">
+                    <span class="btn btn-warning mb-1">
+                        <i class="bi bi-cloud-upload"></i>
+                    </span>
+                </label>
+                <input id="uploadProductsButton" type="file" name="products" class="d-none" accept=".xlsx">
+            </form>
+        </div>
+        <div class="col-auto">
+            <form method="POST" enctype="multipart/form-data" id="uploadImagesForm" action="{{url_for('main.UploadImages', vendor_id=vendor.id)}}">
+                {{ images_form.csrf_token }}
+                <label for="uploadImagesButton">
+                    <span class="btn btn-success mb-1">
+                        <i class="bi bi-card-image"></i>
+                    </span>
+                </label>
+                <input id="uploadImagesButton" type="file" name="images" class="d-none" accept=".zip">
+            </form>
+        </div>
+    </div>
     <div class="row justify-content-center">
         <div class="col-md-8">
             {% for category in categories %}
-            	<span class="text-decoration-none badge bg-primary">{{ category.name }}</span>
+                <span class="text-decoration-none badge bg-primary">{{ category.name }}</span>
             {% endfor %}
         </div>
     </div>
     <div class="row justify-content-center">
-        <div class="col">
-            <div class="alert bg-yellow" role="alert">
-                <ol>
-					<li>
-						Скачайте текущий каталог и используйте полученный Excel-файл как шаблон.
-					</li>
-					<li>
-						Загрузите обновленный каталог из Excel.
-					</li>
-					<li>
-						Загрузите картинки в zip-архиве (имя файла = "артикул товара")
-					</li>
-				</ol>
+        <div class="col-md-8">
+            <div class="alert bg-yellow my-1" role="alert">
+                <ol class="my-0">
+                    <li>
+                        Скачайте текущий каталог и используйте полученный Excel-файл как шаблон.
+                    </li>
+                    <li>
+                        Загрузите обновленный каталог из Excel.
+                    </li>
+                    <li>
+                        Загрузите картинки в zip-архиве (имя файла = "артикул товара")
+                    </li>
+                </ol>
             </div>
         </div>
     </div>
 </div>
 
 <div class="container">
-	<div class="row bg-light d-none d-sm-flex border">
-		<div class="col-2 overflow-hidden">
-			Изображение
-		</div>
-		<div class="col overflow-hidden">
-			Название
-		</div>
-		<div class="col-2 overflow-hidden">
-			Категория
-		</div>
-		<div class="col-2 overflow-hidden">
-			Цена
-		</div>
-		<div class="col-2 overflow-hidden">
-			Описание
-		</div>
-	</div>
-	<div id="productList">
-		{% for product in vendor.products %}
-			<div class="row my-1 border-bottom">
-				<div class="col-2">
-					<img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64" alt="thumbnail">
-				</div>
-				<div class="col-sm">
-					<span class="d-sm-none fw-bold">Название:</span>
-					{{ product.name }}<br>
-					<small class="text-secondary">
-						{{product.sku}}
-					</small>
-				</div>
-				<div class="col-sm-2">
-					<span class="d-sm-none fw-bold">Категория:</span>
-					{{ product.category.name }}
-				</div>
-				<div class="col-sm-2">
-					<span class="d-sm-none fw-bold">Цена:</span>
-					{{ product.price }}/{{ product.measurement }}
-				</div>
-				<div class="col-sm-2">
-					<span class="d-sm-none fw-bold">Описание:</span>
-					{{ product.description or '' }}
-				</div>
-			</div>
-		{% endfor %}
-	</div>
+    <div class="row bg-light d-none d-sm-flex border">
+        <div class="col-2 overflow-hidden">
+            Изображение
+        </div>
+        <div class="col overflow-hidden">
+            Название
+        </div>
+        <div class="col-2 overflow-hidden">
+            Категория
+        </div>
+        <div class="col-2 overflow-hidden">
+            Цена
+        </div>
+        <div class="col-2 overflow-hidden">
+            Описание
+        </div>
+    </div>
+    <div id="productList">
+        {% for product in vendor.products %}
+            <div class="row my-1 border-bottom">
+                <div class="col-2">
+                    <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64" alt="thumbnail">
+                </div>
+                <div class="col-sm">
+                    <span class="d-sm-none fw-bold">Название:</span>
+                    {{ product.name }}<br>
+                    <small class="text-secondary">
+                        {{product.sku}}
+                    </small>
+                </div>
+                <div class="col-sm-2">
+                    <span class="d-sm-none fw-bold">Категория:</span>
+                    {{ product.category.name }}
+                </div>
+                <div class="col-sm-2">
+                    <span class="d-sm-none fw-bold">Цена:</span>
+                    {{ product.price }} ₽/{{ product.measurement }}
+                </div>
+                <div class="col-sm-2">
+                    <span class="d-sm-none fw-bold">Описание:</span>
+                    {{ product.description or '' }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 </div>
 
 {% endblock %}
 
 {% block scripts %}
 <script>
-	$(document).ready(function () {
-		$('#uploadProductsButton').on('change',()=>{
-			$('#uploadProductsForm').submit();
-		});
-		$('#vendorSelect').change(()=>{
-			window.location = "{{url_for('main.ShowProducts', vendor_id=0)}}".replace('0', $('#vendorSelect').val());
-		});
-		$('#uploadImagesButton').on('change',()=>{
-			$('#uploadImagesForm').submit();
-		});
-	});
+    $(document).ready(function () {
+        $('#uploadProductsButton').on('change',()=>{
+            $('#uploadProductsForm').submit();
+        });
+        $('#vendorSelect').change(()=>{
+            window.location = "{{url_for('main.ShowProducts', vendor_id=0)}}".replace('0', $('#vendorSelect').val());
+        });
+        $('#uploadImagesButton').on('change',()=>{
+            $('#uploadImagesForm').submit();
+        });
+    });
 </script>
 {% endblock %}
