@@ -207,7 +207,7 @@ class SaveOrdersForm(FlaskForm):
 ################################################################################
 
 class AppSettingsForm(FlaskForm):
-    email = EmailField('Электронная почта')
+    email = EmailField('Электронная почта 1С')
     enable = BooleanField('Включить рассылку 1С')
     order_id_bias = IntegerField('Константа номеров заявок')
     submit = SubmitField('Сохранить')
