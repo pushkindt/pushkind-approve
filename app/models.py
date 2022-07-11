@@ -376,6 +376,7 @@ class AppSettings(db.Model):
         server_default=expression.true()
     )
     email_1C = db.Column(db.String(128), nullable=True)
+    order_id_bias = db.Column(db.Integer, nullable=False, default=0, server_default='0')
 
 
 class OrderEvent(db.Model):

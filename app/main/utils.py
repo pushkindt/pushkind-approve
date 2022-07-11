@@ -5,7 +5,7 @@ from flask import render_template, url_for, jsonify
 from flask_login import current_user
 
 from app import db
-from app.models import Order
+from app.models import AppSettings, Order
 from app.email import SendEmail
 
 
@@ -115,5 +115,6 @@ def SendEmail1C(recipients, order, data):
 
 
 def GetNewOrderNumber():
-    count = db.session.query(Order).count()
+    settings = AppSettings.query.filter_by(hub_id=current_user.hub_id).first()
+    count = db.session.query(Order).count() + settings.order_id_bias
     return f'{count}'

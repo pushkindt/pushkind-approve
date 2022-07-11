@@ -9,7 +9,7 @@ from app.models import UserRoles, Category, Project, Site
 from app.models import AppSettings, IncomeStatement, CashflowStatement
 from app.main.forms import AddCategoryForm, AddProjectForm, AddSiteForm, EditProjectForm
 from app.main.forms import EditSiteForm
-from app.main.forms import Notify1CSettingsForm, CategoryResponsibilityForm
+from app.main.forms import AppSettingsForm, CategoryResponsibilityForm
 from app.main.forms import AddIncomeForm, AddCashflowForm, EditIncomeForm, EditCashflowForm
 from app.main.utils import role_required
 
@@ -34,10 +34,13 @@ def ShowAdminPage():
 
     app_data = AppSettings.query.filter_by(hub_id=current_user.hub_id).first()
     if app_data is None:
-        forms['notify1C'] = Notify1CSettingsForm()
+        forms['app'] = AppSettingsForm()
     else:
-        forms['notify1C'] = Notify1CSettingsForm(
-            enable=app_data.notify_1C, email=app_data.email_1C)
+        forms['app'] = AppSettingsForm(
+            enable=app_data.notify_1C,
+            email=app_data.email_1C,
+            order_id_bias=app_data.order_id_bias
+        )
 
     projects = Project.query.filter(
         Project.hub_id == current_user.hub_id).order_by(Project.name).all()
@@ -65,11 +68,11 @@ def ShowAdminPage():
     )
 
 
-@bp.route('/admin/1C/', methods=['POST'])
+@bp.route('/admin/app/save', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin])
-def Notify1CSettings():
-    form = Notify1CSettingsForm()
+def SaveAppSettings():
+    form = AppSettingsForm()
     if form.validate_on_submit():
         app_data = AppSettings.query.filter_by(
             hub_id=current_user.hub_id).first()
@@ -78,6 +81,7 @@ def Notify1CSettings():
             db.session.add(app_data)
         app_data.notify_1C = form.enable.data
         app_data.email_1C = form.email.data
+        app_data.order_id_bias = form.order_id_bias.data
         db.session.commit()
         flash('Настройки рассылки 1С успешно сохранены.')
     else:

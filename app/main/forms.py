@@ -206,9 +206,10 @@ class SaveOrdersForm(FlaskForm):
 # Admin page
 ################################################################################
 
-class Notify1CSettingsForm(FlaskForm):
+class AppSettingsForm(FlaskForm):
     email = EmailField('Электронная почта')
     enable = BooleanField('Включить рассылку 1С')
+    order_id_bias = IntegerField('Константа номеров заявок')
     submit = SubmitField('Сохранить')
 
 
