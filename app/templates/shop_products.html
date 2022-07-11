@@ -29,11 +29,11 @@
     </div>
 </div>
 
-<div class="container bg-white border rounded">
+<div class="container">
 
     <div class="row">
         <div class="col overflow-hidden">
-            Создание заявки для:<br>
+            <strong>НОВАЯ ЗАЯВКА</strong><br>
             <a class="text-muted text-decoration-none" href="{{url_for('main.ShopCategories')}}" id="siteProjectSelect">Выбор проекта и объекта</a>
         </div>
         <div class="col-auto text-end overflow-hidden">
@@ -61,7 +61,7 @@
     <div id="productList">
         {% for product in products %}
             <form class="cartItem" data-id="{{product.id}}" data-name="{{product.name}}" data-sku="{{product.sku}}" data-price="{{product.price}}"  data-vendor="{{product.vendor.name}}"  data-image="{{product.image}}" data-measurement="{{product.measurement}}">
-                <div class="row border-top border-bottom my-1 py-1" data-id="{{product.id}}">
+                <div class="row bg-white my-1 py-1 rounded" data-id="{{product.id}}">
                     <div class="col-auto selectable">
                         <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="96" width="96" alt="thumbnail">
                     </div>

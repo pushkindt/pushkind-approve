@@ -71,32 +71,15 @@
 </div>
 
 <div class="container">
-    <div class="row bg-light d-none d-sm-flex border">
-        <div class="col-2 overflow-hidden">
-            Изображение
-        </div>
-        <div class="col overflow-hidden">
-            Название
-        </div>
-        <div class="col-2 overflow-hidden">
-            Категория
-        </div>
-        <div class="col-2 overflow-hidden">
-            Цена
-        </div>
-    </div>
     <div id="productList">
         {% for product in vendor.products|sort(attribute='name') %}
-            <div class="row my-1 border-bottom selectable" data-id="{{product.id}}">
+            <div class="row my-1 selectable bg-white rounded" data-id="{{product.id}}">
                 <div class="col-2">
                     <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64" alt="thumbnail">
                 </div>
                 <div class="col-sm">
-                    <span class="d-sm-none fw-bold">Название:</span>
-                    {{ product.name }}<br>
-                    <small class="text-secondary">
-                        {{product.sku}}
-                    </small>
+                    <h5>{{product.name}}</h5>
+                    <small>Артикул: {{product.sku}}</small>
                 </div>
                 <div class="col-sm-2">
                     <span class="d-sm-none fw-bold">Категория:</span>

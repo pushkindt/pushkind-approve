@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 
 {% block styles%}
+<style>
+.cards{
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.card:hover{
+    box-shadow: 5px 6px 6px 2px #e9ecef;
+    transform: scale(1.1);
+}
+</style>
 
 {% endblock %}
 
@@ -16,11 +26,11 @@
 
 </div>
 
-<div class="container bg-white border rounded">
+<div class="container">
 
     <div class="row">
         <div class="col overflow-hidden">
-            Создание заявки для:<br>
+            <strong>НОВАЯ ЗАЯВКА</strong><br>
             <a class="text-muted text-decoration-none" href="#" id="siteProjectSelect">Выбор проекта и объекта</a>
         </div>
         <div class="col-auto text-end overflow-hidden">
@@ -33,14 +43,14 @@
 
     <div id="categoryList">
         {% for rows in categories|batch(5) %}
-            <div class="row">
+            <div class="row my-4">
                 {% for category in rows %}
                     <div class="col-sm m-1">
                         <div class="card shadow text-center selectable" data-id="{{category.id}}">
                             <div class="card-body">
                                 <img src="{{category.image or config['PLACEHOLDER_IMAGE']}}" height="128" width="128" alt="thumbnail">
                             </div>
-                            <div class="card-footer">
+                            <div class="card-footer bg-white border-top-0">
                                 {{category.name}}
                             </div>
                         </div>
