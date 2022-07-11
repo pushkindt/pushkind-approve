@@ -132,6 +132,12 @@
         $('#uploadImagesButton').on('change',()=>{
             $('#uploadImagesForm').submit();
         });
+		$("#productFilter").on("keyup", function () {
+			let value = $(this).val().toLowerCase();
+			$("#productList .row").filter(function () {
+				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+			});
+		});
     });
 </script>
 {% endblock %}
