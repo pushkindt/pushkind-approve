@@ -35,12 +35,10 @@ def ShowProducts():
         vendor = vendors.filter_by(id=vendor_id).first()
     vendors = vendors.all()
     categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
-    products = Product.query.filter(Product.id.in_(v.id for v in vendors)).all()
     return render_template(
         'products.html',
         vendors=vendors,
         vendor=vendor,
-        products=products,
         categories=categories,
         products_form=products_form,
         images_form=images_form,
