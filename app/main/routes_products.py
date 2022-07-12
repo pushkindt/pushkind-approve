@@ -67,6 +67,28 @@ def UploadProducts():
         df['cat_id'] = df['category'].apply(lambda x: categories.get(x.lower()))
         df.drop(df.columns.difference(['name','sku', 'price', 'measurement', 'cat_id', 'vendor_id', 'description']), axis=1, inplace=True)
         df.dropna(subset=['cat_id', 'name', 'sku', 'price', 'measurement'], inplace=True)
+
+        file_list = os.listdir(
+            os.path.join(
+                'app',
+                'static',
+                'upload',
+                f'vendor{vendor.id}'
+            )
+        )
+        image_list = {
+            os.path.splitext(file_name)[0]:url_for(
+                'static',
+                filename=os.path.join(
+                    'upload',
+                    f'vendor{vendor.id}',
+                            file_name
+                )
+            ) for file_name in file_list
+        }
+
+        df['image'] = df['sku'].apply(lambda x: image_list.get(x))
+
         Product.query.filter_by(vendor_id=vendor.id).delete()
         db.session.commit()
         df.to_sql(name = 'product', con = db.engine, if_exists = 'append', index = False)
