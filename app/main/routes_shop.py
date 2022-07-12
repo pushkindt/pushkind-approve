@@ -117,6 +117,7 @@ def ShopCart():
                     p.cat_id for p in products
                 )
             ).all()
+            cashflow_id, income_id = max((c.cashflow_id,c.income_id) for c in categories)
             order = Order(
                 id = order_id,
                 initiative_id = current_user.id,
@@ -126,7 +127,9 @@ def ShopCart():
                 products = order_products,
                 vendors=list(set(order_vendors)),
                 total = sum([p['quantity']*p['price'] for p in order_products]),
-                status = OrderStatus.new
+                status = OrderStatus.new,
+                cashflow_id = cashflow_id,
+                income_id = income_id
             )
             db.session.add(order)
             order.categories = categories
