@@ -3,7 +3,7 @@
 {% set glob={} %}
 
 {% block content %}
-<div class="container bg-white border rounded">
+<div class="container">
 	<div class="row my-2">
 		<div class="col">
 			<span class="fw-bold">
@@ -715,6 +715,13 @@
 					}
 					console.log(JSON.stringify(splitProducts));
 					$("#splitProducts").val(JSON.stringify(splitProducts));
+				} else {
+					let productId = $(this).attr('data-id');
+					let modalElement = document.getElementById('descriptionModal'+productId);
+					let descriptionModal = bootstrap.Modal.getInstance(modalElement);
+					if (!descriptionModal)
+						descriptionModal= new bootstrap.Modal(modalElement, {});
+					descriptionModal.show();
 				}
 			});
 		{% endif %}

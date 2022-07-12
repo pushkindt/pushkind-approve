@@ -21,7 +21,7 @@
 
 </div>
 
-<div class="container border rounded">
+<div class="container">
 
     <div class="row my-2">
         <div class="col overflow-hidden">
@@ -77,7 +77,7 @@
 {% endblock %}
 
 {% block templates %}
-<div class="row rounded border-top border-bottom my-1 py-1 cartItem" id="cartItemTemplate">
+<div class="row rounded bg-white my-1 py-1 cartItem" id="cartItemTemplate">
     <div class="col-auto">
         <input required type="number" class="d-none" name="cart-_-product" hidden id="productIdTemplate">
         <img id="productImageTemplate" src="{{ config['PLACEHOLDER_IMAGE'] }}" height="64" width="64" alt="thumbnail">
