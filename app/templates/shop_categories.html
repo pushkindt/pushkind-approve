@@ -2,16 +2,14 @@
 
 {% block styles%}
 <style>
-.cards{
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-.card:hover{
-    box-shadow: 5px 6px 6px 2px #e9ecef;
-    transform: scale(1.1);
-}
-</style>
 
+.card:hover {
+    box-shadow: 0 0 0 0.2rem #bce3f6;
+    border-color: #bce3f6;
+    transition: all .55s ease-in-out;
+}
+
+</style>
 {% endblock %}
 
 {% block content %}
@@ -46,7 +44,7 @@
             <div class="row my-4">
                 {% for category in rows %}
                     <div class="col-sm m-1">
-                        <div class="card shadow text-center selectable" data-id="{{category.id}}">
+                        <div class="card text-center selectable" data-id="{{category.id}}">
                             <div class="card-body">
                                 <img src="{{category.image or config['PLACEHOLDER_IMAGE']}}" height="128" width="128" alt="thumbnail">
                             </div>
