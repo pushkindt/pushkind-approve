@@ -1,4 +1,3 @@
-from email.policy import default
 import enum
 import json
 from time import time
@@ -9,7 +8,6 @@ from hashlib import md5
 import jwt
 from flask import current_app
 from flask_login import UserMixin
-from sqlalchemy import ForeignKey
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
@@ -35,6 +33,8 @@ class EventType(enum.IntEnum):
     site = 11
     measurement = 12
     splitted = 13
+    project = 14
+    notification = 15
 
     def __str__(self):
         pretty = [
@@ -47,11 +47,13 @@ class EventType(enum.IntEnum):
             'экспорт в 1С',
             'объединение',
             'законтрактовано',
-            'изменение БДР',
-            'изменение БДДС',
-            'изменение объекта',
-            'изменение ЕИ',
-            'разделение'
+            'изменение',
+            'изменение',
+            'изменение',
+            'изменение',
+            'разделение',
+            'изменение',
+            'уведомление'
         ]
         return pretty[self.value]
 
@@ -61,16 +63,18 @@ class EventType(enum.IntEnum):
             'success',
             'danger',
             'primary',
+            'dark',
+            'dark',
+            'dark',
+            'dark',
+            'dark',
             'primary',
-            'info',
-            'info',
-            'info',
-            'info',
-            'info',
-            'info',
-            'info',
-            'info',
-            'info'
+            'primary',
+            'primary',
+            'primary',
+            'dark',
+            'primary',
+            'dark'
         ]
         return colors[self.value]
 
@@ -103,6 +107,7 @@ class OrderStatus(enum.IntEnum):
     partly_approved = 2
     approved = 3
     modified = 4
+    cancelled = 5
 
     def __str__(self):
         pretty = [
@@ -110,7 +115,8 @@ class OrderStatus(enum.IntEnum):
             'Отклонена',
             'В работе',
             'Согласована',
-            'Исправлена'
+            'Исправлена',
+            'Отменена'
         ]
         return pretty[self.value]
 
@@ -120,6 +126,7 @@ class OrderStatus(enum.IntEnum):
             'danger',
             'warning',
             'success',
+            'secondary',
             'secondary'
         ]
         return colors[self.value]
@@ -616,6 +623,9 @@ class Order(db.Model):
                 if approval is not None:
                     position.approved = True
                     position.user = approval.user
+                else:
+                    position.approved = False
+                    position.user = None
             if update_status is True:
                 order.UpdateOrderStatus()
         db.session.commit()

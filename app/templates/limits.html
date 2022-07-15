@@ -27,7 +27,7 @@
     </div>
     <div class="collapse" id="limitFormCollapse">
         <form method="POST" action="{{ url_for('main.AddLimit') }}">
-            {{ form.csrf_token }}
+            {{ form.csrf_token(id=False) }}
             <div class="row mb-3">
                 {{ form.interval.label(class_='col-md-2 col-form-label') }}
                 <div class="col-md-10">

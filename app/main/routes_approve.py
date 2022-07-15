@@ -497,19 +497,6 @@ def GetExcelReport2(order_id):
     )
 
 
-@bp.route('/orders/notify/<order_id>')
-@login_required
-@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
-def NotifyApprovers(order_id):
-    order = GetOrder(order_id)
-    if order is None:
-        flash('Заявка с таким номером не найдена.')
-        return redirect(url_for('main.ShowIndex'))
-    SendEmailNotification('modified', order)
-    flash('Уведомление успешно выслано.')
-    return redirect(url_for('main.ShowOrder', order_id=order_id))
-
-
 @bp.route('/orders/dealdone/<order_id>')
 @login_required
 @role_required([UserRoles.admin, UserRoles.purchaser])
@@ -924,9 +911,11 @@ def SaveParameters(order_id):
     form = InitiativeForm()
 
     projects = Project.query.filter(
-        Project.hub_id == current_user.hub_id).order_by(Project.name).all()
+        Project.hub_id == current_user.hub_id
+    ).order_by(Project.name).all()
     categories = Category.query.filter(
-        Category.hub_id == current_user.hub_id).all()
+        Category.hub_id == current_user.hub_id
+    ).all()
 
     form.categories.choices = [(c.id, c.name) for c in categories]
     form.project.choices = [(p.id, p.name) for p in projects]
@@ -940,9 +929,12 @@ def SaveParameters(order_id):
 
     if form.validate_on_submit() is True:
         new_site = Site.query.filter_by(
-            id=form.site.data, project_id=form.project.data).first()
+            id=form.site.data,
+            project_id=form.project.data
+        ).first()
         if new_site is not None and (order.site is None or order.site.id != new_site.id):
-            message = f'объект изменён с {order.site.name if order.site else ""} на {new_site.name}'
+            old_project = order.site.project
+            message = f'Объект изменён с «{order.site.name if order.site else ""}» на «{new_site.name}»'
             event = OrderEvent(
                 user_id=current_user.id,
                 order_id=order_id,
@@ -955,12 +947,23 @@ def SaveParameters(order_id):
                 id=form.site.data,
                 project_id=form.project.data
             ).first()
+            if old_project.id != order.site.project.id:
+                message = f'Проект изменён с «{old_project.name if order.site else ""}» на «{order.site.project.name}»'
+                event = OrderEvent(
+                    user_id=current_user.id,
+                    order_id=order_id,
+                    type=EventType.project,
+                    data=message,
+                    timestamp=datetime.now(tz=timezone.utc)
+                )
+                db.session.add(event)
         order.categories = Category.query.filter(
             Category.id.in_(form.categories.data),
             Category.hub_id == current_user.hub_id
         ).all()
+        OrderApproval.query.filter_by(order_id=order.id).delete()
         db.session.commit()
-        Order.UpdateOrdersPositions(current_user.hub_id, order_id)
+        Order.UpdateOrdersPositions(current_user.hub_id, order_id, update_status=True)
         if order.site is not None and order.cashflow_statement is not None:
             OrderLimit.update_current(
                 current_user.hub_id,
@@ -986,6 +989,7 @@ def LeaveComment(order_id):
     form.notify_reviewers.choices = [
         (r.id, r.name) for r in order.reviewers
     ]
+    reviewers = {r.id:r.name for r in order.reviewers}
     if form.validate_on_submit():
         stripped = form.comment.data.strip()
         if len(stripped) > 0:
@@ -998,11 +1002,20 @@ def LeaveComment(order_id):
             )
             db.session.add(comment)
             flash('Комментарий успешно добавлен.')
-        else:
-            flash('Комментарий не может быть пустым.')
-        db.session.commit()
 
-        SendEmailNotification('comment', order, form.notify_reviewers.data)
+        if len(form.notify_reviewers.data) > 0:
+            SendEmailNotification('comment', order, form.notify_reviewers.data, data=stripped)
+            message = 'Уведомление выслано: ' + ', '.join(reviewers[r] for r in form.notify_reviewers.data)
+            event = OrderEvent(
+                user_id=current_user.id,
+                order_id=order_id,
+                type=EventType.notification,
+                data=message,
+                timestamp=datetime.now(tz=timezone.utc)
+            )
+            db.session.add(event)
+
+        db.session.commit()
 
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 

@@ -1,4 +1,7 @@
-К заявке #{{ order.id }} оставлен новый комментарий.
+Инициатор {{ current_user.name }} ({{ current_user.location }}) напоминает о заявке #{{ order.id }}.
+{% if data %}
+Комментарии: {{ data }}
+{% endif %}
 
 Нажмите на ссылку для перехода в Личный Кабинет:
 {{ url_for('auth.login_token', token=token, next=next_page, _external=True) }}

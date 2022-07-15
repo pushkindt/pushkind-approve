@@ -75,7 +75,6 @@ class LeaveCommentForm(FlaskForm):
     comment = TextAreaField(
         'Комментарий',
         validators=[
-            InputRequired(message='Комментарий не может быть пустым'),
             Length(max=256, message='Слишком длинный комментарий.')
         ]
     )

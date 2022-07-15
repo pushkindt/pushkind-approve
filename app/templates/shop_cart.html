@@ -57,7 +57,7 @@
     </div>
 
     <form method="POST" action="{{url_for('main.ShopCart')}}" id="shoppingCartForm">
-        {{ form.csrf_token }}
+        {{ form.csrf_token(id=False) }}
         {{ form.project_id(class_='d-none') }}
         {{ form.site_id(class_='d-none') }}
         <div class="alert alert-secondary my-1" id="emptyCartAlert">
