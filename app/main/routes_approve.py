@@ -1014,6 +1014,7 @@ def LeaveComment(order_id):
                 timestamp=datetime.now(tz=timezone.utc)
             )
             db.session.add(event)
+            flash(message)
 
         db.session.commit()
 
