@@ -10,27 +10,40 @@
 	<div class="row justify-content-center">
 		<div class="col-md-8">
 			{% for d in dates %}
-				<a href="{{ url_for('main.ShowIndex', from=dates[d], focus=filter_focus) }}" class="text-decoration-none badge {% if filter_from == dates[d] %}bg-primary{% else %}bg-white fw-normal text-secondary border{% endif %}">{{ d }}</a>
+				<a href="{{ url_for('main.ShowIndex', from=dates[d], focus=filter_focus, disapproved=filter_disapproved) }}" class="text-decoration-none badge {% if filter_from == dates[d] %}bg-primary{% else %}bg-white fw-normal text-secondary border{% endif %}">{{ d }}</a>
 			{% endfor %}
-			<a href="{{ url_for('main.ShowIndex', from=0, focus=filter_focus) }}" class="text-decoration-none badge {% if filter_from == 0 %}bg-primary{% else %}bg-white fw-normal text-secondary border{% endif %}">все</a>
+			<a href="{{ url_for('main.ShowIndex', from=0, focus=filter_focus, disapproved=filter_disapproved) }}" class="text-decoration-none badge {% if filter_from == 0 %}bg-primary{% else %}bg-white fw-normal text-secondary border{% endif %}">все</a>
 		</div>
 	</div>
-	{% if current_user.role.name in ['validator', 'purchaser'] %}
-		<div class="row justify-content-center">
-			<div class="col-md-8 fs-7">
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="filterFocus" {%if not filter_focus %}checked{% endif %}>
-					<label class="form-check-label" for="filterFocus">
-						{% if current_user.role.name == 'validator' %}
-							Показывать только заявки, которые я должен согласовать.
-						{% else %}
-							Показывать только не законтрактованные заявки.
-						{% endif %}
-					</label>
+	<div class="row justify-content-center">
+		<div class="col-md-8 fs-7">
+			<div class="row">
+				<div class="col">
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="filterDisapproved" {%if filter_disapproved %}checked{% endif %}>
+						<label class="form-check-label" for="filterDisapproved">
+							Показывать отклоненные заявки.
+						</label>
+					</div>
 				</div>
+				{% if current_user.role.name in ['validator', 'purchaser'] %}
+					<div class="col">
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="checkbox" id="filterFocus" {%if not filter_focus %}checked{% endif %}>
+							<label class="form-check-label" for="filterFocus">
+								{% if current_user.role.name == 'validator' %}
+									Показывать только заявки, которые я должен согласовать.
+								{% else %}
+									Показывать только не законтрактованные заявки.
+								{% endif %}
+							</label>
+						</div>
+					</div>
+				{% endif %}
 			</div>
 		</div>
-	{% endif %}
+	</div>
+
 </div>
 <div class="container">
 	<div class="row my-2 fs-7">
@@ -112,9 +125,16 @@
 
 		$("#filterFocus").change(function () {
 			if (this.checked)
-				document.location.href = "{{ url_for('main.ShowIndex', from=filter_from) }}".replaceAll("&amp;", "&");
+				document.location.href = "{{ url_for('main.ShowIndex', from=filter_from, disapproved=filter_disapproved) | safe }}";
 			else
-				document.location.href = "{{ url_for('main.ShowIndex', from=filter_from, focus=True) }}".replaceAll("&amp;", "&");
+				document.location.href = "{{ url_for('main.ShowIndex', from=filter_from, focus=True, disapproved=filter_disapproved) | safe }}";
+		});
+
+		$("#filterDisapproved").change(function () {
+			if (this.checked)
+				document.location.href = "{{ url_for('main.ShowIndex', from=filter_from, focus=filter_focus, disapproved=True) | safe }}";
+			else
+				document.location.href = "{{ url_for('main.ShowIndex', from=filter_from, focus=filter_focus) | safe }}";
 		});
 
 		$("#saveOrdersButton").click(function () {

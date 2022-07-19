@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import json
 
 from flask import render_template, flash, request, redirect, url_for, Response
 from flask_login import current_user, login_required
@@ -27,6 +28,11 @@ def ShowIndex():
 
     dates = get_filter_timestamps()
     filter_from = request.args.get('from', default=dates['recently'], type=int)
+    filter_disapproved = request.args.get('disapproved', default=None, type=str)
+    if filter_disapproved is not None:
+        filter_disapproved = True
+
+    print(filter_disapproved)
 
     dates['сегодня'] = dates.pop('daily')
     dates['неделя'] = dates.pop('weekly')
@@ -43,6 +49,9 @@ def ShowIndex():
         filter_focus = None
 
     orders = Order.query
+
+    if filter_disapproved is None:
+        orders = orders.filter(Order.status != OrderStatus.not_approved)
 
     if current_user.role == UserRoles.initiative:
         orders = orders.filter(Order.initiative_id == current_user.id)
@@ -102,6 +111,7 @@ def ShowIndex():
         categories=categories,
         filter_from=filter_from,
         filter_focus=filter_focus,
+        filter_disapproved=filter_disapproved,
         merge_form=merge_form,
         save_form=save_form
     )
