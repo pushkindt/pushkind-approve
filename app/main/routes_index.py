@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-import json
 
 from flask import render_template, flash, request, redirect, url_for, Response
 from flask_login import current_user, login_required

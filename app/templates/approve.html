@@ -123,19 +123,12 @@
 			<span class="fw-bold">Комментарии: </span>
 			<ul class="list-unstyled">
 				{% for event in order.events|reverse %}
-					{% if event.type.name == 'commented' %}
-						<li>
-							<span class="bg-yellow">
-								{% set user = event.user %}
-								{{ moment(event.timestamp).format('DD.MM.YYYY') }} {% include '_user.popover.html' %} {{ event.data|safe }}
-							</span>
-						</li>
-					{% elif event.type.name == 'disapproved' %}
+					{% if event.type.name in ('commented', 'approved', 'disapproved') and event.data %}
 						<li>
 							<span class="bg-yellow">
 								{% set user = event.user %}
 								{{ moment(event.timestamp).format('DD.MM.YYYY') }} {% include '_user.popover.html' %}
-								{{ event.type }} {{ event.data or '' }}
+								{{ event.type }}: {{ event.data }}
 							</span>
 						</li>
 					{% endif %}
