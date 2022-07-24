@@ -209,6 +209,9 @@ class AppSettingsForm(FlaskForm):
     email = EmailField('Электронная почта 1С')
     enable = BooleanField('Включить рассылку 1С')
     order_id_bias = IntegerField('Константа номеров заявок')
+    image = FileField(label = 'Логотип (png)', validators=[
+        FileAllowed(['png'], 'Разрешены только изображения PNG!')
+    ])
     submit = SubmitField('Сохранить')
 
 

@@ -45,7 +45,7 @@
 					<nav class="navbar navbar-expand-md navbar-light">
 						<div class="container-fluid">
 							<a class="navbar-brand" href="{{ url_for('main.ShowIndex') }}">
-								<img class="logo" src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+								<img class="logo" src="{{ url_for('static', filename='upload/logo-{}.png'.format(current_user.hub_id)) }}" alt="Logo">
 							</a>
 							<button class="navbar-toggler" type="button" data-bs-toggle="collapse"
 								data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"

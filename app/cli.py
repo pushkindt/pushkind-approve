@@ -18,7 +18,7 @@ def register(app):
             role=UserRoles.admin,
             name=hub_name
         )
-        admin.SetPassword(hub_password)
+        admin.set_password(hub_password)
         db.session.add(admin)
         db.session.commit()
         hub = Vendor(

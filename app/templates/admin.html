@@ -12,7 +12,7 @@
 			</h2>
 			<div id="oneSFormCollapse" class="accordion-collapse collapse" aria-labelledby="oneSFormHeading" data-bs-parent="#settingsFormsAccordion">
 				<div class="accordion-body">
-					<form method="POST" action="{{ url_for('main.SaveAppSettings') }}">
+					<form method="POST" action="{{ url_for('main.SaveAppSettings') }}" enctype="multipart/form-data">
 						<div class="row my-3">
 							{{ forms['app'].csrf_token(id=False) }}
 							{{ forms['app'].email.label(class_ = 'col-md-2 form-label') }}
@@ -32,6 +32,12 @@
 							{{ forms['app'].order_id_bias.label(class_ = 'col-md-2 form-label') }}
 							<div class="col-md-10">
 								{{ forms['app'].order_id_bias(class_ = 'form-control') }}
+							</div>
+						</div>
+						<div class="row mb-3">
+							{{ forms['app'].image.label(class_ = 'col-md-2 form-label') }}
+							<div class="col-md-10">
+								{{forms['app'].image(class_='form-control', accept='image/png')}}
 							</div>
 						</div>
 						<div class="row mb-3">

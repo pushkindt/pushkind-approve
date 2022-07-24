@@ -31,8 +31,6 @@ def ShowIndex():
     if filter_disapproved is not None:
         filter_disapproved = True
 
-    print(filter_disapproved)
-
     dates['сегодня'] = dates.pop('daily')
     dates['неделя'] = dates.pop('weekly')
     dates['месяц'] = dates.pop('monthly')
@@ -47,7 +45,7 @@ def ShowIndex():
     else:
         filter_focus = None
 
-    orders = Order.query
+    orders = Order.query.filter_by(hub_id=current_user.hub_id)
 
     if filter_disapproved is None:
         orders = orders.filter(Order.status != OrderStatus.not_approved)

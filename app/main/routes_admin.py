@@ -82,10 +82,24 @@ def SaveAppSettings():
         app_data.notify_1C = form.enable.data
         app_data.email_1C = form.email.data
         app_data.order_id_bias = form.order_id_bias.data
+        if form.image.data:
+            f = form.image.data
+            file_name, file_ext = os.path.splitext(f.filename)
+            file_name = f'logo-{current_user.hub_id}{file_ext}'
+            full_path = os.path.join(
+                'app', 'static', 'upload', file_name
+            )
+            f.save(full_path)
         db.session.commit()
         flash('Настройки рассылки 1С успешно сохранены.')
     else:
-        for error in form.email.errors + form.enable.errors:
+        errors = (
+            form.email.errors +
+            form.enable.errors +
+            form.order_id_bias.errors +
+            form.image.errors
+        )
+        for error in errors:
             flash(error)
     return redirect(url_for('main.ShowAdminPage'))
 
