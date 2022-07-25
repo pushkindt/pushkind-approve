@@ -183,7 +183,7 @@
 		$(".selectable").click(function (event) {
 			let orderId = $(this).attr('data-id');
 			if (isMerging == false) {
-				document.location.href = "{{ url_for('main.ShowOrder', order_id='replace_me') }}".replace("replace_me", orderId);
+				document.location.href = "{{ url_for('main.ShowOrder', order_id='0') }}".replace("0", orderId);
 			} else {
 				if (mergeOrders.includes(orderId)) {
 					$(this).removeClass("bg-dark text-white");

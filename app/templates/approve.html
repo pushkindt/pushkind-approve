@@ -8,7 +8,7 @@
 		<div class="col">
 			<span class="fw-bold">
 				ЗАЯВКА
-				#{{ order.id }}
+				#{{ order.number }}
 			</span>
 			от {{ moment(order.create_date).format('DD.MM.YYYY') }}
 			{% include '_order.status.html' %}

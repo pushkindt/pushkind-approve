@@ -176,8 +176,8 @@ def MergeOrders():
                 else:
                     products[product_id]['quantity'] += product['quantity']
 
-        order_id = GetNewOrderNumber()
-        order = Order(id = order_id)
+        order_number = GetNewOrderNumber()
+        order = Order(number = order_number)
         db.session.add(order)
         order.initiative = current_user
 
@@ -206,8 +206,8 @@ def MergeOrders():
 
         for o in orders:
             o.total = 0.0
-            message += f' {o.id}'
-            message2 = f'заявка объединена в заявку {order.id}'
+            message += f' {o.number}'
+            message2 = f'заявка объединена в заявку {order.number}'
             event = OrderEvent(
                 user_id=current_user.id,
                 order_id=o.id,
@@ -230,7 +230,7 @@ def MergeOrders():
 
         Order.UpdateOrdersPositions(current_user.hub_id)
 
-        flash(f'Объединено заявок: {len(orders)}. Идентификатор новой заявки {order.id}')
+        flash(f'Объединено заявок: {len(orders)}. Идентификатор новой заявки {order.number}')
 
         SendEmailNotification('new', order)
     else:
@@ -277,7 +277,7 @@ def SaveOrders():
         ws['M1'] = 'Категории'
 
         for i, order in enumerate(orders, start=2):
-            ws.cell(row=i, column=1, value=order.id)
+            ws.cell(row=i, column=1, value=order.number)
             ws.cell(row=i, column=2, value=datetime.fromtimestamp(order.create_timestamp))
             if order.site is not None:
                 ws.cell(row=i, column=3, value=order.site.project.name)

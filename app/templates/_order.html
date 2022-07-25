@@ -1,28 +1,28 @@
 {% if order.children | length > 1 %}
 	<div class="row text-muted border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
 		<div class="col-sm-1 overflow-hidden">
-			{{ order.id }}<br>
+			{{ order.number }}<br>
 			<small>разделена на</small><br>
 			{% for child in order.children %}
 				<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=child.id) }}">
-					{{ child.id }}
+					{{ child.number }}
 				</a><br>
 			{% endfor %}
 		</div>
 {% elif order.children | length == 1 %}
 	<div class="row text-muted border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
 		<div class="col-sm-1 overflow-hidden">
-			{{ order.id }}<br>
+			{{ order.number }}<br>
 			<small>объединена в</small><br>
 			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.children[0].id) }}">
-				{{ order.children[0].id }}
+				{{ order.children[0].number }}
 			</a>
 		</div>
 {% else %}
 	<div class="row selectable border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
 		<div class="col-sm-1 overflow-hidden">
 			<span class="d-sm-none fw-bold">Заявка:</span>
-			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.id) }}">{{ order.id }}</a>
+			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.id) }}">{{ order.number }}</a>
 			<br>
 			<span class="text-muted">
 				{{ moment(order.create_date).format() }}
@@ -83,7 +83,7 @@
 			<small>
 				&sum;
 				{% for parent in order.parents %}
-					#{{ parent.id }}
+					#{{ parent.number }}
 				{% endfor %}
 			</small>
 		</div>
@@ -92,7 +92,7 @@
 			<small>
 				&divide;
 				{% for parent in order.parents %}
-					#{{ parent.id }}
+					#{{ parent.number }}
 				{% endfor %}
 			</small>
 		</div>

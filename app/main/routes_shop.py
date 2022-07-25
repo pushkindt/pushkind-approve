@@ -110,7 +110,7 @@ def ShopCart():
                                 }
                             )
                 order_products.append(order_product)
-            order_id = GetNewOrderNumber()
+            order_number = GetNewOrderNumber()
             now = datetime.now(tz=timezone.utc)
             categories = Category.query.filter(
                 Category.id.in_(
@@ -119,7 +119,7 @@ def ShopCart():
             ).all()
             cashflow_id, income_id = max((c.cashflow_id,c.income_id) for c in categories)
             order = Order(
-                id = order_id,
+                number = order_number,
                 initiative_id = current_user.id,
                 create_timestamp = int(now.timestamp()),
                 site_id = site.id,
@@ -134,7 +134,7 @@ def ShopCart():
             db.session.add(order)
             order.categories = categories
             db.session.commit()
-            Order.UpdateOrdersPositions(current_user.hub_id, order_id)
+            Order.UpdateOrdersPositions(current_user.hub_id, order.id)
             flash('Заявка успешно создана.')
             SendEmailNotification('new', order)
             return redirect(url_for('main.ShowIndex'))

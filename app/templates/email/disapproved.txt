@@ -1,4 +1,4 @@
-Заявка #{{ order.id }} была отклонена
+Заявка #{{ order.number }} была отклонена
 
 Нажмите на ссылку для перехода в Личный Кабинет
 {{ url_for('auth.login_token', token=token, next=next_page, _external=True) }}

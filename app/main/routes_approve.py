@@ -48,7 +48,7 @@ def GetOrder(order_id):
     return order
 
 
-@bp.route('/orders/<order_id>')
+@bp.route('/orders/<int:order_id>')
 @login_required
 @role_forbidden([UserRoles.default])
 def ShowOrder(order_id):
@@ -131,7 +131,7 @@ def ShowOrder(order_id):
     )
 
 
-@bp.route('/orders/split/<order_id>', methods=['POST'])
+@bp.route('/orders/split/<int:order_id>', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
 def SplitOrder(order_id):
@@ -168,9 +168,9 @@ def SplitOrder(order_id):
         message_flash = 'заявка разделена на заявки'
 
         for product_list in product_lists:
-            new_order_id = GetNewOrderNumber()
-            message_flash += f' {new_order_id}'
-            new_order = Order(id = new_order_id)
+            new_order_number = GetNewOrderNumber()
+            message_flash += f' {new_order_number}'
+            new_order = Order(number = new_order_number)
             db.session.add(new_order)
             new_order.initiative_id = order.initiative_id
             now = datetime.now(tz=timezone.utc)
@@ -194,10 +194,10 @@ def SplitOrder(order_id):
                 Vendor.hub_id == current_user.hub_id
             ).all()
             new_order.parents = [order]
-            message = f'заявка получена разделением из заявки {order_id}'
+            message = f'заявка получена разделением из заявки {order.number}'
             event = OrderEvent(
                 user_id=current_user.id,
-                order_id=new_order_id,
+                order_id=new_order.id,
                 type=EventType.splitted,
                 data=message,
                 timestamp=datetime.now(tz=timezone.utc)
@@ -234,7 +234,7 @@ def SplitOrder(order_id):
     return redirect(url_for('main.ShowIndex'))
 
 
-@bp.route('/orders/duplicate/<order_id>')
+@bp.route('/orders/duplicate/<int:order_id>')
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
 def DuplicateOrder(order_id):
@@ -243,8 +243,8 @@ def DuplicateOrder(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
 
-    order_id = GetNewOrderNumber()
-    new_order = Order(id = order_id)
+    order_number = GetNewOrderNumber()
+    new_order = Order(number = order_number)
     db.session.add(new_order)
 
     new_order.initiative = current_user
@@ -263,7 +263,7 @@ def DuplicateOrder(order_id):
     new_order.categories = order.categories
     new_order.vendors = order.vendors
 
-    message = f'заявка клонирована с номером {new_order.id}'
+    message = f'заявка клонирована с номером {new_order.number}'
     event = OrderEvent(
         user_id=current_user.id,
         order_id=order.id,
@@ -272,7 +272,7 @@ def DuplicateOrder(order_id):
         timestamp=datetime.now(tz=timezone.utc)
     )
     db.session.add(event)
-    message = f'заявка клонирована из заявки {order.id}'
+    message = f'заявка клонирована из заявки {order.number}'
     event = OrderEvent(
         user_id=current_user.id,
         order_id=new_order.id,
@@ -292,7 +292,7 @@ def DuplicateOrder(order_id):
             cashflow_id=order.cashflow_id
         )
 
-    flash(f'Заявка успешно клонирована. Номер новой заявки {new_order.id}. '\
+    flash(f'Заявка успешно клонирована. Номер новой заявки {new_order.number}. '\
            'Вы перемещены в новую заявку.')
 
     SendEmailNotification('new', new_order)
@@ -300,7 +300,7 @@ def DuplicateOrder(order_id):
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
 
-@bp.route('/orders/quantity/<order_id>', methods=['POST'])
+@bp.route('/orders/quantity/<int:order_id>', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.purchaser])
 def SaveQuantity(order_id):
@@ -370,7 +370,7 @@ def SaveQuantity(order_id):
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
 
-@bp.route('/orders/excel1/<order_id>')
+@bp.route('/orders/excel1/<int:order_id>')
 @login_required
 @role_forbidden([UserRoles.default])
 def GetExcelReport1(order_id):
@@ -418,7 +418,7 @@ def GetExcelReport1(order_id):
 
     ws = wb['электронное согласование']
     i = 3
-    ws.cell(i, 3).value = order.id
+    ws.cell(i, 3).value = order.number
     i += 1
     ws.cell(i, 3).value = datetime.fromtimestamp(
         order.create_timestamp,
@@ -443,7 +443,7 @@ def GetExcelReport1(order_id):
     )
 
 
-@bp.route('/orders/excel2/<order_id>')
+@bp.route('/orders/excel2/<int:order_id>')
 @login_required
 @role_forbidden([UserRoles.default])
 def GetExcelReport2(order_id):
@@ -472,7 +472,7 @@ def GetExcelReport2(order_id):
         i += 1
 
     i = 3
-    ws.cell(i, 9).value = order.id
+    ws.cell(i, 9).value = order.number
     i += 1
     ws.cell(i, 9).value = datetime.fromtimestamp(
         order.create_timestamp,
@@ -497,7 +497,7 @@ def GetExcelReport2(order_id):
     )
 
 
-@bp.route('/orders/dealdone/<order_id>')
+@bp.route('/orders/dealdone/<int:order_id>')
 @login_required
 @role_required([UserRoles.admin, UserRoles.purchaser])
 def SetDealDone(order_id):
@@ -597,7 +597,7 @@ def Prepare1CReport(order, excel_date):
             ws.cell(i, 30).value = product.get('vendor', '')
 
         i += 6
-        ws.cell(i, 20).value = order.id
+        ws.cell(i, 20).value = order.number
         i += 1
         ws.cell(i, 20).value = datetime.fromtimestamp(
             order.create_timestamp,
@@ -618,7 +618,7 @@ def Prepare1CReport(order, excel_date):
     return None
 
 
-@bp.route('/orders/excel1C/<order_id>')
+@bp.route('/orders/excel1C/<int:order_id>')
 @login_required
 @role_required([UserRoles.admin, UserRoles.validator, UserRoles.purchaser])
 def GetExcelReport1C(order_id):
@@ -643,7 +643,7 @@ def GetExcelReport1C(order_id):
         return Response(
             data,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            headers={'Content-Disposition': f'attachment;filename=pushkind_{order.id}.xlsx'}
+            headers={'Content-Disposition': f'attachment;filename=pushkind_{order.number}.xlsx'}
         )
 
     app_data = AppSettings.query.filter_by(
@@ -668,7 +668,7 @@ def GetExcelReport1C(order_id):
 
 
 
-@bp.route('/orders/approval/<order_id>', methods=['POST'])
+@bp.route('/orders/approval/<int:order_id>', methods=['POST'])
 @login_required
 @role_required([UserRoles.validator])
 def SaveApproval(order_id):
@@ -815,7 +815,7 @@ def SaveApproval(order_id):
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
 
-@bp.route('/orders/statements/<order_id>', methods=['POST'])
+@bp.route('/orders/statements/<int:order_id>', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.validator, UserRoles.purchaser])
 def SaveStatements(order_id):
@@ -894,7 +894,7 @@ def SaveStatements(order_id):
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
 
-@bp.route('/orders/parameters/<order_id>', methods=['POST'])
+@bp.route('/orders/parameters/<int:order_id>', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.validator, UserRoles.purchaser])
 def SaveParameters(order_id):
@@ -977,7 +977,7 @@ def SaveParameters(order_id):
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
 
-@bp.route('/orders/comment/<order_id>', methods=['POST'])
+@bp.route('/orders/comment/<int:order_id>', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin, UserRoles.initiative, UserRoles.validator, UserRoles.purchaser])
 def LeaveComment(order_id):
@@ -1020,7 +1020,7 @@ def LeaveComment(order_id):
 
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
-@bp.route('/orders/process/<order_id>')
+@bp.route('/orders/process/<int:order_id>')
 @login_required
 @role_required([UserRoles.admin, UserRoles.purchaser])
 def ProcessHubOrder(order_id):

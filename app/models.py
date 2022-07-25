@@ -319,7 +319,7 @@ class Position(db.Model):
 
 class OrderApproval(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    order_id = db.Column(db.String(128), db.ForeignKey('order.id'), nullable=False)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
     product_id = db.Column(db.Integer, index=True, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     remark = db.Column(db.String(128), nullable=True)
@@ -388,7 +388,7 @@ class AppSettings(db.Model):
 
 class OrderEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    order_id = db.Column(db.String(128), db.ForeignKey('order.id'), nullable=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     timestamp = db.Column(
         db.DateTime,
@@ -443,13 +443,14 @@ class Site(db.Model):
 OrderRelationship = db.Table(
     'order_relationship',
     db.Model.metadata,
-    db.Column('order_id', db.String(128), db.ForeignKey('order.id'), primary_key=True),
-    db.Column('child_id', db.String(128), db.ForeignKey('order.id'), primary_key=True)
+    db.Column('order_id', db.Integer, db.ForeignKey('order.id'), primary_key=True),
+    db.Column('child_id', db.Integer, db.ForeignKey('order.id'), primary_key=True)
 )
 
 
 class Order(db.Model):
-    id = db.Column(db.String(128), primary_key=True, nullable=False)
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    number = db.Column(db.String(128), nullable=False)
     initiative_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     create_timestamp = db.Column(db.Integer, nullable=False)
     products = db.Column(JsonType(), nullable=False)
@@ -641,19 +642,19 @@ class Order(db.Model):
 
 class OrderCategory(db.Model):
     __tablename__ = 'order_category'
-    order_id = db.Column(db.String(128), db.ForeignKey('order.id'), primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), primary_key=True)
 
 
 class OrderVendor(db.Model):
     __tablename__ = 'order_vendor'
-    order_id = db.Column(db.String(128), db.ForeignKey('order.id'), primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), primary_key=True)
     vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), primary_key=True)
 
 
 class OrderPosition(db.Model):
     __tablename__ = 'order_position'
-    order_id = db.Column(db.String(128), db.ForeignKey('order.id'), primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), primary_key=True)
     position_id = db.Column(db.Integer, db.ForeignKey('position.id'), primary_key=True)
     approved = db.Column(
         db.Boolean,

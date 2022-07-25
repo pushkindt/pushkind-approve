@@ -72,13 +72,13 @@ def SendEmailNotification(kind, order, recipients_id=[], data=None):
         current_app.logger.info(
             '"%s" email about order %s has been sent to %s',
             kind,
-            order.id,
+            order.number,
             recipient.email
         )
         token = recipient.get_jwt_token(expires_in=86400)
         next_page=url_for('main.ShowOrder', order_id=order.id)
         SendEmail(
-            f'Уведомление по заявке #{order.id}',
+            f'Уведомление по заявке #{order.number}',
             sender=(current_app.config['MAIL_SENDERNAME'], current_app.config['MAIL_USERNAME']),
             recipients=[recipient.email],
             text_body=render_template(f'email/{kind}.txt', next_page=next_page, token=token, order=order, data=data),
@@ -89,17 +89,17 @@ def SendEmailNotification(kind, order, recipients_id=[], data=None):
 def SendEmail1C(recipients, order, data):
     current_app.logger.info(
         '"export1C" email about order %s has been sent to %s',
-        order.id,
+        order.number,
         recipients
     )
 
     if order.site is not None:
-        subject = f'{order.site.project.name}. {order.site.name} (pushkind_{order.id})'
+        subject = f'{order.site.project.name}. {order.site.name} (pushkind_{order.number})'
     else:
-        subject = f'pushkind_{order.id}'
+        subject = f'pushkind_{order.number}'
 
     data = (
-        f'pushkind_{order.id}.xlsx',
+        f'pushkind_{order.number}.xlsx',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         data
     )
