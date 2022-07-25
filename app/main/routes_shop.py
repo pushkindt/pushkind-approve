@@ -83,7 +83,13 @@ def ShopCart():
                 return redirect(url_for('main.ShopCart'))
             order_products = []
             order_vendors = []
-            for product in products:
+            categories = []
+            products = {p.id:p for p in products}
+            for cart_item in form.cart.data:
+                product = products[cart_item['product']]
+                if product is None:
+                    continue
+                categories.append(product.cat_id)
                 order_vendors.append(product.vendor)
                 order_product = {
                     'id': product.id,
@@ -94,27 +100,25 @@ def ShopCart():
                     'categoryId': product.cat_id,
                     'vendor': product.vendor.name,
                     'category': product.category.name,
+                    'quantity': cart_item['quantity'],
                     'selectedOptions': [
                         {
                             'value': product.measurement
                         }
                     ]
                 }
-                for cart_item in form.cart.data:
-                    if cart_item['product'] == product.id:
-                        order_product['quantity'] = cart_item['quantity']
-                        if cart_item['text'] is not None:
-                            order_product['selectedOptions'].append(
-                                {
-                                    'value': cart_item['text']
-                                }
-                            )
+                if cart_item['text'] is not None:
+                    order_product['selectedOptions'].append(
+                        {
+                            'value': cart_item['text']
+                        }
+                    )
                 order_products.append(order_product)
             order_number = GetNewOrderNumber()
             now = datetime.now(tz=timezone.utc)
             categories = Category.query.filter(
                 Category.id.in_(
-                    p.cat_id for p in products
+                    categories
                 )
             ).all()
             cashflow_id, income_id = max((c.cashflow_id,c.income_id) for c in categories)

@@ -297,7 +297,7 @@ def DuplicateOrder(order_id):
 
     SendEmailNotification('new', new_order)
 
-    return redirect(url_for('main.ShowOrder', order_id=order_id))
+    return redirect(url_for('main.ShowOrder', order_id=new_order.id))
 
 
 @bp.route('/orders/quantity/<int:order_id>', methods=['POST'])

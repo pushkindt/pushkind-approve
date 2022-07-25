@@ -13,7 +13,8 @@
             <div class="alert bg-yellow">
                 Проверьте заявку. Вы можете исправить количество или вернуться
                 в каталог, чтобы добавить товары. Для удаления позиции просто
-                укажите 0 в поле количества. Если заявка готова - нажмите "отправить"
+                укажите 0 в поле количества. Внимание клонированные товары не
+                сохранятся после ухода со страницы. Если заявка готова - нажмите "отправить"
                 внизу экрана.
             </div>
         </div>
@@ -79,28 +80,29 @@
 {% block templates %}
 <div class="row rounded bg-white my-1 py-1 cartItem" id="cartItemTemplate">
     <div class="col-auto">
-        <input required type="number" class="d-none" name="cart-_-product" hidden id="productIdTemplate">
+        <input required type="number" class="d-none productIdInput" name="cart-_-product" hidden id="productIdTemplate">
         <img id="productImageTemplate" src="{{ config['PLACEHOLDER_IMAGE'] }}" height="64" width="64" alt="thumbnail">
     </div>
     <div class="col overflow-hidden">
         <h5 id="productNameTemplate"></h5>
         <small>Артикул: <span id="productSkuTemplate"></span></small>
+        <br><button type="button" class="cloneProductButton btn btn-link">клонировать</button>
     </div>
-    <div class="col-sm-1 overflow-hidden">
+    <div class="col-sm-2 overflow-hidden">
         <span id="productVendorTemplate"></span>
     </div>
     <div class="col-sm-2 overflow-hidden">
-        Цена: <strong id="productPriceTemplate"></strong>
+        Цена: <strong id="productPriceTemplate" class="productPrice"></strong>
         <br>
         Единицы: <strong id="productMeasurementTemplate"></strong>
         <br>
         <div class="input-group my-1">
             <span class="input-group-text">Кол-во</span>
-            <input required type="number" value="1" min="0" step="1" class="form-control addToCart" name="cart-_-quantity" id="productQuantityTemplate">
+            <input required type="number" value="1" min="0" step="1" class="form-control addToCart productQuantityInput" name="cart-_-quantity" id="productQuantityTemplate">
         </div>
     </div>
     <div class="col-sm-3 overflow-hidden">
-        <textarea style="height: 100%;" class="form-control addToCart" name="cart-_-text" id="productTextTemplate" rows="3" placeholder="место для комментария или ссылки на файл в облаке"></textarea>
+        <textarea style="height: 100%;" class="form-control addToCart productTextInput" name="cart-_-text" id="productTextTemplate" rows="3" placeholder="место для комментария или ссылки на файл в облаке"></textarea>
     </div>
 </div>
 {% endblock %}
@@ -108,20 +110,21 @@
 {% block scripts %}
 <script>
     $(document).ready(function () {
-
+        $.fn.reduce = [].reduce;
         var shoppingCart = sessionStorage.getItem('shoppingCart');
+        var shoppingCartItems = $("#shoppingCartItems");
 
         function SetInCartText(){
-            let numItems = shoppingCart.length;
+            let numItems = shoppingCartItems.children().length;
             if (numItems > 0){
-                let totalPrice = shoppingCart.reduce((a, b) => a + (b['price']|| 0) * (b["quantity"] || 0), 0);
+                let cartItems = $(".cartItem");
+                let totalPrice = cartItems.reduce((a, b) => a + (Number($(b).data('cost') || 0)), 0);
                 $("#inCartItems").text('Всего позиций: ' + numItems + ' на сумму ' + totalPrice.toFixed(2));
             }
             else
                 $("#inCartItems").text('');
         }
 
-        var shoppingCartItems = $("#shoppingCartItems");
         if (!shoppingCart){
             shoppingCart = [];
             sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
@@ -135,7 +138,6 @@
                 sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
             }
         }
-        SetInCartText();
 
         let project_id = Number(sessionStorage.getItem('project_id'));
         let site_id = Number(sessionStorage.getItem('site_id'));
@@ -186,6 +188,8 @@
             measurement.removeAttr('id');
 
             content.data('id', item['id']);
+            content.data('pos', i);
+            content.data('cost', Number(item['price'])*Number(item['quantity']));
             sku.text(item['sku']);
             name.text(item['name']);
             text.val(item['text']);
@@ -225,9 +229,10 @@
                     itemQuantityInput.val(itemQuantity);
                     shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
                     form.remove();
-                    if (shoppingCart.length == 0){
+                    if (shoppingCartItems.children().length == 0){
                         $("#submit").addClass('d-none');
                         $("#emptyCartAlert").removeClass("d-none");
+                        $(window).off('beforeunload');
                     }
                 }
                 else {
@@ -242,6 +247,32 @@
             }, 500, form);
             form.data('timer', timerId);
         });
+        $(".cloneProductButton").click(function(){
+            let content = $(this).closest('.cartItem');
+            let itemPosition = content.data('pos');
+            let itemCost = content.data('cost');
+            content = content.clone(true, true);
+            let text = content.find('textarea.productTextInput');
+            let product = content.find('input.productIdInput');
+            let quantity = content.find('input.productQuantityInput');
+            let itemCount = shoppingCartItems.children().length;
+            content.removeData('id');
+            content.data('pos', itemCount);
+            content.data('cost', itemCost);
+            text.attr('name', text.attr('name').replace(itemPosition, itemCount));
+            product.attr('name', product.attr('name').replace(itemPosition, itemCount));
+            quantity.attr('name', quantity.attr('name').replace(itemPosition, itemCount));
+            shoppingCartItems.append(content);
+            SetInCartText();
+            $(window).on('beforeunload', () => {
+                return confirm('Клонированные товары будут потеряны. Покинуть страницу?');
+            });
+        });
+        $("#shoppingCartForm").submit(()=>{
+            $(window).off('beforeunload');
+            return true;
+        });
+        SetInCartText();
     });
 
 </script>
