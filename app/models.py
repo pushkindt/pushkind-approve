@@ -246,6 +246,12 @@ class User(UserMixin, db.Model):
     def categories_list(self):
         return [c.id for c in self.categories]
 
+    @property
+    def hub_list(self):
+        if self.role in [UserRoles.admin, UserRoles.supervisor]:
+            return Vendor.query.filter_by(hub_id=None).all()
+        return [self.hub]
+
     def __hash__(self):
         return self.id
 

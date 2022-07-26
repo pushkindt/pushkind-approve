@@ -42,4 +42,14 @@
 			<a class="nav-link {% if request.endpoint == 'main.ShowHistory' %} active {% endif %}" href="{{ url_for('main.ShowHistory') }}">История</a>
 		</li>
 	{% endif %}
+	{% if current_user.role.name in ['admin', 'supervisor'] %}
+		<li class="nav-item dropdown">
+			<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Хабы</a>
+			<ul class="dropdown-menu">
+				{% for hub in current_user.hub_list %}
+					<li><a class="dropdown-item" href="{{url_for('main.SwitchHub', hub_id=hub.id)}}">{{ hub.name }}</a></li>
+				{% endfor %}
+			</ul>
+		</li>
+	{% endif %}
 </ul>
