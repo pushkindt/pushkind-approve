@@ -10,9 +10,11 @@
         <small>Артикул: {{ product['sku'] }}</small>
         {% if 'selectedOptions' in product %}
             <br>
-            {% for option in product['selectedOptions'][1:] %}
-                <small>{{ option['value'] }}</small>
-            {% endfor %}
+            <span class="bg-yellow fs-7">
+                {% for option in product['selectedOptions'][1:] %}
+                    {{ option['value'] }}
+                {% endfor %}
+            <span>
         {% endif %}
     </div>
     <div class="col-sm-2 overflow-hidden pt-sm-4">
