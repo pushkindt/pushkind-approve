@@ -59,23 +59,50 @@ def UploadProducts():
         return redirect(url_for('main.ShowProducts'))
 
     if form.validate_on_submit():
-        df = pd.read_excel(form.products.data, engine='openpyxl')
-        df.columns= df.columns.str.lower()
+        df = pd.read_excel(
+            form.products.data,
+            engine='openpyxl'
+        )
+        df.columns = df.columns.str.lower()
+        df.drop(
+            df.columns.difference([
+                'name',
+                'sku',
+                'price',
+                'measurement',
+                'category',
+                'description'
+            ]),
+            axis=1,
+            inplace=True
+        )
+        df = df.astype(
+            dtype = {
+                'name': str,
+                'sku': str,
+                'price': float,
+                'measurement': str,
+                'description': str,
+                'category': str
+            }
+        )
         df['vendor_id'] = vendor.id
         categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
         categories = {c.name.lower():c.id for c in categories}
         df['cat_id'] = df['category'].apply(lambda x: categories.get(x.lower()))
-        df.drop(df.columns.difference(['name','sku', 'price', 'measurement', 'cat_id', 'vendor_id', 'description']), axis=1, inplace=True)
+        df.drop(['category'], axis=1, inplace=True)
         df.dropna(subset=['cat_id', 'name', 'sku', 'price', 'measurement'], inplace=True)
-
-        file_list = os.listdir(
-            os.path.join(
-                'app',
-                'static',
-                'upload',
-                f'vendor{vendor.id}'
+        try:
+            file_list = os.listdir(
+                os.path.join(
+                    'app',
+                    'static',
+                    'upload',
+                    f'vendor{vendor.id}'
+                )
             )
-        )
+        except FileNotFoundError:
+            file_list = []
         image_list = {
             os.path.splitext(file_name)[0]:url_for(
                 'static',
