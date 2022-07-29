@@ -680,16 +680,27 @@ def SaveApproval(order_id):
     form = OrderApprovalForm()
     if form.validate_on_submit():
 
+        message = form.comment.data.strip()
+        if len(message) == 0:
+            message = None
+
+        user_approval = OrderApproval.query.filter_by(
+            user_id=current_user.id,
+            order_id=order.id,
+            product_id=form.product_id.data,
+            remark=message
+        ).first()
+
+        if user_approval is not None:
+            flash('Вы уже выполнили это действие.')
+            return redirect(url_for('main.ShowOrder', order_id=order_id))
+
         last_status = order.status
 
         position_approval = OrderPosition.query.filter_by(
             order_id=order_id,
             position_id=current_user.position_id
         ).first()
-
-        message = form.comment.data.strip()
-        if len(message) == 0:
-            message = None
 
         if form.product_id.data is None:
             OrderApproval.query.filter_by(

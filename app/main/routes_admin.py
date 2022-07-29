@@ -39,7 +39,7 @@ def ShowAdminPage():
         forms['app'] = AppSettingsForm(
             enable=app_data.notify_1C,
             email=app_data.email_1C,
-            order_id_bias=app_data.order_id_bias
+            order_id_bias=app_data.order_id_bias or 0
         )
 
     projects = Project.query.filter(

@@ -640,6 +640,7 @@
 					else if (approved == false) {
 						$("#product_id").prop("disabled", true);
 						$("#product_id").val(null);
+						$("#approvalComment").prop("required", false);
 						approvalHint.text("Подтвердите согласование заявки. Вы также можете добавить комментарий:");
 						approvalHint.removeClass("text-danger");
 						approvalHint.addClass("text-success");
