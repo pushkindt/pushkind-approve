@@ -28,5 +28,5 @@ def register(app):
         )
         db.session.add(hub)
         db.session.commit()
-        admin.hub=hub
+        admin.hub = hub
         db.session.commit()

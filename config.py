@@ -14,8 +14,7 @@ class Config:
     ICU_EXTENSION_PATH = os.path.join(basedir, 'libsqliteicu.so')
     SQLALCHEMY_DATABASE_URI = (
         os.environ
-        .get('DATABASE_URL', 'file:' + os.path.join(basedir, 'app.db'))
-        .replace('file:', 'sqlite:///', 1)
+        .get('DATABASE_URL', 'sqlite:///' + os.path.join(basedir, 'app.db'))
     )
     PLACEHOLDER_IMAGE = '/static/placeholder.png'
     SQLALCHEMY_TRACK_MODIFICATIONS = False

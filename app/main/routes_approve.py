@@ -1,5 +1,6 @@
 from copy import copy
 from datetime import datetime, timezone, date, timedelta
+import os
 
 from flask import render_template, redirect, url_for, flash, Response, request
 from flask_login import current_user, login_required
@@ -312,7 +313,7 @@ def SaveQuantity(order_id):
 
     if order.status == OrderStatus.approved:
         flash('Нельзя модифицировать согласованную заявку.')
-        return redirect(url_for('main.ShowIndex'))
+        return redirect(url_for('main.ShowOrder', order_id=order_id))
 
     form = ChangeQuantityForm()
     if form.validate_on_submit():
@@ -383,7 +384,7 @@ def GetExcelReport1(order_id):
 
     data_len = len(order_products)
     starting_row = 11
-    wb = load_workbook(filename='template.xlsx')
+    wb = load_workbook(filename=os.path.join('app', 'static', 'upload', 'template.xlsx'))
     ws = wb.active
     ws['P17'] = order.initiative.name
     if data_len > 1:
@@ -455,7 +456,7 @@ def GetExcelReport2(order_id):
     order_products = [p for p in order.products if p['quantity'] > 0]
 
     starting_row = 2
-    wb = load_workbook(filename='template2.xlsx')
+    wb = load_workbook(filename=os.path.join('app', 'static', 'upload', 'template2.xlsx'))
     ws = wb.active
 
     ws.title = order.site.name if order.site is not None else 'Объект не указан'
@@ -533,7 +534,7 @@ def Prepare1CReport(order, excel_date):
             Category.hub_id == order.initiative.hub_id
         ).all()
         starting_row = 3
-        wb = load_workbook(filename='template1C.xlsx')
+        wb = load_workbook(filename=os.path.join('app', 'static', 'upload', 'template1C.xlsx'))
         wb.iso_dates = True
         ws = wb['Заявка']
         for merged_cell in ws.merged_cells.ranges:
@@ -620,7 +621,7 @@ def Prepare1CReport(order, excel_date):
 
 @bp.route('/orders/excel1C/<int:order_id>')
 @login_required
-@role_required([UserRoles.admin, UserRoles.validator, UserRoles.purchaser])
+@role_forbidden([UserRoles.default])
 def GetExcelReport1C(order_id):
     order = GetOrder(order_id)
     if order is None:
@@ -826,7 +827,7 @@ def SaveStatements(order_id):
 
     if order.status == OrderStatus.approved:
         flash('Нельзя модифицировать согласованную заявку.')
-        return redirect(url_for('main.ShowIndex'))
+        return redirect(url_for('main.ShowOrder', order_id=order_id))
 
     form = ApproverForm()
 
@@ -906,7 +907,7 @@ def SaveParameters(order_id):
 
     if order.status == OrderStatus.approved and current_user.role != UserRoles.admin:
         flash('Нельзя модифицировать согласованную заявку.')
-        return redirect(url_for('main.ShowIndex'))
+        return redirect(url_for('main.ShowOrder', order_id=order_id))
 
     form = InitiativeForm()
 

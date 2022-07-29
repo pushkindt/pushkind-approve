@@ -52,6 +52,9 @@ def ShowSettings():
         user_form.about_user.projects.choices = [
             (p.id, p.name) for p in projects
         ]
+    else:
+        user_form.about_user.categories.choices = []
+        user_form.about_user.projects.choices = []
 
     if user_form.submit.data:
         if user_form.validate_on_submit():

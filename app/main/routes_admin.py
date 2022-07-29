@@ -85,7 +85,7 @@ def SaveAppSettings():
         if form.image.data:
             f = form.image.data
             file_name, file_ext = os.path.splitext(f.filename)
-            file_name = f'logo-{current_user.hub_id}{file_ext}'
+            file_name = f'logo{current_user.hub_id}{file_ext}'
             full_path = os.path.join(
                 'app', 'static', 'upload', file_name
             )
