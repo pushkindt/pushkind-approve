@@ -589,51 +589,43 @@ class Order(db.Model):
         result += self.validators() + self.purchasers
         return result
 
-    @classmethod
-    def UpdateOrdersPositions(cls, hub_id, order_id=None, update_status=False):
+    def update_positions(self, update_status=False):
 
-        # Query orders from the hub
-        orders = Order.query.filter(Order.hub_id == hub_id, Order.status != OrderStatus.approved)
-        # Filter by order_id if specified
-        if order_id is not None:
-            orders = orders.filter_by(id=order_id)
+        # Orders with no site and categories binding have no responsible positions
+        if self.site is None or len(self.categories) == 0:
+            return
+        # Query positions which have validators with the same project
+        # and categories bindings as the order
+        # Update the order's responsible positions
+        self.positions = (
+            Position.query
+            .filter_by(hub_id=self.hub_id)
+            .join(User).filter(User.role == UserRoles.validator)
+            .join(UserCategory, User.id == UserCategory.user_id)
+            .filter(UserCategory.category_id.in_(self.categories_list))
+            .join(UserProject, User.id == UserProject.user_id)
+            .filter(UserProject.project_id == self.site.project_id)
+            .all()
+        )
 
-        for order in orders.all():
-            # Orders with no site and categories binding have no responsible positions
-            if order.site is None or len(order.categories) == 0:
-                continue
-            # Query positions which have validators with the same project
-            # and categories bindings as the order
-            # Update the order's responsible positions
-            order.positions = (
-                Position.query
-                .filter_by(hub_id=hub_id)
-                .join(User).filter(User.role == UserRoles.validator)
-                .join(UserCategory, User.id == UserCategory.user_id)
-                .filter(UserCategory.category_id.in_(order.categories_list))
-                .join(UserProject, User.id == UserProject.user_id)
-                .filter(UserProject.project_id == order.site.project_id)
-                .all()
+        # Update those which have users approved the order
+
+        for position in self.approvals:
+            approval = (
+                OrderApproval.query
+                .filter(OrderApproval.order_id == self.id, OrderApproval.product_id == None)
+                .join(User)
+                .filter(User.position_id == position.position_id)
+                .first()
             )
-
-            # Update those which have users approved the order
-
-            for position in order.approvals:
-                approval = (
-                    OrderApproval.query
-                    .filter(OrderApproval.order_id == order.id, OrderApproval.product_id == None)
-                    .join(User)
-                    .filter(User.position_id == position.position_id)
-                    .first()
-                )
-                if approval is not None:
-                    position.approved = True
-                    position.user = approval.user
-                else:
-                    position.approved = False
-                    position.user = None
-            if update_status is True:
-                order.UpdateOrderStatus()
+            if approval is not None:
+                position.approved = True
+                position.user = approval.user
+            else:
+                position.approved = False
+                position.user = None
+        if update_status is True:
+            self.UpdateOrderStatus()
         db.session.commit()
 
     @property

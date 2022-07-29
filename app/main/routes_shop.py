@@ -138,7 +138,7 @@ def ShopCart():
             db.session.add(order)
             order.categories = categories
             db.session.commit()
-            Order.UpdateOrdersPositions(current_user.hub_id, order.id)
+            order.update_positions()
             flash('Заявка успешно создана.')
             SendEmailNotification('new', order)
             return redirect(url_for('main.ShowIndex'))

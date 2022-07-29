@@ -129,7 +129,8 @@ def ShowSettings():
             RemoveExcessivePosition()
 
             if user.role in [UserRoles.purchaser, UserRoles.validator]:
-                Order.UpdateOrdersPositions(current_user.hub_id)
+                for order in Order.query.filter(Order.hub_id==current_user.hub_id, Order.status != OrderStatus.approved).all():
+                    order.update_positions()
 
             flash('Данные успешно сохранены.')
         else:
@@ -185,7 +186,8 @@ def RemoveUser(user_id):
     RemoveExcessivePosition()
 
     if user.role in [UserRoles.purchaser, UserRoles.validator]:
-        Order.UpdateOrdersPositions(current_user.hub_id)
+        for order in Order.query.filter(Order.hub_id==current_user.hub_id, Order.status != OrderStatus.approved).all():
+            order.update_positions()
 
     flash('Пользователь успешно удалён.')
     return redirect(url_for('main.ShowSettings'))

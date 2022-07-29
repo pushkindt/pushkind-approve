@@ -205,6 +205,7 @@ def SplitOrder(order_id):
             )
             db.session.add(event)
             db.session.commit()
+            new_order.update_positions()
             SendEmailNotification('new', new_order)
 
         order.total = 0.0
@@ -217,8 +218,6 @@ def SplitOrder(order_id):
         )
         db.session.add(event)
         db.session.commit()
-
-        Order.UpdateOrdersPositions(current_user.hub_id)
 
         if order.site is not None and order.cashflow_statement is not None:
             OrderLimit.update_current(
@@ -284,7 +283,7 @@ def DuplicateOrder(order_id):
     db.session.add(event)
     db.session.commit()
 
-    Order.UpdateOrdersPositions(current_user.hub_id)
+    new_order.update_positions()
 
     if order.site is not None and order.cashflow_statement is not None:
         OrderLimit.update_current(
@@ -975,7 +974,7 @@ def SaveParameters(order_id):
         ).all()
         OrderApproval.query.filter_by(order_id=order.id).delete()
         db.session.commit()
-        Order.UpdateOrdersPositions(current_user.hub_id, order_id, update_status=True)
+        order.update_positions(update_status=True)
         if order.site is not None and order.cashflow_statement is not None:
             OrderLimit.update_current(
                 current_user.hub_id,

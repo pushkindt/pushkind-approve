@@ -228,7 +228,7 @@ def MergeOrders():
 
         db.session.commit()
 
-        Order.UpdateOrdersPositions(current_user.hub_id)
+        order.update_positions()
 
         flash(f'Объединено заявок: {len(orders)}. Идентификатор новой заявки {order.number}')
 
