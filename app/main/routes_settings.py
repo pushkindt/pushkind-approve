@@ -1,6 +1,6 @@
 from flask_login import current_user, login_required
 from flask import render_template, redirect, url_for, flash, Response
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
 
@@ -19,10 +19,21 @@ from app.main.utils import role_required, role_forbidden
 
 
 def RemoveExcessivePosition():
-    positions = Position.query.filter(Position.users == None).all()
-    for position in positions:
-        position.approvals = []
-        db.session.delete(position)
+    positions = (
+        Position.query.join(
+            User,
+            and_(
+                Position.id == User.position_id,
+                User.role == UserRoles.validator
+            ),
+            isouter=True
+        ).filter(
+            User.position_id == None
+        ).all()
+    )
+    position_ids = [p.id for p in positions]
+    OrderPosition.query.filter(OrderPosition.position_id.in_(position_ids)).delete()
+    Position.query.filter(Position.id.in_(position_ids)).delete()
     db.session.commit()
 
 

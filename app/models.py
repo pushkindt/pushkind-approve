@@ -149,7 +149,6 @@ class Vendor(db.Model):
         default=True,
         server_default=expression.true()
     )
-    hub = db.relationship('Vendor')
     positions = db.relationship('Position', backref='hub')
     categories = db.relationship('Category', backref='hub')
     settings = db.relationship('AppSettings', backref='hub')
@@ -320,7 +319,6 @@ class Position(db.Model):
     name = db.Column(db.String(128), nullable=False, index=True)
     hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
     users = db.relationship('User', backref='position')
-    approvals = db.relationship('OrderPosition', cascade='all, delete-orphan', backref='position')
 
 
 class OrderApproval(db.Model):
@@ -510,12 +508,13 @@ class Order(db.Model):
     events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='order')
     positions = db.relationship('Position', secondary='order_position')
     approvals = db.relationship('OrderPosition', backref='order')
-    user_approvals = db.relationship('OrderApproval', backref='order')
+    user_approvals = db.relationship('OrderApproval', backref='order', viewonly=True)
     children = db.relationship(
         'Order',
         secondary=OrderRelationship,
         primaryjoin=id == OrderRelationship.c.order_id,
-        secondaryjoin=id == OrderRelationship.c.child_id
+        secondaryjoin=id == OrderRelationship.c.child_id,
+        viewonly=True
     )
     parents = db.relationship(
         'Order',
@@ -671,6 +670,7 @@ class OrderPosition(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True)
     timestamp = db.Column(db.DateTime, nullable=True)
     user = db.relationship('User')
+    position = db.relationship('Position')
 
 
 class UserCategory(db.Model):
