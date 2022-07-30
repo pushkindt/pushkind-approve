@@ -34,7 +34,9 @@ def ShowAdminPage():
 
     app_data = AppSettings.query.filter_by(hub_id=current_user.hub_id).first()
     if app_data is None:
-        forms['app'] = AppSettingsForm()
+        forms['app'] = AppSettingsForm(
+            order_id_bias=0
+        )
     else:
         forms['app'] = AppSettingsForm(
             enable=app_data.notify_1C,
