@@ -8,6 +8,7 @@ from hashlib import md5
 import jwt
 from flask import current_app
 from flask_login import UserMixin
+from sqlalchemy import false
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
@@ -320,6 +321,11 @@ class Position(db.Model):
     hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
     users = db.relationship('User', backref='position')
 
+    def __eq__(self, other):
+        if not isinstance(other, Position) or self.id != other.id:
+            return False
+        return True
+
 
 class OrderApproval(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
@@ -506,7 +512,6 @@ class Order(db.Model):
     categories = db.relationship('Category', secondary='order_category')
     vendors = db.relationship('Vendor', secondary='order_vendor')
     events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='order')
-    positions = db.relationship('Position', secondary='order_position')
     approvals = db.relationship('OrderPosition', backref='order')
     user_approvals = db.relationship('OrderApproval', backref='order', viewonly=True)
     children = db.relationship(
@@ -597,7 +602,7 @@ class Order(db.Model):
         # Query positions which have validators with the same project
         # and categories bindings as the order
         # Update the order's responsible positions
-        self.positions = (
+        positions = (
             Position.query
             .filter_by(hub_id=self.hub_id)
             .join(User).filter(User.role == UserRoles.validator)
@@ -608,22 +613,48 @@ class Order(db.Model):
             .all()
         )
 
+        old_approvals = {
+            appr.position_id:appr for appr in self.approvals\
+        }
+
+        OrderPosition.query.filter_by(order_id=self.id).delete()
+
+        db.session.commit()
+
+        approvals = []
         # Update those which have users approved the order
 
-        for position in self.approvals:
-            approval = (
-                OrderApproval.query
-                .filter(OrderApproval.order_id == self.id, OrderApproval.product_id == None)
-                .join(User)
-                .filter(User.position_id == position.position_id)
-                .first()
+        for position in positions:
+            old_approval = old_approvals.get(position.id)
+            order_position = OrderPosition(
+                order=self,
+                position=position
             )
-            if approval is not None:
-                position.approved = True
-                position.user = approval.user
+            if old_approval is None:
+                user_approval = (
+                    OrderApproval.query
+                    .filter(
+                        OrderApproval.order_id == self.id,
+                        OrderApproval.product_id == None
+                    )
+                    .join(User)
+                    .filter(
+                        User.position_id == position.id,
+                        User.role == UserRoles.validator
+                    )
+                    .first()
+                )
+                if user_approval is not None:
+                    order_position.user_id = user_approval.user_id
+                    order_position.approved = True
             else:
-                position.approved = False
-                position.user = None
+                order_position.user_id = old_approval.user_id
+                order_position.approved = old_approval.approved
+                order_position.timestamp = old_approval.timestamp
+            approvals.append(
+                order_position
+            )
+        self.approvals = approvals
         if update_status is True:
             self.UpdateOrderStatus()
         db.session.commit()

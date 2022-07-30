@@ -82,6 +82,9 @@ def ShowSettings():
             else:
                 user = current_user
 
+
+            old_position = user.position
+
             if (
                 user_form.about_user.position.data is not None and
                 user_form.about_user.position.data != ''
@@ -126,11 +129,12 @@ def ShowSettings():
             user.name = user_form.about_user.full_name.data.strip()
             db.session.commit()
 
-            RemoveExcessivePosition()
+            if old_position != user.position:
+                RemoveExcessivePosition()
 
-            if user.role in [UserRoles.purchaser, UserRoles.validator]:
-                for order in Order.query.filter(Order.hub_id==current_user.hub_id, Order.status != OrderStatus.approved).all():
-                    order.update_positions()
+                if user.role in [UserRoles.purchaser, UserRoles.validator]:
+                    for order in Order.query.filter(Order.hub_id==current_user.hub_id, Order.status != OrderStatus.approved).all():
+                        order.update_positions()
 
             flash('Данные успешно сохранены.')
         else:
