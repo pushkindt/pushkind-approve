@@ -81,7 +81,10 @@ def ShowIndex():
         orders = orders.join(Project).filter(Project.enabled == True)
 
     if current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(hub_id=current_user.hub_id, admin_id=current_user.id).first()
+        vendor = Vendor.query.filter_by(
+            hub_id=current_user.hub_id,
+            email=current_user.email
+        ).first()
         if vendor:
             orders = orders.filter(
                 # Order.purchased == True,

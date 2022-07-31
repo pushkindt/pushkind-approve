@@ -28,7 +28,7 @@ def ShowProducts():
     images_form = UploadImagesForm()
     vendors = Vendor.query.filter_by(hub_id = current_user.hub_id)
     if current_user.role == UserRoles.vendor:
-        vendors = vendors.filter_by(admin_id=current_user.id)
+        vendors = vendors.filter_by(email=current_user.email)
     vendor_id = request.args.get('vendor_id', type=int)
     if vendor_id is None:
         vendor = vendors.first()
@@ -54,7 +54,7 @@ def UploadProducts():
         vendor_id = request.args.get('vendor_id', type=int)
         vendor = Vendor.query.filter_by(id=vendor_id).first()
     elif current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(admin_id=current_user.id).first()
+        vendor = Vendor.query.filter_by(email=current_user.email).first()
     if vendor is None:
         flash('Такой поставщик не найден.')
         return redirect(url_for('main.ShowProducts'))
@@ -136,7 +136,7 @@ def UploadImages():
         vendor_id = request.args.get('vendor_id', type=int)
         vendor = Vendor.query.filter_by(id=vendor_id).first()
     elif current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(admin_id=current_user.id).first()
+        vendor = Vendor.query.filter_by(email=current_user.email).first()
     if vendor is None:
         flash('Такой поставщик не найден.')
         return redirect(url_for('main.ShowProducts'))
@@ -182,7 +182,7 @@ def DownloadProducts():
         vendor_id = request.args.get('vendor_id', type=int)
         vendor = Vendor.query.filter_by(id=vendor_id).first()
     elif current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(admin_id=current_user.id).first()
+        vendor = Vendor.query.filter_by(email=current_user.email).first()
     if vendor is None:
         flash('Такой поставщик не найден.')
         return redirect(url_for('main.ShowProducts'))

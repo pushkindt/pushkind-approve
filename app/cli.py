@@ -22,7 +22,6 @@ def register(app):
         db.session.add(admin)
         db.session.commit()
         hub = Vendor(
-            admin_id=admin.id,
             email=hub_email,
             name=hub_name
         )

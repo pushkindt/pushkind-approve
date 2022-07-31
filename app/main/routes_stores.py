@@ -50,8 +50,7 @@ def AddStore():
         store = Vendor(
             hub_id=current_user.hub_id,
             name=store_name,
-            email=store_email,
-            admin_id = vendor_admin.id
+            email=store_email
         )
         db.session.add(store)
         db.session.commit()

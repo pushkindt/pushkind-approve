@@ -1,11 +1,11 @@
 {% if 'selectedOptions' not in product %}
     {% set _ = glob.update({'no_measurements':True}) %}
 {% endif %}
-<div class="row my-1 py-1 bg-white rounded {% if product['id'] in order.user_approvals|map(attribute='product_id')|list %}border border-danger{%endif%}" data-id="{{ product.id }}">
+<div class="row my-1 py-1 bg-white rounded selectable {% if product['id'] in order.user_approvals|map(attribute='product_id')|list %}border border-danger{%endif%}" data-id="{{ product.id }}">
     <div class="col-auto">
         <img src="{{ product['imageUrl'] or config['PLACEHOLDER_IMAGE'] }}" height="96" width="96" alt="thumbnail">
     </div>
-    <div class="col overflow-hidden selectable">
+    <div class="col overflow-hidden">
         <h5>{{ product['name'] }}</h5>
         <small>Артикул: {{ product['sku'] }}</small>
         {% if 'selectedOptions' in product %}
@@ -17,13 +17,13 @@
             <span>
         {% endif %}
     </div>
-    <div class="col-sm-2 overflow-hidden pt-sm-4 selectable">
+    <div class="col-sm-2 overflow-hidden pt-sm-4">
         {{ product['vendor'] }}
     </div>
-    <div class="col-sm-2 overflow-hidden pt-sm-4 selectable">
+    <div class="col-sm-2 overflow-hidden pt-sm-4">
         <strong>{{ '{:,.2f}'.format(product['price']) }}</strong> ₽
     </div>
-    <div class="col-sm-1 overflow-hidden pt-sm-4 selectable">
+    <div class="col-sm-1 overflow-hidden pt-sm-4">
         <strong>{{product['selectedOptions'][0]['value'] if 'selectedOptions' in product else ''}}</strong>
     </div>
     <div class="col-sm-2 overflow-hidden pt-sm-3 text-end">

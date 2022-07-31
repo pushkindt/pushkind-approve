@@ -709,6 +709,22 @@
 					descriptionModal.show();
 				}
 			});
+			$(".selectable input").click(function(e){
+				e.stopPropagation();
+			});
+		{% endif %}
+		{% if current_user.role.name in ['validator', 'supervisor', 'vendor'] %}
+			$(".selectable").click(function(e){
+				let productId = $(this).attr('data-id');
+				let modalElement = document.getElementById('descriptionModal'+productId);
+				let descriptionModal = bootstrap.Modal.getInstance(modalElement);
+				if (!descriptionModal)
+					descriptionModal= new bootstrap.Modal(modalElement, {});
+				descriptionModal.show();
+			});
+			$(".selectable input").click(function(e){
+				e.stopPropagation();
+			});
 		{% endif %}
 		{% if current_user.role.name in ['admin', 'initiative', 'validator', 'purchaser'] %}
 			let notifyReviewers = $("#notify_reviewers");

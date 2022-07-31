@@ -167,7 +167,10 @@ def AddProject():
     if form.validate_on_submit():
         project_name = form.project_name.data.strip()
         uid = form.uid.data.strip() if form.uid.data is not None else None
-        project = Project.query.filter_by(name=project_name).first()
+        project = Project.query.filter_by(
+            hub_id=current_user.hub_id,
+            name=project_name
+        ).first()
         if project is None:
             project = Project(name=project_name, uid=uid,
                               hub_id=current_user.hub_id)
@@ -190,7 +193,10 @@ def AddSite():
     if form.validate_on_submit():
         site_name = form.site_name.data.strip()
         uid = form.uid.data.strip() if form.uid.data is not None else None
-        site = Site.query.filter_by(name=site_name).first()
+        site = Site.query.filter_by(
+            project_id=form.project_id.data,
+            name=site_name
+        ).first()
         if site is None:
             site = Site(name=site_name, uid=uid,
                         project_id=form.project_id.data)
@@ -228,7 +234,10 @@ def EditProject():
         project = Project.query.filter_by(id=form.project_id.data).first()
         if project is not None:
             project_name = form.project_name.data.strip()
-            existed = Project.query.filter_by(name=project_name).first()
+            existed = Project.query.filter_by(
+                hub_id=current_user.hub_id,
+                name=project_name
+            ).first()
             if existed is None or existed.id == project.id:
                 project.name = project_name
                 project.uid = form.uid.data.strip() if form.uid.data is not None else None
@@ -268,7 +277,14 @@ def EditSite():
         site = Site.query.filter_by(id=form.site_id.data).first()
         if site is not None:
             site_name = form.site_name.data.strip()
-            existed = Site.query.filter_by(name=site_name).first()
+            existed = (
+                Site.query.filter_by(
+                    name=site_name
+                )
+                .join(Project, Site.project_id == Project.id)
+                .filter_by(hub_id=current_user.hub_id)
+                .first()
+            )
             if existed is None or existed.id == site.id:
                 site.name = site_name
                 site.uid = form.uid.data.strip() if form.uid.data is not None else None
@@ -421,7 +437,10 @@ def AddCategory():
     form = AddCategoryForm()
     if form.validate_on_submit():
         category_name = form.category_name.data.strip()
-        category = Category.query.filter_by(name=category_name).first()
+        category = Category.query.filter_by(
+            hub_id=current_user.hub_id,
+            name=category_name
+        ).first()
         if category is None:
             category = Category(
                 name=category_name,

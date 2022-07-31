@@ -19,7 +19,7 @@ from app.main.utils import role_required, role_forbidden
 
 
 def RemoveExcessivePosition():
-    positions = (
+    validators_positions = (
         Position.query.join(
             User,
             and_(
@@ -31,8 +31,18 @@ def RemoveExcessivePosition():
             User.position_id == None
         ).all()
     )
-    position_ids = [p.id for p in positions]
+    position_ids = [p.id for p in validators_positions]
     OrderPosition.query.filter(OrderPosition.position_id.in_(position_ids)).delete()
+    users_positions = (
+        Position.query.join(
+            User,
+            Position.id == User.position_id,
+            isouter=True
+        ).filter(
+            User.position_id == None
+        ).all()
+    )
+    position_ids = [p.id for p in users_positions]
     Position.query.filter(Position.id.in_(position_ids)).delete()
     db.session.commit()
 

@@ -40,7 +40,10 @@ def GetOrder(order_id):
             Site.project_id.in_([p.id for p in current_user.projects])
         )
     elif current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(hub_id=current_user.hub_id, admin_id=current_user.id).first()
+        vendor = Vendor.query.filter_by(
+            hub_id=current_user.hub_id,
+            email=current_user.email
+        ).first()
         order = order.filter(
             # Order.purchased == True,
             Order.vendors.any(OrderVendor.vendor_id == vendor.id)

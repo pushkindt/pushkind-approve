@@ -8,7 +8,6 @@ from hashlib import md5
 import jwt
 from flask import current_app
 from flask_login import UserMixin
-from sqlalchemy import false
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
@@ -140,25 +139,33 @@ def load_user(user_id):
 
 class Vendor(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=True)
-    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    hub_id = db.Column(
+        db.Integer,
+        db.ForeignKey('vendor.id', ondelete="CASCADE"),
+        nullable=True
+    )
     name = db.Column(db.String(128), nullable=False)
-    email = db.Column(db.String(128), nullable=False)
-    enabled = db.Column(        
+    email = db.Column(db.String(128), nullable=False, unique=True, index=True)
+    enabled = db.Column(
         db.Boolean,
         nullable=False,
         default=True,
         server_default=expression.true()
     )
-    positions = db.relationship('Position', backref='hub')
-    categories = db.relationship('Category', backref='hub')
-    settings = db.relationship('AppSettings', backref='hub')
-    projects = db.relationship('Project', backref='hub')
-    orders = db.relationship('Order', backref='hub')
+    users = db.relationship('User', back_populates='hub', cascade="all, delete", passive_deletes=True)
+    positions = db.relationship('Position', back_populates='hub', cascade="all, delete", passive_deletes=True)
+    categories = db.relationship('Category', back_populates='hub', cascade="all, delete", passive_deletes=True)
+    settings = db.relationship('AppSettings', back_populates='hub', cascade="all, delete", passive_deletes=True)
+    projects = db.relationship('Project', back_populates='hub', cascade="all, delete", passive_deletes=True)
+    orders = db.relationship('Order', back_populates='hub', cascade="all, delete", passive_deletes=True)
+    income_statements = db.relationship('IncomeStatement', back_populates='hub', cascade="all, delete", passive_deletes=True)
+    cashflow_statements = db.relationship('CashflowStatement', back_populates='hub', cascade="all, delete", passive_deletes=True)
+    order_limits = db.relationship('OrderLimit', back_populates='hub', cascade="all, delete", passive_deletes=True)
+    products = db.relationship('Product', back_populates='vendor', cascade="all, delete", passive_deletes=True)
 
 
 class JsonType(TypeDecorator):
-    impl = db.String()
+    impl = db.Text()
 
     def process_bind_param(self, value, dialect):
         if value is not None:
@@ -192,7 +199,7 @@ class User(UserMixin, db.Model):
         nullable=True
     )
     location = db.Column(db.String(128), nullable=True)
-    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=True)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=True)
     email_new = db.Column(
         db.Boolean,
         nullable=False,
@@ -224,19 +231,22 @@ class User(UserMixin, db.Model):
         server_default=expression.true()
     )
     last_seen = db.Column(db.DateTime, nullable=True)
-    note = db.Column(db.String(), nullable=True)
+    note = db.Column(db.String(512), nullable=True)
     registered = db.Column(db.DateTime, nullable=True)
     birthday = db.Column(db.Date, nullable=True)
     categories = db.relationship('Category', secondary='user_category', backref='users')
     projects = db.relationship('Project', secondary='user_project', backref='users')
-    events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='user')
+    events = db.relationship('OrderEvent', cascade='all, delete', back_populates='user', passive_deletes=True)
     approvals = db.relationship(
         'OrderApproval',
-        cascade='all, delete-orphan',
-        backref='user', lazy='dynamic'
+        cascade='all, delete',
+        back_populates='user',
+        lazy='dynamic',
+        passive_deletes=True
     )
-    orders = db.relationship('Order', backref='initiative')
-    hub = db.relationship('Vendor', foreign_keys=[hub_id])
+    orders = db.relationship('Order', back_populates='initiative')
+    hub = db.relationship('Vendor', back_populates='users', foreign_keys=[hub_id])
+    position = db.relationship('Position', back_populates='users')
 
     @property
     def projects_list(self):
@@ -318,8 +328,9 @@ class User(UserMixin, db.Model):
 class Position(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
-    users = db.relationship('User', backref='position')
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=False)
+    users = db.relationship('User', back_populates='position')
+    hub = db.relationship('Vendor', back_populates='positions')
 
     def __eq__(self, other):
         if not isinstance(other, Position) or self.id != other.id:
@@ -329,10 +340,12 @@ class Position(db.Model):
 
 class OrderApproval(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id', ondelete='CASCADE'), nullable=False)
     product_id = db.Column(db.Integer, index=True, nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     remark = db.Column(db.String(128), nullable=True)
+    user = db.relationship('User', back_populates='approvals')
+    order = db.relationship('Order', back_populates='user_approvals')
 
     def __bool__(self):
         return self.product_id is None
@@ -342,7 +355,7 @@ class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
     children = db.Column(JsonType(), nullable=False)
-    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=False)
     responsible = db.Column(db.String(128), nullable=True)
     functional_budget = db.Column(db.String(128), nullable=True)
     income_id = db.Column(  # БДР
@@ -359,6 +372,8 @@ class Category(db.Model):
     image = db.Column(db.String(128), nullable=True)
     income_statement = db.relationship('IncomeStatement')
     cashflow_statement = db.relationship('CashflowStatement')
+    hub = db.relationship('Vendor', back_populates='categories')
+    products = db.relationship('Product', back_populates='category', cascade="all, delete", passive_deletes=True)
 
     def __repr__(self):
         return json.dumps(self.to_dict())
@@ -385,7 +400,7 @@ class Category(db.Model):
 
 class AppSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False, unique=True)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=False, unique=True)
     notify_1C = db.Column(
         db.Boolean,
         nullable=False,
@@ -394,30 +409,35 @@ class AppSettings(db.Model):
     )
     email_1C = db.Column(db.String(128), nullable=True)
     order_id_bias = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    hub = db.relationship('Vendor', back_populates='settings')
 
 
 class OrderEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id', ondelete="CASCADE"), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
     timestamp = db.Column(
         db.DateTime,
         nullable=False,
         default=datetime.now(tz=timezone.utc),
-        server_default=func.datetime('now')
+        server_default=func.current_timestamp()
     )
     type = db.Column(db.Enum(EventType), nullable=False, default=EventType.commented)
-    data = db.Column(db.String(), nullable=True)
+    data = db.Column(db.String(512), nullable=True)
+    user = db.relationship('User', back_populates='events')
+    order = db.relationship('Order', back_populates='events')
 
 
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
-    sites = db.relationship('Site', cascade='all, delete-orphan', backref='project')
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=False)
     enabled = db.Column(db.Boolean, nullable=False, default=True,
                         server_default=expression.true(), index=True)
     uid = db.Column(db.String(128), nullable=True)
+    hub = db.relationship('Vendor', back_populates='projects')
+    sites = db.relationship('Site', cascade='all, delete', back_populates='project', passive_deletes=True)
+    order_limits = db.relationship('OrderLimit', back_populates='project', cascade='all, delete', passive_deletes=True)
 
     def __repr__(self):
         return json.dumps(self.to_dict())
@@ -436,9 +456,10 @@ class Project(db.Model):
 class Site(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
-    orders = db.relationship('Order', backref='site')
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id', ondelete="CASCADE"), nullable=False)
     uid = db.Column(db.String(128), nullable=True)
+    orders = db.relationship('Order', back_populates='site')
+    project = db.relationship('Project', back_populates='sites')
 
     def to_dict(self):
         data = {
@@ -461,7 +482,7 @@ OrderRelationship = db.Table(
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     number = db.Column(db.String(128), nullable=False)
-    initiative_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    initiative_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="SET NULL"), nullable=True)
     create_timestamp = db.Column(db.Integer, nullable=False)
     products = db.Column(JsonType(), nullable=False)
     total = db.Column(db.Float, nullable=False)
@@ -482,7 +503,7 @@ class Order(db.Model):
         db.ForeignKey('cashflow_statement.id', ondelete='SET NULL'),
         nullable=True
     )
-    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=False)
     purchased = db.Column(
         db.Boolean,
         nullable=False,
@@ -511,9 +532,10 @@ class Order(db.Model):
     dealdone_responsible_comment = db.Column(db.String(128))
     categories = db.relationship('Category', secondary='order_category')
     vendors = db.relationship('Vendor', secondary='order_vendor')
-    events = db.relationship('OrderEvent', cascade='all, delete-orphan', backref='order')
+    hub = db.relationship('Vendor', back_populates='orders')
+    events = db.relationship('OrderEvent', cascade='all, delete', back_populates='order', passive_deletes=True)
     approvals = db.relationship('OrderPosition', backref='order')
-    user_approvals = db.relationship('OrderApproval', backref='order', viewonly=True)
+    user_approvals = db.relationship('OrderApproval', back_populates='order', viewonly=True)
     children = db.relationship(
         'Order',
         secondary=OrderRelationship,
@@ -527,8 +549,10 @@ class Order(db.Model):
         primaryjoin=id == OrderRelationship.c.child_id,
         secondaryjoin=id == OrderRelationship.c.order_id
     )
-    income_statement = db.relationship('IncomeStatement')
-    cashflow_statement = db.relationship('CashflowStatement')
+    income_statement = db.relationship('IncomeStatement', back_populates='orders')
+    cashflow_statement = db.relationship('CashflowStatement', back_populates='orders')
+    initiative = db.relationship('User', back_populates='orders')
+    site = db.relationship('Site', back_populates='orders')
 
     def UpdateOrderStatus(self):
         if self.site is None or self.site.project.enabled is False:
@@ -712,7 +736,9 @@ class IncomeStatement(db.Model):
     __tablename__ = 'income_statement'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=False)
+    hub = db.relationship('Vendor', back_populates='income_statements')
+    orders = db.relationship('Order', back_populates='income_statement')
 
     def __repr__(self):
         return json.dumps(self.to_dict())
@@ -726,7 +752,10 @@ class CashflowStatement(db.Model):
     __tablename__ = 'cashflow_statement'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=False)
+    hub = db.relationship('Vendor', back_populates='cashflow_statements')
+    order_limits = db.relationship('OrderLimit', back_populates='cashflow_statement', cascade='all, delete', passive_deletes=True)
+    orders = db.relationship('Order', back_populates='cashflow_statement')
 
     def __repr__(self):
         return json.dumps(self.to_dict())
@@ -759,7 +788,7 @@ class OrderLimitsIntervals(enum.IntEnum):
 class OrderLimit(db.Model):
     __tablename__ = 'order_limit'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
+    hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=False)
     value = db.Column(db.Float, nullable=False, default=0.0, server_default='0.0')
     current = db.Column(db.Float, nullable=False, default=0.0, server_default='0.0')
     cashflow_id = db.Column(
@@ -779,8 +808,9 @@ class OrderLimit(db.Model):
         default=OrderLimitsIntervals.monthly,
         server_default='monthly'
     )
-    cashflow_statement = db.relationship('CashflowStatement')
-    project = db.relationship('Project')
+    cashflow_statement = db.relationship('CashflowStatement', back_populates='order_limits')
+    project = db.relationship('Project', back_populates='order_limits')
+    hub = db.relationship('Vendor', back_populates='order_limits')
 
     @classmethod
     def update_current(cls, hub_id, project_id=None, cashflow_id=None):
@@ -824,19 +854,19 @@ class OrderLimit(db.Model):
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
     sku = db.Column(db.String(128), nullable=False, index=True)
     price = db.Column(db.Float, nullable=False)
     image = db.Column(db.String(128), nullable=True)
     measurement = db.Column(db.String(128), nullable=True)
-    cat_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
-    description = db.Column(db.String(), nullable=True)
+    cat_id = db.Column(db.Integer, db.ForeignKey('category.id', ondelete="CASCADE"), nullable=False)
+    description = db.Column(db.String(512), nullable=True)
     input_required =  db.Column(
         db.Boolean,
         nullable=False,
         default=False,
         server_default=expression.false()
     )
-    vendor = db.relationship('Vendor', backref='products')
-    category = db.relationship('Category')
+    vendor = db.relationship('Vendor', back_populates='products')
+    category = db.relationship('Category', back_populates='products')

@@ -116,5 +116,6 @@ def SendEmail1C(recipients, order, data):
 
 def GetNewOrderNumber():
     settings = AppSettings.query.filter_by(hub_id=current_user.hub_id).first()
-    count = db.session.query(Order).count() + settings.order_id_bias
+    order_id_bias = settings.order_id_bias if settings is not None else 0
+    count = db.session.query(Order).count() + order_id_bias
     return f'{count}'
