@@ -8,6 +8,7 @@ RUN apt-get update
 RUN apt-get -y install default-libmysqlclient-dev gcc vim-nox
 COPY requirements.txt requirements.txt
 RUN python3 -m venv venv
+RUN venv/bin/python3 -m pip install --upgrade pip
 RUN venv/bin/pip install -r requirements.txt
 RUN venv/bin/pip install gunicorn
 
