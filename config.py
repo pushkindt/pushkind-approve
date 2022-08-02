@@ -30,3 +30,5 @@ class Config:
     )
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB limit for uploading
     MAX_ZIP_FILE_SIZE = 1 * 1024 * 1024  # 1MB limit for a file in a zip archive
+    MYSQL_DATABASE_CHARSET = 'utf8mb4'
+    MYSQL_CHARSET = 'utf8mb4'
