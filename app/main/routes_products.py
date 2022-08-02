@@ -117,6 +117,11 @@ def UploadProducts():
 
         df['image'] = df['sku'].apply(lambda x: image_list.get(x))
 
+        df['name'] = df['name'].str.slice(0,128)
+        df['sku'] = df['sku'].str.slice(0,128)
+        df['measurement'] = df['measurement'].str.slice(0,128)
+        df['description'] = df['description'].str.slice(0,512)
+
         Product.query.filter_by(vendor_id=vendor.id).delete()
         db.session.commit()
         df.to_sql(name = 'product', con = db.engine, if_exists = 'append', index = False)

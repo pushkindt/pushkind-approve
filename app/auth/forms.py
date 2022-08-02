@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, BooleanField, SubmitField, StringField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
+from wtforms.validators import Length
 from wtforms.fields import EmailField
 
 from app.models import User
@@ -27,7 +28,8 @@ class RegistrationForm(FlaskForm):
         'Электронная почта',
         validators=[
             DataRequired(message='Электронная почта - обязательное поле.'),
-            Email(message='Некорректный адрес электронной почты.')
+            Email(message='Некорректный адрес электронной почты.'),
+            Length(max=128, message='Слишком длинный электронный адрес.')
         ]
     )
     password = PasswordField(

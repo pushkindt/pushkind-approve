@@ -198,7 +198,7 @@ class User(UserMixin, db.Model):
         db.ForeignKey('position.id', ondelete='SET NULL'),
         nullable=True
     )
-    location = db.Column(db.String(128), nullable=True)
+    location = db.Column(db.String(512), nullable=True)
     hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=True)
     email_new = db.Column(
         db.Boolean,
@@ -231,7 +231,7 @@ class User(UserMixin, db.Model):
         server_default=expression.true()
     )
     last_seen = db.Column(db.DateTime, nullable=True)
-    note = db.Column(db.String(512), nullable=True)
+    note = db.Column(db.Text(), nullable=True)
     registered = db.Column(db.DateTime, nullable=True)
     birthday = db.Column(db.Date, nullable=True)
     categories = db.relationship('Category', secondary='user_category', backref='users')
@@ -343,7 +343,7 @@ class OrderApproval(db.Model):
     order_id = db.Column(db.Integer, db.ForeignKey('order.id', ondelete='CASCADE'), nullable=False)
     product_id = db.Column(db.Integer, index=True, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
-    remark = db.Column(db.String(128), nullable=True)
+    remark = db.Column(db.String(512), nullable=True)
     user = db.relationship('User', back_populates='approvals')
     order = db.relationship('Order', back_populates='user_approvals')
 
