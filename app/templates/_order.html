@@ -18,6 +18,16 @@
 				{{ order.children[0].number }}
 			</a>
 		</div>
+{% elif order.status.name == 'cancelled' %}
+<div class="row text-muted border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
+	<div class="col-sm-1 overflow-hidden">
+		<span class="d-sm-none fw-bold">Заявка:</span>
+		<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.id) }}">{{ order.number }}</a>
+		<br>
+		<span class="text-muted">
+			{{ moment(order.create_date).format() }}
+		</span>
+	</div>
 {% else %}
 	<div class="row selectable border bg-white my-1 rounded" data-id="{{ order.id }}" data-total="{{ order.total }}">
 		<div class="col-sm-1 overflow-hidden">

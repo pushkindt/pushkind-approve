@@ -63,6 +63,14 @@
 							<span class="text-secondary">законтрактовать</span>
 						{% endif %}
 					</li>
+					<li class="dropdown-item">
+						<i class="bi bi-x-circle"></i>
+						{% if current_user.role.name in ['admin', 'purchaser', 'initiative'] %}
+							<a href="{{ url_for('main.CancelOrder', order_id = order.id) }}" onclick="return confirm('Это действие невозможно отменить. Продолжить?')">аннулировать</a>
+						{% else %}
+							<span class="text-secondary">аннулировать</span>
+						{% endif %}
+					</li>
 				</ul>
 			</div>
 		</div>

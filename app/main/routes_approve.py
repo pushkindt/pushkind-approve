@@ -1,5 +1,6 @@
 from copy import copy
 from datetime import datetime, timezone, date, timedelta
+from email import message
 import os
 
 from flask import render_template, redirect, url_for, flash, Response, request
@@ -149,13 +150,16 @@ def SplitOrder(order_id):
         flash('Нельзя разделять заявки, которые были объединены или разделены.')
         return redirect(url_for('main.ShowIndex'))
 
+    if order.status in (OrderStatus.approved, OrderStatus.cancelled):
+        flash('Нельзя модифицировать согласованную или аннулированную заявку.')
+        return redirect(url_for('main.ShowOrder', order_id=order_id))
+
     form = SplitOrderForm()
     if form.validate_on_submit():
         product_ids = form.products.data
         if not isinstance(product_ids, list) or len(product_ids) == 0:
             flash('Некорректный список позиции.')
             return redirect(url_for('main.ShowOrder', order_id=order_id))
-
 
         product_lists = [[], []]
 
@@ -313,8 +317,8 @@ def SaveQuantity(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
 
-    if order.status == OrderStatus.approved:
-        flash('Нельзя модифицировать согласованную заявку.')
+    if order.status in (OrderStatus.approved, OrderStatus.cancelled):
+        flash('Нельзя модифицировать согласованную или аннулированную заявку.')
         return redirect(url_for('main.ShowOrder', order_id=order_id))
 
     form = ChangeQuantityForm()
@@ -509,6 +513,10 @@ def SetDealDone(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
 
+    if order.status == OrderStatus.cancelled:
+        flash('Нельзя модифицировать аннулированную заявку.')
+        return redirect(url_for('main.ShowOrder', order_id=order_id))
+
     if order.dealdone is True:
         flash('Заявка уже законтрактована.')
     else:
@@ -679,6 +687,11 @@ def SaveApproval(order_id):
     if order is None:
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
+
+    if order.status == OrderStatus.cancelled:
+        flash('Нельзя модифицировать аннулированную заявку.')
+        return redirect(url_for('main.ShowOrder', order_id=order_id))
+
     form = OrderApprovalForm()
     if form.validate_on_submit():
 
@@ -796,7 +809,7 @@ def SaveApproval(order_id):
                     position_approval.user = current_user
                     position_approval.timestamp = datetime.utcnow()
         db.session.add(event)
-        order.UpdateOrderStatus()
+        order.update_status()
         db.session.commit()
         flash('Согласование сохранено.')
 
@@ -838,8 +851,8 @@ def SaveStatements(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
 
-    if order.status == OrderStatus.approved:
-        flash('Нельзя модифицировать согласованную заявку.')
+    if order.status in (OrderStatus.approved, OrderStatus.cancelled):
+        flash('Нельзя модифицировать согласованную или аннулированную заявку.')
         return redirect(url_for('main.ShowOrder', order_id=order_id))
 
     form = ApproverForm()
@@ -917,9 +930,8 @@ def SaveParameters(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
 
-
-    if order.status == OrderStatus.approved and current_user.role != UserRoles.admin:
-        flash('Нельзя модифицировать согласованную заявку.')
+    if order.status in (OrderStatus.approved, OrderStatus.cancelled):
+        flash('Нельзя модифицировать согласованную или аннулированную заявку.')
         return redirect(url_for('main.ShowOrder', order_id=order_id))
 
     form = InitiativeForm()
@@ -1043,7 +1055,11 @@ def ProcessHubOrder(order_id):
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
 
-    message = f'Заявка была отправлена поставщикам: '
+    if order.status == OrderStatus.cancelled:
+        flash('Нельзя отправить поставщику аннулированную заявку.')
+        return redirect(url_for('main.ShowOrder', order_id=order_id))
+
+    message = 'Заявка была отправлена поставщикам: '
     message += ', '.join(vendor.name for vendor in order.vendors)
 
     event = OrderEvent(
@@ -1059,4 +1075,25 @@ def ProcessHubOrder(order_id):
 
     flash(message)
 
+    return redirect(url_for('main.ShowOrder', order_id=order_id))
+
+@bp.route('/orders/cancel/<int:order_id>', methods=['GET'])
+@login_required
+@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.validator, UserRoles.purchaser])
+def CancelOrder(order_id):
+    order = GetOrder(order_id)
+    if order is None:
+        flash('Заявка с таким номером не найдена.')
+        return redirect(url_for('main.ShowIndex'))
+    order.status = OrderStatus.cancelled
+    order.total = 0
+    event = OrderEvent(
+        order_id=order_id,
+        user_id=current_user.id,
+        type=EventType.cancelled,
+        timestamp=datetime.now(tz=timezone.utc)
+    )
+    db.session.add(event)
+    db.session.commit()
+    flash('Заявка аннулирована.')
     return redirect(url_for('main.ShowOrder', order_id=order_id))

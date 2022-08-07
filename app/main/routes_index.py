@@ -48,7 +48,9 @@ def ShowIndex():
     orders = Order.query.filter_by(hub_id=current_user.hub_id)
 
     if filter_disapproved is None:
-        orders = orders.filter(Order.status != OrderStatus.not_approved)
+        orders = orders.filter(
+            ~Order.status.in_([OrderStatus.not_approved, OrderStatus.cancelled])
+        )
 
     if current_user.role == UserRoles.initiative:
         orders = orders.filter(Order.initiative_id == current_user.id)

@@ -35,6 +35,7 @@ class EventType(enum.IntEnum):
     splitted = 13
     project = 14
     notification = 15
+    cancelled = 16
 
     def __str__(self):
         pretty = [
@@ -53,7 +54,8 @@ class EventType(enum.IntEnum):
             'изменение',
             'разделение',
             'изменение',
-            'уведомление'
+            'уведомление',
+            'аннулирована'
         ]
         return pretty[self.value]
 
@@ -74,7 +76,8 @@ class EventType(enum.IntEnum):
             'primary',
             'dark',
             'primary',
-            'dark'
+            'dark',
+            'danger'
         ]
         return colors[self.value]
 
@@ -116,7 +119,7 @@ class OrderStatus(enum.IntEnum):
             'В работе',
             'Согласована',
             'Исправлена',
-            'Отменена'
+            'Аннулирована'
         ]
         return pretty[self.value]
 
@@ -127,7 +130,7 @@ class OrderStatus(enum.IntEnum):
             'warning',
             'success',
             'secondary',
-            'secondary'
+            'danger'
         ]
         return colors[self.value]
 
@@ -554,8 +557,10 @@ class Order(db.Model):
     initiative = db.relationship('User', back_populates='orders')
     site = db.relationship('Site', back_populates='orders')
 
-    def UpdateOrderStatus(self):
-        if self.site is None or self.site.project.enabled is False:
+    def update_status(self):
+        if (self.site is None or
+            self.site.project.enabled is False or
+            self.status == OrderStatus.cancelled):
             return
         approved = [p.approved for p in self.approvals]
         if all(approved):
@@ -680,7 +685,7 @@ class Order(db.Model):
             )
         self.approvals = approvals
         if update_status is True:
-            self.UpdateOrderStatus()
+            self.update_status()
         db.session.commit()
 
     @property
