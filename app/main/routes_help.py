@@ -1,8 +1,13 @@
+from io import StringIO
+
 from flask_login import current_user, login_required
 from flask import render_template
+import pandas as pd
 
+from app import db
 from app.main import bp
 from app.models import UserRoles, Project, Category, User, UserProject, UserCategory
+from app.models import OrderStatus
 from app.main.utils import role_forbidden
 
 
@@ -15,6 +20,39 @@ from app.main.utils import role_forbidden
 @login_required
 @role_forbidden([UserRoles.default, UserRoles.vendor])
 def ShowHelp():
+
+    stats = pd.read_sql(
+        f"""select '' as status, '' as `site_name`, '' as category_name, sum(total) as price, count(*) as `cnt` from `order`
+        union all
+        select o.status, s.name as site_name, c.name as category_name, sum(o.total) as price, count(*) as `cnt` from `order` o
+        inner join site s on o.site_id = s.id
+        inner join order_category oc on o.id = oc.order_id
+        inner join category c on oc.category_id = c.id
+        where o.hub_id = {current_user.hub_id}
+        group by o.status, s.name, c.name
+        order by o.status, s.name, c.name""",
+        con=db.session.connection()
+        )
+    buf = StringIO()
+    stats['status'] = stats['status'].apply(lambda x: OrderStatus[x] if x != '' else '')
+    stats.rename(
+        {
+            'status': 'Статус',
+            'site_name': 'Объект',
+            'category_name': 'Категория',
+            'price': 'Сумма',
+            'cnt': 'Кол-во'
+        },
+        inplace=True,
+        axis=1
+    )
+    stats.to_html(
+        buf=buf,
+        classes=["table", "table-striped", "table-sm"],
+        float_format=lambda x: "{:.2f}".format(x),
+        table_id="statsTable"
+    )
+    buf.seek(0)
     project_responsibility = {}
     projects = Project.query.filter_by(hub_id=current_user.hub_id).join(UserProject)
     projects = projects.join(User).filter_by(role=UserRoles.validator).order_by(Project.name).all()
@@ -39,5 +77,6 @@ def ShowHelp():
     return render_template(
         'help.html',
         projects=project_responsibility,
-        categories=category_responsibility
+        categories=category_responsibility,
+        stats=buf
     )

@@ -1,10 +1,27 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.js"></script>
+{% endblock %}
+
 {% block content %}
 
 
 <div class="container">
 	<div class="accordion" id="helpPageAccordion">
+		<div class="accordion-item">
+			<h2 class="accordion-header" id="statsHeading">
+				<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
+					Статистика
+				</button>
+			</h2>
+			<div id="statsCollapse" class="accordion-collapse collapse" aria-labelledby="statsHeading" data-bs-parent="#helpPageAccordion">
+				<div class="accordion-body table-responsive-lg">
+					{{ stats.getvalue() | safe }}
+				</div>
+			</div>
+		</div>
 		<div class="accordion-item">
 			<h2 class="accordion-header" id="actionsHeading">
 				<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#actionsCollapse" aria-expanded="false" aria-controls="actionsCollapse">
@@ -255,6 +272,7 @@
 				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
 			});
 		});
+		$('#statsTable').DataTable();
 	});
 </script>
 {% endblock %}
