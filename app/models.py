@@ -357,7 +357,7 @@ class OrderApproval(db.Model):
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    children = db.Column(JsonType(), nullable=False)
+    children = db.Column(db.JSON(), nullable=False)
     hub_id = db.Column(db.Integer, db.ForeignKey('vendor.id', ondelete="CASCADE"), nullable=False)
     responsible = db.Column(db.String(128), nullable=True)
     functional_budget = db.Column(db.String(128), nullable=True)
@@ -487,7 +487,7 @@ class Order(db.Model):
     number = db.Column(db.String(128), nullable=False)
     initiative_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="SET NULL"), nullable=True)
     create_timestamp = db.Column(db.Integer, nullable=False)
-    products = db.Column(JsonType(), nullable=False)
+    products = db.Column(db.JSON(), nullable=False)
     total = db.Column(db.Float, nullable=False)
     status = db.Column(
         db.Enum(OrderStatus),
