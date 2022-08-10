@@ -38,7 +38,7 @@
 					<li class="dropdown-item">
 						<i class="bi bi-layout-split"></i>
 						{% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
-							<button class="btn btn-link ps-0" id="startSplitting">разделить</button>
+							<a href="#" id="startSplitting">разделить</a>
 						{% else %}
 							<span class="text-secondary">разделить</span>
 						{% endif %}
