@@ -1,6 +1,5 @@
 from copy import copy
 from datetime import datetime, timezone, date, timedelta
-from email import message
 import os
 
 from flask import render_template, redirect, url_for, flash, Response, request
@@ -504,7 +503,7 @@ def GetExcelReport2(order_id):
     )
 
 
-@bp.route('/orders/dealdone/<int:order_id>')
+@bp.route('/orders/dealdone/<int:order_id>', methods=['POST'])
 @login_required
 @role_required([UserRoles.admin, UserRoles.purchaser])
 def SetDealDone(order_id):
@@ -519,18 +518,20 @@ def SetDealDone(order_id):
 
     if order.dealdone is True:
         flash('Заявка уже законтрактована.')
-    else:
+        return redirect(url_for('main.ShowOrder', order_id=order_id))
+
+    form = LeaveCommentForm()
+    form.notify_reviewers.choices = [
+        (r.id, r.name) for r in order.reviewers
+    ]
+    if form.validate_on_submit():
         order.dealdone = True
-        event = OrderEvent(
-            user_id=current_user.id,
-            order_id=order_id,
-            type=EventType.dealdone,
-            data='заявка законтрактована',
-            timestamp=datetime.now(tz=timezone.utc)
-        )
-        db.session.add(event)
+        form.comment_and_send_email(order, EventType.dealdone)
         flash('Заявка законтрактована.')
         db.session.commit()
+    else:
+        for error in form.comment.errors + form.notify_reviewers.errors:
+            flash(error)
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
 
@@ -676,7 +677,6 @@ def GetExcelReport1C(order_id):
     else:
         flash('Email для отправки в 1С не настроен администратором.')
     return redirect(url_for('main.ShowOrder', order_id=order_id))
-
 
 
 @bp.route('/orders/approval/<int:order_id>', methods=['POST'])
@@ -1015,36 +1015,14 @@ def LeaveComment(order_id):
     form.notify_reviewers.choices = [
         (r.id, r.name) for r in order.reviewers
     ]
-    reviewers = {r.id:r.name for r in order.reviewers}
     if form.validate_on_submit():
-        stripped = form.comment.data.strip()
-        if len(stripped) > 0:
-            comment = OrderEvent(
-                user_id=current_user.id,
-                order_id=order_id,
-                type=EventType.commented,
-                data=stripped,
-                timestamp=datetime.now(tz=timezone.utc)
-            )
-            db.session.add(comment)
-            flash('Комментарий успешно добавлен.')
-
-        if len(form.notify_reviewers.data) > 0:
-            SendEmailNotification('comment', order, form.notify_reviewers.data, data=stripped)
-            message = 'Уведомление выслано: ' + ', '.join(reviewers[r] for r in form.notify_reviewers.data)
-            event = OrderEvent(
-                user_id=current_user.id,
-                order_id=order_id,
-                type=EventType.notification,
-                data=message,
-                timestamp=datetime.now(tz=timezone.utc)
-            )
-            db.session.add(event)
-            flash(message)
-
+        form.comment_and_send_email(order, EventType.commented)
         db.session.commit()
-
+    else:
+        for error in form.comment.errors + form.notify_reviewers.errors:
+            flash(error)
     return redirect(url_for('main.ShowOrder', order_id=order_id))
+
 
 @bp.route('/orders/process/<int:order_id>')
 @login_required
@@ -1077,23 +1055,31 @@ def ProcessHubOrder(order_id):
 
     return redirect(url_for('main.ShowOrder', order_id=order_id))
 
-@bp.route('/orders/cancel/<int:order_id>', methods=['GET'])
+
+@bp.route('/orders/cancel/<int:order_id>', methods=['POST'])
 @login_required
-@role_required([UserRoles.admin, UserRoles.initiative, UserRoles.validator, UserRoles.purchaser])
+@role_required([UserRoles.admin, UserRoles.initiative])
 def CancelOrder(order_id):
     order = GetOrder(order_id)
     if order is None:
         flash('Заявка с таким номером не найдена.')
         return redirect(url_for('main.ShowIndex'))
-    order.status = OrderStatus.cancelled
-    order.total = 0
-    event = OrderEvent(
-        order_id=order_id,
-        user_id=current_user.id,
-        type=EventType.cancelled,
-        timestamp=datetime.now(tz=timezone.utc)
-    )
-    db.session.add(event)
-    db.session.commit()
-    flash('Заявка аннулирована.')
+
+    if order.status == OrderStatus.cancelled:
+        flash('Нельзя аннулировать аннулированную заявку.')
+        return redirect(url_for('main.ShowOrder', order_id=order_id))
+
+    form = LeaveCommentForm()
+    form.notify_reviewers.choices = [
+        (r.id, r.name) for r in order.reviewers
+    ]
+    if form.validate_on_submit():
+        order.status = OrderStatus.cancelled
+        order.total = 0
+        form.comment_and_send_email(order, EventType.cancelled)
+        db.session.commit()
+        flash('Заявка аннулирована.')
+    else:
+        for error in form.comment.errors + form.notify_reviewers.errors:
+            flash(error)
     return redirect(url_for('main.ShowOrder', order_id=order_id))

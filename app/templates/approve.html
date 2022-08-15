@@ -22,7 +22,7 @@
 					<li class="dropdown-item">
 						<i class="bi bi-pencil"></i>
 						{% if current_user.role.name in ['admin', 'initiative', 'validator', 'purchaser'] %}
-							<a href="#" data-bs-toggle="modal" data-bs-target="#leaveCommentModal">комментировать</a>
+							<a class="leaveComment" href="#" data-bs-toggle="modal" data-bs-target="#leaveCommentModal" data-target="comment">комментировать</a>
 						{% else %}
 							<span class="text-secondary">комментировать</span>
 						{% endif %}
@@ -58,15 +58,15 @@
 					<li class="dropdown-item">
 						<i class="bi bi-check-circle"></i>
 						{% if current_user.role.name in ['admin', 'purchaser'] %}
-							<a href="{{ url_for('main.SetDealDone', order_id = order.id) }}" onclick="return confirm('Установить статус заявки законтрактовано?')">законтрактовать</a>
+							<a class="leaveComment" href="#" data-bs-toggle="modal" data-bs-target="#leaveCommentModal"  data-target="dealdone">законтрактовать</a>
 						{% else %}
 							<span class="text-secondary">законтрактовать</span>
 						{% endif %}
 					</li>
 					<li class="dropdown-item">
 						<i class="bi bi-x-circle"></i>
-						{% if current_user.role.name in ['admin', 'purchaser', 'initiative'] %}
-							<a href="{{ url_for('main.CancelOrder', order_id = order.id) }}" onclick="return confirm('Это действие невозможно отменить. Продолжить?')">аннулировать</a>
+						{% if current_user.role.name in ['admin', 'initiative'] %}
+							<a class="leaveComment" href="#" data-bs-toggle="modal" data-bs-target="#leaveCommentModal"  data-target="cancel">аннулировать</a>
 						{% else %}
 							<span class="text-secondary">аннулировать</span>
 						{% endif %}
@@ -312,7 +312,7 @@
 					<h5 class="modal-title" id="leaveCommentModalLabel">ОСТАВИТЬ КОММЕНТАРИЙ</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
-				<form method="POST" action="{{ url_for('main.LeaveComment', order_id = order.id) }}">
+				<form method="POST" action="{{ url_for('main.LeaveComment', order_id = order.id) }}" id="leaveCommentForm">
 					<div class="modal-body">
 						{{ comment_form.csrf_token(id=False) }}
 						<div class="mb-3">
@@ -745,6 +745,22 @@
 
 			$('#notifyNoneReviewers').click(function() {
 				notifyReviewersSelectize.clear(false);
+			});
+
+			$('.leaveComment').click(function() {
+				let target = $(this).data("target");
+				if (target == 'comment'){
+					$("#leaveCommentModalLabel").text('ОСТАВИТЬ КОММЕНТАРИЙ');
+					$("#leaveCommentForm").attr('action', "{{url_for('main.LeaveComment', order_id=order.id)}}")
+				}
+				else if (target == 'dealdone'){
+					$("#leaveCommentModalLabel").text('ЗАКОНТРАКТОВАТЬ');
+					$("#leaveCommentForm").attr('action', "{{url_for('main.SetDealDone', order_id=order.id)}}")
+				}
+				else if (target == 'cancel'){
+					$("#leaveCommentModalLabel").text('АННУЛИРОВАТЬ');
+					$("#leaveCommentForm").attr('action', "{{url_for('main.CancelOrder', order_id=order.id)}}")
+				}
 			});
 
 		{% endif %}

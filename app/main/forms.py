@@ -1,5 +1,7 @@
 import json
+from datetime import datetime, timezone
 
+from flask_login import current_user
 from flask_wtf import FlaskForm
 from wtforms import SubmitField, IntegerField, StringField, SelectField, TextAreaField, FieldList
 from wtforms import FormField, Form, PasswordField, BooleanField, SelectMultipleField, DecimalField
@@ -8,7 +10,9 @@ from wtforms.validators import DataRequired, Length, ValidationError, Email, Inp
 from wtforms.fields import DateField
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 
-from app.models import OrderLimitsIntervals, UserRoles
+from app import db
+from app.models import OrderLimitsIntervals, UserRoles, OrderEvent, EventType
+from app.main.utils import SendEmailNotification
 
 
 class JSONField(StringField):
@@ -80,6 +84,35 @@ class LeaveCommentForm(FlaskForm):
     )
     notify_reviewers = SelectMultipleField('Уведомить ↓', coerce=int)
     submit = SubmitField('Сохранить')
+
+    def comment_and_send_email(self, order, event_type):
+        stripped = self.comment.data.strip() or None
+        reviewers = {r.id:r.name for r in order.reviewers}
+        event = OrderEvent(
+            order_id=order.id,
+            user_id=current_user.id,
+            type=event_type,
+            timestamp=datetime.now(tz=timezone.utc),
+            data=stripped
+        )
+        db.session.add(event)
+        if len(self.notify_reviewers.data) > 0:
+            SendEmailNotification(
+                'comment',
+                order,
+                self.notify_reviewers.data,
+                data=self.comment.data
+            )
+            message = 'Уведомление выслано: '
+            message += ', '.join(reviewers[r] for r in self.notify_reviewers.data)
+            event = OrderEvent(
+                user_id=current_user.id,
+                order_id=order.id,
+                type=EventType.notification,
+                data=message,
+                timestamp=datetime.now(tz=timezone.utc)
+            )
+            db.session.add(event)
 
 
 class OrderApprovalForm(FlaskForm):
@@ -486,6 +519,7 @@ class CartItemForm(Form):
         if quantity.data < 0:
             raise ValidationError('Количество не может быть меньше нуля.')
 
+
 class CreateOrderForm(FlaskForm):
     project_id = IntegerField(
         'ID проекта',
@@ -512,6 +546,7 @@ class UploadProductsForm(FlaskForm):
         FileAllowed(['xlsx'], 'Разрешены только XLSX.')
     ])
     submit = SubmitField('Загрузить')
+
 
 class UploadImagesForm(FlaskForm):
     images = FileField(label = 'Изображения', validators=[
