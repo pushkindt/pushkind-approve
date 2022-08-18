@@ -516,10 +516,6 @@ def SetDealDone(order_id):
         flash('Нельзя модифицировать аннулированную заявку.')
         return redirect(url_for('main.ShowOrder', order_id=order_id))
 
-    if order.dealdone is True:
-        flash('Заявка уже законтрактована.')
-        return redirect(url_for('main.ShowOrder', order_id=order_id))
-
     form = LeaveCommentForm()
     form.notify_reviewers.choices = [
         (r.id, r.name) for r in order.reviewers

@@ -1,4 +1,4 @@
-Инициатор {{ current_user.name }} ({{ current_user.location }}) напоминает о заявке #{{ order.number }}.
+Инициатор {{ current_user.name }} ({{ current_user.location }}) уведомляет о заявке #{{ order.number }}.
 {% if data %}
 Комментарии: {{ data }}
 {% endif %}
