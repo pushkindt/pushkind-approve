@@ -24,6 +24,6 @@
 		<span class="badge bg-white text-dark border fw-normal" title="Отправлена в 1С">1C</span>
 	{% endif %}
 	{% if order.dealdone %}
-		<span class="badge bg-white text-dark border fw-normal" title="законтрактовано">законтрактовано</span>
+		<span class="badge bg-white text-dark border fw-normal" title="{{order.dealdone_comment or 'законтрактовано'}}">законтрактовано</span>
 	{% endif %}
 {% endif %}

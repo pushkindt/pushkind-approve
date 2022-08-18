@@ -581,6 +581,18 @@ class Order(db.Model):
         return
 
     @property
+    def dealdone_comment(self):
+        if self.dealdone is False:
+            return None
+        event = (
+            OrderEvent.query
+            .filter_by(order_id=self.id, type=EventType.dealdone)
+            .order_by(OrderEvent.timestamp.desc())
+            .first()
+        )
+        return event.data if event else None
+
+    @property
     def categories_list(self):
         return [c.id for c in self.categories]
 
