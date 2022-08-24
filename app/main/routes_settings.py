@@ -286,7 +286,7 @@ def DownloadUsers():
             orders = orders.filter(Site.project_id.in_([p.id for p in user.projects]))
             orders = orders.all()
             ws.cell(i, 13).value = len(orders)
-            ws.cell(i, 14).value = ', '.join([o.id for o in orders])
+            ws.cell(i, 14).value = ', '.join([o.number for o in orders])
         else:
             ws.cell(i, 12).value = 0
             ws.cell(i, 13).value = 0
