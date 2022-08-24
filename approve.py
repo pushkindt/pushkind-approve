@@ -6,7 +6,7 @@ from app.models import Category, AppSettings, OrderEvent, Project, Site, Order
 from app.models import Position, OrderLimit
 
 
-application = create_app()
+application = None
 cli.register(application)
 
 @application.shell_context_processor
