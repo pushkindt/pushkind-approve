@@ -22,15 +22,15 @@ from app.main.utils import role_forbidden
 def ShowHelp():
 
     stats = pd.read_sql(
-        f"""(select '' as status, '' as `site_name`, '' as category_name, sum(total) as price, count(*) as `cnt` from `order`)
+        f"""select '' as status, '' as `site_name`, '' as category_name, sum(total) as price, count(*) as `cnt` from `order`
         union all
-        (select o.status, s.name as site_name, c.name as category_name, sum(o.total) as price, count(*) as `cnt` from `order` o
+        select o.status, s.name as site_name, c.name as category_name, sum(o.total) as price, count(*) as `cnt` from `order` o
         inner join site s on o.site_id = s.id
         inner join order_category oc on o.id = oc.order_id
         inner join category c on oc.category_id = c.id
         where o.hub_id = {current_user.hub_id}
         group by o.status, s.name, c.name
-        order by o.status, s.name, c.name)""",
+        order by o.status, s.name, c.name""",
         con=db.session.connection()
         )
     buf = StringIO()
