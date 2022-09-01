@@ -11,7 +11,7 @@ import pandas as pd
 from app import db
 from app.main import bp
 from app.models import Product, UserRoles, Product, Vendor, Category
-from app.main.utils import role_required
+from app.main.utils import role_forbidden
 from app.main.forms import UploadProductsForm, UploadImagesForm
 
 
@@ -22,7 +22,7 @@ from app.main.forms import UploadProductsForm, UploadImagesForm
 @bp.route('/products/', methods=['GET', 'POST'])
 @bp.route('/products/show', methods=['GET', 'POST'])
 @login_required
-@role_required([UserRoles.admin, UserRoles.vendor])
+@role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
 def ShowProducts():
     products_form = UploadProductsForm()
     images_form = UploadImagesForm()
@@ -47,14 +47,14 @@ def ShowProducts():
 
 @bp.route('/products/upload', methods=['GET', 'POST'])
 @login_required
-@role_required([UserRoles.admin, UserRoles.vendor])
+@role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
 def UploadProducts():
     form = UploadProductsForm()
-    if current_user.role == UserRoles.admin:
+    if current_user.role == UserRoles.vendor:
+        vendor = Vendor.query.filter_by(email=current_user.email).first()
+    else:
         vendor_id = request.args.get('vendor_id', type=int)
         vendor = Vendor.query.filter_by(id=vendor_id).first()
-    elif current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(email=current_user.email).first()
     if vendor is None:
         flash('Такой поставщик не найден.')
         return redirect(url_for('main.ShowProducts'))
@@ -134,14 +134,14 @@ def UploadProducts():
 
 @bp.route('/products/upload/images', methods=['GET', 'POST'])
 @login_required
-@role_required([UserRoles.admin, UserRoles.vendor])
+@role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
 def UploadImages():
     form = UploadImagesForm()
-    if current_user.role == UserRoles.admin:
+    if current_user.role == UserRoles.vendor:
+        vendor = Vendor.query.filter_by(email=current_user.email).first()
+    else:
         vendor_id = request.args.get('vendor_id', type=int)
         vendor = Vendor.query.filter_by(id=vendor_id).first()
-    elif current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(email=current_user.email).first()
     if vendor is None:
         flash('Такой поставщик не найден.')
         return redirect(url_for('main.ShowProducts'))
@@ -181,13 +181,14 @@ def UploadImages():
 
 @bp.route('/products/download', methods=['GET', 'POST'])
 @login_required
-@role_required([UserRoles.admin, UserRoles.vendor])
+@role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
 def DownloadProducts():
-    if current_user.role == UserRoles.admin:
+    if current_user.role == UserRoles.vendor:
+        vendor = Vendor.query.filter_by(email=current_user.email).first()
+    else:
         vendor_id = request.args.get('vendor_id', type=int)
         vendor = Vendor.query.filter_by(id=vendor_id).first()
-    elif current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(email=current_user.email).first()
+
     if vendor is None:
         flash('Такой поставщик не найден.')
         return redirect(url_for('main.ShowProducts'))

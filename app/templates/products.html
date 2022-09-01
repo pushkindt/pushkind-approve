@@ -7,7 +7,7 @@
         <div class="col-5 mb-1">
             <input class="form-control" id="productFilter" type="text" placeholder="Фильтр..">
         </div>
-    {% if current_user.role.name == 'admin' %}
+    {% if current_user.role.name != 'vendor' %}
         <div class="col-3 mb-1">
             <select class="form-select" aria-label="Vendor select" id="vendorSelect">
                 {% for v in vendors %}
