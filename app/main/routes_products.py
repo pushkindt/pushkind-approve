@@ -1,4 +1,3 @@
-from distutils.command.upload import upload
 import os
 import io
 from zipfile import ZipFile
@@ -239,8 +238,8 @@ def UploadProductImage(id):
     form = UploadProductImageForm()
     if form.validate_on_submit():
         f = form.image.data
-        file_name, file_ext = os.path.splitext(f.filename)
-        file_name = f'{product.id}{file_ext}'
+        file_name = Path(f.filename)
+        file_name = Path(str(product.sku) + file_name.suffix)
         static_path = Path('app/static')
         upload_path = Path(f'upload/vendor{vendor.id}')
         full_path = static_path / upload_path
