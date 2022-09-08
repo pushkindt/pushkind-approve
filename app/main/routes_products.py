@@ -1,4 +1,3 @@
-import os
 import io
 from zipfile import ZipFile
 from pathlib import Path
@@ -98,26 +97,11 @@ def UploadProducts():
         df['cat_id'] = df['category'].apply(lambda x: categories.get(x.lower()))
         df.drop(['category'], axis=1, inplace=True)
         df.dropna(subset=['cat_id', 'name', 'sku', 'price', 'measurement'], inplace=True)
-        try:
-            file_list = os.listdir(
-                os.path.join(
-                    'app',
-                    'static',
-                    'upload',
-                    f'vendor{vendor.id}'
-                )
-            )
-        except FileNotFoundError:
-            file_list = []
+        static_path = Path(f'app/static/upload/vendor{vendor.id}')
+        static_path.mkdir(parents=True, exist_ok=True)
         image_list = {
-            os.path.splitext(file_name)[0]:url_for(
-                'static',
-                filename=os.path.join(
-                    'upload',
-                    f'vendor{vendor.id}',
-                            file_name
-                )
-            ) for file_name in file_list
+            f.stem:url_for('static', filename=Path(*static_path.parts[2:]) / f.name)
+            for f in static_path.glob('*') if not f.is_dir()
         }
 
         df['image'] = df['sku'].apply(lambda x: image_list.get(x))
@@ -158,24 +142,19 @@ def UploadImages():
             for zip_info in zip_file.infolist():
                 if zip_info.is_dir() or zip_info.file_size > current_app.config['MAX_ZIP_FILE_SIZE']:
                     continue
-                sku, file_ext = os.path.splitext(os.path.basename(zip_info.filename))
+                file_name = Path(zip_info.filename)
+                sku = file_name.stem
+                print(sku)
                 if sku not in products:
                     continue
-                zip_info.filename = sku + file_ext
-                full_path = os.path.join(
-                    'app',
-                    'static',
-                    'upload',
-                    f'vendor{vendor.id}'
-                )
-                zip_file.extract(zip_info, full_path)
+                zip_info.filename = sku + file_name.suffix
+                static_path = Path(f'app/static/upload/vendor{vendor.id}')
+                static_path.mkdir(parents=True, exist_ok=True)
+                zip_file.extract(zip_info, static_path)
+                static_path = static_path / zip_info.filename
                 db.session.query(Product).filter_by(vendor_id=vendor.id, sku=sku).update(
                     {
-                        'image': url_for('static', filename=os.path.join(
-                            'upload',
-                            f'vendor{vendor.id}',
-                            zip_info.filename
-                        ))
+                        'image': url_for('static', filename=Path(*static_path.parts[2:]))
                     }
                 )
                 db.session.commit()
@@ -240,12 +219,11 @@ def UploadProductImage(id):
         f = form.image.data
         file_name = Path(f.filename)
         file_name = Path(str(product.sku) + file_name.suffix)
-        static_path = Path('app/static')
-        upload_path = Path(f'upload/vendor{vendor.id}')
-        full_path = static_path / upload_path
-        full_path.mkdir(parents=True, exist_ok=True)
-        f.save(full_path / file_name)
-        product.image = url_for('static', filename=(upload_path / file_name))
+        static_path = Path(f'app/static/upload/vendor{vendor.id}')
+        static_path.mkdir(parents=True, exist_ok=True)
+        full_path = static_path / file_name
+        f.save(full_path)
+        product.image = url_for('static', filename=(Path(*static_path.parts[2:])))
         db.session.commit()
         flash('Изображение товара успешно загружено.')
     else:
