@@ -554,3 +554,11 @@ class UploadImagesForm(FlaskForm):
         FileAllowed(['zip'], 'Разрешены только zip архивы.')
     ])
     submit = SubmitField('Загрузить')
+
+
+class UploadProductImageForm(FlaskForm):
+    image = FileField(label = 'Изображение', validators=[
+        FileRequired('Разрешены только изображения JPG и PNG!'),
+        FileAllowed(['jpg', 'png'], 'Разрешены только изображения JPG и PNG!')
+    ])
+    submit = SubmitField('Загрузить')

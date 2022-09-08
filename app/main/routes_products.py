@@ -1,6 +1,8 @@
+from distutils.command.upload import upload
 import os
 import io
 from zipfile import ZipFile
+from pathlib import Path
 
 from flask import redirect, render_template, request, url_for, flash, current_app
 from flask import send_file
@@ -13,6 +15,7 @@ from app.main import bp
 from app.models import Product, UserRoles, Product, Vendor, Category
 from app.main.utils import role_forbidden
 from app.main.forms import UploadProductsForm, UploadImagesForm
+from app.main.forms import UploadProductImageForm
 
 
 ################################################################################
@@ -26,6 +29,7 @@ from app.main.forms import UploadProductsForm, UploadImagesForm
 def ShowProducts():
     products_form = UploadProductsForm()
     images_form = UploadImagesForm()
+    product_image_form = UploadProductImageForm()
     vendors = Vendor.query.filter_by(hub_id = current_user.hub_id)
     if current_user.role == UserRoles.vendor:
         vendors = vendors.filter_by(email=current_user.email)
@@ -43,7 +47,9 @@ def ShowProducts():
         categories=categories,
         products_form=products_form,
         images_form=images_form,
+        product_image_form=product_image_form,
     )
+
 
 @bp.route('/products/upload', methods=['GET', 'POST'])
 @login_required
@@ -132,6 +138,7 @@ def UploadProducts():
             flash(error)
     return redirect(url_for('main.ShowProducts', vendor_id=vendor.id))
 
+
 @bp.route('/products/upload/images', methods=['GET', 'POST'])
 @login_required
 @role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
@@ -179,6 +186,7 @@ def UploadImages():
             flash(error)
     return redirect(url_for('main.ShowProducts', vendor_id=vendor.id))
 
+
 @bp.route('/products/download', methods=['GET', 'POST'])
 @login_required
 @role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
@@ -208,3 +216,40 @@ def DownloadProducts():
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         download_name='products.xlsx'
     )
+
+
+@bp.route('/products/<int:id>/upload/image', methods=['GET', 'POST'])
+@login_required
+@role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
+def UploadProductImage(id):
+    if current_user.role == UserRoles.vendor:
+        vendor = Vendor.query.filter_by(email=current_user.email).first()
+    else:
+        vendor_id = request.args.get('vendor_id', type=int)
+        vendor = Vendor.query.filter_by(id=vendor_id).first()
+    if vendor is None:
+        flash('Такой поставщик не найден.')
+        return redirect(url_for('main.ShowProducts'))
+
+    product = Product.query.filter_by(id=id, vendor_id=vendor.id).first()
+    if product is None:
+        flash('Такой товар не найден.')
+        return redirect(url_for('main.ShowProducts'))
+
+    form = UploadProductImageForm()
+    if form.validate_on_submit():
+        f = form.image.data
+        file_name, file_ext = os.path.splitext(f.filename)
+        file_name = f'{product.id}{file_ext}'
+        static_path = Path('app/static')
+        upload_path = Path(f'upload/vendor{vendor.id}')
+        full_path = static_path / upload_path
+        full_path.mkdir(parents=True, exist_ok=True)
+        f.save(full_path / file_name)
+        product.image = url_for('static', filename=(upload_path / file_name))
+        db.session.commit()
+        flash('Изображение товара успешно загружено.')
+    else:
+        for error in form.image.errors:
+            flash(error)
+    return redirect(url_for('main.ShowProducts', vendor_id=vendor.id))
