@@ -41,7 +41,6 @@
 		<header id="header" class="header">
 			<div class="container">
 				{% if not current_user.is_anonymous %}
-
 					<nav class="navbar navbar-expand-md navbar-light">
 						<div class="container-fluid">
 							<a class="navbar-brand" href="{{ url_for('main.ShowIndex') }}">
@@ -54,7 +53,7 @@
 							</button>
 							<div class="collapse navbar-collapse" id="navbarSupportedContent">
 								{% include 'navigation.html' %}
-								<span class="navbar-text">
+								<span class="navbar-text py-0">
 									<a tabindex="0" role="button" data-bs-toggle="popover" data-bs-trigger="focus"
 										title="{{current_user.name or ''}}" data-bs-html="true"
 										data-bs-content="{{current_user.role}}<br>{{current_user.email}}<br><a href='{{url_for('auth.logout')}}'>выйти</a>">
@@ -65,7 +64,13 @@
 							</div>
 						</div>
 					</nav>
-
+					{% if current_user.role.name != 'default' %}
+						<div class="row">
+							<div class="col text-end fs-7">
+								<a class="mx-1" href="#" data-bs-toggle="modal" data-bs-target="#callSupportModal">поддержка</a>
+							</div>
+						</div>
+					{% endif %}
 				{% else %}
 					<div class="row">
 						<div class="col text-center overflow-hidden">
@@ -82,6 +87,27 @@
 		<div class="d-none" id="templates">
 			{% block templates %}{% endblock %}
 		</div>
+		{% if not current_user.is_anonymous and current_user.role.name != 'default' %}
+			<div class="modal fade" id="callSupportModal" tabindex="-1" aria-labelledby="callSupportModalLabel" aria-hidden="true">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="callSupportModalLabel">ОБРАТИТЬСЯ В ПОДДЕРЖКУ</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<form method="POST" action="{{ url_for('main.CallSupport') }}" id="callSupportForm">
+							<div class="modal-body">
+								<textarea class="form-control" name="comment" rows="3" required></textarea>
+							</div>
+							<div class="modal-footer">
+								<button type="submit" class="btn btn-primary">Отправить</button>
+								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		{% endif %}
 		<script src="{{ url_for('static', filename='js/jquery.form.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 		<script>

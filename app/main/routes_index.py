@@ -1,11 +1,13 @@
 from datetime import datetime, timezone
 
 from flask import render_template, flash, request, redirect, url_for, Response
+from flask import current_app
 from flask_login import current_user, login_required
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
 
 from app import db
+from app.email import SendEmail
 from app.main import bp
 from app.models import UserRoles, OrderStatus, Project, OrderEvent, EventType, Order, Site
 from app.models import Category, OrderCategory, OrderApproval, OrderVendor, Vendor
@@ -326,4 +328,23 @@ def SaveOrders():
 
     for error in form.orders.errors:
         flash(error)
+    return redirect(url_for('main.ShowIndex'))
+
+
+@bp.route('/support/call/', methods=['POST'])
+@login_required
+@role_forbidden([UserRoles.default])
+def CallSupport():
+    comment = request.form.get('comment', '', type=str)
+    if len(comment) > 0 and len(comment) < 2048:
+        SendEmail(
+            'Обращение в поддержку',
+            current_app.config['MAIL_USERNAME'],
+            [current_app.config['ADMIN_EMAIL']],
+            text_body=render_template('email/support.txt', comment=comment),
+            html_body=render_template('email/support.html', comment=comment),
+        )
+        flash('Сообщение отправлено в поддержку.')
+    else:
+        flash('Сообщение некорректной длины (максимум 2048 символов).')
     return redirect(url_for('main.ShowIndex'))

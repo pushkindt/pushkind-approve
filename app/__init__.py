@@ -1,6 +1,6 @@
 import logging
 from logging.handlers import RotatingFileHandler
-import os
+from pathlib import Path
 
 from flask import Flask, current_app
 from flask_sqlalchemy import SQLAlchemy
@@ -55,8 +55,7 @@ def create_app(config_class=Config):
     app.register_blueprint(api_bp, url_prefix='/api')
 
     if app.debug is False:
-        if os.path.exists('logs') is False:
-            os.mkdir('logs')
+        Path('logs').mkdir(parents=True, exist_ok=True)
         file_handler = RotatingFileHandler(
             f'logs/{__name__}.log',
             maxBytes=10240,
@@ -74,7 +73,7 @@ def create_app(config_class=Config):
         app.logger.setLevel(logging.INFO)
         app.logger.info('%s startup', __name__)
 
-    if 'ICU_EXTENSION_PATH' in app.config and os.path.exists(app.config['ICU_EXTENSION_PATH']):
+    if 'ICU_EXTENSION_PATH' in app.config and Path(app.config['ICU_EXTENSION_PATH']).exists():
         with app.app_context():
             listen(db.engine, 'connect', load_extension)
 
