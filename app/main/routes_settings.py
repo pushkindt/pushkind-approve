@@ -94,6 +94,7 @@ def ShowSettings():
 
 
             old_position = user.position
+            old_role = user.role
 
             if (
                 user_form.about_user.position.data is not None and
@@ -142,7 +143,7 @@ def ShowSettings():
             if old_position != user.position:
                 RemoveExcessivePosition()
 
-            if user.role in [UserRoles.purchaser, UserRoles.validator]:
+            if user.role == UserRoles.validator or old_role == UserRoles.validator:
                 for order in Order.query.filter(Order.hub_id==current_user.hub_id, Order.status != OrderStatus.approved).all():
                     order.update_positions()
 

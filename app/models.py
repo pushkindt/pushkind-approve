@@ -596,7 +596,8 @@ class Order(db.Model):
     def categories_list(self):
         return [c.id for c in self.categories]
 
-    def validators(self, position_id=None):
+    @property
+    def validators(self):
         if self.site is None or len(self.categories) == 0:
             return []
         validators = (
@@ -609,8 +610,6 @@ class Order(db.Model):
             .join(Position).join(OrderPosition)
             .filter_by(order_id=self.id)
         )
-        if position_id is not None:
-            validators = validators.filter_by(position_id=position_id)
         return validators.all()
 
     @property
@@ -632,7 +631,7 @@ class Order(db.Model):
         result = User.query.filter_by(id=self.initiative_id).all()
         if self.site is None or len(self.categories) == 0:
             return result
-        result += self.validators() + self.purchasers
+        result += self.validators + self.purchasers
         return result
 
     def update_positions(self, update_status=False):
@@ -655,7 +654,7 @@ class Order(db.Model):
         )
 
         old_approvals = {
-            appr.position_id:appr for appr in self.approvals\
+            appr.position_id:appr for appr in self.approvals
         }
 
         OrderPosition.query.filter_by(order_id=self.id).delete()
