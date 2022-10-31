@@ -33,3 +33,4 @@ WTForms
 pandas
 mysql-connector-python
 mysqlclient
+celery
