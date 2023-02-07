@@ -223,7 +223,7 @@ def UploadProductImage(id):
         static_path.mkdir(parents=True, exist_ok=True)
         full_path = static_path / file_name
         f.save(full_path)
-        product.image = url_for('static', filename=(Path(*static_path.parts[2:])))
+        product.image = url_for('static', filename=(Path(*full_path.parts[2:])))
         db.session.commit()
         flash('Изображение товара успешно загружено.')
     else:
