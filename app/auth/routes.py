@@ -108,7 +108,7 @@ def reset_password(token):
         return redirect(url_for('auth.login'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
-        user.set_passwors(form.password.data)
+        user.set_password(form.password.data)
         db.session.commit()
         flash('Ваш пароль был изменён.')
         return redirect(url_for('auth.login'))
