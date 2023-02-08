@@ -1,12 +1,3 @@
-# C extensions
-*.so
-*.o
-*.pid
-*.a
-ecwid-api
-c/tests/tests.log
-c/bin/
-
 # Python
 venv/
 __pycache__/
@@ -22,6 +13,7 @@ migrations/
 
 #Pushkind-approve
 *.xlsx
+app/static/upload/
 
 #VSCode
 .vscode/
