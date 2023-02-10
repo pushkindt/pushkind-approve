@@ -14,7 +14,7 @@ class TestConfig:
     SQLALCHEMY_DATABASE_URI = ""
     ECWID_JS_URL = ""
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    MAIL_SERVER = ""
+    MAIL_SERVER = None
     MAIL_PORT = 25
     MAIL_USE_SSL = False
     MAIL_USE_TLS = False

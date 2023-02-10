@@ -1,7 +1,10 @@
 import io
+import json
 from pathlib import Path
+from typing import BinaryIO
 from zipfile import ZipFile
 
+import numpy as np
 import pandas as pd
 from flask import (
     current_app,
@@ -23,6 +26,17 @@ from app.models import Category, Product, UserRoles, Vendor
 ################################################################################
 # Vendor products page
 ################################################################################
+
+
+MANDATORY_COLUMNS = [
+    "name",
+    "sku",
+    "price",
+    "measurement",
+    "category",
+    "description",
+    "input_required",
+]
 
 
 @bp.route("/products/", methods=["GET", "POST"])
@@ -54,8 +68,64 @@ def ShowProducts():
     )
 
 
-def products_excel_to_df(excel_data) -> pd.DataFrame:
-    pass
+def product_columns_to_json(row: pd.Series) -> str:
+    result = {}
+    for k, v in row.items():
+        result[k] = sorted(list({s.strip() for s in str(v).split(",")}))
+    if result:
+        return json.dumps(result, ensure_ascii=False)
+    else:
+        return ""
+
+
+def products_excel_to_df(
+    excel_data: BinaryIO, vendor_id: int, categories: "dict[str:int]"
+) -> pd.DataFrame:
+    df = pd.read_excel(excel_data, engine="openpyxl")
+    df.columns = df.columns.str.lower()
+    if not all(x in df.columns for x in MANDATORY_COLUMNS):
+        raise KeyError("The mandatory columns are missing.")
+    extra_columns = list(df.columns.difference(MANDATORY_COLUMNS))
+    if "options" in extra_columns:
+        extra_columns.remove("options")
+    df["options"] = df[extra_columns].apply(product_columns_to_json, axis=1)
+    df.drop(
+        extra_columns,
+        axis=1,
+        inplace=True,
+    )
+    df = df.astype(
+        dtype={
+            "name": str,
+            "sku": str,
+            "price": float,
+            "measurement": str,
+            "description": str,
+            "category": str,
+            "options": str,
+            "input_required": bool,
+        }
+    )
+    df["options"] = df["options"].replace("", None)
+    df["vendor_id"] = vendor_id
+    df["cat_id"] = df["category"].apply(lambda x: categories.get(x.lower()))
+    df.drop(["category"], axis=1, inplace=True)
+    df.dropna(subset=["cat_id", "name", "sku", "price", "measurement"], inplace=True)
+    static_path = Path(f"app/static/upload/vendor{vendor_id}")
+    static_path.mkdir(parents=True, exist_ok=True)
+    image_list = {
+        f.stem: url_for("static", filename=Path(*static_path.parts[2:]) / f.name)
+        for f in static_path.glob("*")
+        if not f.is_dir()
+    }
+
+    df["image"] = df["sku"].apply(image_list.get)
+
+    df["name"] = df["name"].str.slice(0, 128)
+    df["sku"] = df["sku"].str.slice(0, 128)
+    df["measurement"] = df["measurement"].str.slice(0, 128)
+    df["description"] = df["description"].str.slice(0, 512)
+    return df
 
 
 @bp.route("/products/upload", methods=["GET", "POST"])
@@ -73,48 +143,9 @@ def UploadProducts():
         return redirect(url_for("main.ShowProducts"))
 
     if form.validate_on_submit():
-        df = pd.read_excel(form.products.data, engine="openpyxl")
-        df.columns = df.columns.str.lower()
-        df.drop(
-            df.columns.difference(
-                ["name", "sku", "price", "measurement", "category", "description"]
-            ),
-            axis=1,
-            inplace=True,
-        )
-        df = df.astype(
-            dtype={
-                "name": str,
-                "sku": str,
-                "price": float,
-                "measurement": str,
-                "description": str,
-                "category": str,
-            }
-        )
-        df["vendor_id"] = vendor.id
         categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
         categories = {c.name.lower(): c.id for c in categories}
-        df["cat_id"] = df["category"].apply(lambda x: categories.get(x.lower()))
-        df.drop(["category"], axis=1, inplace=True)
-        df.dropna(
-            subset=["cat_id", "name", "sku", "price", "measurement"], inplace=True
-        )
-        static_path = Path(f"app/static/upload/vendor{vendor.id}")
-        static_path.mkdir(parents=True, exist_ok=True)
-        image_list = {
-            f.stem: url_for("static", filename=Path(*static_path.parts[2:]) / f.name)
-            for f in static_path.glob("*")
-            if not f.is_dir()
-        }
-
-        df["image"] = df["sku"].apply(lambda x: image_list.get(x))
-
-        df["name"] = df["name"].str.slice(0, 128)
-        df["sku"] = df["sku"].str.slice(0, 128)
-        df["measurement"] = df["measurement"].str.slice(0, 128)
-        df["description"] = df["description"].str.slice(0, 512)
-
+        df = products_excel_to_df(form.products.data, vendor.id, categories)
         Product.query.filter_by(vendor_id=vendor.id).delete()
         db.session.commit()
         df.to_sql(name="product", con=db.engine, if_exists="append", index=False)

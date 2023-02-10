@@ -184,7 +184,7 @@ class JsonType(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if value is not None:
-            return json.dumps(value)
+            return json.dumps(value, ensure_ascii=False)
         return None
 
     def process_result_value(self, value, dialect):
@@ -271,7 +271,7 @@ class User(UserMixin, db.Model):
         return isinstance(another, User) and self.id == another.id
 
     def __repr__(self):
-        return json.dumps(self.to_dict())
+        return json.dumps(self.to_dict(), ensure_ascii=False)
 
     def set_password(self, password):
         self.password = generate_password_hash(password)
@@ -388,7 +388,7 @@ class Category(db.Model):
     )
 
     def __repr__(self):
-        return json.dumps(self.to_dict())
+        return json.dumps(self.to_dict(), ensure_ascii=False)
 
     def to_dict(self):
         data = {
@@ -472,7 +472,7 @@ class Project(db.Model):
     )
 
     def __repr__(self):
-        return json.dumps(self.to_dict())
+        return json.dumps(self.to_dict(), ensure_ascii=False)
 
     def to_dict(self):
         data = {
@@ -776,7 +776,7 @@ class IncomeStatement(db.Model):
     orders = db.relationship("Order", back_populates="income_statement")
 
     def __repr__(self):
-        return json.dumps(self.to_dict())
+        return json.dumps(self.to_dict(), ensure_ascii=False)
 
     def to_dict(self):
         data = {"id": self.id, "name": self.name}
@@ -800,7 +800,7 @@ class CashflowStatement(db.Model):
     orders = db.relationship("Order", back_populates="cashflow_statement")
 
     def __repr__(self):
-        return json.dumps(self.to_dict())
+        return json.dumps(self.to_dict(), ensure_ascii=False)
 
     def to_dict(self):
         data = {"id": self.id, "name": self.name}
