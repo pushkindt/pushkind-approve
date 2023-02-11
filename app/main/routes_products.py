@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import BinaryIO
 from zipfile import ZipFile
 
-import numpy as np
 import pandas as pd
 from flask import (
     current_app,
@@ -22,6 +21,7 @@ from app.main import bp
 from app.main.forms import UploadImagesForm, UploadProductImageForm, UploadProductsForm
 from app.main.utils import role_forbidden
 from app.models import Category, Product, UserRoles, Vendor
+from app.utils import first
 
 ################################################################################
 # Vendor products page
@@ -39,43 +39,20 @@ MANDATORY_COLUMNS = [
 ]
 
 
-@bp.route("/products/", methods=["GET", "POST"])
-@bp.route("/products/show", methods=["GET", "POST"])
-@login_required
-@role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
-def ShowProducts():
-    products_form = UploadProductsForm()
-    images_form = UploadImagesForm()
-    product_image_form = UploadProductImageForm()
-    vendors = Vendor.query.filter_by(hub_id=current_user.hub_id)
+def _get_vendor(vendor_id: int) -> Vendor:
     if current_user.role == UserRoles.vendor:
-        vendors = vendors.filter_by(email=current_user.email)
-    vendor_id = request.args.get("vendor_id", type=int)
-    if vendor_id is None:
-        vendor = vendors.first()
-    else:
-        vendor = vendors.filter_by(id=vendor_id).first()
-    vendors = vendors.all()
-    categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
-    return render_template(
-        "products.html",
-        vendors=vendors,
-        vendor=vendor,
-        categories=categories,
-        products_form=products_form,
-        images_form=images_form,
-        product_image_form=product_image_form,
-    )
+        return Vendor.query.filter_by(email=current_user.email).first()
+    return Vendor.query.filter_by(id=vendor_id).first()
 
 
 def product_columns_to_json(row: pd.Series) -> str:
-    result = {}
-    for k, v in row.items():
-        result[k] = sorted(list({s.strip() for s in str(v).split(",")}))
-    if result:
-        return json.dumps(result, ensure_ascii=False)
-    else:
-        return ""
+    def parse_column(value: str) -> "list[str]":
+        return (
+            sorted(list({s.strip() for s in str(value).split(",")})) if value else None
+        )
+
+    result = {k: parse_column(v) for k, v in row.items() if v}
+    return json.dumps(result, ensure_ascii=False) if result else ""
 
 
 def products_excel_to_df(
@@ -83,8 +60,13 @@ def products_excel_to_df(
 ) -> pd.DataFrame:
     df = pd.read_excel(excel_data, engine="openpyxl")
     df.columns = df.columns.str.lower()
-    if not all(x in df.columns for x in MANDATORY_COLUMNS):
-        raise KeyError("The mandatory columns are missing.")
+    mandatory_columns_set = set(MANDATORY_COLUMNS)
+    if not mandatory_columns_set.issubset(df.columns):
+        missing_columns = mandatory_columns_set - df.columns
+        raise KeyError(
+            f"The following mandatory columns are missing: {missing_columns}"
+        )
+
     extra_columns = list(df.columns.difference(MANDATORY_COLUMNS))
     if "options" in extra_columns:
         extra_columns.remove("options")
@@ -94,6 +76,7 @@ def products_excel_to_df(
         axis=1,
         inplace=True,
     )
+
     df = df.astype(
         dtype={
             "name": str,
@@ -107,10 +90,12 @@ def products_excel_to_df(
         }
     )
     df["options"] = df["options"].replace("", None)
+
     df["vendor_id"] = vendor_id
     df["cat_id"] = df["category"].apply(lambda x: categories.get(x.lower()))
     df.drop(["category"], axis=1, inplace=True)
     df.dropna(subset=["cat_id", "name", "sku", "price", "measurement"], inplace=True)
+
     static_path = Path(f"app/static/upload/vendor{vendor_id}")
     static_path.mkdir(parents=True, exist_ok=True)
     image_list = {
@@ -118,14 +103,49 @@ def products_excel_to_df(
         for f in static_path.glob("*")
         if not f.is_dir()
     }
-
     df["image"] = df["sku"].apply(image_list.get)
 
-    df["name"] = df["name"].str.slice(0, 128)
-    df["sku"] = df["sku"].str.slice(0, 128)
-    df["measurement"] = df["measurement"].str.slice(0, 128)
-    df["description"] = df["description"].str.slice(0, 512)
+    string_columns = ["name", "sku", "measurement", "description"]
+    for column in string_columns:
+        df[column] = (
+            df[column].str.slice(0, 128)
+            if column == "name"
+            else df[column].str.slice(0, 512)
+        )
     return df
+
+
+@bp.route("/products/", methods=["GET", "POST"])
+@bp.route("/products/show", methods=["GET", "POST"])
+@login_required
+@role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
+def ShowProducts():
+    products_form = UploadProductsForm()
+    images_form = UploadImagesForm()
+    product_image_form = UploadProductImageForm()
+
+    vendors = Vendor.query.filter_by(hub_id=current_user.hub_id)
+    if current_user.role == UserRoles.vendor:
+        vendors = vendors.filter_by(email=current_user.email)
+    vendors = vendors.all()
+
+    vendor = _get_vendor(request.args.get("vendor_id", type=int))
+    if vendor is None:
+        if current_user.role == UserRoles.vendor:
+            flash("Такой поставщик не найден.")
+            return redirect(url_for("auth.logout"))
+        vendor = first(vendors)
+
+    categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
+    return render_template(
+        "products.html",
+        vendors=vendors,
+        vendor=vendor,
+        categories=categories,
+        products_form=products_form,
+        images_form=images_form,
+        product_image_form=product_image_form,
+    )
 
 
 @bp.route("/products/upload", methods=["GET", "POST"])
@@ -133,11 +153,7 @@ def products_excel_to_df(
 @role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
 def UploadProducts():
     form = UploadProductsForm()
-    if current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(email=current_user.email).first()
-    else:
-        vendor_id = request.args.get("vendor_id", type=int)
-        vendor = Vendor.query.filter_by(id=vendor_id).first()
+    vendor = _get_vendor(request.args.get("vendor_id", type=int))
     if vendor is None:
         flash("Такой поставщик не найден.")
         return redirect(url_for("main.ShowProducts"))
@@ -162,11 +178,7 @@ def UploadProducts():
 @role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
 def UploadImages():
     form = UploadImagesForm()
-    if current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(email=current_user.email).first()
-    else:
-        vendor_id = request.args.get("vendor_id", type=int)
-        vendor = Vendor.query.filter_by(id=vendor_id).first()
+    vendor = _get_vendor(request.args.get("vendor_id", type=int))
     if vendor is None:
         flash("Такой поставщик не найден.")
         return redirect(url_for("main.ShowProducts"))
@@ -207,12 +219,7 @@ def UploadImages():
 @login_required
 @role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
 def DownloadProducts():
-    if current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(email=current_user.email).first()
-    else:
-        vendor_id = request.args.get("vendor_id", type=int)
-        vendor = Vendor.query.filter_by(id=vendor_id).first()
-
+    vendor = _get_vendor(request.args.get("vendor_id", type=int))
     if vendor is None:
         flash("Такой поставщик не найден.")
         return redirect(url_for("main.ShowProducts"))
@@ -222,7 +229,7 @@ def DownloadProducts():
         df = pd.read_sql(products.statement, conn)
     categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
     categories = {c.id: c.name for c in categories}
-    df["category"] = df["cat_id"].apply(lambda x: categories.get(x))
+    df["category"] = df["cat_id"].apply(categories.get)
     df.drop(["id", "image", "vendor_id", "cat_id"], axis="columns", inplace=True)
     buffer = io.BytesIO()
     df.to_excel(buffer, index=False)
@@ -235,34 +242,30 @@ def DownloadProducts():
     )
 
 
-@bp.route("/products/<int:id>/upload/image", methods=["GET", "POST"])
+@bp.route("/products/<int:product_id>/upload/image", methods=["GET", "POST"])
 @login_required
 @role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
-def UploadProductImage(id):
-    if current_user.role == UserRoles.vendor:
-        vendor = Vendor.query.filter_by(email=current_user.email).first()
-    else:
-        vendor_id = request.args.get("vendor_id", type=int)
-        vendor = Vendor.query.filter_by(id=vendor_id).first()
+def UploadProductImage(product_id):
+    vendor = _get_vendor(request.args.get("vendor_id", type=int))
     if vendor is None:
         flash("Такой поставщик не найден.")
         return redirect(url_for("main.ShowProducts"))
 
-    product = Product.query.filter_by(id=id, vendor_id=vendor.id).first()
+    product = Product.query.filter_by(id=product_id, vendor_id=vendor.id).first()
     if product is None:
         flash("Такой товар не найден.")
         return redirect(url_for("main.ShowProducts"))
 
     form = UploadProductImageForm()
     if form.validate_on_submit():
-        f = form.image.data
-        file_name = Path(f.filename)
+        file_data = form.image.data
+        file_name = Path(file_data.filename)
         file_name = Path(str(product.sku) + file_name.suffix)
         static_path = Path(f"app/static/upload/vendor{vendor.id}")
         static_path.mkdir(parents=True, exist_ok=True)
         full_path = static_path / file_name
-        f.save(full_path)
-        product.image = url_for("static", filename=(Path(*full_path.parts[2:])))
+        file_data.save(full_path)
+        product.image = url_for("static", filename=Path(*full_path.parts[2:]))
         db.session.commit()
         flash("Изображение товара успешно загружено.")
     else:

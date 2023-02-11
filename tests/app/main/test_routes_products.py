@@ -1,29 +1,38 @@
 import io
-import json
+from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
 
 from app.main.routes_products import (
     MANDATORY_COLUMNS,
+    _get_vendor,
     product_columns_to_json,
     products_excel_to_df,
 )
+from app.models import UserRoles, Vendor
 
 
-def test_products_columns_to_json():
-    data = {"a": "1,2,3,4", "b": "qwer,qwer", "c": 3}
-    ser = pd.Series(data)
-    assert (
-        product_columns_to_json(ser)
-        == '{"a": ["1", "2", "3", "4"], "b": ["qwer"], "c": ["3"]}'
+def test_product_columns_to_json():
+    row = pd.Series({"column_1": "apple, orange, pear", "column_2": "banana, cherry"})
+    expected_result = (
+        '{"column_1": ["apple", "orange", "pear"], "column_2": ["banana", "cherry"]}'
     )
-    assert product_columns_to_json(pd.Series(dtype=object)) == ""
-    data = pd.DataFrame([data])
-    data["options"] = data[data.columns].apply(product_columns_to_json, axis=1)
-    assert (
-        data["options"][0] == '{"a": ["1", "2", "3", "4"], "b": ["qwer"], "c": ["3"]}'
-    )
+
+    result = product_columns_to_json(row)
+    assert result == expected_result, f"Expected {expected_result} but got {result}"
+
+    row = pd.Series({"column_1": "apple, orange, pear", "column_2": None})
+    expected_result = '{"column_1": ["apple", "orange", "pear"]}'
+
+    result = product_columns_to_json(row)
+    assert result == expected_result, f"Expected {expected_result} but got {result}"
+
+    row = pd.Series({}, dtype=object)
+    expected_result = ""
+
+    result = product_columns_to_json(row)
+    assert result == expected_result, f"Expected {expected_result} but got {result}"
 
 
 def test_products_excel_to_df_raises():
@@ -55,3 +64,30 @@ def test_products_excel_to_df():
     pd.testing.assert_frame_equal(
         source.sort_index(axis=1), target.sort_index(axis=1), check_names=True
     )
+
+
+@pytest.fixture
+def mock_vendor(monkeypatch):
+    vendor = Vendor(id=1, email="test_vendor@example.com")
+    monkeypatch.setattr(Vendor, "query", Mock())
+    Vendor.query.filter_by.return_value.first.return_value = vendor
+    return vendor
+
+
+def test_get_vendor_when_user_is_vendor(mock_vendor):
+    current_user = Mock()
+    current_user.role = UserRoles.vendor
+    current_user.email = mock_vendor.email
+    with patch("app.main.routes_products.current_user", current_user):
+        result = _get_vendor(2)
+        assert result == mock_vendor
+        Vendor.query.filter_by.assert_called_once_with(email=current_user.email)
+
+
+def test_get_vendor_when_user_is_not_vendor(mock_vendor):
+    current_user = Mock()
+    current_user.role = UserRoles.admin
+    with patch("app.main.routes_products.current_user", current_user):
+        result = _get_vendor(1)
+        assert result == mock_vendor
+        Vendor.query.filter_by.assert_called_once_with(id=1)

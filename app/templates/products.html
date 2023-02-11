@@ -7,22 +7,23 @@
         <div class="col-5 mb-1">
             <input class="form-control" id="productFilter" type="text" placeholder="Фильтр..">
         </div>
-    {% if current_user.role.name != 'vendor' %}
+        {% if current_user.role.name != 'vendor' %}
         <div class="col-3 mb-1">
             <select class="form-select" aria-label="Vendor select" id="vendorSelect">
                 {% for v in vendors %}
-                    <option {% if v.id == vendor.id %}selected{% endif %} value="{{ v.id }}">{{ v.name }}</option>
+                <option {% if v.id==vendor.id %}selected{% endif %} value="{{ v.id }}">{{ v.name }}</option>
                 {% endfor %}
             </select>
         </div>
-    {% endif %}
+        {% endif %}
         <div class="col-auto">
             <a class="btn btn-primary" href="{{url_for('main.DownloadProducts', vendor_id=vendor.id)}}">
                 <i class="bi bi-cloud-download"></i>
             </a>
         </div>
         <div class="col-auto">
-            <form method="POST" enctype="multipart/form-data" id="uploadProductsForm" action="{{url_for('main.UploadProducts', vendor_id=vendor.id)}}">
+            <form method="POST" enctype="multipart/form-data" id="uploadProductsForm"
+                action="{{url_for('main.UploadProducts', vendor_id=vendor.id)}}">
                 {{ products_form.csrf_token(id=False) }}
                 <label for="uploadProductsButton">
                     <span class="btn btn-warning mb-1">
@@ -33,7 +34,8 @@
             </form>
         </div>
         <div class="col-auto">
-            <form method="POST" enctype="multipart/form-data" id="uploadImagesForm" action="{{url_for('main.UploadImages', vendor_id=vendor.id)}}">
+            <form method="POST" enctype="multipart/form-data" id="uploadImagesForm"
+                action="{{url_for('main.UploadImages', vendor_id=vendor.id)}}">
                 {{ images_form.csrf_token(id=False) }}
                 <label for="uploadImagesButton">
                     <span class="btn btn-success mb-1">
@@ -47,7 +49,7 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             {% for category in categories %}
-                <span class="text-decoration-none badge bg-secondary">{{ category.name }}</span>
+            <span class="text-decoration-none badge bg-secondary">{{ category.name }}</span>
             {% endfor %}
         </div>
     </div>
@@ -73,66 +75,74 @@
 <div class="container">
     <div id="productList">
         {% for product in vendor.products|sort(attribute='name') %}
-            <div class="row my-1 selectable bg-white rounded" data-id="{{product.id}}">
-                <div class="col-auto">
-                    <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64" alt="thumbnail">
-                </div>
-                <div class="col-sm">
-                    <h5>{{product.name}}</h5>
-                    <small>Артикул: {{product.sku}}</small>
-                </div>
-                <div class="col-sm-2">
-                    <span class="d-sm-none fw-bold">Категория:</span>
-                    {{ product.category.name }}
-                </div>
-                <div class="col-sm-2">
-                    <span class="d-sm-none fw-bold">Цена:</span>
-                    {{ product.price }} ₽/{{ product.measurement }}
-                </div>
-                <div class="col-auto">
-                    <form method="POST" enctype="multipart/form-data" id="uploadProductImageForm{{product.id}}" action="{{url_for('main.UploadProductImage', id=product.id, vendor_id=vendor.id)}}">
-                        {{ product_image_form.csrf_token(id=False) }}
-                        <label for="uploadProductImageButton{{product.id}}">
-                            <span class="btn btn-success my-1">
-                                <i class="bi bi-card-image"></i>
-                            </span>
-                        </label>
-                        <input id="uploadProductImageButton{{product.id}}" type="file" name="image" class="d-none uploadProductImageButton" accept="image/png,image/jpeg">
-                    </form>
-                </div>
+        <div class="row my-1 selectable bg-white rounded" data-id="{{product.id}}">
+            <div class="col-auto">
+                <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64" alt="thumbnail">
             </div>
-            <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1" aria-labelledby="descriptionModalLabel{{product.id}}" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="descriptionModalLabel{{product.id}}">{{product.name}}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div id="carouselControls{{product.id}}" class="carousel carousel-dark slide" data-bs-ride="carousel">
-                                <div class="carousel-inner">
-                                    <div class="carousel-item active">
-                                        <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" class="d-block w-100" alt="Main image">
-                                    </div>
-                                    <div class="carousel-item">
-                                        <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" class="d-block w-100" alt="Media image">
-                                    </div>
+            <div class="col-sm">
+                <h5>{{product.name}}</h5>
+                <small>Артикул: {{product.sku}}</small>
+            </div>
+            <div class="col-sm-2">
+                <span class="d-sm-none fw-bold">Категория:</span>
+                {{ product.category.name }}
+            </div>
+            <div class="col-sm-2">
+                <span class="d-sm-none fw-bold">Цена:</span>
+                {{ product.price }} ₽/{{ product.measurement }}
+            </div>
+            <div class="col-auto">
+                <form method="POST" enctype="multipart/form-data" id="uploadProductImageForm{{product.id}}"
+                    action="{{url_for('main.UploadProductImage', product_id=product.id, vendor_id=vendor.id)}}">
+                    {{ product_image_form.csrf_token(id=False) }}
+                    <label for="uploadProductImageButton{{product.id}}">
+                        <span class="btn btn-success my-1">
+                            <i class="bi bi-card-image"></i>
+                        </span>
+                    </label>
+                    <input id="uploadProductImageButton{{product.id}}" type="file" name="image"
+                        class="d-none uploadProductImageButton" accept="image/png,image/jpeg">
+                </form>
+            </div>
+        </div>
+        <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1"
+            aria-labelledby="descriptionModalLabel{{product.id}}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="descriptionModalLabel{{product.id}}">{{product.name}}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="carouselControls{{product.id}}" class="carousel carousel-dark slide"
+                            data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                <div class="carousel-item active">
+                                    <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" class="d-block w-100"
+                                        alt="Main image">
                                 </div>
-                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselControls{{product.id}}" data-bs-slide="prev">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Previous</span>
-                                </button>
-                                <button class="carousel-control-next" type="button" data-bs-target="#carouselControls{{product.id}}" data-bs-slide="next">
-                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Next</span>
-                                </button>
+                                <div class="carousel-item">
+                                    <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" class="d-block w-100"
+                                        alt="Media image">
+                                </div>
                             </div>
-                            <strong>Описание:</strong>
-                            <pre>{{product.description or ''}}</pre>
+                            <button class="carousel-control-prev" type="button"
+                                data-bs-target="#carouselControls{{product.id}}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button"
+                                data-bs-target="#carouselControls{{product.id}}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
                         </div>
+                        <strong>Описание:</strong>
+                        <pre>{{product.description or ''}}</pre>
                     </div>
                 </div>
             </div>
+        </div>
         {% endfor %}
     </div>
 </div>
@@ -142,30 +152,30 @@
 {% block scripts %}
 <script>
     $(document).ready(function () {
-        $('#uploadProductsButton').on('change',()=>{
+        $('#uploadProductsButton').on('change', () => {
             $('#uploadProductsForm').submit();
         });
-        $('#vendorSelect').change(()=>{
+        $('#vendorSelect').change(() => {
             window.location = "{{url_for('main.ShowProducts', vendor_id=0)}}".replace('0', $('#vendorSelect').val());
         });
-        $('#uploadImagesButton').on('change',()=>{
+        $('#uploadImagesButton').on('change', () => {
             $('#uploadImagesForm').submit();
         });
-        $('.uploadProductImageButton').on('change', function() {
+        $('.uploadProductImageButton').on('change', function () {
             $(this).parent('form').submit();
         });
-		$("#productFilter").on("keyup", function () {
-			let value = $(this).val().toLowerCase();
-			$("#productList .row").filter(function () {
-				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-			});
-		});
+        $("#productFilter").on("keyup", function () {
+            let value = $(this).val().toLowerCase();
+            $("#productList .row").filter(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
         $(".selectable").click(function (event) {
             let productId = $(this).attr('data-id');
-            let modalElement = document.getElementById('descriptionModal'+productId);
+            let modalElement = document.getElementById('descriptionModal' + productId);
             let descriptionModal = bootstrap.Modal.getInstance(modalElement);
             if (!descriptionModal)
-                descriptionModal= new bootstrap.Modal(modalElement, {});
+                descriptionModal = new bootstrap.Modal(modalElement, {});
             descriptionModal.show();
         });
     });
