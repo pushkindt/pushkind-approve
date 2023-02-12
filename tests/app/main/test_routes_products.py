@@ -47,7 +47,7 @@ def test_products_excel_to_df_raises():
 def test_products_excel_to_df():
     source = pd.DataFrame([{x: "1" for x in MANDATORY_COLUMNS}])
     source["category"] = "category"
-    source["input_required"] = False
+    source["input_required"] = True
     source["opt1"] = "1,2 ,3"
     source["opt2"] = "qwer, qwer"
     source["opt3"] = "3"
