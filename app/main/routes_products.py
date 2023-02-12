@@ -58,7 +58,7 @@ def product_columns_to_json(row: pd.Series) -> str:
 def products_excel_to_df(
     excel_data: BinaryIO, vendor_id: int, categories: "dict[str:int]"
 ) -> pd.DataFrame:
-    df = pd.read_excel(excel_data, engine="openpyxl")
+    df = pd.read_excel(excel_data, engine="openpyxl", dtype=str, keep_default_na=False)
     df.columns = df.columns.str.lower()
     mandatory_columns_set = set(MANDATORY_COLUMNS)
     if not mandatory_columns_set.issubset(df.columns):
@@ -66,7 +66,7 @@ def products_excel_to_df(
         raise KeyError(
             f"The following mandatory columns are missing: {missing_columns}"
         )
-
+    print(df.dtypes)
     extra_columns = list(df.columns.difference(MANDATORY_COLUMNS))
     if "options" in extra_columns:
         extra_columns.remove("options")
@@ -76,7 +76,7 @@ def products_excel_to_df(
         axis=1,
         inplace=True,
     )
-
+    print(df)
     df = df.astype(
         dtype={
             "name": str,

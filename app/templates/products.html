@@ -1,5 +1,15 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<style>
+    .uploadImageIcon:hover {
+        border: 1px solid #6c757d !important;
+        border-radius: 0.25rem !important;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <div class="container my-2">
@@ -75,35 +85,49 @@
 <div class="container">
     <div id="productList">
         {% for product in vendor.products|sort(attribute='name') %}
-        <div class="row my-1 selectable bg-white rounded" data-id="{{product.id}}">
-            <div class="col-auto">
-                <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64" alt="thumbnail">
-            </div>
-            <div class="col-sm">
-                <h5>{{product.name}}</h5>
-                <small>Артикул: {{product.sku}}</small>
-            </div>
-            <div class="col-sm-2">
-                <span class="d-sm-none fw-bold">Категория:</span>
-                {{ product.category.name }}
-            </div>
-            <div class="col-sm-2">
-                <span class="d-sm-none fw-bold">Цена:</span>
-                {{ product.price }} ₽/{{ product.measurement }}
-            </div>
+        <div class="row my-1 bg-white rounded">
             <div class="col-auto">
                 <form method="POST" enctype="multipart/form-data" id="uploadProductImageForm{{product.id}}"
                     action="{{url_for('main.UploadProductImage', product_id=product.id, vendor_id=vendor.id)}}">
                     {{ product_image_form.csrf_token(id=False) }}
                     <label for="uploadProductImageButton{{product.id}}">
-                        <span class="btn btn-success my-1">
-                            <i class="bi bi-card-image"></i>
-                        </span>
+                        <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64" alt=""
+                            class="uploadImageIcon">
                     </label>
                     <input id="uploadProductImageButton{{product.id}}" type="file" name="image"
                         class="d-none uploadProductImageButton" accept="image/png,image/jpeg">
                 </form>
             </div>
+            <div class="col-6 selectable overflow-hidden" data-id="{{product.id}}">
+                <h5>{{product.name}}</h5>
+                <small>Артикул: {{product.sku}}</small>
+            </div>
+            <div class="col-sm">
+                <span class="d-sm-none fw-bold">Категория:</span>
+                {{ product.category.name }}
+            </div>
+            <div class="col-sm">
+                <span class="d-sm-none fw-bold">Цена:</span>
+                <strong>{{ '{:,.2f}'.format(product.price) }}</strong> ₽/{{ product.measurement }}
+            </div>
+            {% if product.options %}
+            <div class="col-12">
+                {% for rows in product.options|batch(4) %}
+                <div class="row">
+                    {% for option in rows %}
+                    <div class="col-sm-3 my-1">
+                        <select class="form-select">
+                            <option selected disabled>{{ option }}</option>
+                            {% for value in product.options[option]%}
+                            <option value="{{value}}">{{value}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
         <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1"
             aria-labelledby="descriptionModalLabel{{product.id}}" aria-hidden="true">
