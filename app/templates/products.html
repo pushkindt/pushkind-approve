@@ -55,6 +55,14 @@
                 <input id="uploadImagesButton" type="file" name="images" class="d-none" accept=".zip">
             </form>
         </div>
+        <div class="col-auto">
+            <form action="{{ url_for('main.remove_products', vendor_id=vendor.id) }}" method="POST">
+                <button type="submit" class="btn btn-danger text-white"
+                    onclick="return confirm('Очистить список товаров?')">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </form>
+        </div>
     </div>
     <div class="row justify-content-center">
         <div class="col-md-8">

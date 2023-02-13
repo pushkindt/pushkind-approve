@@ -160,7 +160,10 @@ def UploadProducts():
         categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
         categories = {c.name.lower(): c.id for c in categories}
         df = products_excel_to_df(form.products.data, vendor.id, categories)
-        Product.query.filter_by(vendor_id=vendor.id).delete()
+        skus = df.sku.values.tolist()
+        Product.query.filter_by(vendor_id=vendor.id).filter(
+            Product.sku.in_(skus)
+        ).delete()
         db.session.commit()
         df.to_sql(name="product", con=db.engine, if_exists="append", index=False)
         db.session.commit()
@@ -210,6 +213,20 @@ def UploadImages():
     else:
         for error in form.images.errors:
             flash(error)
+    return redirect(url_for("main.ShowProducts", vendor_id=vendor.id))
+
+
+@bp.route("/products/remove", methods=["POST"])
+@login_required
+@role_forbidden([UserRoles.default, UserRoles.initiative, UserRoles.supervisor])
+def remove_products():
+    vendor = _get_vendor(request.args.get("vendor_id", type=int))
+    if vendor is None:
+        flash("Такой поставщик не найден.")
+        return redirect(url_for("main.ShowProducts"))
+    Product.query.filter_by(vendor_id=vendor.id).filter().delete()
+    db.session.commit()
+    flash("Список товаров успешно очищен.")
     return redirect(url_for("main.ShowProducts", vendor_id=vendor.id))
 
 
