@@ -99,23 +99,21 @@
                     action="{{url_for('main.UploadProductImage', product_id=product.id, vendor_id=vendor.id)}}">
                     {{ product_image_form.csrf_token(id=False) }}
                     <label for="uploadProductImageButton{{product.id}}">
-                        <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64" alt=""
+                        <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64"
                             class="uploadImageIcon">
                     </label>
                     <input id="uploadProductImageButton{{product.id}}" type="file" name="image"
                         class="d-none uploadProductImageButton" accept="image/png,image/jpeg">
                 </form>
             </div>
-            <div class="col-6 selectable overflow-hidden" data-id="{{product.id}}">
+            <div class="col col-sm-6 overflow-hidden selectable">
                 <h5>{{product.name}}</h5>
                 <small>Артикул: {{product.sku}}</small>
             </div>
-            <div class="col-sm">
-                <span class="d-sm-none fw-bold">Категория:</span>
+            <div class="col-sm overflow-hidden pt-sm-4">
                 {{ product.category.name }}
             </div>
-            <div class="col-sm">
-                <span class="d-sm-none fw-bold">Цена:</span>
+            <div class="col overflow-hidden pt-sm-4 pt-2">
                 <strong>{{ '{:,.2f}'.format(product.price) }}</strong> ₽/{{ product.measurement }}
             </div>
             {% if product.options %}
@@ -203,7 +201,7 @@
             });
         });
         $(".selectable").click(function (event) {
-            let productId = $(this).attr('data-id');
+            let productId = $(this).parent(".row").attr("data-id");
             let modalElement = document.getElementById('descriptionModal' + productId);
             let descriptionModal = bootstrap.Modal.getInstance(modalElement);
             if (!descriptionModal)

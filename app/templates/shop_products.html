@@ -1,44 +1,37 @@
-{% extends "base.html" %}
-
-{% block styles%}
-
-{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block styles%} {% endblock %} {% block content %}
 
 <div class="container my-2">
-
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <input class="form-control" id="productFilter" type="text" placeholder="Фильтр..">
+            <input class="form-control" id="productFilter" type="text" placeholder="Фильтр.." />
         </div>
     </div>
     <div class="row justify-content-center">
         <div class="col-md-8">
-            {% set glob={} %}
-            {% for vendor in vendors %}
-                {% if vendor_id == vendor.id %}
-                    {% set _ = glob.update({'vendor_name':vendor.name}) %}
-                    <a href="{{ url_for('main.ShopProducts', vendor_id=vendor.id, cat_id=category.id) }}" class="text-decoration-none badge bg-primary">{{ vendor.name }}</a>
-                {% else %}
-                    <a href="{{ url_for('main.ShopProducts', vendor_id=vendor.id, cat_id=category.id) }}" class="text-decoration-none badge bg-white fw-normal text-secondary border">{{ vendor.name }}</a>
-                {% endif %}
-            {% endfor %}
-            <a href="{{ url_for('main.ShopProducts',cat_id=category.id) }}" class="text-decoration-none badge {% if vendor_id is none %}bg-primary{% else %}bg-white fw-normal text-secondary border{% endif %}">все</a>
+            {% set glob={} %} {% for vendor in vendors %} {% if vendor_id == vendor.id %} {% set _ =
+            glob.update({'vendor_name':vendor.name}) %}
+            <a href="{{ url_for('main.ShopProducts', vendor_id=vendor.id, cat_id=category.id) }}"
+                class="text-decoration-none badge bg-primary">{{ vendor.name }}</a>
+            {% else %}
+            <a href="{{ url_for('main.ShopProducts', vendor_id=vendor.id, cat_id=category.id) }}"
+                class="text-decoration-none badge bg-white fw-normal text-secondary border">{{ vendor.name }}</a>
+            {% endif %} {% endfor %}
+            <a href="{{ url_for('main.ShopProducts',cat_id=category.id) }}"
+                class="text-decoration-none badge {% if vendor_id is none %}bg-primary{% else %}bg-white fw-normal text-secondary border{% endif %}">все</a>
         </div>
     </div>
 </div>
 
 <div class="container">
-
     <div class="row">
         <div class="col overflow-hidden">
-            <strong>НОВАЯ ЗАЯВКА</strong><br>
-            <a class="text-muted text-decoration-none" href="{{url_for('main.ShopCategories')}}" id="siteProjectSelect">Выбор проекта и объекта</a>
+            <strong>НОВАЯ ЗАЯВКА</strong><br />
+            <a class="text-muted text-decoration-none" href="{{url_for('main.ShopCategories')}}"
+                id="siteProjectSelect">Выбор проекта и объекта</a>
         </div>
         <div class="col-auto text-end overflow-hidden">
             <a class="text-muted" href="{{url_for('main.ShopCart')}}">
-                <i class="bi bi-cart fs-4"></i><br>
+                <i class="bi bi-cart fs-4"></i><br />
                 <small class="text-muted" id="inCartItems"></small>
             </a>
         </div>
@@ -53,172 +46,190 @@
                 <a href="{{url_for('main.ShopProducts', cat_id=category.id)}}">{{category.name}}</a>
             </li>
             {% if 'vendor_name' in glob %}
-                <li class="breadcrumb-item active" aria-current="page">{{glob['vendor_name']}}</li>
+            <li class="breadcrumb-item active" aria-current="page">{{glob['vendor_name']}}</li>
             {% endif %}
         </ol>
     </nav>
 
     <div id="productList">
         {% for product in products %}
-            <form class="cartItem" data-id="{{product.id}}" data-name="{{product.name}}" data-sku="{{product.sku}}" data-price="{{product.price}}"  data-vendor="{{product.vendor.name}}"  data-image="{{product.image}}" data-measurement="{{product.measurement}}">
-                <div class="row bg-white my-1 py-1 rounded" data-id="{{product.id}}">
-                    <div class="col-auto selectable">
-                        <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="96" width="96" alt="thumbnail">
-                    </div>
-                    <div class="col overflow-hidden selectable">
-                        <h5>{{product.name}}</h5>
-                        <small>Артикул: {{product.sku}}</small>
-                    </div>
-                    <div class="col-sm-2 overflow-hidden pt-sm-4">
-                        {{ product.vendor.name }}
-                    </div>
-                    <div class="col-sm-2 overflow-hidden pt-sm-4">
-                        <strong>{{'{:,.2f}'.format(product['price'])}}</strong> ₽
-                    </div>
-                    <div class="col-sm-1 overflow-hidden pt-sm-4">
-                        <strong>{{product.measurement}}</strong>
-                    </div>
-                    <div class="col-sm-2 overflow-hidden pt-sm-3">
-                        <input type="number" class="form-control addToCart" min="0" step="1" aria-label="Количество" id="input-addon{{product.id}}">
-                    </div>
+        <form class="cartItem" data-id="{{product.id}}" data-name="{{product.name}}" data-sku="{{product.sku}}"
+            data-price="{{product.price}}" data-vendor="{{product.vendor.name}}" data-image="{{product.image}}"
+            data-measurement="{{product.measurement}}">
+            <div class="row bg-white my-1 rounded" data-id="{{product.id}}">
+                <div class="col-auto selectable">
+                    <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64">
                 </div>
-            </form>
-            <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1" aria-labelledby="#descriptionModalLabel{{product.id}}" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="descriptionModalLabel{{product.id}}">{{product.name}}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="col col-sm-6 overflow-hidden selectable">
+                    <h5>{{product.name}}</h5>
+                    <small>Артикул: {{product.sku}}</small>
+                </div>
+                <div class="col-sm overflow-hidden pt-sm-4">{{ product.vendor.name }}</div>
+                <div class="col overflow-hidden pt-sm-4 pt-2">
+                    <strong>{{'{:,.2f}'.format(product['price'])}}</strong>₽/<strong>{{product.measurement}}</strong>
+                </div>
+                <div class="col overflow-hidden pt-sm-3">
+                    <input type="number" class="form-control addToCart" min="0" step="1" aria-label="Количество"
+                        id="input-addon{{product.id}}" />
+                </div>
+                {% if product.options %}
+                <div class="col-12">
+                    {% for rows in product.options|batch(4) %}
+                    <div class="row">
+                        {% for option in rows %}
+                        <div class="col-sm-3 my-1">
+                            <select class="form-select">
+                                <option selected disabled>{{ option }}</option>
+                                {% for value in product.options[option]%}
+                                <option value="{{value}}">{{value}}</option>
+                                {% endfor %}
+                            </select>
                         </div>
-                        <div class="modal-body">
-                            <div id="carouselControls{{product.id}}" class="carousel carousel-dark slide" data-bs-ride="carousel">
-                                <div class="carousel-inner">
-                                    <div class="carousel-item active">
-                                        <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" class="d-block w-100" alt="Main image">
-                                    </div>
-                                    <div class="carousel-item">
-                                        <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" class="d-block w-100" alt="Media image">
-                                    </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </form>
+        <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1"
+            aria-labelledby="#descriptionModalLabel{{product.id}}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="descriptionModalLabel{{product.id}}">{{product.name}}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="carouselControls{{product.id}}" class="carousel carousel-dark slide"
+                            data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                <div class="carousel-item active">
+                                    <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" class="d-block w-100"
+                                        alt="Main image" />
                                 </div>
-                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselControls{{product.id}}" data-bs-slide="prev">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Previous</span>
-                                </button>
-                                <button class="carousel-control-next" type="button" data-bs-target="#carouselControls{{product.id}}" data-bs-slide="next">
-                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Next</span>
-                                </button>
+                                <div class="carousel-item">
+                                    <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" class="d-block w-100"
+                                        alt="Media image" />
+                                </div>
                             </div>
-                            <strong>Описание:</strong>
-                            <pre>{{product.description or ''}}</pre>
+                            <button class="carousel-control-prev" type="button"
+                                data-bs-target="#carouselControls{{product.id}}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button"
+                                data-bs-target="#carouselControls{{product.id}}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
                         </div>
+                        <strong>Описание:</strong>
+                        <pre>{{product.description or ''}}</pre>
                     </div>
                 </div>
             </div>
+        </div>
         {% endfor %}
     </div>
 </div>
 
-{% endblock %}
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script>
     $(document).ready(function () {
+        var shoppingCart = sessionStorage.getItem("shoppingCart");
 
-        var shoppingCart = sessionStorage.getItem('shoppingCart');
-
-        function SetInCartText(){
+        function SetInCartText() {
             let numItems = shoppingCart.length;
-            if (numItems > 0){
-                let totalPrice = shoppingCart.reduce((a, b) => a + (b['price']|| 0) * (b["quantity"] || 0), 0);
-                $("#inCartItems").text(numItems + ' позиции на сумму ' + totalPrice.toFixed(2));
-            }
-            else
-                $("#inCartItems").text('');
+            if (numItems > 0) {
+                let totalPrice = shoppingCart.reduce((a, b) => a + (b["price"] || 0) * (b["quantity"] || 0), 0);
+                $("#inCartItems").text(numItems + " позиции на сумму " + totalPrice.toFixed(2));
+            } else $("#inCartItems").text("");
         }
 
-
-        if (!shoppingCart){
+        if (!shoppingCart) {
             shoppingCart = [];
-            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-        }
-        else {
-
+            sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
+        } else {
             try {
                 shoppingCart = JSON.parse(shoppingCart);
-                shoppingCart.forEach(element => {
-                    let input = $('#input-addon'+element['id']);
-                    let text = $('#text-addon'+element['id']);
-                    if (input){
-                        input.val(element['quantity']);
-                        input.addClass('border-success')
+                shoppingCart.forEach((element) => {
+                    let input = $("#input-addon" + element["id"]);
+                    let text = $("#text-addon" + element["id"]);
+                    if (input) {
+                        input.val(element["quantity"]);
+                        input.addClass("border-success");
                     }
-                    if (text)
-                        text.val(element['text']);
+                    if (text) text.val(element["text"]);
                 });
-            } catch(e) {
+            } catch (e) {
                 shoppingCart = [];
-                sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
+                sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
             }
         }
         SetInCartText();
 
-        let project_id = sessionStorage.getItem('project_id');
-        let site_id = sessionStorage.getItem('site_id');
-        let site_name = sessionStorage.getItem('site_name');
-        let project_name = sessionStorage.getItem('project_name');
-        if (!project_id || !site_id || !project_name || !site_name)
-            window.location = "{{url_for('main.ShopCategories')}}";
-        $("#siteProjectSelect").text(project_name + ', ' + site_name);
-        $("#siteProjectSelect").click(function(){
+        let project_id = sessionStorage.getItem("project_id");
+        let site_id = sessionStorage.getItem("site_id");
+        let site_name = sessionStorage.getItem("site_name");
+        let project_name = sessionStorage.getItem("project_name");
+        if (!project_id || !site_id || !project_name || !site_name) window.location = "{{url_for('main.ShopCategories')}}";
+        $("#siteProjectSelect").text(project_name + ", " + site_name);
+        $("#siteProjectSelect").click(function () {
             sessionStorage.removeItem("project_id");
             sessionStorage.removeItem("project_name");
             sessionStorage.removeItem("site_id");
             sessionStorage.removeItem("site_name");
         });
-        $(".addToCart").on("keyup change", function(){
-            let form = $(this).closest('.cartItem');
-            let timerId = form.data('timer');
-            if (timerId)
-                clearTimeout(timerId);
-            timerId = setTimeout(function(form){
-                form.removeData('timer');
-                let itemId = Number(form.data('id'));
-                let itemName = form.data('name');
-                let itemVendor = form.data('vendor');
-                let itemImage = form.data('image');
-                let itemSku = form.data('sku');
-                let itemPrice = Number(form.data('price'));
-                let input = form.find('input.addToCart');
-                let itemQuantity = Number(input.val());
-                let itemText = form.find('textarea.addToCart').val();
-                let itemMeasurement = form.data('measurement');
-                if (itemQuantity > 0) {
-                    let cartItem = shoppingCart.find(obj => {return obj['id'] === itemId});
-                    if (!cartItem){
-                        cartItem = {
-                            "id": itemId,
-                            "name": itemName,
-                            "sku": itemSku,
-                            "price": itemPrice,
-                            "vendor": itemVendor,
-                            "image": itemImage,
-                            "measurement": itemMeasurement
+        $(".addToCart").on("keyup change", function () {
+            let form = $(this).closest(".cartItem");
+            let timerId = form.data("timer");
+            if (timerId) clearTimeout(timerId);
+            timerId = setTimeout(
+                function (form) {
+                    form.removeData("timer");
+                    let itemId = Number(form.data("id"));
+                    let itemName = form.data("name");
+                    let itemVendor = form.data("vendor");
+                    let itemImage = form.data("image");
+                    let itemSku = form.data("sku");
+                    let itemPrice = Number(form.data("price"));
+                    let input = form.find("input.addToCart");
+                    let itemQuantity = Number(input.val());
+                    let itemText = form.find("textarea.addToCart").val();
+                    let itemMeasurement = form.data("measurement");
+                    if (itemQuantity > 0) {
+                        let cartItem = shoppingCart.find((obj) => {
+                            return obj["id"] === itemId;
+                        });
+                        if (!cartItem) {
+                            cartItem = {
+                                id: itemId,
+                                name: itemName,
+                                sku: itemSku,
+                                price: itemPrice,
+                                vendor: itemVendor,
+                                image: itemImage,
+                                measurement: itemMeasurement,
+                            };
+                            shoppingCart.push(cartItem);
                         }
-                        shoppingCart.push(cartItem);
+                        if (itemText) cartItem["text"] = itemText;
+                        cartItem["quantity"] = itemQuantity;
+                        input.addClass("border-success");
+                    } else {
+                        shoppingCart = shoppingCart.filter((obj) => {
+                            return obj["id"] !== itemId;
+                        });
+                        input.removeClass("border-success");
                     }
-                    if (itemText)
-                        cartItem["text"] = itemText;
-                    cartItem["quantity"] = itemQuantity;
-                    input.addClass('border-success');
-                }
-                else {
-                    shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
-                    input.removeClass('border-success');
-                }
-                sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-                SetInCartText();
-            }, 500, form);
-            form.data('timer', timerId);
+                    sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
+                    SetInCartText();
+                },
+                500,
+                form
+            );
+            form.data("timer", timerId);
         });
         $("#productFilter").on("keyup", function () {
             let value = $(this).val().toLowerCase();
@@ -228,14 +239,12 @@
             });
         });
         $(".selectable").click(function (event) {
-            let productId = $(this).parent('.row').attr('data-id');
-            let modalElement = document.getElementById('descriptionModal'+productId);
+            let productId = $(this).parent(".row").attr("data-id");
+            let modalElement = document.getElementById("descriptionModal" + productId);
             let descriptionModal = bootstrap.Modal.getInstance(modalElement);
-            if (!descriptionModal)
-                descriptionModal= new bootstrap.Modal(modalElement, {});
+            if (!descriptionModal) descriptionModal = new bootstrap.Modal(modalElement, {});
             descriptionModal.show();
         });
     });
-
 </script>
 {%endblock %}
