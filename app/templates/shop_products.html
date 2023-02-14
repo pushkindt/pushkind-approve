@@ -1,4 +1,9 @@
-{% extends "base.html" %} {% block styles%} {% endblock %} {% block content %}
+{% extends "base.html" %}
+
+{% block styles%}
+{% endblock %}
+
+{% block content %}
 
 <div class="container my-2">
     <div class="row justify-content-center">
@@ -53,45 +58,43 @@
 
     <div id="productList">
         {% for product in products %}
-        <form class="cartItem" data-id="{{product.id}}" data-name="{{product.name}}" data-sku="{{product.sku}}"
-            data-price="{{product.price}}" data-vendor="{{product.vendor.name}}" data-image="{{product.image}}"
-            data-measurement="{{product.measurement}}">
-            <div class="row bg-white my-1 rounded" data-id="{{product.id}}">
-                <div class="col-auto selectable">
-                    <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64">
-                </div>
-                <div class="col col-sm-6 overflow-hidden selectable">
-                    <h5>{{product.name}}</h5>
-                    <small>Артикул: {{product.sku}}</small>
-                </div>
-                <div class="col-sm overflow-hidden pt-sm-4">{{ product.vendor.name }}</div>
-                <div class="col overflow-hidden pt-sm-4 pt-2">
-                    <strong>{{'{:,.2f}'.format(product['price'])}}</strong>₽/<strong>{{product.measurement}}</strong>
-                </div>
-                <div class="col overflow-hidden pt-sm-3 mb-1">
-                    <input type="number" class="form-control addToCart" min="0" step="1" aria-label="Количество"
-                        id="input-addon{{product.id}}" />
-                </div>
-                {% if product.options %}
-                <div class="col-12">
-                    {% for rows in product.options|batch(4) %}
-                    <div class="row">
-                        {% for option in rows %}
-                        <div class="col-sm-3 my-1">
-                            <select class="form-select">
-                                <option selected disabled>{{ option }}</option>
-                                {% for value in product.options[option]%}
-                                <option value="{{value}}">{{value}}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        {% endfor %}
+        <div class="row bg-white my-1 rounded cartItem" data-id="{{product.id}}" data-name="{{product.name}}"
+            data-sku="{{product.sku}}" data-price="{{product.price}}" data-vendor="{{product.vendor.name}}"
+            data-image="{{product.image or ''}}" data-measurement="{{product.measurement}}">
+            <div class="col-auto selectable">
+                <img src="{{product.image or config['PLACEHOLDER_IMAGE']}}" height="64" width="64">
+            </div>
+            <div class="col col-sm-6 overflow-hidden selectable">
+                <h5>{{product.name}}</h5>
+                <small>Артикул: {{product.sku}}</small>
+            </div>
+            <div class="col-sm overflow-hidden selectable pt-sm-4">{{ product.vendor.name }}</div>
+            <div class="col overflow-hidden selectable pt-sm-4 pt-2">
+                <strong>{{'{:,.2f}'.format(product['price'])}}</strong>₽/<strong>{{product.measurement}}</strong>
+            </div>
+            <div class="col overflow-hidden pt-sm-3 mb-1">
+                <input type="number" class="form-control addToCart" min="0" step="1" aria-label="Количество"
+                    id="input-addon{{product.id}}" />
+            </div>
+            {% if product.options %}
+            <div class="col-12">
+                {% for rows in product.options|batch(4) %}
+                <div class="row">
+                    {% for option in rows %}
+                    <div class="col-sm-3 my-1">
+                        <select class="form-select addToCart" data-name="{{option}}">
+                            <option selected disabled>{{ option }}</option>
+                            {% for value in product.options[option]%}
+                            <option value="{{value}}">{{value}}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     {% endfor %}
                 </div>
-                {% endif %}
+                {% endfor %}
             </div>
-        </form>
+            {% endif %}
+        </div>
         <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1"
             aria-labelledby="#descriptionModalLabel{{product.id}}" aria-hidden="true">
             <div class="modal-dialog">
@@ -134,103 +137,41 @@
     </div>
 </div>
 
-{% endblock %} {% block scripts %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/shoppingCart.js') }}"></script>
 <script>
     $(document).ready(function () {
+
         var shoppingCart = sessionStorage.getItem("shoppingCart");
-
-        function SetInCartText() {
-            let numItems = shoppingCart.length;
-            if (numItems > 0) {
-                let totalPrice = shoppingCart.reduce((a, b) => a + (b["price"] || 0) * (b["quantity"] || 0), 0);
-                $("#inCartItems").text(numItems + " позиции на сумму " + totalPrice.toFixed(2));
-            } else $("#inCartItems").text("");
-        }
-
-        if (!shoppingCart) {
-            shoppingCart = [];
-            sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
-        } else {
-            try {
-                shoppingCart = JSON.parse(shoppingCart);
-                shoppingCart.forEach((element) => {
-                    let input = $("#input-addon" + element["id"]);
-                    let text = $("#text-addon" + element["id"]);
-                    if (input) {
-                        input.val(element["quantity"]);
-                        input.addClass("border-success");
-                    }
-                    if (text) text.val(element["text"]);
-                });
-            } catch (e) {
-                shoppingCart = [];
-                sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
-            }
-        }
-        SetInCartText();
+        shoppingCart = UpdateCartItems(shoppingCart);
+        SetInCartText(shoppingCart);
 
         let project_id = sessionStorage.getItem("project_id");
         let site_id = sessionStorage.getItem("site_id");
         let site_name = sessionStorage.getItem("site_name");
         let project_name = sessionStorage.getItem("project_name");
-        if (!project_id || !site_id || !project_name || !site_name) window.location = "{{url_for('main.ShopCategories')}}";
+        if (!project_id || !site_id || !project_name || !site_name)
+            window.location = "{{url_for('main.ShopCategories')}}";
+
         $("#siteProjectSelect").text(project_name + ", " + site_name);
+
         $("#siteProjectSelect").click(function () {
             sessionStorage.removeItem("project_id");
             sessionStorage.removeItem("project_name");
             sessionStorage.removeItem("site_id");
             sessionStorage.removeItem("site_name");
         });
+
         $(".addToCart").on("keyup change", function () {
             let form = $(this).closest(".cartItem");
             let timerId = form.data("timer");
-            if (timerId) clearTimeout(timerId);
-            timerId = setTimeout(
-                function (form) {
-                    form.removeData("timer");
-                    let itemId = Number(form.data("id"));
-                    let itemName = form.data("name");
-                    let itemVendor = form.data("vendor");
-                    let itemImage = form.data("image");
-                    let itemSku = form.data("sku");
-                    let itemPrice = Number(form.data("price"));
-                    let input = form.find("input.addToCart");
-                    let itemQuantity = Number(input.val());
-                    let itemText = form.find("textarea.addToCart").val();
-                    let itemMeasurement = form.data("measurement");
-                    if (itemQuantity > 0) {
-                        let cartItem = shoppingCart.find((obj) => {
-                            return obj["id"] === itemId;
-                        });
-                        if (!cartItem) {
-                            cartItem = {
-                                id: itemId,
-                                name: itemName,
-                                sku: itemSku,
-                                price: itemPrice,
-                                vendor: itemVendor,
-                                image: itemImage,
-                                measurement: itemMeasurement,
-                            };
-                            shoppingCart.push(cartItem);
-                        }
-                        if (itemText) cartItem["text"] = itemText;
-                        cartItem["quantity"] = itemQuantity;
-                        input.addClass("border-success");
-                    } else {
-                        shoppingCart = shoppingCart.filter((obj) => {
-                            return obj["id"] !== itemId;
-                        });
-                        input.removeClass("border-success");
-                    }
-                    sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
-                    SetInCartText();
-                },
-                500,
-                form
-            );
+            if (timerId)
+                clearTimeout(timerId);
+            timerId = setTimeout(AddToCart, 500, form, shoppingCart);
             form.data("timer", timerId);
         });
+
         $("#productFilter").on("keyup", function () {
             let value = $(this).val().toLowerCase();
             $("#productList .row").filter(function () {
@@ -238,11 +179,13 @@
                 $(this).toggle(show);
             });
         });
+
         $(".selectable").click(function (event) {
-            let productId = $(this).parent(".row").attr("data-id");
+            let productId = $(this).parent(".row").data("id");
             let modalElement = document.getElementById("descriptionModal" + productId);
             let descriptionModal = bootstrap.Modal.getInstance(modalElement);
-            if (!descriptionModal) descriptionModal = new bootstrap.Modal(modalElement, {});
+            if (!descriptionModal)
+                descriptionModal = new bootstrap.Modal(modalElement, {});
             descriptionModal.show();
         });
     });
