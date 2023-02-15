@@ -20,60 +20,73 @@ function SetInCartText(shoppingCart) {
         $("#inCartItems").text("");
 }
 
-function UpdateCartItem(item) {
-    let cartItem = $('div.row[data-id="' + item["id"] + '"]');
-    let input = $("#input-addon" + item["id"]);
-    let text = $("#text-addon" + item["id"]);
+function UpdateProductQuantity(item) {
+    let input = $("#product" + item["id"] + " .productQuantity");
     if (input) {
         input.val(item["quantity"]);
         input.addClass("border-success");
     }
-    if (text)
-        text.val(item["text"]);
-    let options = Object.keys(item['options']);
-    options.forEach((option) => {
-        let select = cartItem.find('select[data-name="' + option + '"]');
-        select.val(item['options'][option]).change()
-    });
 }
 
-function UpdateCartItems(shoppingCart) {
+function SyncShoppingCart() {
+    shoppingCart = sessionStorage.getItem("shoppingCart");
     if (!shoppingCart) {
         shoppingCart = [];
         sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
     } else {
         try {
             shoppingCart = JSON.parse(shoppingCart);
-            shoppingCart.forEach(UpdateCartItem);
+            $(".productQuantity").val(null);
+            $(".productQuantity").removeClass("border-success");
+            shoppingCart.forEach(UpdateProductQuantity);
         } catch (e) {
             console.log(e);
             shoppingCart = [];
             sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
         }
     }
+    SetInCartText(shoppingCart);
     return shoppingCart;
 }
 
+function SyncProductModal(form, shoppingCart) {
+    let productId = Number(form.data("id"));
+
+    let cartItem = shoppingCart.find((obj) => {
+        return obj["id"] === productId;
+    });
+    if (!cartItem)
+        return;
+    let quantityInput = form.find("input");
+    quantityInput.val(cartItem["quantity"]);
+    let textInput = form.find("textarea");
+    textInput.val(cartItem["text"]);
+    let options = Object.keys(cartItem['options']);
+    options.forEach((option) => {
+        let select = form.find('select[data-name="' + option + '"]');
+        select.val(cartItem['options'][option]).change()
+    });
+}
+
 function AddToCart(form, shoppingCart) {
-    form.removeData("timer");
-    let itemId = Number(form.data("id"));
+    let productId = Number(form.data("id"));
     let itemName = form.data("name");
     let itemVendor = form.data("vendor");
     let itemImage = form.data("image");
     let itemSku = form.data("sku");
     let itemPrice = Number(form.data("price"));
-    let input = form.find("input.addToCart");
-    let itemQuantity = Number(input.val());
-    let itemText = form.find("textarea.addToCart").val();
+    let quantityInput = form.find("input");
+    let itemQuantity = Number(quantityInput.val());
+    let itemText = form.find("textarea").val();
     let itemMeasurement = form.data("measurement");
     let itemOptions = productOptionsToJson(form);
     if (itemQuantity > 0) {
         let cartItem = shoppingCart.find((obj) => {
-            return obj["id"] === itemId;
+            return obj["id"] === productId;
         });
         if (!cartItem) {
             cartItem = {
-                id: itemId,
+                id: productId,
                 name: itemName,
                 sku: itemSku,
                 price: itemPrice,
@@ -88,13 +101,11 @@ function AddToCart(form, shoppingCart) {
         if (itemOptions)
             cartItem["options"] = itemOptions;
         cartItem["quantity"] = itemQuantity;
-        input.addClass("border-success");
     } else {
         shoppingCart = shoppingCart.filter((obj) => {
-            return obj["id"] !== itemId;
+            return obj["id"] !== productId;
         });
-        input.removeClass("border-success");
     }
     sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
-    SetInCartText(shoppingCart);
+    return SyncShoppingCart();
 }

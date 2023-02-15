@@ -1,5 +1,6 @@
 import io
 import json
+import re
 from pathlib import Path
 from typing import BinaryIO
 from zipfile import ZipFile
@@ -55,11 +56,15 @@ def product_columns_to_json(row: pd.Series) -> str:
     return json.dumps(result, ensure_ascii=False) if result else ""
 
 
+def clean_column_names(name: str) -> str:
+    return re.sub(r"[^\w]+", "_", name.lower())
+
+
 def products_excel_to_df(
     excel_data: BinaryIO, vendor_id: int, categories: "dict[str:int]"
 ) -> pd.DataFrame:
     df = pd.read_excel(excel_data, engine="openpyxl", dtype=str, keep_default_na=False)
-    df.columns = df.columns.str.lower()
+    df.columns = [clean_column_names(name) for name in df.columns]
     mandatory_columns_set = set(MANDATORY_COLUMNS)
     if not mandatory_columns_set.issubset(df.columns):
         missing_columns = mandatory_columns_set - df.columns

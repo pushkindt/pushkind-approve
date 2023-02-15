@@ -7,6 +7,7 @@ import pytest
 from app.main.routes_products import (
     MANDATORY_COLUMNS,
     _get_vendor,
+    clean_column_names,
     product_columns_to_json,
     products_excel_to_df,
 )
@@ -91,3 +92,9 @@ def test_get_vendor_when_user_is_not_vendor(mock_vendor):
         result = _get_vendor(1)
         assert result == mock_vendor
         Vendor.query.filter_by.assert_called_once_with(id=1)
+
+
+def test_clean_column_names():
+    test_string = '"qewrqwer"\n\\qwer\'qwer    qwer'
+    expected_string = "_qewrqwer_qwer_qwer_qwer"
+    assert clean_column_names(test_string) == expected_string

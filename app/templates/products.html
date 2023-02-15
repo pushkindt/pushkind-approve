@@ -93,7 +93,7 @@
 <div class="container">
     <div id="productList">
         {% for product in vendor.products|sort(attribute='name') %}
-        <div class="row my-1 bg-white rounded">
+        <div class="row my-1 bg-white rounded" data-id="{{product.id}}">
             <div class="col-auto">
                 <form method="POST" enctype="multipart/form-data" id="uploadProductImageForm{{product.id}}"
                     action="{{url_for('main.UploadProductImage', product_id=product.id, vendor_id=vendor.id)}}">
