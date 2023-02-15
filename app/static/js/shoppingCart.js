@@ -21,7 +21,7 @@ function SetInCartText(shoppingCart) {
 }
 
 function UpdateProductQuantity(item) {
-    let input = $("#product" + item["id"] + " .productQuantity");
+    let input = $("#product" + item["id"] + " input");
     if (input) {
         input.val(item["quantity"]);
         input.addClass("border-success");

@@ -74,8 +74,7 @@
                 <strong>{{ '{:,.2f}'.format(product.price) }}</strong> ₽/{{ product.measurement }}
             </div>
             <div class="col overflow-hidden pt-sm-3 mb-1">
-                <input disabled type="number" class="form-control productQuantity" min="0" step="1"
-                    aria-label="Количество">
+                <input disabled type="number" class="form-control" aria-label="Количество">
             </div>
         </div>
         <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1" data-id="{{product.id}}"
