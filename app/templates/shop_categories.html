@@ -2,13 +2,11 @@
 
 {% block styles%}
 <style>
-
-.card:hover {
-    box-shadow: 0 0 0 0.2rem #bce3f6;
-    border-color: #bce3f6;
-    transition: all .55s ease-in-out;
-}
-
+    .card:hover {
+        box-shadow: 0 0 0 0.2rem #bce3f6;
+        border-color: #bce3f6;
+        transition: all .55s ease-in-out;
+    }
 </style>
 {% endblock %}
 
@@ -32,7 +30,7 @@
             <a class="text-muted text-decoration-none" href="#" id="siteProjectSelect">Выбор проекта и объекта</a>
         </div>
         <div class="col-auto text-end overflow-hidden">
-            <a class="text-muted" href="{{url_for('main.ShopCart')}}">
+            <a class="text-muted" href="{{url_for('main.ShopOrder')}}">
                 <i class="bi bi-cart fs-4"></i><br>
                 <small class="text-muted" id="inCartItems"></small>
             </a>
@@ -41,24 +39,25 @@
 
     <div id="categoryList">
         {% for rows in categories|batch(5) %}
-            <div class="row my-4">
-                {% for category in rows %}
-                    <div class="col-sm m-1">
-                        <div class="card text-center selectable" data-id="{{category.id}}">
-                            <div class="card-body">
-                                <img src="{{category.image or config['PLACEHOLDER_IMAGE']}}" height="128" width="128" alt="thumbnail">
-                            </div>
-                            <div class="card-footer bg-white border-top-0">
-                                {{category.name}}
-                            </div>
-                        </div>
+        <div class="row my-4">
+            {% for category in rows %}
+            <div class="col-sm m-1">
+                <div class="card text-center selectable" data-id="{{category.id}}">
+                    <div class="card-body">
+                        <img src="{{category.image or config['PLACEHOLDER_IMAGE']}}" height="128" width="128"
+                            alt="thumbnail">
                     </div>
-                {% endfor %}
-                {% for i in range(5 - rows|length) %}
-                    <div class="col-sm m-1">
+                    <div class="card-footer bg-white border-top-0">
+                        {{category.name}}
                     </div>
-                {% endfor %}
+                </div>
             </div>
+            {% endfor %}
+            {% for i in range(5 - rows|length) %}
+            <div class="col-sm m-1">
+            </div>
+            {% endfor %}
+        </div>
         {% endfor %}
     </div>
 </div>
@@ -76,7 +75,7 @@
                         <select class="form-select border-danger" id="projectSelect">
                             <option value="" disabled selected>Выберите проект...</option>
                             {% for project in projects %}
-                                <option value="{{ project.id }}">{{ project.name }}</option>
+                            <option value="{{ project.id }}">{{ project.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -134,130 +133,106 @@
 
 {% endblock %}
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/shoppingCart.js') }}"></script>
 <script>
     $(document).ready(function () {
 
-        var shoppingCart = sessionStorage.getItem('shoppingCart');
-
-        function SetInCartText(){
-            let numItems = shoppingCart.length;
-            if (numItems > 0){
-                let totalPrice = shoppingCart.reduce((a, b) => a + (b['price']|| 0) * (b["quantity"] || 0), 0);
-                $("#inCartItems").text(numItems + ' позиции на сумму ' + totalPrice.toFixed(2));
-            }
-            else
-                $("#inCartItems").text('');
-        }
-
-        var shoppingCartItems = $("#shoppingCartItems");
-        if (!shoppingCart){
-            shoppingCart = [];
-            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-        }
-        else {
-
-            try {
-                shoppingCart = JSON.parse(shoppingCart);
-            } catch(e) {
-                shoppingCart = [];
-                sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-            }
-        }
-        SetInCartText();
+        var shoppingCart = GetShoppingCart();
+        SetInCartText(shoppingCart);
 
         var siteProjectModal = new bootstrap.Modal(document.getElementById('siteProjectModal'), { 'backdrop': 'static' });
 
-        var projects = [{% for project in projects %}{{ project| safe }}, {% endfor %}];
+        var projects = [{% for project in projects %}{{ project | safe }}, {% endfor %}];
 
-        var project_id = Number(sessionStorage.getItem('project_id'));
-        var site_id = Number(sessionStorage.getItem('site_id'));
+    var project_id = Number(sessionStorage.getItem('project_id'));
+    var site_id = Number(sessionStorage.getItem('site_id'));
 
-        var project = projects.find(obj => {return obj['id'] === project_id});
-        var site = undefined;
-        if (project){
-            site = project['sites'].find(obj => {return obj['id'] === site_id});
+    var project = projects.find(obj => { return obj['id'] === project_id });
+    var site = undefined;
+    if (project) {
+        site = project['sites'].find(obj => { return obj['id'] === site_id });
+    }
+
+    if (!project || !site) {
+        sessionStorage.removeItem("project_id");
+        sessionStorage.removeItem("project_name");
+        sessionStorage.removeItem("site_id");
+        sessionStorage.removeItem("site_name");
+        siteProjectModal.show();
+    }
+    else
+        $("#siteProjectSelect").text(project["name"] + ', ' + site["name"])
+
+    $("#siteProjectSelect").click(function () {
+        siteProjectModal.show();
+    });
+
+    $("#projectSelect").change(function () {
+        project_id = Number($(this).val());
+        project = projects.find(obj => { return obj['id'] === project_id });
+        sessionStorage.setItem("project_id", project['id']);
+        sessionStorage.setItem("project_name", project['name']);
+        site = undefined;
+        site_id = undefined;
+        sessionStorage.removeItem('site_id');
+        sessionStorage.removeItem('site_name');
+        $("#siteProjectSelect").text("Выбор проекта и объекта")
+
+        $(this).removeClass("border-danger");
+        $("#siteProjectDismiss").prop("disabled", true);
+        $("#siteProjectDismiss").addClass("btn-secondary");
+        $("#siteProjectDismiss").removeClass("btn-primary");
+        let sitesList = $("#siteSelect");
+        sitesList.empty();
+        let defaultSite = $("<option>").text("Выберите объект...");
+        defaultSite.prop("disabled", true);
+        defaultSite.prop("selected", true);
+        sitesList.append(defaultSite);
+
+        let show_limit_alert = false;
+
+        for (j = 0; j < project["sites"].length; j++) {
+            let siteOption = $("<option>")
+            siteOption.text(project["sites"][j]["name"])
+            siteOption.val(project["sites"][j]["id"])
+            sitesList.append(siteOption);
         }
-
-        if (!project || !site){
-            sessionStorage.removeItem("project_id");
-            sessionStorage.removeItem("project_name");
-            sessionStorage.removeItem("site_id");
-            sessionStorage.removeItem("site_name");
-            siteProjectModal.show();
-        }
+        $("#limits").removeClass("d-none");
+        $(".limit").filter(function () {
+            let show = $(this).data("project") == project["id"];
+            $(this).toggle(show);
+            if (show)
+                show_limit_alert |= $(this).data("overlimit");
+        });
+        if ($(".limit:visible").length == 0)
+            $("#limits").addClass("d-none");
+        if (show_limit_alert)
+            $("#limitAlert").removeClass("d-none");
         else
-            $("#siteProjectSelect").text(project["name"] + ', ' + site["name"])
-
-        $("#siteProjectSelect").click(function(){
-            siteProjectModal.show();
+            $("#limitAlert").addClass("d-none");
+    });
+    $("#siteSelect").change(function () {
+        site_id = Number($(this).val());
+        site = project['sites'].find(obj => { return obj['id'] === site_id });
+        sessionStorage.setItem("site_id", site['id']);
+        sessionStorage.setItem("site_name", site['name']);
+        $("#siteProjectSelect").text(project["name"] + ', ' + site["name"])
+        $(this).removeClass("border-danger");
+        $("#siteProjectDismiss").prop("disabled", false);
+        $("#siteProjectDismiss").removeClass("btn-secondary");
+        $("#siteProjectDismiss").addClass("btn-primary");
+    });
+    $(".selectable").click(function (event) {
+        let categoryId = $(this).attr('data-id');
+        document.location.href = "{{ url_for('main.ShopProducts', cat_id=0) }}".replace("0", categoryId);
+    });
+    $("#categoryFilter").on("keyup", function () {
+        let value = $(this).val().toLowerCase();
+        $("#categoryList .card").filter(function () {
+            let show = $(this).text().toLowerCase().indexOf(value) > -1;
+            $(this).toggle(show);
         });
-
-        $("#projectSelect").change(function () {
-            project_id = Number($(this).val());
-            project = projects.find(obj => {return obj['id'] === project_id});
-            sessionStorage.setItem("project_id", project['id']);
-            sessionStorage.setItem("project_name", project['name']);
-            site = undefined;
-            site_id = undefined;
-            sessionStorage.removeItem('site_id');
-            sessionStorage.removeItem('site_name');
-            $("#siteProjectSelect").text("Выбор проекта и объекта")
-
-            $(this).removeClass("border-danger");
-            $("#siteProjectDismiss").prop("disabled", true);
-            $("#siteProjectDismiss").addClass("btn-secondary");
-            $("#siteProjectDismiss").removeClass("btn-primary");
-            let sitesList = $("#siteSelect");
-            sitesList.empty();
-            let defaultSite = $("<option>").text("Выберите объект...");
-            defaultSite.prop("disabled", true);
-            defaultSite.prop("selected", true);
-            sitesList.append(defaultSite);
-
-            let show_limit_alert = false;
-
-            for (j = 0; j < project["sites"].length; j++) {
-                let siteOption = $("<option>")
-                siteOption.text(project["sites"][j]["name"])
-                siteOption.val(project["sites"][j]["id"])
-                sitesList.append(siteOption);
-            }
-            $("#limits").removeClass("d-none");
-            $(".limit").filter(function () {
-                let show = $(this).data("project") == project["id"];
-                $(this).toggle(show);
-                if (show)
-                    show_limit_alert |= $(this).data("overlimit");
-            });
-            if ($(".limit:visible").length == 0)
-                $("#limits").addClass("d-none");
-            if (show_limit_alert)
-                $("#limitAlert").removeClass("d-none");
-            else
-                $("#limitAlert").addClass("d-none");
-        });
-        $("#siteSelect").change(function () {
-            site_id = Number($(this).val());
-            site = project['sites'].find(obj => {return obj['id'] === site_id});
-            sessionStorage.setItem("site_id", site['id']);
-            sessionStorage.setItem("site_name", site['name']);
-            $("#siteProjectSelect").text(project["name"] + ', ' + site["name"])
-            $(this).removeClass("border-danger");
-            $("#siteProjectDismiss").prop("disabled", false);
-            $("#siteProjectDismiss").removeClass("btn-secondary");
-            $("#siteProjectDismiss").addClass("btn-primary");
-        });
-        $(".selectable").click(function (event) {
-            let categoryId = $(this).attr('data-id');
-            document.location.href = "{{ url_for('main.ShopProducts', cat_id=0) }}".replace("0", categoryId);
-        });
-        $("#categoryFilter").on("keyup", function () {
-            let value = $(this).val().toLowerCase();
-            $("#categoryList .card").filter(function () {
-                let show = $(this).text().toLowerCase().indexOf(value) > -1;
-                $(this).toggle(show);
-            });
-        });
+    });
     });
 
 </script>

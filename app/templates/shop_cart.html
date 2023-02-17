@@ -5,7 +5,34 @@
 {% endblock %}
 
 {% block content %}
-
+<script>
+    function CloneProduct() {
+        event.preventDefault();
+        event.stopPropagation();
+        const content = event.target.closest('.cartItem');
+        const productPos = Number(content.getAttribute("data-pos"));
+        let item = shoppingCart[productPos];
+        if (item) {
+            shoppingCart.push(item);
+            sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
+            PopulateProduct(item, shoppingCart.length - 1);
+            SetInCartText(shoppingCart);
+        }
+    }
+    function ShowDescriptionModal() {
+        const productPos = Number(event.currentTarget.getAttribute("data-pos"));
+        let modalElement = document.getElementById("descriptionModal");
+        let descriptionModal = bootstrap.Modal.getInstance(modalElement);
+        if (!descriptionModal)
+            descriptionModal = new bootstrap.Modal(modalElement, {});
+        let item = shoppingCart[productPos];
+        if (item) {
+            modalElement.dataset.pos = productPos;
+            SyncProductModal(modalElement, item, true, false);
+            descriptionModal.show();
+        }
+    }
+</script>
 <div class="container my-2">
 
     <div class="row justify-content-center">
@@ -28,7 +55,6 @@
     <div class="row my-2">
         <div class="col overflow-hidden">
             <strong>НОВАЯ ЗАЯВКА</strong>
-            от {{ moment().format('DD.MM.YYYY') }}
         </div>
         <div class="col-auto text-end overflow-hidden">
             <a class="text-muted" href="{{url_for('main.ShopCategories')}}">
@@ -44,21 +70,21 @@
             <a href="{{url_for('main.ShopCategories')}}" id="siteSelect" class="siteProjectSelect">Не указан</a>
         </div>
     </div>
-	<div class="row">
-		<div class="col">
-			<strong>Инициатор:</strong>
-			{% set user = current_user %}
-			{% include '_user.popover.html' %}
-			{{ user.name }}
-		</div>
-	</div>
+    <div class="row">
+        <div class="col">
+            <strong>Инициатор:</strong>
+            {% set user = current_user %}
+            {% include '_user.popover.html' %}
+            {{ user.name or user.email }}
+        </div>
+    </div>
     <div class="row mt-2">
         <div class="col">
             <span id="inCartItems"></span>
         </div>
     </div>
 
-    <form method="POST" action="{{url_for('main.ShopCart')}}" id="shoppingCartForm">
+    <form method="POST" action="{{url_for('main.ShopOrder')}}" id="shoppingCartForm">
         {{ form.csrf_token(id=False) }}
         {{ form.project_id(class_='d-none') }}
         {{ form.site_id(class_='d-none') }}
@@ -73,207 +99,165 @@
             </div>
         </div>
     </form>
-
 </div>
-
+<div class="modal fade" id="descriptionModal" tabindex="-1" aria-labelledby="#descriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="descriptionModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row justify-content-center">
+                    <div class="col-8">
+                        <div id="carouselControls" class="carousel carousel-dark slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                <div class="carousel-item active">
+                                    <div class="carousel-item active">
+                                        <img src="{{config['PLACEHOLDER_IMAGE']}}" class="d-block w-100"
+                                            alt="Main image" />
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselControls"
+                                data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carouselControls"
+                                data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <textarea class="form-control" rows="3"
+                            placeholder="место для комментария или ссылки на файл в облаке"></textarea>
+                    </div>
+                    <div class="col-4">
+                        <input placeholder="Количество" type="number" class="form-control" min="0" step="1"
+                            aria-label="Количество">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary addToCart" data-bs-dismiss="modal">Сохранить</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block templates %}
-<div class="row rounded bg-white my-1 py-1 cartItem" id="cartItemTemplate">
+<div class="row rounded bg-white my-1 cartItem selectable" id="cartItemTemplate" onclick="ShowDescriptionModal()">
     <div class="col-auto">
-        <input required type="number" class="d-none productIdInput" name="cart-_-product" hidden id="productIdTemplate">
-        <img id="productImageTemplate" src="{{ config['PLACEHOLDER_IMAGE'] }}" height="64" width="64" alt="thumbnail">
+        <input required type="number" class="d-none" name="cart-_-product" hidden id="productIdTemplate">
+        <input type="text" class="d-none" name="cart-_-text" hidden id="productTextTemplate">
+        <input type="text" class="d-none" name="cart-_-options" hidden id="productOptionsTemplate">
+        <img id="productImageTemplate" src="{{ config['PLACEHOLDER_IMAGE'] }}" height="64" width="64">
     </div>
-    <div class="col overflow-hidden">
+    <div class="col col-sm-6 overflow-hidden">
         <h5 id="productNameTemplate"></h5>
-        <small>Артикул: <span id="productSkuTemplate"></span></small>
-        <br><button type="button" class="cloneProductButton btn btn-link">клонировать</button>
-    </div>
-    <div class="col-sm-2 overflow-hidden">
-        <span id="productVendorTemplate"></span>
-    </div>
-    <div class="col-sm-2 overflow-hidden">
-        Цена: <strong id="productPriceTemplate" class="productPrice"></strong>
-        <br>
-        Единицы: <strong id="productMeasurementTemplate"></strong>
-        <br>
-        <div class="input-group my-1">
-            <span class="input-group-text">Кол-во</span>
-            <input required type="number" value="1" min="0" step="1" class="form-control addToCart productQuantityInput" name="cart-_-quantity" id="productQuantityTemplate">
+        <div class="row">
+            <div class="col small">
+                Артикул: <span id="productSkuTemplate"></span>
+            </div>
+        </div>
+        <div class="row d-none">
+            <div class="col small" id="productOptionsValuesTemplate">
+            </div>
+        </div>
+        <div class="row d-none">
+            <div class="col small">
+                Комментарий: <strong id="productTextValueTemplate" class="productTextValue"></strong>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <a href="#" class="cloneProductButton" onclick="CloneProduct()">клонировать</a>
+            </div>
         </div>
     </div>
-    <div class="col-sm-3 overflow-hidden">
-        <textarea style="height: 100%;" class="form-control addToCart productTextInput" name="cart-_-text" id="productTextTemplate" rows="3" placeholder="место для комментария или ссылки на файл в облаке"></textarea>
+    <div class="col-sm overflow-hidden pt-sm-4">
+        <span id="productVendorTemplate"></span>
+    </div>
+    <div class="col overflow-hidden pt-sm-4 pt-2">
+        <strong id="productPriceTemplate"></strong>
+        ₽/<span id="productMeasurementTemplate"></span>
+    </div>
+    <div class="col overflow-hidden pt-sm-3 mb-1">
+        <input readonly type="number" class="form-control productQuantity" name="cart-_-quantity"
+            id="productQuantityTemplate" aria-label="Количество">
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/shoppingCart.js') }}"></script>
 <script>
-    $(document).ready(function () {
-        $.fn.reduce = [].reduce;
-        var shoppingCart = sessionStorage.getItem('shoppingCart');
-        var shoppingCartItems = $("#shoppingCartItems");
+    var shoppingCart = [];
+    document.addEventListener("DOMContentLoaded", function () {
 
-        function SetInCartText(){
-            let numItems = shoppingCartItems.children().length;
-            if (numItems > 0){
-                let cartItems = $(".cartItem");
-                let totalPrice = cartItems.reduce((a, b) => a + (Number($(b).data('cost') || 0)), 0);
-                $("#inCartItems").text('Всего позиций: ' + numItems + ' на сумму ' + totalPrice.toFixed(2));
-            }
-            else
-                $("#inCartItems").text('');
+        shoppingCart = GetShoppingCart();
+        shoppingCart.forEach(PopulateProduct);
+        SetInCartText(shoppingCart);
+        const [projectId, siteId, siteName, projectName] = CheckProjectAndSiteSet("{{ url_for('main.ShopCategories') }}");
+
+        document.querySelector("#projectSelect").textContent = projectName;
+        document.querySelector("#siteSelect").textContent = siteName;
+        document.querySelector("#project_id").value = projectId;
+        document.querySelector("#site_id").value = siteId;
+
+        const submitButton = document.querySelector("#submit");
+        const emptyCartAlert = document.querySelector("#emptyCartAlert");
+        if (shoppingCart.length > 0) {
+            submitButton.classList.remove("d-none");
+            emptyCartAlert.classList.add("d-none");
         }
 
-        if (!shoppingCart){
-            shoppingCart = [];
-            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-        }
-        else {
-
-            try {
-                shoppingCart = JSON.parse(shoppingCart);
-            } catch(e) {
-                shoppingCart = [];
-                sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-            }
-        }
-
-        let project_id = Number(sessionStorage.getItem('project_id'));
-        let site_id = Number(sessionStorage.getItem('site_id'));
-        let site_name = sessionStorage.getItem('site_name');
-        let project_name = sessionStorage.getItem('project_name');
-        if (!project_id || !site_id || !project_name || !site_name)
-            window.location = "{{url_for('main.ShopCategories')}}";
-        $("#projectSelect").text(project_name);
-        $("#siteSelect").text(site_name);
-
-        $("#project_id").val(project_id);
-        $("#site_id").val(site_id);
-
-        $(".siteProjectSelect").click(function(){
-            sessionStorage.removeItem("project_id");
-            sessionStorage.removeItem("project_name");
-            sessionStorage.removeItem("site_id");
-            sessionStorage.removeItem("site_name");
-        });
-
-        if (shoppingCart.length > 0){
-            $("#submit").removeClass('d-none');
-            $("#emptyCartAlert").addClass("d-none");
-        }
-
-        let i = 0;
-        shoppingCart.forEach(item => {
-            let content = $('#cartItemTemplate').clone();
-            let sku = content.find('#productSkuTemplate');
-            let name = content.find('#productNameTemplate');
-            let text = content.find('#productTextTemplate');
-            let image = content.find('#productImageTemplate');
-            let vendor = content.find('#productVendorTemplate');
-            let price = content.find('#productPriceTemplate');
-            let product = content.find('#productIdTemplate');
-            let quantity = content.find('#productQuantityTemplate');
-            let measurement = content.find('#productMeasurementTemplate');
-
-            content.removeAttr('id');
-            sku.removeAttr('id');
-            name.removeAttr('id');
-            text.removeAttr('id');
-            image.removeAttr('id');
-            vendor.removeAttr('id');
-            price.removeAttr('id');
-            product.removeAttr('id');
-            quantity.removeAttr('id');
-            measurement.removeAttr('id');
-
-            content.data('id', item['id']);
-            content.data('pos', i);
-            content.data('cost', Number(item['price'])*Number(item['quantity']));
-            sku.text(item['sku']);
-            name.text(item['name']);
-            text.val(item['text']);
-            if (item['image'])
-                image.attr('src', item['image']);
-            vendor.text(item['vendor']);
-            price.text(item['price'].toFixed(2));
-            product.val(item['id']);
-            quantity.val(item['quantity']);
-            measurement.text(item['measurement']);
-
-            text.attr('name', text.attr('name').replace('_', i));
-            product.attr('name', product.attr('name').replace('_', i));
-            quantity.attr('name', quantity.attr('name').replace('_', i));
-
-            shoppingCartItems.append(content);
-            i++;
-        });
-
-        $("#submit").click(function(){
+        submitButton.addEventListener("click", function () {
             shoppingCart = [];
             sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
         });
-        $(".addToCart").on("keyup change", function(){
-            let form = $(this).closest('.cartItem');
-            let timerId = form.data('timer');
-            if (timerId)
-                clearTimeout(timerId);
-            timerId = setTimeout(function(form){
-                form.removeData('timer');
-                let itemId = Number(form.data('id'));
-                let itemQuantityInput = form.find('input.addToCart');
-                let itemQuantity = Number(itemQuantityInput.val());
-                let itemText = form.find('textarea.addToCart').val();
-                if (!itemQuantity || itemQuantity == 0){
-                    itemQuantity = 1;
-                    itemQuantityInput.val(itemQuantity);
-                    shoppingCart = shoppingCart.filter(obj => {return obj['id'] !== itemId});
-                    form.remove();
-                    if (shoppingCartItems.children().length == 0){
-                        $("#submit").addClass('d-none');
-                        $("#emptyCartAlert").removeClass("d-none");
-                        $(window).off('beforeunload');
-                    }
+
+        const addToCartButtons = document.querySelectorAll(".addToCart");
+
+        addToCartButtons.forEach(function (addToCartButton) {
+            addToCartButton.addEventListener("click", function () {
+                const form = this.closest('.modal');
+                const productPos = Number(form.dataset.pos);
+                const quantityInput = form.querySelector("input");
+                const textInput = form.querySelector("textarea");
+                const itemQuantity = Number(quantityInput.value);
+                const itemText = textInput.value;
+                let cartItem = document.querySelector(`div.cartItem[data-pos="${productPos}"]`);
+
+                if (!itemQuantity || itemQuantity == 0) {
+                    shoppingCart[productPos] = null;
+                    cartItem.remove();
+                } else {
+                    shoppingCart[productPos]['quantity'] = itemQuantity;
+                    shoppingCart[productPos]['text'] = itemText;
+                    let quantityInput = cartItem.querySelector(".productQuantity");
+                    quantityInput.value = itemQuantity;
+                    let textInput = cartItem.querySelector(".productTextValue");
+                    textInput.textContent = itemText;
                 }
-                else {
-                    let cartItem = shoppingCart.find(obj => {return obj['id'] === itemId});
-                    if (cartItem){
-                        cartItem["text"] = itemText;
-                        cartItem["quantity"] = itemQuantity;
-                    }
+
+                if (shoppingCart.filter(Boolean).length == 0) {
+                    shoppingCart = [];
+                    submitButton.classList.add("d-none");
+                    emptyCartAlert.classList.remove("d-none");
                 }
                 sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-                SetInCartText();
-            }, 500, form);
-            form.data('timer', timerId);
-        });
-        $(".cloneProductButton").click(function(){
-            let content = $(this).closest('.cartItem');
-            let itemPosition = content.data('pos');
-            let itemCost = content.data('cost');
-            content = content.clone(true, true);
-            let text = content.find('textarea.productTextInput');
-            let product = content.find('input.productIdInput');
-            let quantity = content.find('input.productQuantityInput');
-            let itemCount = shoppingCartItems.children().length;
-            content.removeData('id');
-            content.data('pos', itemCount);
-            content.data('cost', itemCost);
-            text.attr('name', text.attr('name').replace(itemPosition, itemCount));
-            product.attr('name', product.attr('name').replace(itemPosition, itemCount));
-            quantity.attr('name', quantity.attr('name').replace(itemPosition, itemCount));
-            shoppingCartItems.append(content);
-            SetInCartText();
-            $(window).on('beforeunload', () => {
-                return confirm('Клонированные товары будут потеряны. Покинуть страницу?');
+                SetInCartText(shoppingCart);
             });
         });
-        $("#shoppingCartForm").submit(()=>{
-            $(window).off('beforeunload');
-            return true;
-        });
-        SetInCartText();
+
     });
 
 </script>

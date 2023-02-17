@@ -60,10 +60,10 @@ def ShopProducts(cat_id, vendor_id):
     )
 
 
-@bp.route("/shop/cart", methods=["GET", "POST"])
+@bp.route("/shop/order", methods=["GET", "POST"])
 @login_required
 @role_required([UserRoles.initiative, UserRoles.purchaser, UserRoles.admin])
-def ShopCart():
+def ShopOrder():
     form = CreateOrderForm()
     if form.submit.data:
         if form.validate_on_submit():
@@ -103,8 +103,18 @@ def ShopCart():
                 }
                 if cart_item["text"] is not None:
                     order_product["selectedOptions"].append(
-                        {"value": cart_item["text"]}
+                        {"value": cart_item["text"], "name": "Комментарий"}
                     )
+                if cart_item["options"] is not None:
+                    for opt, values in product.options.items():
+                        if (
+                            opt in cart_item["options"]
+                            and cart_item["options"][opt] in values
+                        ):
+                            order_product["selectedOptions"].append(
+                                {"value": cart_item["options"][opt], "name": opt}
+                            )
+
                 order_products.append(order_product)
             order_number = GetNewOrderNumber()
             now = datetime.now(tz=timezone.utc)
@@ -133,5 +143,7 @@ def ShopCart():
             SendEmailNotification("new", order)
             return redirect(url_for("main.ShowIndex"))
         else:
-            flash("Что-то пошло не так.")
+            for fieldName, errorMessages in form.errors.items():
+                for err in errorMessages:
+                    flash(err)
     return render_template("shop_cart.html", form=form)

@@ -500,7 +500,8 @@ class CartItemForm(Form):
         validators=[InputRequired(message="Невозможное значение количества.")],
         render_kw={"type": "number", "step": 1, "min": 0},
     )
-    text = TextAreaField("Текст баннера")
+    text = TextAreaField("Текст")
+    options = JSONField("Опции")
 
     def validate_quantity(self, quantity):
         if quantity.data < 0:

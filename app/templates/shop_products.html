@@ -34,11 +34,11 @@
     <div class="row">
         <div class="col overflow-hidden">
             <strong>НОВАЯ ЗАЯВКА</strong><br />
-            <a class="text-muted text-decoration-none" href="{{url_for('main.ShopCategories')}}"
-                id="siteProjectSelect">Выбор проекта и объекта</a>
+            <a class="text-muted text-decoration-none siteProjectSelect" href="{{url_for('main.ShopCategories')}}">Выбор
+                проекта и объекта</a>
         </div>
         <div class="col-auto text-end overflow-hidden">
-            <a class="text-muted" href="{{url_for('main.ShopCart')}}">
+            <a class="text-muted" href="{{url_for('main.ShopOrder')}}">
                 <i class="bi bi-cart fs-4"></i><br />
                 <small class="text-muted" id="inCartItems"></small>
             </a>
@@ -74,7 +74,7 @@
                 <strong>{{ '{:,.2f}'.format(product.price) }}</strong> ₽/{{ product.measurement }}
             </div>
             <div class="col overflow-hidden pt-sm-3 mb-1">
-                <input disabled type="number" class="form-control" aria-label="Количество">
+                <input readonly type="number" class="form-control" aria-label="Количество">
             </div>
         </div>
         <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1" data-id="{{product.id}}"
@@ -161,47 +161,54 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/shoppingCart.js') }}"></script>
 <script>
-    $(document).ready(function () {
+    document.addEventListener("DOMContentLoaded", function () {
 
-        var shoppingCart = SyncShoppingCart(shoppingCart);
+        var shoppingCart = GetShoppingCart();
+        PopulateProductQuantities(shoppingCart);
+        SetInCartText(shoppingCart);
+        CheckProjectAndSiteSet("{{ url_for('main.ShopCategories') }}");
 
-        let project_id = sessionStorage.getItem("project_id");
-        let site_id = sessionStorage.getItem("site_id");
-        let site_name = sessionStorage.getItem("site_name");
-        let project_name = sessionStorage.getItem("project_name");
-        if (!project_id || !site_id || !project_name || !site_name)
-            window.location = "{{url_for('main.ShopCategories')}}";
-
-        $("#siteProjectSelect").text(project_name + ", " + site_name);
-
-        $("#siteProjectSelect").click(function () {
-            sessionStorage.removeItem("project_id");
-            sessionStorage.removeItem("project_name");
-            sessionStorage.removeItem("site_id");
-            sessionStorage.removeItem("site_name");
-        });
-
-        $(".addToCart").on("click", function () {
-            let form = $(this).closest('.modal');
-            shoppingCart = AddToCart(form, shoppingCart);
-        });
-
-        $("#productFilter").on("keyup", function () {
-            let value = $(this).val().toLowerCase();
-            $("#productList .row").filter(function () {
-                let show = $(this).text().toLowerCase().indexOf(value) > -1;
-                $(this).toggle(show);
+        const addToCartButtons = document.querySelectorAll(".addToCart");
+        addToCartButtons.forEach(function (addToCartButton) {
+            addToCartButton.addEventListener("click", function (event) {
+                const form = event.target.closest('.modal');
+                shoppingCart = AddToCart(form, shoppingCart);
+                SetInCartText(shoppingCart);
             });
         });
 
-        $(".selectable").click(function (event) {
-            let productId = $(this).data("id");
-            let modalElement = document.getElementById("descriptionModal" + productId);
-            let descriptionModal = bootstrap.Modal.getInstance(modalElement);
-            if (!descriptionModal)
-                descriptionModal = new bootstrap.Modal(modalElement, {});
-            SyncProductModal($(modalElement), shoppingCart);
-            descriptionModal.show();
+        const productFilter = document.querySelector("#productFilter");
+        const productList = document.querySelector("#productList");
+
+        productFilter.addEventListener("keyup", function () {
+            const filterValue = this.value.toLowerCase();
+            const productRows = productList.querySelectorAll(".row");
+
+            productRows.forEach(function (row) {
+                const rowText = row.textContent.toLowerCase();
+                const showRow = rowText.indexOf(filterValue) > -1;
+                row.style.display = showRow ? "flex" : "none";
+            });
+        });
+
+        const selectableElements = document.querySelectorAll(".selectable");
+
+        selectableElements.forEach(function (selectable) {
+            selectable.addEventListener("click", function (event) {
+                const productId = Number(selectable.getAttribute("data-id"));
+                const modalElement = document.getElementById("descriptionModal" + productId);
+                let descriptionModal = bootstrap.Modal.getInstance(modalElement);
+                if (!descriptionModal) {
+                    descriptionModal = new bootstrap.Modal(modalElement, {});
+                }
+                let item = shoppingCart.filter(Boolean).find(function (obj) {
+                    return obj.id === productId;
+                });
+                if (item) {
+                    SyncProductModal(modalElement, item, false, true);
+                }
+                descriptionModal.show();
+            });
         });
     });
 </script>

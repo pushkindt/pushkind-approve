@@ -1,111 +1,219 @@
-function productOptionsToJson(form) {
-    let formData = {};
-    form.find('select').each(function () {
-        let selected = $(this).find(':selected');
-        let name = $(this).data('name');
-        if (!selected.attr('disabled')) {
-            formData[name] = selected.val();
-        }
-    });
-    return formData;
-}
-
-function SetInCartText(shoppingCart) {
-    let numItems = shoppingCart.length;
-    if (numItems > 0) {
-        let totalPrice = shoppingCart.reduce((a, b) => a + (b["price"] || 0) * (b["quantity"] || 0), 0);
-        $("#inCartItems").text(numItems + " позиции на сумму " + totalPrice.toFixed(2));
-    }
-    else
-        $("#inCartItems").text("");
-}
-
-function UpdateProductQuantity(item) {
-    let input = $("#product" + item["id"] + " input");
-    if (input) {
-        input.val(item["quantity"]);
-        input.addClass("border-success");
-    }
-}
-
-function SyncShoppingCart() {
-    shoppingCart = sessionStorage.getItem("shoppingCart");
-    if (!shoppingCart) {
+function GetShoppingCart() {
+    let shoppingCart = JSON.parse(sessionStorage.getItem("shoppingCart") ?? "[]");
+    if (!Array.isArray(shoppingCart)) {
+        console.error("Invalid shopping cart data:", shoppingCart);
         shoppingCart = [];
-        sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
     } else {
-        try {
-            shoppingCart = JSON.parse(shoppingCart);
-            $(".productQuantity").val(null);
-            $(".productQuantity").removeClass("border-success");
-            shoppingCart.forEach(UpdateProductQuantity);
-        } catch (e) {
-            console.log(e);
+        if (shoppingCart.filter(Boolean).length == 0)
             shoppingCart = [];
-            sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
-        }
     }
-    SetInCartText(shoppingCart);
+    sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
     return shoppingCart;
 }
 
-function SyncProductModal(form, shoppingCart) {
-    let productId = Number(form.data("id"));
 
-    let cartItem = shoppingCart.find((obj) => {
-        return obj["id"] === productId;
-    });
-    if (!cartItem)
+function SetInCartText(shoppingCart) {
+    const filteredCart = shoppingCart.filter(Boolean);
+    const numItems = filteredCart.length;
+    const inCartItems = document.getElementById("inCartItems");
+    if (numItems > 0) {
+        const totalPrice = filteredCart.reduce((a, b) => a + (b["price"] || 0) * (b["quantity"] || 0), 0);
+        inCartItems.textContent = `${numItems} позиции на сумму ${totalPrice.toFixed(2)}`;
+    } else {
+        inCartItems.textContent = "";
+    }
+}
+
+
+function PopulateProductQuantities(shoppingCart) {
+    for (let i = shoppingCart.length - 1; i >= 0; i--) {
+        const item = shoppingCart[i];
+        if (item) {
+            const input = document.querySelector(`#product${item["id"]} input`);
+            if (input) {
+                input.value = item.quantity;
+                input.classList.add("border-success");
+            }
+        }
+    }
+}
+
+function PopulateProduct(item, index) {
+    if (!item) {
         return;
-    let quantityInput = form.find("input");
-    quantityInput.val(cartItem["quantity"]);
-    let textInput = form.find("textarea");
-    textInput.val(cartItem["text"]);
-    let options = Object.keys(cartItem['options']);
-    options.forEach((option) => {
-        let select = form.find('select[data-name="' + option + '"]');
-        select.val(cartItem['options'][option]).change()
-    });
+    }
+    const content = document.querySelector('#cartItemTemplate').cloneNode(true);
+    const sku = content.querySelector('#productSkuTemplate');
+    const name = content.querySelector('#productNameTemplate');
+    const text = content.querySelector('#productTextTemplate');
+    const image = content.querySelector('#productImageTemplate');
+    const vendor = content.querySelector('#productVendorTemplate');
+    const price = content.querySelector('#productPriceTemplate');
+    const product = content.querySelector('#productIdTemplate');
+    const quantity = content.querySelector('#productQuantityTemplate');
+    const measurement = content.querySelector('#productMeasurementTemplate');
+    const options = content.querySelector('#productOptionsTemplate');
+    const optionsValues = content.querySelector('#productOptionsValuesTemplate');
+    const textValue = content.querySelector('#productTextValueTemplate');
+
+    content.removeAttribute('id');
+    sku.removeAttribute('id');
+    name.removeAttribute('id');
+    text.removeAttribute('id');
+    image.removeAttribute('id');
+    vendor.removeAttribute('id');
+    price.removeAttribute('id');
+    product.removeAttribute('id');
+    quantity.removeAttribute('id');
+    measurement.removeAttribute('id');
+    options.removeAttribute('id');
+    optionsValues.removeAttribute('id');
+    textValue.removeAttribute('id');
+
+    content.dataset.id = item.id;
+    content.dataset.pos = index;
+    content.dataset.cost = Number(item.price) * Number(item.quantity);
+
+    sku.textContent = item.sku;
+    name.textContent = item.name;
+    if (item.text) {
+        text.value = item.text;
+        textValue.textContent = item.text;
+        let parentRow = textValue.parentNode;
+        while (parentRow && !parentRow.classList.contains('row')) {
+            parentRow = parentRow.parentNode;
+        }
+        if (parentRow) {
+            parentRow.classList.remove('d-none');
+        }
+    }
+    if (item.image) {
+        image.setAttribute('src', item.image);
+    }
+    vendor.textContent = item.vendor;
+    price.textContent = item.price.toFixed(2);
+    product.value = item.id;
+    quantity.value = item.quantity;
+    measurement.textContent = item.measurement;
+    if (item.options) {
+        options.value = JSON.stringify(item.options);
+        const optionsKeys = Object.keys(item.options);
+        const optionsValuesArr = optionsKeys.map(key => `${key}: <strong>${item.options[key]}</strong>`);
+        optionsValues.innerHTML = optionsValuesArr.join(', ');
+        optionsValues.closest('.row').classList.remove('d-none')
+    }
+    text.setAttribute('name', text.getAttribute('name').replace('_', index));
+    product.setAttribute('name', product.getAttribute('name').replace('_', index));
+    quantity.setAttribute('name', quantity.getAttribute('name').replace('_', index));
+    options.setAttribute('name', options.getAttribute('name').replace('_', index));
+    document.querySelector('#shoppingCartItems').appendChild(content);
+}
+
+function productOptionsToJson(form) {
+    let formData = {};
+    let selectElements = form.querySelectorAll('select');
+    for (let i = 0; i < selectElements.length; i++) {
+        let selected = selectElements[i].querySelector('option:checked');
+        let name = selectElements[i].dataset.name;
+        if (!selected.disabled) {
+            formData[name] = selected.value;
+        }
+    }
+    return formData;
 }
 
 function AddToCart(form, shoppingCart) {
-    let productId = Number(form.data("id"));
-    let itemName = form.data("name");
-    let itemVendor = form.data("vendor");
-    let itemImage = form.data("image");
-    let itemSku = form.data("sku");
-    let itemPrice = Number(form.data("price"));
-    let quantityInput = form.find("input");
-    let itemQuantity = Number(quantityInput.val());
-    let itemText = form.find("textarea").val();
-    let itemMeasurement = form.data("measurement");
-    let itemOptions = productOptionsToJson(form);
+    const productId = Number(form.getAttribute("data-id"));
+    const itemName = form.getAttribute("data-name");
+    const itemVendor = form.getAttribute("data-vendor");
+    const itemImage = form.getAttribute("data-image");
+    const itemSku = form.getAttribute("data-sku");
+    const itemPrice = Number(form.getAttribute("data-price"));
+    const quantityInput = form.querySelector("input");
+    const itemQuantity = Number(quantityInput.value);
+    const itemText = form.querySelector("textarea").value;
+    const itemMeasurement = form.getAttribute("data-measurement");
+    const itemOptions = productOptionsToJson(form);
+
+    let productQuantityInput = document.querySelector(`#product${productId} input`);
+
     if (itemQuantity > 0) {
-        let cartItem = shoppingCart.find((obj) => {
-            return obj["id"] === productId;
-        });
-        if (!cartItem) {
-            cartItem = {
+        let item = shoppingCart.filter(Boolean).find(obj => obj.id === productId);
+
+        if (!item) {
+            item = {
                 id: productId,
                 name: itemName,
                 sku: itemSku,
                 price: itemPrice,
                 vendor: itemVendor,
                 image: itemImage,
-                measurement: itemMeasurement,
+                measurement: itemMeasurement
             };
-            shoppingCart.push(cartItem);
+            shoppingCart.push(item);
         }
-        if (itemText)
-            cartItem["text"] = itemText;
-        if (itemOptions)
-            cartItem["options"] = itemOptions;
-        cartItem["quantity"] = itemQuantity;
+
+        if (itemText) {
+            item.text = itemText;
+        }
+
+        if (itemOptions) {
+            item.options = itemOptions;
+        }
+
+        item.quantity = itemQuantity;
+        productQuantityInput.value = itemQuantity;
+        productQuantityInput.classList.add("border-success");
     } else {
-        shoppingCart = shoppingCart.filter((obj) => {
-            return obj["id"] !== productId;
+        shoppingCart = shoppingCart.filter(obj => obj.id !== productId);
+        productQuantityInput.value = "";
+        productQuantityInput.classList.remove("border-success");
+    }
+
+    sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
+    return shoppingCart;
+}
+
+
+function SyncProductModal(form, item, setImage = false, setOptions = false) {
+
+    let quantityInput = form.querySelector("input");
+    quantityInput.value = item.quantity;
+
+    let textInput = form.querySelector("textarea");
+    textInput.value = item.text || '';
+
+    if (setOptions) {
+        let options = Object.keys(item.options);
+        options.forEach(function (option) {
+            let select = form.querySelector('select[data-name="' + option + '"]');
+            select.value = item.options[option];
+            select.dispatchEvent(new Event('change'));
         });
     }
-    sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
-    return SyncShoppingCart();
+
+    if (setImage) {
+        let image = form.querySelector('img');
+        if (item.image)
+            image.src = item.image;
+    }
+}
+
+function CheckProjectAndSiteSet(redirectUrl) {
+    const projectId = Number(sessionStorage.getItem("project_id"));
+    const siteId = Number(sessionStorage.getItem("site_id"));
+    const siteName = sessionStorage.getItem("site_name");
+    const projectName = sessionStorage.getItem("project_name");
+    if (!projectId || !siteId || !projectName || !siteName)
+        window.location = redirectUrl;
+
+    const siteProjectSelect = document.querySelector(".siteProjectSelect");
+    siteProjectSelect.textContent = `${projectName}, ${siteName}`;
+    siteProjectSelect.addEventListener("click", function () {
+        sessionStorage.removeItem("project_id");
+        sessionStorage.removeItem("project_name");
+        sessionStorage.removeItem("site_id");
+        sessionStorage.removeItem("site_name");
+    });
+    return [projectId, siteId, siteName, projectName];
 }
