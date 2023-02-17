@@ -6,7 +6,7 @@
 
 {% block content %}
 <script>
-    function CloneProduct() {
+    function CloneProduct(event) {
         event.preventDefault();
         event.stopPropagation();
         const content = event.target.closest('.cartItem');
@@ -19,7 +19,7 @@
             SetInCartText(shoppingCart);
         }
     }
-    function ShowDescriptionModal() {
+    function ShowDescriptionModal(event) {
         const productPos = Number(event.currentTarget.getAttribute("data-pos"));
         let modalElement = document.getElementById("descriptionModal");
         let descriptionModal = bootstrap.Modal.getInstance(modalElement);
@@ -65,9 +65,9 @@
     <div class="row">
         <div class="col">
             <strong>Проект:</strong>
-            <a href="{{url_for('main.ShopCategories')}}" id="projectSelect" class="siteProjectSelect">Не указан</a><br>
+            <a href="{{url_for('main.ShopCategories')}}" id="projectName" class="siteProjectSelect">Не указан</a><br>
             <strong>Объект:</strong>
-            <a href="{{url_for('main.ShopCategories')}}" id="siteSelect" class="siteProjectSelect">Не указан</a>
+            <a href="{{url_for('main.ShopCategories')}}" id="siteName" class="siteProjectSelect">Не указан</a>
         </div>
     </div>
     <div class="row">
@@ -153,7 +153,7 @@
 {% endblock %}
 
 {% block templates %}
-<div class="row rounded bg-white my-1 cartItem selectable" id="cartItemTemplate" onclick="ShowDescriptionModal()">
+<div class="row rounded bg-white my-1 cartItem selectable" id="cartItemTemplate" onclick="ShowDescriptionModal(event)">
     <div class="col-auto">
         <input required type="number" class="d-none" name="cart-_-product" hidden id="productIdTemplate">
         <input type="text" class="d-none" name="cart-_-text" hidden id="productTextTemplate">
@@ -178,7 +178,7 @@
         </div>
         <div class="row">
             <div class="col">
-                <a href="#" class="cloneProductButton" onclick="CloneProduct()">клонировать</a>
+                <a href="#" class="cloneProductButton" onclick="CloneProduct(event)">клонировать</a>
             </div>
         </div>
     </div>
@@ -205,10 +205,10 @@
         shoppingCart = GetShoppingCart();
         shoppingCart.forEach(PopulateProduct);
         SetInCartText(shoppingCart);
-        const [projectId, siteId, siteName, projectName] = CheckProjectAndSiteSet("{{ url_for('main.ShopCategories') }}");
+        const [projectId, siteId, siteName, projectName] = CheckProjectAndSiteSet(() => {
+            window.location = "{{ url_for('main.ShopCategories') }}";
+        });
 
-        document.querySelector("#projectSelect").textContent = projectName;
-        document.querySelector("#siteSelect").textContent = siteName;
         document.querySelector("#project_id").value = projectId;
         document.querySelector("#site_id").value = siteId;
 

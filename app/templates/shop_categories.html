@@ -26,14 +26,29 @@
 
     <div class="row">
         <div class="col overflow-hidden">
-            <strong>НОВАЯ ЗАЯВКА</strong><br>
-            <a class="text-muted text-decoration-none" href="#" id="siteProjectSelect">Выбор проекта и объекта</a>
+            <strong>НОВАЯ ЗАЯВКА</strong>
         </div>
         <div class="col-auto text-end overflow-hidden">
             <a class="text-muted" href="{{url_for('main.ShopOrder')}}">
                 <i class="bi bi-cart fs-4"></i><br>
                 <small class="text-muted" id="inCartItems"></small>
             </a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <strong>Проект:</strong>
+            <a href="#" id="projectName" class="siteProjectSelect">Не указан</a><br>
+            <strong>Объект:</strong>
+            <a href="#" id="siteName" class="siteProjectSelect">Не указан</a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <strong>Инициатор:</strong>
+            {% set user = current_user %}
+            {% include '_user.popover.html' %}
+            {{ user.name or user.email }}
         </div>
     </div>
 
@@ -135,102 +150,107 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/shoppingCart.js') }}"></script>
 <script>
-    $(document).ready(function () {
+    document.addEventListener("DOMContentLoaded", function () {
 
         var shoppingCart = GetShoppingCart();
         SetInCartText(shoppingCart);
 
-        var siteProjectModal = new bootstrap.Modal(document.getElementById('siteProjectModal'), { 'backdrop': 'static' });
+        let siteProjectModal = new bootstrap.Modal(document.getElementById('siteProjectModal'), { 'backdrop': 'static' });
 
-        var projects = [{% for project in projects %}{{ project | safe }}, {% endfor %}];
+        let projects = [{% for project in projects %}{{ project | safe }}, {% endfor %}];
 
-    var project_id = Number(sessionStorage.getItem('project_id'));
-    var site_id = Number(sessionStorage.getItem('site_id'));
-
-    var project = projects.find(obj => { return obj['id'] === project_id });
-    var site = undefined;
-    if (project) {
-        site = project['sites'].find(obj => { return obj['id'] === site_id });
-    }
-
-    if (!project || !site) {
-        sessionStorage.removeItem("project_id");
-        sessionStorage.removeItem("project_name");
-        sessionStorage.removeItem("site_id");
-        sessionStorage.removeItem("site_name");
-        siteProjectModal.show();
-    }
-    else
-        $("#siteProjectSelect").text(project["name"] + ', ' + site["name"])
-
-    $("#siteProjectSelect").click(function () {
+    CheckProjectAndSiteSet(() => {
         siteProjectModal.show();
     });
 
-    $("#projectSelect").change(function () {
-        project_id = Number($(this).val());
-        project = projects.find(obj => { return obj['id'] === project_id });
-        sessionStorage.setItem("project_id", project['id']);
-        sessionStorage.setItem("project_name", project['name']);
-        site = undefined;
-        site_id = undefined;
+
+    const projectSelect = document.getElementById("projectSelect");
+    const projectName = document.getElementById("projectName");
+    const siteName = document.getElementById("siteName");
+    const siteProjectSelect = document.getElementById("siteProjectSelect");
+    const siteSelect = document.getElementById("siteSelect");
+    const limits = document.getElementById("limits");
+    const limitAlert = document.getElementById("limitAlert");
+    const siteProjectDismiss = document.getElementById("siteProjectDismiss");
+
+    projectSelect.addEventListener("change", function () {
+        const id = Number(projectSelect.value);
+        const name = projectSelect.options[projectSelect.selectedIndex].text;
+        sessionStorage.setItem("project_id", id);
+        sessionStorage.setItem("project_name", name);
         sessionStorage.removeItem('site_id');
         sessionStorage.removeItem('site_name');
-        $("#siteProjectSelect").text("Выбор проекта и объекта")
-
-        $(this).removeClass("border-danger");
-        $("#siteProjectDismiss").prop("disabled", true);
-        $("#siteProjectDismiss").addClass("btn-secondary");
-        $("#siteProjectDismiss").removeClass("btn-primary");
-        let sitesList = $("#siteSelect");
-        sitesList.empty();
-        let defaultSite = $("<option>").text("Выберите объект...");
-        defaultSite.prop("disabled", true);
-        defaultSite.prop("selected", true);
-        sitesList.append(defaultSite);
-
+        projectName.textContent = name;
+        siteName.textContent = "Не указан";
+        projectSelect.classList.remove("border-danger");
+        siteProjectDismiss.disabled = true;
+        siteProjectDismiss.classList.add("btn-secondary");
+        siteProjectDismiss.classList.remove("btn-primary");
+        siteSelect.innerHTML = "";
+        let defaultSite = document.createElement("option");
+        defaultSite.textContent = "Выберите объект...";
+        defaultSite.disabled = true;
+        defaultSite.selected = true;
+        siteSelect.appendChild(defaultSite);
         let show_limit_alert = false;
-
-        for (j = 0; j < project["sites"].length; j++) {
-            let siteOption = $("<option>")
-            siteOption.text(project["sites"][j]["name"])
-            siteOption.val(project["sites"][j]["id"])
-            sitesList.append(siteOption);
+        const project = projects.find(obj => obj.id === id);
+        for (let j = 0; j < project.sites.length; j++) {
+            let siteOption = document.createElement("option");
+            siteOption.textContent = project.sites[j].name;
+            siteOption.value = project.sites[j].id;
+            siteSelect.appendChild(siteOption);
         }
-        $("#limits").removeClass("d-none");
-        $(".limit").filter(function () {
-            let show = $(this).data("project") == project["id"];
-            $(this).toggle(show);
+        limits.classList.remove("d-none");
+        const limitElements = document.querySelectorAll(".limit");
+        limitElements.forEach((element) => {
+            let show = element.dataset.project == id;
+            element.style.display = show ? "block" : "none";
             if (show)
-                show_limit_alert |= $(this).data("overlimit");
+                show_limit_alert |= element.dataset.overlimit;
         });
-        if ($(".limit:visible").length == 0)
-            $("#limits").addClass("d-none");
+        //if (!document.querySelector(".limit:visible")) 
         if (show_limit_alert)
-            $("#limitAlert").removeClass("d-none");
-        else
-            $("#limitAlert").addClass("d-none");
+            limitAlert.classList.remove("d-none");
+        else {
+            limitAlert.classList.add("d-none");
+            limits.classList.add("d-none");
+        }
     });
-    $("#siteSelect").change(function () {
-        site_id = Number($(this).val());
-        site = project['sites'].find(obj => { return obj['id'] === site_id });
-        sessionStorage.setItem("site_id", site['id']);
-        sessionStorage.setItem("site_name", site['name']);
-        $("#siteProjectSelect").text(project["name"] + ', ' + site["name"])
-        $(this).removeClass("border-danger");
-        $("#siteProjectDismiss").prop("disabled", false);
-        $("#siteProjectDismiss").removeClass("btn-secondary");
-        $("#siteProjectDismiss").addClass("btn-primary");
+
+
+    siteSelect.addEventListener("change", function () {
+        const id = Number(siteSelect.value);
+        const name = siteSelect.options[siteSelect.selectedIndex].text;
+        sessionStorage.setItem("site_id", id);
+        sessionStorage.setItem("site_name", name);
+        siteName.textContent = name;
+        siteSelect.classList.remove("border-danger");
+        siteProjectDismiss.disabled = false;
+        siteProjectDismiss.classList.remove("btn-secondary");
+        siteProjectDismiss.classList.add("btn-primary");
     });
-    $(".selectable").click(function (event) {
-        let categoryId = $(this).attr('data-id');
-        document.location.href = "{{ url_for('main.ShopProducts', cat_id=0) }}".replace("0", categoryId);
+
+    const selectables = document.querySelectorAll(".selectable");
+
+    selectables.forEach(function (selectable) {
+        selectable.addEventListener("click", function (event) {
+            const categoryId = selectable.getAttribute('data-id');
+            const url = "{{ url_for('main.ShopProducts', cat_id=0) }}".replace("0", categoryId);
+            window.location.href = url;
+        });
     });
-    $("#categoryFilter").on("keyup", function () {
-        let value = $(this).val().toLowerCase();
-        $("#categoryList .card").filter(function () {
-            let show = $(this).text().toLowerCase().indexOf(value) > -1;
-            $(this).toggle(show);
+
+
+    const categoryFilter = document.getElementById("categoryFilter");
+    const categoryList = document.getElementById("categoryList");
+
+    categoryFilter.addEventListener("input", function (event) {
+        const value = event.target.value.toLowerCase();
+        const cards = categoryList.querySelectorAll(".card");
+        cards.forEach(function (card) {
+            const cardText = card.textContent.toLowerCase();
+            const show = cardText.indexOf(value) > -1;
+            card.style.display = show ? "flex" : "none";
         });
     });
     });

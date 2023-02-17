@@ -33,9 +33,7 @@
 <div class="container">
     <div class="row">
         <div class="col overflow-hidden">
-            <strong>НОВАЯ ЗАЯВКА</strong><br />
-            <a class="text-muted text-decoration-none siteProjectSelect" href="{{url_for('main.ShopCategories')}}">Выбор
-                проекта и объекта</a>
+            <strong>НОВАЯ ЗАЯВКА</strong>
         </div>
         <div class="col-auto text-end overflow-hidden">
             <a class="text-muted" href="{{url_for('main.ShopOrder')}}">
@@ -44,7 +42,22 @@
             </a>
         </div>
     </div>
-
+    <div class="row">
+        <div class="col">
+            <strong>Проект:</strong>
+            <a href="{{url_for('main.ShopCategories')}}" id="projectName" class="siteProjectSelect">Не указан</a><br>
+            <strong>Объект:</strong>
+            <a href="{{url_for('main.ShopCategories')}}" id="siteName" class="siteProjectSelect">Не указан</a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <strong>Инициатор:</strong>
+            {% set user = current_user %}
+            {% include '_user.popover.html' %}
+            {{ user.name or user.email }}
+        </div>
+    </div>
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
@@ -166,7 +179,9 @@
         var shoppingCart = GetShoppingCart();
         PopulateProductQuantities(shoppingCart);
         SetInCartText(shoppingCart);
-        CheckProjectAndSiteSet("{{ url_for('main.ShopCategories') }}");
+        CheckProjectAndSiteSet(() => {
+            window.location = "{{ url_for('main.ShopCategories') }}";
+        });
 
         const addToCartButtons = document.querySelectorAll(".addToCart");
         addToCartButtons.forEach(function (addToCartButton) {

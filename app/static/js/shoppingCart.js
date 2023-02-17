@@ -4,8 +4,7 @@ function GetShoppingCart() {
         console.error("Invalid shopping cart data:", shoppingCart);
         shoppingCart = [];
     } else {
-        if (shoppingCart.filter(Boolean).length == 0)
-            shoppingCart = [];
+        shoppingCart = shoppingCart.filter(Boolean);
     }
     sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
     return shoppingCart;
@@ -26,12 +25,14 @@ function SetInCartText(shoppingCart) {
 
 
 function PopulateProductQuantities(shoppingCart) {
-    for (let i = shoppingCart.length - 1; i >= 0; i--) {
+    const numElements = shoppingCart.length - 1;
+    for (let i = numElements; i >= 0; i--) {
         const item = shoppingCart[i];
         if (item) {
             const input = document.querySelector(`#product${item["id"]} input`);
             if (input) {
-                input.value = item.quantity;
+                const prevValue = Number(input.value);
+                input.value = prevValue + item.quantity;
                 input.classList.add("border-success");
             }
         }
@@ -112,7 +113,8 @@ function PopulateProduct(item, index) {
 function productOptionsToJson(form) {
     let formData = {};
     let selectElements = form.querySelectorAll('select');
-    for (let i = 0; i < selectElements.length; i++) {
+    const numElements = selectElements.length;
+    for (let i = 0; i < numElements; i++) {
         let selected = selectElements[i].querySelector('option:checked');
         let name = selectElements[i].dataset.name;
         if (!selected.disabled) {
@@ -162,10 +164,19 @@ function AddToCart(form, shoppingCart) {
         }
 
         item.quantity = itemQuantity;
-        productQuantityInput.value = itemQuantity;
-        productQuantityInput.classList.add("border-success");
     } else {
         shoppingCart = shoppingCart.filter(obj => obj.id !== productId);
+    }
+
+    const totalQuantity = shoppingCart.reduce(function (acc, i) {
+        if (i.id == productId)
+            acc += i.quantity;
+        return acc;
+    }, 0);
+    if (totalQuantity > 0) {
+        productQuantityInput.value = totalQuantity;
+        productQuantityInput.classList.add("border-success");
+    } else {
         productQuantityInput.value = "";
         productQuantityInput.classList.remove("border-success");
     }
@@ -199,21 +210,24 @@ function SyncProductModal(form, item, setImage = false, setOptions = false) {
     }
 }
 
-function CheckProjectAndSiteSet(redirectUrl) {
+function CheckProjectAndSiteSet(selectProjectSiteCallback) {
     const projectId = Number(sessionStorage.getItem("project_id"));
     const siteId = Number(sessionStorage.getItem("site_id"));
     const siteName = sessionStorage.getItem("site_name");
     const projectName = sessionStorage.getItem("project_name");
-    if (!projectId || !siteId || !projectName || !siteName)
-        window.location = redirectUrl;
-
     const siteProjectSelect = document.querySelector(".siteProjectSelect");
-    siteProjectSelect.textContent = `${projectName}, ${siteName}`;
+    if (!projectId || !siteId || !siteName || !projectName)
+        selectProjectSiteCallback();
+    else {
+        document.querySelector("#projectName").textContent = projectName;
+        document.querySelector("#siteName").textContent = siteName;
+    }
     siteProjectSelect.addEventListener("click", function () {
         sessionStorage.removeItem("project_id");
         sessionStorage.removeItem("project_name");
         sessionStorage.removeItem("site_id");
         sessionStorage.removeItem("site_name");
+        selectProjectSiteCallback();
     });
     return [projectId, siteId, siteName, projectName];
 }
