@@ -101,7 +101,7 @@ def ShopOrder():
                     "quantity": cart_item["quantity"],
                     "selectedOptions": [{"value": product.measurement}],
                 }
-                if cart_item["text"] is not None:
+                if cart_item["text"]:
                     order_product["selectedOptions"].append(
                         {"value": cart_item["text"], "name": "Комментарий"}
                     )

@@ -137,7 +137,7 @@
                             {% for option in rows %}
                             <div class="col-sm-4 my-1">
                                 <select class="form-select" data-name="{{option}}">
-                                    <option selected disabled>{{ option }}</option>
+                                    <option selected disabled value="0">{{ option }}</option>
                                     {% for value in product.options[option]%}
                                     <option value="{{value}}">{{value}}</option>
                                     {% endfor %}
@@ -157,10 +157,20 @@
                                     aria-label="Количество">
                             </div>
                         </div>
+                        <div class="row justify-content-center my-1">
+                            <div class="col-auto">
+                                <nav>
+                                    <ul class="pagination">
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary addToCart"
                             data-bs-dismiss="modal">Сохранить</button>
+                        <button type="button" class="btn btn-primary addToCart"
+                            data-bs-dismiss="modal">Клонировать</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                     </div>
                 </div>
@@ -174,9 +184,23 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/shoppingCart.js') }}"></script>
 <script>
+    var shoppingCart = GetShoppingCart();
+
+    function CartItemPageClick(event) {
+        event.preventDefault();
+        let currentPage = event.target;
+        const form = currentPage.closest('.modal');
+        let itemPos = Number(currentPage.getAttribute("data-pos"));
+        let item = shoppingCart[itemPos];
+        SyncProductModal(form, item, false, true);
+        let pages = form.querySelectorAll(".page-item");
+        pages.forEach((item) => { item.classList.remove("active") });
+        currentPage.parentElement.classList.add("active");
+        let saveToCartButton = form.querySelector("button.addToCart");
+        saveToCartButton.dataset.pos = itemPos;
+    }
     document.addEventListener("DOMContentLoaded", function () {
 
-        var shoppingCart = GetShoppingCart();
         PopulateProductQuantities(shoppingCart);
         SetInCartText(shoppingCart);
         CheckProjectAndSiteSet(() => {
@@ -187,7 +211,8 @@
         addToCartButtons.forEach(function (addToCartButton) {
             addToCartButton.addEventListener("click", function (event) {
                 const form = event.target.closest('.modal');
-                shoppingCart = AddToCart(form, shoppingCart);
+                const itemPos = event.target.getAttribute("data-pos");
+                shoppingCart = AddToCart(form, shoppingCart, itemPos);
                 SetInCartText(shoppingCart);
             });
         });
@@ -216,12 +241,34 @@
                 if (!descriptionModal) {
                     descriptionModal = new bootstrap.Modal(modalElement, {});
                 }
-                let item = shoppingCart.filter(Boolean).find(function (obj) {
+                let items = shoppingCart.filter(Boolean).filter(function (obj) {
                     return obj.id === productId;
                 });
-                if (item) {
-                    SyncProductModal(modalElement, item, false, true);
+                let addToCartButton = modalElement.querySelectorAll("button.addToCart")[1];
+                if (items.length > 0) {
+                    addToCartButton.classList.remove("d-none");
+                    let content = "";
+                    let page = 1;
+                    let currentPos = null;
+                    shoppingCart.forEach((item, index) => {
+                        if (item && item.id === productId) {
+                            if (page == 1) {
+                                currentPos = index;
+                                content += `<li class="page-item cartItemPage active"><a class="page-link" href="#" data-pos="${index}" onclick="CartItemPageClick(event)">${page}</a></li>`;
+                            }
+                            else
+                                content += `<li class="page-item cartItemPage"><a class="page-link" href="#" data-pos="${index}" onclick="CartItemPageClick(event)">${page}</a></li>`;
+                            page++;
+                        }
+                    });
+                    let pagination = modalElement.querySelector('.pagination');
+                    pagination.innerHTML = content;
+                    let saveToCartButton = modalElement.querySelector("button.addToCart");
+                    saveToCartButton.dataset.pos = currentPos;
+                    SyncProductModal(modalElement, items[0], false, true);
                 }
+                else
+                    addToCartButton.classList.add("d-none");
                 descriptionModal.show();
             });
         });

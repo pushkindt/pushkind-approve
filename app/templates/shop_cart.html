@@ -199,10 +199,9 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/shoppingCart.js') }}"></script>
 <script>
-    var shoppingCart = [];
+    var shoppingCart = GetShoppingCart();
     document.addEventListener("DOMContentLoaded", function () {
 
-        shoppingCart = GetShoppingCart();
         shoppingCart.forEach(PopulateProduct);
         SetInCartText(shoppingCart);
         const [projectId, siteId, siteName, projectName] = CheckProjectAndSiteSet(() => {

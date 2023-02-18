@@ -124,7 +124,7 @@ function productOptionsToJson(form) {
     return formData;
 }
 
-function AddToCart(form, shoppingCart) {
+function AddToCart(form, shoppingCart, itemPos = null) {
     const productId = Number(form.getAttribute("data-id"));
     const itemName = form.getAttribute("data-name");
     const itemVendor = form.getAttribute("data-vendor");
@@ -137,12 +137,11 @@ function AddToCart(form, shoppingCart) {
     const itemMeasurement = form.getAttribute("data-measurement");
     const itemOptions = productOptionsToJson(form);
 
-    let productQuantityInput = document.querySelector(`#product${productId} input`);
-
     if (itemQuantity > 0) {
-        let item = shoppingCart.filter(Boolean).find(obj => obj.id === productId);
-
-        if (!item) {
+        let item = {};
+        if (itemPos)
+            item = shoppingCart[itemPos];
+        else {
             item = {
                 id: productId,
                 name: itemName,
@@ -165,9 +164,11 @@ function AddToCart(form, shoppingCart) {
 
         item.quantity = itemQuantity;
     } else {
-        shoppingCart = shoppingCart.filter(obj => obj.id !== productId);
+        if (itemPos)
+            shoppingCart.splice(itemPos, 1);
     }
 
+    let productQuantityInput = document.querySelector(`#product${productId} input`);
     const totalQuantity = shoppingCart.reduce(function (acc, i) {
         if (i.id == productId)
             acc += i.quantity;
@@ -195,10 +196,12 @@ function SyncProductModal(form, item, setImage = false, setOptions = false) {
     textInput.value = item.text || '';
 
     if (setOptions) {
-        let options = Object.keys(item.options);
-        options.forEach(function (option) {
-            let select = form.querySelector('select[data-name="' + option + '"]');
-            select.value = item.options[option];
+        form.querySelectorAll('select').forEach((select) => {
+            const name = select.getAttribute("data-name");
+            if (name in item.options)
+                select.value = item.options[name];
+            else
+                select.value = 0;
             select.dispatchEvent(new Event('change'));
         });
     }
