@@ -87,7 +87,10 @@
                 <strong>{{ '{:,.2f}'.format(product.price) }}</strong> ₽/{{ product.measurement }}
             </div>
             <div class="col overflow-hidden pt-sm-3 mb-1">
-                <input readonly type="number" class="form-control" aria-label="Количество">
+                <div class="input-group mb-3 has-validation">
+                    <input readonly type="number" class="form-control" aria-label="Количество">
+                    <span class="input-group-text d-none"><i class="bi bi-plus"></i></span>
+                </div>
             </div>
         </div>
         <div class="modal fade" id="descriptionModal{{product.id}}" tabindex="-1" data-id="{{product.id}}"
@@ -154,7 +157,7 @@
                             </div>
                             <div class="col-4">
                                 <input placeholder="Количество" type="number" class="form-control" min="0" step="1"
-                                    aria-label="Количество">
+                                    aria-label="Количество" value="0">
                             </div>
                         </div>
                         <div class="row justify-content-center my-1">
@@ -245,6 +248,8 @@
                     return obj.id === productId;
                 });
                 let addToCartButton = modalElement.querySelectorAll("button.addToCart")[1];
+                let pagination = modalElement.querySelector('.pagination');
+                let saveToCartButton = modalElement.querySelector("button.addToCart");
                 if (items.length > 0) {
                     addToCartButton.classList.remove("d-none");
                     let content = "";
@@ -261,14 +266,15 @@
                             page++;
                         }
                     });
-                    let pagination = modalElement.querySelector('.pagination');
                     pagination.innerHTML = content;
-                    let saveToCartButton = modalElement.querySelector("button.addToCart");
                     saveToCartButton.dataset.pos = currentPos;
                     SyncProductModal(modalElement, items[0], false, true);
                 }
-                else
+                else {
                     addToCartButton.classList.add("d-none");
+                    pagination.innerHTML = "";
+                    saveToCartButton.removeAttribute("data-pos");
+                }
                 descriptionModal.show();
             });
         });

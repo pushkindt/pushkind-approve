@@ -30,10 +30,12 @@ function PopulateProductQuantities(shoppingCart) {
         const item = shoppingCart[i];
         if (item) {
             const input = document.querySelector(`#product${item["id"]} input`);
+            const plusSign = document.querySelector(`#product${item["id"]} input+span`);
             if (input) {
                 const prevValue = Number(input.value);
                 input.value = prevValue + item.quantity;
                 input.classList.add("border-success");
+                plusSign.classList.remove("d-none");
             }
         }
     }
@@ -174,12 +176,15 @@ function AddToCart(form, shoppingCart, itemPos = null) {
             acc += i.quantity;
         return acc;
     }, 0);
+    const plusSign = document.querySelector(`#product${productId} input+span`);
     if (totalQuantity > 0) {
         productQuantityInput.value = totalQuantity;
         productQuantityInput.classList.add("border-success");
+        plusSign.classList.remove("d-none");
     } else {
         productQuantityInput.value = "";
         productQuantityInput.classList.remove("border-success");
+        plusSign.classList.add("d-none");
     }
 
     sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
