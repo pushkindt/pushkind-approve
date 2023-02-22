@@ -152,12 +152,11 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
 
-        var shoppingCart = GetShoppingCart();
-        SetInCartText(shoppingCart);
+        SetInCartText();
 
         let siteProjectModal = new bootstrap.Modal(document.getElementById('siteProjectModal'), { 'backdrop': 'static' });
 
-        let projects = [{% for project in projects %}{{ project | safe }}, {% endfor %}];
+        const projects = [{% for project in projects %}{{ project | safe }}, {% endfor %}];
 
     CheckProjectAndSiteSet(() => {
         siteProjectModal.show();
@@ -208,7 +207,6 @@
             if (show)
                 show_limit_alert |= element.dataset.overlimit;
         });
-        //if (!document.querySelector(".limit:visible")) 
         if (show_limit_alert)
             limitAlert.classList.remove("d-none");
         else {
@@ -234,7 +232,7 @@
 
     selectables.forEach(function (selectable) {
         selectable.addEventListener("click", function (event) {
-            const categoryId = selectable.getAttribute('data-id');
+            const categoryId = selectable.dataset.id;
             const url = "{{ url_for('main.ShopProducts', cat_id=0) }}".replace("0", categoryId);
             window.location.href = url;
         });

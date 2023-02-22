@@ -1,22 +1,24 @@
 function GetShoppingCart() {
-    let shoppingCart = JSON.parse(sessionStorage.getItem("shoppingCart") ?? "[]");
+    let shoppingCart = JSON.parse(sessionStorage.getItem("shoppingCart") || "[]");
     if (!Array.isArray(shoppingCart)) {
         console.error("Invalid shopping cart data:", shoppingCart);
-        shoppingCart = [];
-    } else {
-        shoppingCart = shoppingCart.filter(Boolean);
+        return [];
     }
+    shoppingCart = shoppingCart.filter(Boolean);
     sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
     return shoppingCart;
 }
 
 
-function SetInCartText(shoppingCart) {
-    const filteredCart = shoppingCart.filter(Boolean);
-    const numItems = filteredCart.length;
+function SetInCartText(shoppingCart = null) {
+    if (!shoppingCart)
+        shoppingCart = GetShoppingCart();
+    else
+        shoppingCart = shoppingCart.filter(Boolean);
+    const numItems = shoppingCart.length;
     const inCartItems = document.getElementById("inCartItems");
     if (numItems > 0) {
-        const totalPrice = filteredCart.reduce((a, b) => a + (b["price"] || 0) * (b["quantity"] || 0), 0);
+        const totalPrice = shoppingCart.reduce((total, item) => total + (item.price || 0) * (item.quantity || 0), 0);
         inCartItems.textContent = `${numItems} позиции на сумму ${totalPrice.toFixed(2)}`;
     } else {
         inCartItems.textContent = "";
@@ -24,22 +26,42 @@ function SetInCartText(shoppingCart) {
 }
 
 
-function PopulateProductQuantities(shoppingCart) {
-    const numElements = shoppingCart.length - 1;
-    for (let i = numElements; i >= 0; i--) {
-        const item = shoppingCart[i];
-        if (item) {
-            const input = document.querySelector(`#product${item["id"]} input`);
-            const plusSign = document.querySelector(`#product${item["id"]} input+span`);
-            if (input) {
-                const prevValue = Number(input.value);
-                input.value = prevValue + item.quantity;
-                input.classList.add("border-success");
-                plusSign.classList.remove("d-none");
-            }
+function PopulateProductQuantities() {
+    const cartItems = GetShoppingCart();
+    for (const item of cartItems) {
+        const productId = item.id;
+        const input = document.querySelector(`#product${productId} input`);
+        const plusSign = document.querySelector(`#product${productId} input+span`);
+
+        if (input) {
+            const prevValue = Number(input.value);
+            input.value = prevValue + item.quantity;
+            input.classList.add('border-success');
+            plusSign.classList.remove('d-none');
         }
     }
 }
+
+
+function HandleCartItemPageClick(event) {
+    event.preventDefault();
+
+    const shoppingCart = GetShoppingCart();
+    const currentPage = event.target;
+    const modal = currentPage.closest('.modal');
+    const itemPos = Number(currentPage.dataset.pos);
+    const item = shoppingCart[itemPos];
+    const pages = modal.querySelectorAll('.page-item');
+    const saveToCartButton = modal.querySelector('button.addToCart');
+
+    SyncProductModal(modal, item, false, true);
+
+    pages.forEach((page) => page.classList.remove('active'));
+    currentPage.parentElement.classList.add('active');
+
+    saveToCartButton.dataset.pos = itemPos;
+}
+
 
 function PopulateProduct(item, index) {
     if (!item) {
@@ -126,17 +148,13 @@ function productOptionsToJson(form) {
     return formData;
 }
 
-function AddToCart(form, shoppingCart, itemPos = null) {
-    const productId = Number(form.getAttribute("data-id"));
-    const itemName = form.getAttribute("data-name");
-    const itemVendor = form.getAttribute("data-vendor");
-    const itemImage = form.getAttribute("data-image");
-    const itemSku = form.getAttribute("data-sku");
-    const itemPrice = Number(form.getAttribute("data-price"));
+function AddToCart(form, itemPos = null) {
+
+    const shoppingCart = GetShoppingCart();
+    const productId = Number(form.dataset.id);
     const quantityInput = form.querySelector("input");
     const itemQuantity = Number(quantityInput.value);
     const itemText = form.querySelector("textarea").value;
-    const itemMeasurement = form.getAttribute("data-measurement");
     const itemOptions = productOptionsToJson(form);
 
     if (itemQuantity > 0) {
@@ -146,12 +164,12 @@ function AddToCart(form, shoppingCart, itemPos = null) {
         else {
             item = {
                 id: productId,
-                name: itemName,
-                sku: itemSku,
-                price: itemPrice,
-                vendor: itemVendor,
-                image: itemImage,
-                measurement: itemMeasurement
+                name: form.dataset.name,
+                sku: form.dataset.sku,
+                price: Number(form.dataset.price),
+                vendor: form.dataset.vendor,
+                image: form.dataset.image,
+                measurement: form.dataset.measurement
             };
             shoppingCart.push(item);
         }
@@ -188,7 +206,6 @@ function AddToCart(form, shoppingCart, itemPos = null) {
     }
 
     sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
-    return shoppingCart;
 }
 
 

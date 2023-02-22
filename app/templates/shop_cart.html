@@ -245,6 +245,12 @@
                     quantityInput.value = itemQuantity;
                     let textInput = cartItem.querySelector(".productTextValue");
                     textInput.textContent = itemText;
+                    if (itemText) {
+                        textInput.closest('.row').classList.remove('d-none');
+                    }
+                    else {
+                        textInput.closest('.row').classList.add('d-none');
+                    }
                 }
 
                 if (shoppingCart.filter(Boolean).length == 0) {

@@ -99,7 +99,9 @@ def ShopOrder():
                     "vendor": product.vendor.name,
                     "category": product.category.name,
                     "quantity": cart_item["quantity"],
-                    "selectedOptions": [{"value": product.measurement}],
+                    "selectedOptions": [
+                        {"name": "Единицы", "value": product.measurement}
+                    ],
                 }
                 if cart_item["text"]:
                     order_product["selectedOptions"].append(
@@ -114,7 +116,6 @@ def ShopOrder():
                             order_product["selectedOptions"].append(
                                 {"value": cart_item["options"][opt], "name": opt}
                             )
-
                 order_products.append(order_product)
             order_number = GetNewOrderNumber()
             now = datetime.now(tz=timezone.utc)
