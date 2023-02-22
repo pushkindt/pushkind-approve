@@ -8,6 +8,7 @@ from app.main import bp
 from app.main.forms import CreateOrderForm
 from app.main.utils import GetNewOrderNumber, SendEmailNotification, role_required
 from app.models import (
+    AppSettings,
     Category,
     Order,
     OrderLimit,
@@ -67,6 +68,7 @@ def ShopOrder():
     form = CreateOrderForm()
     if form.submit.data:
         if form.validate_on_submit():
+            settings = AppSettings.query.filter_by(hub_id=current_user.hub_id).first()
             products = Product.query.filter(
                 Product.id.in_(p["product"] for p in form.cart.data)
             ).all()
@@ -107,7 +109,7 @@ def ShopOrder():
                     order_product["selectedOptions"].append(
                         {"value": cart_item["text"], "name": "Комментарий"}
                     )
-                if cart_item["options"] is not None:
+                if cart_item["options"] and product.options:
                     for opt, values in product.options.items():
                         if (
                             opt in cart_item["options"]
@@ -117,6 +119,9 @@ def ShopOrder():
                                 {"value": cart_item["options"][opt], "name": opt}
                             )
                 order_products.append(order_product)
+            if settings.single_category_orders and len(categories) > 1:
+                flash("Заявки с более чем одной категорией не разрешены.")
+                return redirect(url_for("main.ShopCategories"))
             order_number = GetNewOrderNumber()
             now = datetime.now(tz=timezone.utc)
             categories = Category.query.filter(Category.id.in_(categories)).all()

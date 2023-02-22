@@ -423,6 +423,9 @@ class AppSettings(db.Model):
     )
     email_1C = db.Column(db.String(128), nullable=True)
     order_id_bias = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    single_category_orders = db.Column(
+        db.Boolean, nullable=False, default=True, server_default=expression.true()
+    )
     hub = db.relationship("Vendor", back_populates="settings")
 
 

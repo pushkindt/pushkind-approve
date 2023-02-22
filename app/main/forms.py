@@ -279,6 +279,7 @@ class AppSettingsForm(FlaskForm):
         label="Логотип (png)",
         validators=[FileAllowed(["png"], "Разрешены только изображения PNG!")],
     )
+    single_category_orders = BooleanField("Заявки с одной категорией")
     submit = SubmitField("Сохранить")
 
 

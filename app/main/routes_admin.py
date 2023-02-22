@@ -1,129 +1,148 @@
 import os
 
+from flask import current_app, flash, redirect, render_template, url_for
 from flask_login import current_user, login_required
-from flask import render_template, redirect, url_for, flash, current_app
 
 from app import db
 from app.main import bp
-from app.models import UserRoles, Category, Project, Site
-from app.models import AppSettings, IncomeStatement, CashflowStatement
-from app.main.forms import AddCategoryForm, AddProjectForm, AddSiteForm, EditProjectForm
-from app.main.forms import EditSiteForm
-from app.main.forms import AppSettingsForm, CategoryResponsibilityForm
-from app.main.forms import AddIncomeForm, AddCashflowForm, EditIncomeForm, EditCashflowForm
+from app.main.forms import (
+    AddCashflowForm,
+    AddCategoryForm,
+    AddIncomeForm,
+    AddProjectForm,
+    AddSiteForm,
+    AppSettingsForm,
+    CategoryResponsibilityForm,
+    EditCashflowForm,
+    EditIncomeForm,
+    EditProjectForm,
+    EditSiteForm,
+)
 from app.main.utils import role_required
+from app.models import (
+    AppSettings,
+    CashflowStatement,
+    Category,
+    IncomeStatement,
+    Project,
+    Site,
+    UserRoles,
+)
 
 
-@bp.route('/admin/', methods=['GET', 'POST'])
+@bp.route("/admin/", methods=["GET", "POST"])
 @login_required
 @role_required([UserRoles.admin])
 def ShowAdminPage():
-
     forms = {
-        'add_category': AddCategoryForm(),
-        'edit_category': CategoryResponsibilityForm(),
-        'add_project': AddProjectForm(),
-        'edit_project': EditProjectForm(),
-        'add_site': AddSiteForm(),
-        'edit_site': EditSiteForm(),
-        'add_income': AddIncomeForm(),
-        'add_cashflow': AddCashflowForm(),
-        'edit_income': EditIncomeForm(),
-        'edit_cashflow': EditCashflowForm(),
+        "add_category": AddCategoryForm(),
+        "edit_category": CategoryResponsibilityForm(),
+        "add_project": AddProjectForm(),
+        "edit_project": EditProjectForm(),
+        "add_site": AddSiteForm(),
+        "edit_site": EditSiteForm(),
+        "add_income": AddIncomeForm(),
+        "add_cashflow": AddCashflowForm(),
+        "edit_income": EditIncomeForm(),
+        "edit_cashflow": EditCashflowForm(),
     }
 
     app_data = AppSettings.query.filter_by(hub_id=current_user.hub_id).first()
     if app_data is None:
-        forms['app'] = AppSettingsForm(
-            order_id_bias=0
-        )
+        forms["app"] = AppSettingsForm(order_id_bias=0)
     else:
-        forms['app'] = AppSettingsForm(
+        forms["app"] = AppSettingsForm(
             enable=app_data.notify_1C,
             email=app_data.email_1C,
-            order_id_bias=app_data.order_id_bias or 0
+            order_id_bias=app_data.order_id_bias or 0,
+            single_category_orders=app_data.single_category_orders,
         )
 
-    projects = Project.query.filter(
-        Project.hub_id == current_user.hub_id).order_by(Project.name).all()
-    categories = Category.query.filter(
-        Category.hub_id == current_user.hub_id).all()
+    projects = (
+        Project.query.filter(Project.hub_id == current_user.hub_id)
+        .order_by(Project.name)
+        .all()
+    )
+    categories = Category.query.filter(Category.hub_id == current_user.hub_id).all()
 
-    incomes = IncomeStatement.query.filter(IncomeStatement.hub_id == current_user.hub_id)
+    incomes = IncomeStatement.query.filter(
+        IncomeStatement.hub_id == current_user.hub_id
+    )
     incomes = incomes.order_by(IncomeStatement.name).all()
-    cashflows = CashflowStatement.query.filter(CashflowStatement.hub_id == current_user.hub_id)
+    cashflows = CashflowStatement.query.filter(
+        CashflowStatement.hub_id == current_user.hub_id
+    )
     cashflows = cashflows.order_by(CashflowStatement.name).all()
 
-    forms['edit_category'].income_statement.choices = [(i.id, i.name) for i in incomes]
-    forms['edit_category'].cashflow_statement.choices = [(c.id, c.name) for c in cashflows]
-    forms['edit_category'].income_statement.choices.append((0, 'Выберите БДР...'))
-    forms['edit_category'].cashflow_statement.choices.append((0, 'Выберите БДДС...'))
-    forms['edit_category'].process()
+    forms["edit_category"].income_statement.choices = [(i.id, i.name) for i in incomes]
+    forms["edit_category"].cashflow_statement.choices = [
+        (c.id, c.name) for c in cashflows
+    ]
+    forms["edit_category"].income_statement.choices.append((0, "Выберите БДР..."))
+    forms["edit_category"].cashflow_statement.choices.append((0, "Выберите БДДС..."))
+    forms["edit_category"].process()
 
     return render_template(
-        'admin.html',
+        "admin.html",
         forms=forms,
         projects=projects,
         categories=categories,
         incomes=incomes,
-        cashflows=cashflows
+        cashflows=cashflows,
     )
 
 
-@bp.route('/admin/app/save', methods=['POST'])
+@bp.route("/admin/app/save", methods=["POST"])
 @login_required
 @role_required([UserRoles.admin])
 def SaveAppSettings():
     form = AppSettingsForm()
     if form.validate_on_submit():
-        app_data = AppSettings.query.filter_by(
-            hub_id=current_user.hub_id).first()
+        app_data = AppSettings.query.filter_by(hub_id=current_user.hub_id).first()
         if app_data is None:
             app_data = AppSettings(hub_id=current_user.hub_id)
             db.session.add(app_data)
         app_data.notify_1C = form.enable.data
         app_data.email_1C = form.email.data
         app_data.order_id_bias = form.order_id_bias.data
+        app_data.single_category_orders = form.single_category_orders.data
         if form.image.data:
             f = form.image.data
             file_name, file_ext = os.path.splitext(f.filename)
-            file_name = f'logo{current_user.hub_id}{file_ext}'
-            full_path = os.path.join(
-                'app', 'static', 'upload', file_name
-            )
+            file_name = f"logo{current_user.hub_id}{file_ext}"
+            full_path = os.path.join("app", "static", "upload", file_name)
             f.save(full_path)
         db.session.commit()
-        flash('Настройки рассылки 1С успешно сохранены.')
+        flash("Настройки рассылки 1С успешно сохранены.")
     else:
         errors = (
-            form.email.errors +
-            form.enable.errors +
-            form.order_id_bias.errors +
-            form.image.errors
+            form.email.errors
+            + form.enable.errors
+            + form.order_id_bias.errors
+            + form.image.errors
         )
         for error in errors:
             flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/category/edit/', methods=['POST'])
+@bp.route("/admin/category/edit/", methods=["POST"])
 @login_required
 @role_required([UserRoles.admin])
 def SaveCategoryResponsibility():
     form = CategoryResponsibilityForm()
     incomes = IncomeStatement.query.filter_by(
-        id=form.income_statement.data,
-        hub_id=current_user.hub_id
+        id=form.income_statement.data, hub_id=current_user.hub_id
     ).all()
     cashflows = CashflowStatement.query.filter_by(
-        id=form.cashflow_statement.data,
-        hub_id=current_user.hub_id
+        id=form.cashflow_statement.data, hub_id=current_user.hub_id
     ).all()
     form.income_statement.choices = [(i.id, i.name) for i in incomes]
     form.cashflow_statement.choices = [(c.id, c.name) for c in cashflows]
     if form.validate_on_submit():
         category = Category.query.filter_by(
-            id=form.category_id.data, hub_id=current_user.hub_id).first()
+            id=form.category_id.data, hub_id=current_user.hub_id
+        ).first()
         if category is None:
             flash("Категория с таким идентификатором не найдена.")
         else:
@@ -135,31 +154,31 @@ def SaveCategoryResponsibility():
             if form.image.data:
                 f = form.image.data
                 file_name, file_ext = os.path.splitext(f.filename)
-                file_name = f'category-{category.id}{file_ext}'
-                full_path = os.path.join(
-                    'app', 'static', 'upload', file_name
-                )
+                file_name = f"category-{category.id}{file_ext}"
+                full_path = os.path.join("app", "static", "upload", file_name)
                 f.save(full_path)
-                category.image = url_for('static', filename=os.path.join('upload', file_name))
+                category.image = url_for(
+                    "static", filename=os.path.join("upload", file_name)
+                )
 
             db.session.commit()
             flash("Категория успешно отредактирована.")
     else:
         errors = (
-            form.category_id.errors +
-            form.responsible.errors +
-            form.functional_budget.errors +
-            form.income_statement.errors +
-            form.cashflow_statement.errors +
-            form.image.errors +
-            form.code.errors
+            form.category_id.errors
+            + form.responsible.errors
+            + form.functional_budget.errors
+            + form.income_statement.errors
+            + form.cashflow_statement.errors
+            + form.image.errors
+            + form.code.errors
         )
         for error in errors:
             flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/project/add', methods=['POST'])
+@bp.route("/admin/project/add", methods=["POST"])
 @login_required
 @role_required([UserRoles.admin])
 def AddProject():
@@ -168,24 +187,22 @@ def AddProject():
         project_name = form.project_name.data.strip()
         uid = form.uid.data.strip() if form.uid.data is not None else None
         project = Project.query.filter_by(
-            hub_id=current_user.hub_id,
-            name=project_name
+            hub_id=current_user.hub_id, name=project_name
         ).first()
         if project is None:
-            project = Project(name=project_name, uid=uid,
-                              hub_id=current_user.hub_id)
+            project = Project(name=project_name, uid=uid, hub_id=current_user.hub_id)
             db.session.add(project)
             db.session.commit()
-            flash(f'Проект {project_name} добавлен.')
+            flash(f"Проект {project_name} добавлен.")
         else:
-            flash(f'Проект {project_name} уже существует.')
+            flash(f"Проект {project_name} уже существует.")
     else:
         for error in form.project_name.errors + form.uid.errors:
             flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/site/add', methods=['POST'])
+@bp.route("/admin/site/add", methods=["POST"])
 @login_required
 @role_required([UserRoles.admin])
 def AddSite():
@@ -194,24 +211,22 @@ def AddSite():
         site_name = form.site_name.data.strip()
         uid = form.uid.data.strip() if form.uid.data is not None else None
         site = Site.query.filter_by(
-            project_id=form.project_id.data,
-            name=site_name
+            project_id=form.project_id.data, name=site_name
         ).first()
         if site is None:
-            site = Site(name=site_name, uid=uid,
-                        project_id=form.project_id.data)
+            site = Site(name=site_name, uid=uid, project_id=form.project_id.data)
             db.session.add(site)
             db.session.commit()
-            flash(f'Объект {site_name} добавлен.')
+            flash(f"Объект {site_name} добавлен.")
         else:
-            flash(f'Объект {site_name} уже существует.')
+            flash(f"Объект {site_name} уже существует.")
     else:
         for error in form.site_name.errors + form.uid.errors + form.project_id.errors:
             flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/project/remove/<int:project_id>')
+@bp.route("/admin/project/remove/<int:project_id>")
 @login_required
 @role_required([UserRoles.admin])
 def RemoveProject(project_id):
@@ -219,13 +234,13 @@ def RemoveProject(project_id):
     if project is not None:
         db.session.delete(project)
         db.session.commit()
-        flash(f'Проект {project.name} удален.')
+        flash(f"Проект {project.name} удален.")
     else:
-        flash('Такого проекта не существует.')
-    return redirect(url_for('main.ShowAdminPage'))
+        flash("Такого проекта не существует.")
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/project/edit/', methods=['POST'])
+@bp.route("/admin/project/edit/", methods=["POST"])
 @login_required
 @role_required([UserRoles.admin])
 def EditProject():
@@ -235,26 +250,29 @@ def EditProject():
         if project is not None:
             project_name = form.project_name.data.strip()
             existed = Project.query.filter_by(
-                hub_id=current_user.hub_id,
-                name=project_name
+                hub_id=current_user.hub_id, name=project_name
             ).first()
             if existed is None or existed.id == project.id:
                 project.name = project_name
-                project.uid = form.uid.data.strip() if form.uid.data is not None else None
+                project.uid = (
+                    form.uid.data.strip() if form.uid.data is not None else None
+                )
                 project.enabled = form.enabled.data
                 db.session.commit()
-                flash(f'Проект {project_name} изменён.')
+                flash(f"Проект {project_name} изменён.")
             else:
-                flash(f'Проект {project_name} уже существует.')
+                flash(f"Проект {project_name} уже существует.")
         else:
-            flash('Такого проекта не существует.')
+            flash("Такого проекта не существует.")
     else:
-        for error in form.project_id.errors + form.project_name.errors + form.uid.errors:
+        for error in (
+            form.project_id.errors + form.project_name.errors + form.uid.errors
+        ):
             flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/site/remove/<int:site_id>')
+@bp.route("/admin/site/remove/<int:site_id>")
 @login_required
 @role_required([UserRoles.admin])
 def RemoveSite(site_id):
@@ -262,13 +280,13 @@ def RemoveSite(site_id):
     if site is not None:
         db.session.delete(site)
         db.session.commit()
-        flash(f'Объект {site.name} удален.')
+        flash(f"Объект {site.name} удален.")
     else:
-        flash('Такой объект не существует.')
-    return redirect(url_for('main.ShowAdminPage'))
+        flash("Такой объект не существует.")
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/site/edit/', methods=['POST'])
+@bp.route("/admin/site/edit/", methods=["POST"])
 @login_required
 @role_required([UserRoles.admin])
 def EditSite():
@@ -278,9 +296,7 @@ def EditSite():
         if site is not None:
             site_name = form.site_name.data.strip()
             existed = (
-                Site.query.filter_by(
-                    name=site_name
-                )
+                Site.query.filter_by(name=site_name)
                 .join(Project, Site.project_id == Project.id)
                 .filter_by(hub_id=current_user.hub_id)
                 .first()
@@ -289,18 +305,18 @@ def EditSite():
                 site.name = site_name
                 site.uid = form.uid.data.strip() if form.uid.data is not None else None
                 db.session.commit()
-                flash(f'Объект {site_name} изменён.')
+                flash(f"Объект {site_name} изменён.")
             else:
-                flash(f'Объект {site_name} уже существует.')
+                flash(f"Объект {site_name} уже существует.")
         else:
-            flash('Такой объект не существует.')
+            flash("Такой объект не существует.")
     else:
         for error in form.site_id.errors + form.site_name.errors + form.uid.errors:
             flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/income/add', methods=['POST'])
+@bp.route("/admin/income/add", methods=["POST"])
 @login_required
 @role_required([UserRoles.admin])
 def AddIncome():
@@ -308,8 +324,7 @@ def AddIncome():
     if form.validate_on_submit():
         income_name = form.income_name.data.strip()
         income = IncomeStatement.query.filter_by(
-            name=income_name,
-            hub_id=current_user.hub_id
+            name=income_name, hub_id=current_user.hub_id
         ).first()
         if income is None:
             income = IncomeStatement(name=income_name, hub_id=current_user.hub_id)
@@ -321,10 +336,10 @@ def AddIncome():
     else:
         for error in form.income_name.errors:
             flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/cashflow/add', methods=['POST'])
+@bp.route("/admin/cashflow/add", methods=["POST"])
 @login_required
 @role_required([UserRoles.admin])
 def AddCashflow():
@@ -332,8 +347,7 @@ def AddCashflow():
     if form.validate_on_submit():
         cashflow_name = form.cashflow_name.data.strip()
         cashflow = CashflowStatement.query.filter_by(
-            name=cashflow_name,
-            hub_id=current_user.hub_id
+            name=cashflow_name, hub_id=current_user.hub_id
         ).first()
         if cashflow is None:
             cashflow = CashflowStatement(name=cashflow_name, hub_id=current_user.hub_id)
@@ -345,10 +359,10 @@ def AddCashflow():
     else:
         for error in form.cashflow_name.errors:
             flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/income/remove/<int:income_id>')
+@bp.route("/admin/income/remove/<int:income_id>")
 @login_required
 @role_required([UserRoles.admin])
 def RemoveIncome(income_id):
@@ -358,11 +372,11 @@ def RemoveIncome(income_id):
         db.session.commit()
         flash(f'БДР "{income.name}" удален.')
     else:
-        flash('Такой БДР не существует.')
-    return redirect(url_for('main.ShowAdminPage'))
+        flash("Такой БДР не существует.")
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/cashflow/remove/<int:cashflow_id>')
+@bp.route("/admin/cashflow/remove/<int:cashflow_id>")
 @login_required
 @role_required([UserRoles.admin])
 def RemoveCashflow(cashflow_id):
@@ -372,11 +386,11 @@ def RemoveCashflow(cashflow_id):
         db.session.commit()
         flash(f'БДДС "{cashflow.name}" удален.')
     else:
-        flash('Такой БДДС не существует.')
-    return redirect(url_for('main.ShowAdminPage'))
+        flash("Такой БДДС не существует.")
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/income/edit/', methods=['POST'])
+@bp.route("/admin/income/edit/", methods=["POST"])
 @login_required
 @role_required([UserRoles.admin])
 def EditIncome():
@@ -386,8 +400,7 @@ def EditIncome():
         if income is not None:
             income_name = form.income_name.data.strip()
             existed = IncomeStatement.query.filter_by(
-                name=income_name,
-                hub_id=current_user.hub_id
+                name=income_name, hub_id=current_user.hub_id
             ).first()
             if existed is None or existed.id == income.id:
                 income.name = income_name
@@ -396,14 +409,14 @@ def EditIncome():
             else:
                 flash(f'БДР "{income_name}" уже существует.')
         else:
-            flash('Такой БДР не существует.')
+            flash("Такой БДР не существует.")
     else:
         for error in form.income_id.errors + form.income_name.errors:
             flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/cashflow/edit/', methods=['POST'])
+@bp.route("/admin/cashflow/edit/", methods=["POST"])
 @login_required
 @role_required([UserRoles.admin])
 def EditCashflow():
@@ -413,8 +426,7 @@ def EditCashflow():
         if cashflow is not None:
             cashflow_name = form.cashflow_name.data.strip()
             existed = CashflowStatement.query.filter_by(
-                name=cashflow_name,
-                hub_id=current_user.hub_id
+                name=cashflow_name, hub_id=current_user.hub_id
             ).first()
             if existed is None or existed.id == cashflow.id:
                 cashflow.name = cashflow_name
@@ -423,14 +435,14 @@ def EditCashflow():
             else:
                 flash(f'БДДС "{cashflow_name}" уже существует.')
         else:
-            flash('Такой БДДС не существует.')
+            flash("Такой БДДС не существует.")
     else:
         for error in form.cashflow_id.errors + form.cashflow_name.errors:
             flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/category/add/', methods=['POST'])
+@bp.route("/admin/category/add/", methods=["POST"])
 @login_required
 @role_required([UserRoles.admin])
 def AddCategory():
@@ -438,27 +450,24 @@ def AddCategory():
     if form.validate_on_submit():
         category_name = form.category_name.data.strip()
         category = Category.query.filter_by(
-            hub_id=current_user.hub_id,
-            name=category_name
+            hub_id=current_user.hub_id, name=category_name
         ).first()
         if category is None:
             category = Category(
-                name=category_name,
-                hub_id=current_user.hub_id,
-                children=[]
+                name=category_name, hub_id=current_user.hub_id, children=[]
             )
             db.session.add(category)
             db.session.commit()
-            flash(f'Категория {category_name} добавлена.')
+            flash(f"Категория {category_name} добавлена.")
         else:
-            flash(f'Категория {category_name} уже существует.')
+            flash(f"Категория {category_name} уже существует.")
     else:
         for error in form.category_name.errors:
             flash(error)
-    return redirect(url_for('main.ShowAdminPage'))
+    return redirect(url_for("main.ShowAdminPage"))
 
 
-@bp.route('/admin/category/remove/<int:category_id>')
+@bp.route("/admin/category/remove/<int:category_id>")
 @login_required
 @role_required([UserRoles.admin])
 def RemoveCategory(category_id):
@@ -468,5 +477,5 @@ def RemoveCategory(category_id):
         db.session.commit()
         flash(f'Категория "{category.name}" удалена.')
     else:
-        flash('Такой категории не существует.')
-    return redirect(url_for('main.ShowAdminPage'))
+        flash("Такой категории не существует.")
+    return redirect(url_for("main.ShowAdminPage"))
