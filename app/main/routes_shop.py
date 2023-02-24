@@ -119,6 +119,7 @@ def ShopOrder():
                                 {"value": cart_item["options"][opt], "name": opt}
                             )
                 order_products.append(order_product)
+            categories = list(set(categories))
             if settings.single_category_orders and len(categories) > 1:
                 flash("Заявки с более чем одной категорией не разрешены.")
                 return redirect(url_for("main.ShopCategories"))
