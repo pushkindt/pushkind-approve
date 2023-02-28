@@ -131,8 +131,6 @@
                                             <span class="visually-hidden">Next</span>
                                         </button>
                                     </div>
-                                    <strong>Описание:</strong>
-                                    <pre>{{product.description or ''}}</pre>
                                 </div>
                                 <div class="col-sm">
                                     <div class="row">
@@ -170,6 +168,14 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="row">
+                                        <div class="col text-end">
+                                            <button type="button" class="btn btn-primary addToCart text-white"
+                                                data-bs-dismiss="modal">Сохранить</button>
+                                            <button type="button" class="btn btn-primary addToCart text-white"
+                                                data-bs-dismiss="modal">Клонировать</button>
+                                        </div>
+                                    </div>
                                     <div class="row justify-content-center my-1">
                                         <div class="col-auto">
                                             <nav>
@@ -178,15 +184,11 @@
                                             </nav>
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="col text-end">
-                                            <button type="button" class="btn btn-primary addToCart"
-                                                data-bs-dismiss="modal">Сохранить</button>
-                                            <button type="button" class="btn btn-primary addToCart"
-                                                data-bs-dismiss="modal">Клонировать</button>
-                                        </div>
-                                    </div>
                                 </div>
+                            </div>
+                            <div class="row">
+                                <strong>Описание:</strong>
+                                <pre>{{product.description or ''}}</pre>
                             </div>
                         </div>
                     </div>
