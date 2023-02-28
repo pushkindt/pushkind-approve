@@ -550,11 +550,11 @@
 
 		var projects = [{% for project in projects %}{{ project| safe }}, {% endfor %}];
 
-	var incomes = [{% for income in incomes %}{ { income | safe } }, {% endfor %}];
+	var incomes = [{% for income in incomes %} {{ income | safe }}, {% endfor %}];
 
-	var cashflows = [{% for cashflow in cashflows %}{ { cashflow | safe } }, {% endfor %}];
+	var cashflows = [{% for cashflow in cashflows %} {{ cashflow | safe }}, {% endfor %}];
 
-	var categories = [{% for category in categories %}{ { category | safe } }, {% endfor %}];
+	var categories = [{% for category in categories %} {{ category | safe }}, {% endfor %}];
 
 
 	for (let i = 0; i < categories.length; i++) {
