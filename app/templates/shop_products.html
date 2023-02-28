@@ -131,10 +131,19 @@
                                             <span class="visually-hidden">Next</span>
                                         </button>
                                     </div>
-                                </div>
-                                <div class="col-sm">
                                     <strong>Описание:</strong>
                                     <pre>{{product.description or ''}}</pre>
+                                </div>
+                                <div class="col-sm">
+                                    <div class="row">
+                                        <div class="col">
+                                            <label for="descriptionModalProductText{{product.id}}"
+                                                class="form-label">Для некоторых товаров можно добавить
+                                                пояснение/опции</label>
+                                            <textarea class="form-control" rows="3" placeholder="Комментарий"
+                                                id="descriptionModalProductText{{product.id}}"></textarea>
+                                        </div>
+                                    </div>
                                     {% if product.options %}
                                     {% for rows in product.options|batch(3) %}
                                     <div class="row">
@@ -153,32 +162,33 @@
                                     {% endif %}
                                     <div class="row">
                                         <div class="col">
-                                            <textarea class="form-control" rows="3"
-                                                placeholder="место для комментария или ссылки на файл в облаке"></textarea>
+                                            <div class="input-group mb-3">
+                                                <span class="input-group-text">Количество</span>
+                                                <input type="number" class="form-control" min="0" step="1"
+                                                    aria-label="Количество" value="0">
+                                                <span class="input-group-text">{{product.measurement}}</span>
+                                            </div>
                                         </div>
-                                        <div class="col-4">
-                                            <input placeholder="Количество" type="number" class="form-control" min="0"
-                                                step="1" aria-label="Количество" value="0">
+                                    </div>
+                                    <div class="row justify-content-center my-1">
+                                        <div class="col-auto">
+                                            <nav>
+                                                <ul class="pagination">
+                                                </ul>
+                                            </nav>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col text-end">
+                                            <button type="button" class="btn btn-primary addToCart"
+                                                data-bs-dismiss="modal">Сохранить</button>
+                                            <button type="button" class="btn btn-primary addToCart"
+                                                data-bs-dismiss="modal">Клонировать</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="row justify-content-center my-1">
-                                <div class="col-auto">
-                                    <nav>
-                                        <ul class="pagination">
-                                        </ul>
-                                    </nav>
-                                </div>
-                            </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary addToCart"
-                            data-bs-dismiss="modal">Сохранить</button>
-                        <button type="button" class="btn btn-primary addToCart"
-                            data-bs-dismiss="modal">Клонировать</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                     </div>
                 </div>
             </div>
@@ -269,6 +279,13 @@
                     saveToCartButton.removeAttribute("data-pos");
                 }
                 descriptionModal.show();
+            });
+        });
+        const modals = document.querySelectorAll(".modal");
+        modals.forEach(modal => {
+            modal.addEventListener('shown.bs.modal', event => {
+                let quantityInput = modal.querySelector("input");
+                quantityInput.focus();
             });
         });
     });

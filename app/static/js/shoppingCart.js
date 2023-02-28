@@ -213,6 +213,7 @@ function SyncProductModal(form, item, setImage = false, setOptions = false) {
 
     let quantityInput = form.querySelector("input");
     quantityInput.value = item.quantity;
+    quantityInput.focus();
 
     let textInput = form.querySelector("textarea");
     textInput.value = item.text || '';
