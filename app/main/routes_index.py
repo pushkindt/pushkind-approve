@@ -23,6 +23,7 @@ from app.main.utils import (
     role_required,
 )
 from app.models import (
+    AppSettings,
     Category,
     EventType,
     Order,
@@ -126,6 +127,10 @@ def ShowIndex():
     categories = Category.query.filter_by(hub_id=current_user.hub.id).all()
     merge_form = MergeOrdersForm()
     save_form = SaveOrdersForm(orders=[order.id for order in orders])
+
+    app_data = AppSettings.query.filter_by(hub_id=current_user.hub_id).first()
+    alert = app_data.alert if app_data else None
+
     return render_template(
         "index.html",
         orders=orders,
@@ -137,6 +142,7 @@ def ShowIndex():
         filter_disapproved=filter_disapproved,
         merge_form=merge_form,
         save_form=save_form,
+        alert=alert,
     )
 
 

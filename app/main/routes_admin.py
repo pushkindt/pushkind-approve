@@ -56,6 +56,7 @@ def ShowAdminPage():
             email=app_data.email_1C,
             order_id_bias=app_data.order_id_bias or 0,
             single_category_orders=app_data.single_category_orders,
+            alert=app_data.alert,
         )
 
     projects = (
@@ -106,6 +107,8 @@ def SaveAppSettings():
         app_data.email_1C = form.email.data
         app_data.order_id_bias = form.order_id_bias.data
         app_data.single_category_orders = form.single_category_orders.data
+        alert = form.alert.data.strip() if form.alert.data else None
+        app_data.alert = alert if alert else None
         if form.image.data:
             f = form.image.data
             file_name, file_ext = os.path.splitext(f.filename)
@@ -120,6 +123,8 @@ def SaveAppSettings():
             + form.enable.errors
             + form.order_id_bias.errors
             + form.image.errors
+            + form.single_category_orders.errors
+            + form.alert.errors
         )
         for error in errors:
             flash(error)

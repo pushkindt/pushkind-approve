@@ -280,6 +280,7 @@ class AppSettingsForm(FlaskForm):
         validators=[FileAllowed(["png"], "Разрешены только изображения PNG!")],
     )
     single_category_orders = BooleanField("Заявки с одной категорией")
+    alert = TextAreaField("Предупреждение")
     submit = SubmitField("Сохранить")
 
 
