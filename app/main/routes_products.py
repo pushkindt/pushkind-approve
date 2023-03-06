@@ -252,7 +252,9 @@ def DownloadProducts():
     extra_columns = list(df.columns.difference(MANDATORY_COLUMNS))
     for col in extra_columns:
         df[col] = df[col].apply(
-            lambda values: ", ".join(re.sub(r"\"|'", "", v) for v in values)
+            lambda values: ", ".join(re.sub(r"\"|'", "", str(v)) for v in values)
+            if isinstance(values, list)
+            else None
         )
     buffer = io.BytesIO()
     df.to_excel(buffer, index=False)
