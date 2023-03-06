@@ -910,3 +910,18 @@ class Product(db.Model):
     options = db.Column(db.JSON())
     vendor = db.relationship("Vendor", back_populates="products")
     category = db.relationship("Category", back_populates="products")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "vendor": self.vendor.name,
+            "image": self.image,
+            "name": self.name,
+            "options": self.options,
+            "category": self.category.name,
+            "description": self.description,
+            "sku": self.sku,
+            "price": self.price,
+            "measurement": self.measurement,
+            "input_required": self.input_required,
+        }

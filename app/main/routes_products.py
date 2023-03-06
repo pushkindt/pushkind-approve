@@ -244,13 +244,16 @@ def DownloadProducts():
         flash("Такой поставщик не найден.")
         return redirect(url_for("main.ShowProducts"))
 
-    products = Product.query.filter_by(vendor_id=vendor.id)
-    with db.get_engine().connect() as conn:
-        df = pd.read_sql(products.statement, conn)
-    categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
-    categories = {c.id: c.name for c in categories}
-    df["category"] = df["cat_id"].apply(categories.get)
-    df.drop(["id", "image", "vendor_id", "cat_id"], axis="columns", inplace=True)
+    products = Product.query.filter_by(vendor_id=vendor.id).all()
+    products = [p.to_dict() for p in products]
+    df = pd.json_normalize(products)
+    df.drop(["id", "image", "vendor"], axis="columns", inplace=True)
+    df.columns = [col.replace("options.", "") for col in df.columns]
+    extra_columns = list(df.columns.difference(MANDATORY_COLUMNS))
+    for col in extra_columns:
+        df[col] = df[col].apply(
+            lambda values: ", ".join(re.sub(r"\"|'", "", v) for v in values)
+        )
     buffer = io.BytesIO()
     df.to_excel(buffer, index=False)
     buffer.seek(0)
