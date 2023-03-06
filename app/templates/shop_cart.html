@@ -28,33 +28,17 @@
         let item = shoppingCart[productPos];
         if (item) {
             modalElement.dataset.pos = productPos;
-            SyncProductModal(modalElement, item, true, false);
+            SyncCartModal(modalElement, item);
             descriptionModal.show();
         }
     }
 </script>
-<div class="container my-2">
-
-    <div class="row justify-content-center">
-        <div class="col">
-            <div class="alert bg-yellow">
-                Проверьте заявку и нажмите «отправить» внизу экрана.
-                <br>
-                Внимание! Вы можете нажать «клонировать» и продублировать позицию с другим комментарием.
-                Не возвращайтесь в каталог до отправки заявки, чтобы изменения не пропали.
-                <br>
-                Для удаления позиции просто укажите 0 в поле количества
-            </div>
-        </div>
-    </div>
-
-</div>
 
 <div class="container">
 
-    <div class="row my-2">
+    <div class="row">
         <div class="col overflow-hidden">
-            <strong>НОВАЯ ЗАЯВКА</strong>
+            <strong>ПРОСМОТР ЗАЯВКИ</strong>
         </div>
         <div class="col-auto text-end overflow-hidden">
             <a class="text-muted" href="{{url_for('main.ShopCategories')}}">
@@ -101,52 +85,69 @@
     </form>
 </div>
 <div class="modal fade" id="descriptionModal" tabindex="-1" aria-labelledby="#descriptionModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="descriptionModalLabel"></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="row justify-content-center">
-                    <div class="col-8">
-                        <div id="carouselControls" class="carousel carousel-dark slide" data-bs-ride="carousel">
-                            <div class="carousel-inner">
-                                <div class="carousel-item active">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-sm">
+                            <div id="carouselControls" class="carousel carousel-dark slide" data-bs-ride="carousel">
+                                <div class="carousel-inner">
                                     <div class="carousel-item active">
-                                        <img src="{{config['PLACEHOLDER_IMAGE']}}" class="d-block w-100"
-                                            alt="Main image" />
+                                        <div class="carousel-item active">
+                                            <img src="{{config['PLACEHOLDER_IMAGE']}}" class="d-block w-100"
+                                                alt="Main image" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselControls"
+                                    data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#carouselControls"
+                                    data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-sm">
+                            <div class="row">
+                                <div class="col">
+                                    <label for="descriptionModalProductText"
+                                        class="form-label">Для некоторых товаров можно добавить
+                                        пояснение/опции</label>
+                                    <textarea class="form-control" rows="3" id="descriptionModalProductText"
+                                        placeholder="Комментарий"></textarea>
+                                </div>
+                            </div>
+                            <div class="my-1" id="descriptionModalProductOptions">
+
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text">Количество</span>
+                                        <input type="number" class="form-control" min="0" step="1"
+                                            aria-label="Количество" value="0" id="descriptionModalProductQuantity">
+                                        <span class="input-group-text" id="descriptionModalProductMeasurement"></span>
                                     </div>
                                 </div>
                             </div>
-                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselControls"
-                                data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Previous</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#carouselControls"
-                                data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Next</span>
-                            </button>
+                            <div class="row">
+                                <div class="col text-end">
+                                    <button type="button" class="btn btn-primary addToCart text-white"
+                                        data-bs-dismiss="modal">Сохранить</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col">
-                        <textarea class="form-control" rows="3"
-                            placeholder="место для комментария или ссылки на файл в облаке"></textarea>
-                    </div>
-                    <div class="col-4">
-                        <input placeholder="Количество" type="number" class="form-control" min="0" step="1"
-                            aria-label="Количество">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary addToCart text-white"
-                    data-bs-dismiss="modal">Сохранить</button>
-                <button type="button" class="btn btn-secondary text-white" data-bs-dismiss="modal">Закрыть</button>
             </div>
         </div>
     </div>
@@ -230,8 +231,8 @@
             addToCartButton.addEventListener("click", function () {
                 const form = this.closest('.modal');
                 const productPos = Number(form.dataset.pos);
-                const quantityInput = form.querySelector("input");
-                const textInput = form.querySelector("textarea");
+                const quantityInput = document.getElementById("descriptionModalProductQuantity");
+                const textInput = document.getElementById("descriptionModalProductText");
                 const itemQuantity = Number(quantityInput.value);
                 const itemText = textInput.value;
                 let cartItem = document.querySelector(`div.cartItem[data-pos="${productPos}"]`);

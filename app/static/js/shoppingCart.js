@@ -54,7 +54,7 @@ function HandleCartItemPageClick(event) {
     const pages = modal.querySelectorAll('.page-item');
     const saveToCartButton = modal.querySelector('button.addToCart');
 
-    SyncProductModal(modal, item, false, true);
+    SyncProductModal(modal, item);
 
     pages.forEach((page) => page.classList.remove('active'));
     currentPage.parentElement.classList.add('active');
@@ -209,7 +209,7 @@ function AddToCart(form, itemPos = null) {
 }
 
 
-function SyncProductModal(form, item, setImage = false, setOptions = false) {
+function SyncProductModal(form, item) {
 
     let quantityInput = form.querySelector("input");
     quantityInput.value = item.quantity;
@@ -218,22 +218,59 @@ function SyncProductModal(form, item, setImage = false, setOptions = false) {
     let textInput = form.querySelector("textarea");
     textInput.value = item.text || '';
 
-    if (setOptions) {
-        form.querySelectorAll('select').forEach((select) => {
-            const name = select.getAttribute("data-name");
-            if (name in item.options)
-                select.value = item.options[name];
-            else
-                select.value = 0;
-            select.dispatchEvent(new Event('change'));
-        });
-    }
+    form.querySelectorAll('select').forEach((select) => {
+        const name = select.getAttribute("data-name");
+        if (name in item.options)
+            select.value = item.options[name];
+        else
+            select.value = 0;
+        select.dispatchEvent(new Event('change'));
+    });
+}
 
-    if (setImage) {
-        let image = form.querySelector('img');
-        if (item.image)
-            image.src = item.image;
-    }
+function SyncCartModal(form, item) {
+
+
+    const descriptionModalLabel = document.getElementById('descriptionModalLabel');
+    descriptionModalLabel.textContent = item.name;
+
+    const descriptionModalProductMeasurement = document.getElementById('descriptionModalProductMeasurement');
+    descriptionModalProductMeasurement.textContent = item.measurement;
+
+    const quantityInput = document.getElementById('descriptionModalProductQuantity');
+    quantityInput.value = item.quantity;
+    quantityInput.focus();
+
+    const textInput = document.getElementById('descriptionModalProductText');
+    textInput.value = item.text || '';
+
+    const descriptionModalProductOptions = document.getElementById("descriptionModalProductOptions");
+    descriptionModalProductOptions.innerHTML = "";
+    let content = document.createDocumentFragment();
+    const optionsKeys = Object.keys(item.options);
+    optionsKeys.forEach((key) => {
+        const row = document.createElement('div');
+        row.classList.add('mb-3');
+        const label = document.createElement('lable');
+        label.classList.add('form-label');
+        label.textContent = key;
+        const input = document.createElement('input');
+        input.classList.add('form-control');
+        input.value = item.options[key];
+        input.setAttribute('readonly', 'true');
+        input.setAttribute('disabled', 'true');
+        input.setAttribute('type', 'text');
+        row.appendChild(label);
+        row.appendChild(input);
+        content.appendChild(row);
+    });
+    descriptionModalProductOptions.appendChild(content);
+
+    const image = form.querySelector('img');
+    if (item.image)
+        image.setAttribute("src", item.image);
+    else
+        image.setAttribute("src", "");
 }
 
 function CheckProjectAndSiteSet(selectProjectSiteCallback) {
