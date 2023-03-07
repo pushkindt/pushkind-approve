@@ -200,7 +200,6 @@ def UploadImages():
                     continue
                 file_name = Path(zip_info.filename)
                 sku = file_name.stem
-                print(sku)
                 if sku not in products:
                     continue
                 zip_info.filename = sku + file_name.suffix

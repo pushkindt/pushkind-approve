@@ -168,14 +168,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="col text-end">
-                                            <button type="button" class="btn btn-primary addToCart text-white"
-                                                data-bs-dismiss="modal">Сохранить</button>
-                                            <button type="button" class="btn btn-primary addToCart text-white"
-                                                data-bs-dismiss="modal">Клонировать</button>
-                                        </div>
-                                    </div>
                                     <div class="row justify-content-center my-1">
                                         <div class="col-auto">
                                             <nav>
@@ -211,17 +203,6 @@
             window.location = "{{ url_for('main.ShopCategories') }}";
         });
 
-        const addToCartButtons = document.querySelectorAll(".addToCart");
-        addToCartButtons.forEach(addToCartButton => {
-            addToCartButton.addEventListener("click", event => {
-                const currentButton = event.target;
-                const form = currentButton.closest('.modal');
-                const itemPos = currentButton.dataset.pos;
-                AddToCart(form, itemPos);
-                SetInCartText();
-            });
-        });
-
         const productFilter = document.querySelector("#productFilter");
         const productList = document.querySelector("#productList");
 
@@ -246,50 +227,34 @@
                 if (!descriptionModal) {
                     descriptionModal = new bootstrap.Modal(modalElement, {});
                 }
-                const items = GetShoppingCart().filter((item, index) => {
-                    item.pos = index;
-                    return item.id === productId
-                });
-                const addToCartButton = modalElement.querySelectorAll("button.addToCart")[1];
                 const pagination = modalElement.querySelector('.pagination');
                 pagination.innerHTML = "";
-                const saveToCartButton = modalElement.querySelector("button.addToCart");
-                if (items.length > 0) {
-                    addToCartButton.classList.remove("d-none");
-                    let content = document.createDocumentFragment();
-                    if (items.length > 1) {
-                        const laquo = document.createElement('li');
-                        laquo.classList.add('page-item');
-                        laquo.innerHTML = '<a class="page-link">&laquo;</a>';
-                        content.appendChild(laquo);
-                        items.forEach((item, index) => {
-                            const li = document.createElement('li');
-                            li.classList.add('page-item', 'cartItemPage');
-                            let a = document.createElement('a');
-                            a.classList.add('page-link');
-                            a.textContent = index + 1;
-                            a.dataset.pos = item.pos;
-                            a.href = "#"
-                            a.addEventListener('click', HandleCartItemPageClick);
-                            li.appendChild(a);
-                            if (index == 0) {
-                                li.classList.add('active');
-                            }
-                            content.appendChild(li);
-                        });
-                        const raquo = document.createElement('li');
-                        raquo.classList.add('page-item');
-                        raquo.innerHTML = '<a class="page-link">&raquo;</a>';
-                        content.appendChild(raquo);
+                let content = document.createDocumentFragment();
+                let pageNumber = 1;
+                GetShoppingCart().forEach((item, index) => {
+                    if (item.id === productId) {
+                        const li = document.createElement('li');
+                        li.classList.add('page-item');
+                        li.addEventListener('click', HandleCartItemPageClick);
+                        if (pageNumber === 1) {
+                            li.classList.add('active', 'addToCart');
+                            li.setAttribute('data-bs-dismiss', "modal");
+                            li.innerHTML = '<a href="#" class="page-link">Сохранить</a>'
+                            SyncProductModal(modalElement, index);
+                        } else 
+                            li.innerHTML = `<a href="#" class="page-link">${pageNumber}</a>`
+                        li.dataset.pos = index;
+                        content.appendChild(li);
+                        pageNumber++;
                     }
-                    pagination.appendChild(content);
-                    saveToCartButton.dataset.pos = items[0].pos;
-                    SyncProductModal(modalElement, items[0]);
-                }
-                else {
-                    addToCartButton.classList.add("d-none");
-                    saveToCartButton.removeAttribute("data-pos");
-                }
+                });
+                const raquo = document.createElement('li');
+                raquo.classList.add('page-item', 'addToCart');
+                raquo.setAttribute('data-bs-dismiss', "modal");
+                raquo.addEventListener('click', HandleCartItemPageClick);
+                raquo.innerHTML = '<a class="page-link"><i class="bi bi-plus"></i></a>';
+                content.appendChild(raquo);
+                pagination.appendChild(content);
                 descriptionModal.show();
             });
         });

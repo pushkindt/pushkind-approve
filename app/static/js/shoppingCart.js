@@ -46,20 +46,34 @@ function PopulateProductQuantities() {
 function HandleCartItemPageClick(event) {
     event.preventDefault();
 
-    const shoppingCart = GetShoppingCart();
-    const currentPage = event.target;
-    const modal = currentPage.closest('.modal');
+    const currentPage = event.currentTarget;
     const itemPos = Number(currentPage.dataset.pos);
-    const item = shoppingCart[itemPos];
-    const pages = modal.querySelectorAll('.page-item');
-    const saveToCartButton = modal.querySelector('button.addToCart');
 
-    SyncProductModal(modal, item);
+    const modal = currentPage.closest('.modal');
+    if (currentPage.classList.contains('addToCart')) {
+        AddToCart(modal, itemPos);
+        SetInCartText();
+    } else {
 
-    pages.forEach((page) => page.classList.remove('active'));
-    currentPage.parentElement.classList.add('active');
+        SyncProductModal(modal, itemPos);
 
-    saveToCartButton.dataset.pos = itemPos;
+        const pages = modal.querySelectorAll('.page-item');
+
+        pages.forEach((page, index) => {
+            if (index < pages.length - 1) {
+                page.classList.remove('active');
+                page.classList.remove('addToCart');
+                const a = page.querySelector('a');
+                a.textContent = index + 1;
+                page.removeAttribute('data-bs-dismiss');
+            }
+        });
+        currentPage.classList.add('active');
+        currentPage.classList.add('addToCart');
+        currentPage.setAttribute('data-bs-dismiss', "modal");
+        const a = currentPage.querySelector('a');
+        a.textContent = 'Сохранить';
+    }
 }
 
 
@@ -159,7 +173,7 @@ function AddToCart(form, itemPos = null) {
 
     if (itemQuantity > 0) {
         let item = {};
-        if (itemPos)
+        if (Number.isInteger(itemPos))
             item = shoppingCart[itemPos];
         else {
             item = {
@@ -184,7 +198,7 @@ function AddToCart(form, itemPos = null) {
 
         item.quantity = itemQuantity;
     } else {
-        if (itemPos)
+        if (Number.isInteger(itemPos))
             shoppingCart.splice(itemPos, 1);
     }
 
@@ -209,7 +223,10 @@ function AddToCart(form, itemPos = null) {
 }
 
 
-function SyncProductModal(form, item) {
+function SyncProductModal(form, itemPos) {
+
+    const shoppingCart = GetShoppingCart();
+    const item = shoppingCart[itemPos];
 
     let quantityInput = form.querySelector("input");
     quantityInput.value = item.quantity;
