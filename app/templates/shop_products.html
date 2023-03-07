@@ -257,21 +257,31 @@
                 if (items.length > 0) {
                     addToCartButton.classList.remove("d-none");
                     let content = document.createDocumentFragment();
-                    items.forEach((item, index) => {
-                        const li = document.createElement('li');
-                        li.classList.add('page-item', 'cartItemPage');
-                        let a = document.createElement('a');
-                        a.classList.add('page-link');
-                        a.textContent = index + 1;
-                        a.dataset.pos = item.pos;
-                        a.href = "#"
-                        a.addEventListener('click', HandleCartItemPageClick);
-                        li.appendChild(a);
-                        if (index == 0) {
-                            li.classList.add('active');
-                        }
-                        content.appendChild(li);
-                    });
+                    if (items.length > 1) {
+                        const laquo = document.createElement('li');
+                        laquo.classList.add('page-item');
+                        laquo.innerHTML = '<a class="page-link">&laquo;</a>';
+                        content.appendChild(laquo);
+                        items.forEach((item, index) => {
+                            const li = document.createElement('li');
+                            li.classList.add('page-item', 'cartItemPage');
+                            let a = document.createElement('a');
+                            a.classList.add('page-link');
+                            a.textContent = index + 1;
+                            a.dataset.pos = item.pos;
+                            a.href = "#"
+                            a.addEventListener('click', HandleCartItemPageClick);
+                            li.appendChild(a);
+                            if (index == 0) {
+                                li.classList.add('active');
+                            }
+                            content.appendChild(li);
+                        });
+                        const raquo = document.createElement('li');
+                        raquo.classList.add('page-item');
+                        raquo.innerHTML = '<a class="page-link">&raquo;</a>';
+                        content.appendChild(raquo);
+                    }
                     pagination.appendChild(content);
                     saveToCartButton.dataset.pos = items[0].pos;
                     SyncProductModal(modalElement, items[0]);
