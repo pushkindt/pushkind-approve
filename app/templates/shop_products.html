@@ -133,6 +133,15 @@
                                     </div>
                                 </div>
                                 <div class="col-sm">
+                                    <div class="row my-1 d-none">
+                                        <div class="col">
+                                            <div class="input-group">
+                                                <span class="input-group-text">Копии:</span>
+                                                <select class="form-select selectClones">
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="row">
                                         <div class="col">
                                             <label for="descriptionModalProductText{{product.id}}"
@@ -147,7 +156,7 @@
                                     <div class="row">
                                         {% for option in rows %}
                                         <div class="col-md-4 my-1">
-                                            <select class="form-select" data-name="{{option}}">
+                                            <select class="form-select productOption" data-name="{{option}}">
                                                 <option selected disabled value="0">{{ option }}</option>
                                                 {% for value in product.options[option]%}
                                                 <option value="{{value}}">{{value}}</option>
@@ -170,10 +179,10 @@
                                     </div>
                                     <div class="row justify-content-center my-1">
                                         <div class="col-auto">
-                                            <nav>
-                                                <ul class="pagination">
-                                                </ul>
-                                            </nav>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-outline-primary addToCart rounded" data-bs-dismiss="modal"><i class="bi bi-plus"></i></button>
+                                                <button type="button" class="btn btn-primary addToCart d-none" data-bs-dismiss="modal">Сохранить</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -217,8 +226,17 @@
             });
         });
 
-        const selectableElements = document.querySelectorAll(".selectable");
+        const addToCartButtons = document.querySelectorAll(".addToCart");
+        addToCartButtons.forEach(button => {
+            button.addEventListener("click", HandleAddToCart);
+        });
 
+        const selectClones = document.querySelectorAll(".selectClones");
+        selectClones.forEach(select => {
+            select.addEventListener("change", HandleProductModalChangeClone);
+        });
+
+        const selectableElements = document.querySelectorAll(".selectable");
         selectableElements.forEach(selectable => {
             selectable.addEventListener("click", event => {
                 const productId = Number(selectable.dataset.id);
@@ -227,34 +245,46 @@
                 if (!descriptionModal) {
                     descriptionModal = new bootstrap.Modal(modalElement, {});
                 }
-                const pagination = modalElement.querySelector('.pagination');
-                pagination.innerHTML = "";
-                let content = document.createDocumentFragment();
-                let pageNumber = 1;
+                const addToCartButtons = modalElement.querySelectorAll(".addToCart");
+                const selectClones = modalElement.querySelector(".selectClones");
+                const content = document.createDocumentFragment();
+                selectClones.innerHTML = "";
+                let count = 0;
                 GetShoppingCart().forEach((item, index) => {
                     if (item.id === productId) {
-                        const li = document.createElement('li');
-                        li.classList.add('page-item');
-                        li.addEventListener('click', HandleCartItemPageClick);
-                        if (pageNumber === 1) {
-                            li.classList.add('active', 'addToCart');
-                            li.setAttribute('data-bs-dismiss', "modal");
-                            li.innerHTML = '<a href="#" class="page-link">Сохранить</a>'
+                        const opt = document.createElement('option');
+                        if (count === 0){
+                            addToCartButtons[0].classList.remove('rounded');
+                            addToCartButtons[1].classList.remove('d-none');
+                            addToCartButtons[1].dataset.pos = index;
                             SyncProductModal(modalElement, index);
-                        } else 
-                            li.innerHTML = `<a href="#" class="page-link">${pageNumber}</a>`
-                        li.dataset.pos = index;
-                        content.appendChild(li);
-                        pageNumber++;
+                            opt.setAttribute("selected", "true");
+                        } else {
+                            selectClones.closest('.row').classList.remove('d-none');
+                        }
+                        opt.value = index;
+                        opt.textContent = `Количество: ${item.quantity}`;
+                        if (item.text)
+                            opt.textContent += `, Комментарий: ${item.text}`;
+                        if (item.options) {
+                            const optionsKeys = Object.keys(item.options);
+                            if (optionsKeys.length > 0) {
+                                const optionsValuesArr = optionsKeys.map(key => `${key}: ${item.options[key]}`);
+                                opt.textContent += ", " + optionsValuesArr.join(', ');
+                            }
+                        }
+                        content.appendChild(opt);
+                        count++;
                     }
                 });
-                const raquo = document.createElement('li');
-                raquo.classList.add('page-item', 'addToCart');
-                raquo.setAttribute('data-bs-dismiss', "modal");
-                raquo.addEventListener('click', HandleCartItemPageClick);
-                raquo.innerHTML = '<a class="page-link"><i class="bi bi-plus"></i></a>';
-                content.appendChild(raquo);
-                pagination.appendChild(content);
+                if (count === 0){
+                    addToCartButtons[0].classList.add('rounded');
+                    addToCartButtons[1].classList.add('d-none');
+                    selectClones.closest('.row').classList.add('d-none');
+                    addToCartButtons[1].removeAttribute('data-pos');
+                } else {
+                    selectClones.appendChild(content);
+                }
                 descriptionModal.show();
             });
         });

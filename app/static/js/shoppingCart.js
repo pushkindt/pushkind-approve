@@ -42,38 +42,25 @@ function PopulateProductQuantities() {
     }
 }
 
+function HandleAddToCart(event) {
+    const button = event.currentTarget;
+    const itemPos = Number(button.dataset.pos);
+    const modal = button.closest('.modal');
+    AddToCart(modal, itemPos);
+    SetInCartText();
+}
 
-function HandleCartItemPageClick(event) {
+function HandleProductModalChangeClone(event) {
     event.preventDefault();
 
-    const currentPage = event.currentTarget;
-    const itemPos = Number(currentPage.dataset.pos);
+    const currentClone = event.currentTarget;
+    const itemPos = Number(currentClone.value);
 
-    const modal = currentPage.closest('.modal');
-    if (currentPage.classList.contains('addToCart')) {
-        AddToCart(modal, itemPos);
-        SetInCartText();
-    } else {
+    const modal = currentClone.closest('.modal');
+    SyncProductModal(modal, itemPos);
 
-        SyncProductModal(modal, itemPos);
-
-        const pages = modal.querySelectorAll('.page-item');
-
-        pages.forEach((page, index) => {
-            if (index < pages.length - 1) {
-                page.classList.remove('active');
-                page.classList.remove('addToCart');
-                const a = page.querySelector('a');
-                a.textContent = index + 1;
-                page.removeAttribute('data-bs-dismiss');
-            }
-        });
-        currentPage.classList.add('active');
-        currentPage.classList.add('addToCart');
-        currentPage.setAttribute('data-bs-dismiss', "modal");
-        const a = currentPage.querySelector('a');
-        a.textContent = 'Сохранить';
-    }
+    const addToCartButtons = modal.querySelectorAll(".addToCart");
+    addToCartButtons[1].dataset.pos = itemPos;
 }
 
 
@@ -150,7 +137,7 @@ function PopulateProduct(item, index) {
 
 function productOptionsToJson(form) {
     let formData = {};
-    let selectElements = form.querySelectorAll('select');
+    let selectElements = form.querySelectorAll('select.productOption');
     const numElements = selectElements.length;
     for (let i = 0; i < numElements; i++) {
         let selected = selectElements[i].querySelector('option:checked');
@@ -235,7 +222,7 @@ function SyncProductModal(form, itemPos) {
     let textInput = form.querySelector("textarea");
     textInput.value = item.text || '';
 
-    form.querySelectorAll('select').forEach((select) => {
+    form.querySelectorAll('select.productOption').forEach((select) => {
         const name = select.getAttribute("data-name");
         if (name in item.options)
             select.value = item.options[name];
