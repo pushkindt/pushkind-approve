@@ -24,7 +24,7 @@ from app.models import (
 @bp.route("/shop/")
 @login_required
 @role_required([UserRoles.initiative, UserRoles.purchaser, UserRoles.admin])
-def ShopCategories():
+def shop_categories():
     projects = Project.query
     if current_user.role != UserRoles.admin:
         projects = projects.filter_by(enabled=True)
@@ -41,10 +41,10 @@ def ShopCategories():
 @bp.route("/shop/<int:cat_id>/<int:vendor_id>")
 @login_required
 @role_required([UserRoles.initiative, UserRoles.purchaser, UserRoles.admin])
-def ShopProducts(cat_id, vendor_id):
+def shop_products(cat_id, vendor_id):
     category = Category.query.filter_by(id=cat_id, hub_id=current_user.hub_id).first()
     if category is None:
-        return redirect(url_for("main.ShopCategories"))
+        return redirect(url_for("main.shop_categories"))
     products = Product.query.filter_by(cat_id=cat_id)
     if vendor_id is not None:
         products = products.filter_by(vendor_id=vendor_id)
@@ -64,7 +64,7 @@ def ShopProducts(cat_id, vendor_id):
 @bp.route("/shop/order", methods=["GET", "POST"])
 @login_required
 @role_required([UserRoles.initiative, UserRoles.purchaser, UserRoles.admin])
-def ShopOrder():
+def shop_cart():
     form = CreateOrderForm()
     if form.submit.data:
         if form.validate_on_submit():
@@ -80,7 +80,7 @@ def ShopOrder():
             ).first()
             if site is None:
                 flash("Такой площадки не существует.")
-                return redirect(url_for("main.ShopCart"))
+                return redirect(url_for("main.shop_cart"))
             order_products = []
             order_vendors = []
             categories = []
@@ -122,7 +122,7 @@ def ShopOrder():
             categories = list(set(categories))
             if settings.single_category_orders and len(categories) > 1:
                 flash("Заявки с более чем одной категорией не разрешены.")
-                return redirect(url_for("main.ShopCategories"))
+                return redirect(url_for("main.shop_categories"))
             order_number = GetNewOrderNumber()
             now = datetime.now(tz=timezone.utc)
             categories = Category.query.filter(Category.id.in_(categories)).all()

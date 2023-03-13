@@ -5,55 +5,37 @@
 {% endblock %}
 
 {% block content %}
-<script>
-    function CloneProduct(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        const content = event.target.closest('.cartItem');
-        const productPos = Number(content.getAttribute("data-pos"));
-        let item = shoppingCart[productPos];
-        if (item) {
-            shoppingCart.push(item);
-            sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
-            PopulateProduct(item, shoppingCart.length - 1);
-            SetInCartText(shoppingCart);
-        }
-    }
-    function ShowDescriptionModal(event) {
-        const productPos = Number(event.currentTarget.getAttribute("data-pos"));
-        let modalElement = document.getElementById("descriptionModal");
-        let descriptionModal = bootstrap.Modal.getInstance(modalElement);
-        if (!descriptionModal)
-            descriptionModal = new bootstrap.Modal(modalElement, {});
-        let item = shoppingCart[productPos];
-        if (item) {
-            modalElement.dataset.pos = productPos;
-            SyncCartModal(modalElement, item);
-            descriptionModal.show();
-        }
-    }
-</script>
 
 <div class="container">
 
-    <div class="row">
+    <div class="row my-2">
         <div class="col overflow-hidden">
             <strong>ПРОСМОТР ЗАЯВКИ</strong>
         </div>
         <div class="col-auto text-end overflow-hidden">
-            <a class="text-muted" href="{{url_for('main.ShopCategories')}}">
+            <a class="text-muted" href="{{url_for('main.shop_categories')}}">
                 Вернуться в каталог
             </a>
         </div>
     </div>
+
     <div class="row">
         <div class="col">
             <strong>Проект:</strong>
-            <a href="{{url_for('main.ShopCategories')}}" id="projectName" class="siteProjectSelect">Не указан</a><br>
+            <a href="{{url_for('main.shop_categories')}}"
+                id="projectName"
+                class="siteProjectSelect">
+                Не указан
+            </a><br>
             <strong>Объект:</strong>
-            <a href="{{url_for('main.ShopCategories')}}" id="siteName" class="siteProjectSelect">Не указан</a>
+            <a href="{{url_for('main.shop_categories')}}"
+                id="siteName"
+                class="siteProjectSelect">
+                Не указан
+            </a>
         </div>
     </div>
+
     <div class="row">
         <div class="col">
             <strong>Инициатор:</strong>
@@ -62,13 +44,14 @@
             {{ user.name or user.email }}
         </div>
     </div>
+
     <div class="row mt-2">
         <div class="col">
             <span id="inCartItems"></span>
         </div>
     </div>
 
-    <form method="POST" action="{{url_for('main.ShopOrder')}}" id="shoppingCartForm">
+    <form method="POST" action="{{url_for('main.shop_cart')}}" id="shoppingCartForm">
         {{ form.csrf_token(id=False) }}
         {{ form.project_id(class_='d-none') }}
         {{ form.site_id(class_='d-none') }}
@@ -84,32 +67,44 @@
         </div>
     </form>
 </div>
-<div class="modal fade" id="descriptionModal" tabindex="-1" aria-labelledby="#descriptionModalLabel" aria-hidden="true">
+
+<div class="modal fade"
+    id="descriptionModal"
+    tabindex="-1"
+    aria-labelledby="descriptionModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="descriptionModalLabel"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                </button>
             </div>
             <div class="modal-body">
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-sm">
-                            <div id="carouselControls" class="carousel carousel-dark slide" data-bs-ride="carousel">
+                            <div id="carouselControls"
+                                class="carousel carousel-dark slide" data-bs-ride="carousel">
                                 <div class="carousel-inner">
                                     <div class="carousel-item active">
                                         <div class="carousel-item active">
-                                            <img src="{{config['PLACEHOLDER_IMAGE']}}" class="d-block w-100"
-                                                alt="Main image" />
+                                            <img src="{{config['PLACEHOLDER_IMAGE']}}"
+                                                class="d-block w-100"
+                                                alt="Main image">
                                         </div>
                                     </div>
                                 </div>
-                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselControls"
+                                <button class="carousel-control-prev"
+                                    type="button"
+                                    data-bs-target="#carouselControls"
                                     data-bs-slide="prev">
                                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                                     <span class="visually-hidden">Previous</span>
                                 </button>
-                                <button class="carousel-control-next" type="button" data-bs-target="#carouselControls"
+                                <button class="carousel-control-next"
+                                    type="button"
+                                    data-bs-target="#carouselControls"
                                     data-bs-slide="next">
                                     <span class="carousel-control-next-icon" aria-hidden="true"></span>
                                     <span class="visually-hidden">Next</span>
@@ -120,29 +115,47 @@
                             <div class="row">
                                 <div class="col">
                                     <label for="descriptionModalProductText"
-                                        class="form-label">Для некоторых товаров можно добавить
-                                        пояснение/опции</label>
-                                    <textarea class="form-control" rows="3" id="descriptionModalProductText"
-                                        placeholder="Комментарий"></textarea>
+                                        class="form-label">
+                                        Для некоторых товаров можно добавить пояснение/опции
+                                    </label>
+                                    <textarea class="form-control productText"
+                                        rows="3"
+                                        id="descriptionModalProductText"
+                                        placeholder="Комментарий">
+                                    </textarea>
                                 </div>
                             </div>
                             <div class="my-1" id="descriptionModalProductOptions">
-
                             </div>
-                            <div class="row my-1">
+                            <div class="row">
                                 <div class="col">
                                     <div class="input-group">
                                         <span class="input-group-text">Количество</span>
-                                        <input type="number" class="form-control" min="0" step="1"
-                                            aria-label="Количество" value="0" id="descriptionModalProductQuantity">
-                                        <span class="input-group-text" id="descriptionModalProductMeasurement"></span>
+                                        <input type="number"
+                                            class="form-control productQuantity"
+                                            min="0"
+                                            step="1"
+                                            aria-label="Количество"
+                                            value="0"
+                                            id="descriptionModalProductQuantity">
+                                        <span class="input-group-text"
+                                            id="descriptionModalProductMeasurement">
+                                        </span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="row my-1">
-                                <div class="col text-end">
-                                    <button type="button" class="btn btn-primary addToCart text-white"
-                                        data-bs-dismiss="modal">Сохранить</button>
+                            <div class="row justify-content-center my-1">
+                                <div class="col-auto">
+                                    <button type="button"
+                                        class="btn btn-primary addToCart"
+                                        data-bs-dismiss="modal">
+                                        Сохранить
+                                    </button>
+                                    <button type="button"
+                                        class="btn btn-secondary"
+                                        data-bs-dismiss="modal">
+                                        Закрыть
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -155,7 +168,7 @@
 {% endblock %}
 
 {% block templates %}
-<div class="row rounded bg-white my-1 cartItem selectable" id="cartItemTemplate" onclick="ShowDescriptionModal(event)">
+<div class="row rounded bg-white my-1 cartItem selectable" id="cartItemTemplate">
     <div class="col-auto">
         <input required type="number" class="d-none" name="cart-_-product" hidden id="productIdTemplate">
         <input type="text" class="d-none" name="cart-_-text" hidden id="productTextTemplate">
@@ -180,7 +193,7 @@
         </div>
         <div class="row">
             <div class="col">
-                <a href="#" class="cloneProductButton" onclick="CloneProduct(event)">клонировать</a>
+                <a href="#" class="cloneProductButton">клонировать</a>
             </div>
         </div>
     </div>
@@ -192,8 +205,12 @@
         ₽/<span id="productMeasurementTemplate"></span>
     </div>
     <div class="col overflow-hidden pt-sm-3 mb-1">
-        <input readonly type="number" class="form-control productQuantity" name="cart-_-quantity"
-            id="productQuantityTemplate" aria-label="Количество">
+        <input readonly
+            type="number"
+            class="form-control productQuantity"
+            name="cart-_-quantity"
+            id="productQuantityTemplate"
+            aria-label="Количество">
     </div>
 </div>
 {% endblock %}
@@ -201,67 +218,27 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/shoppingCart.js') }}"></script>
 <script>
-    var shoppingCart = GetShoppingCart();
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", () => {
 
-        shoppingCart.forEach(PopulateProduct);
-        SetInCartText(shoppingCart);
-        const [projectId, siteId, siteName, projectName] = CheckProjectAndSiteSet(() => {
-            window.location = "{{ url_for('main.ShopCategories') }}";
+        const [projectId, siteId, siteName, projectName] = CheckProjectAndSite(() => {
+            window.location = "{{ url_for('main.shop_categories') }}";
         });
 
         document.querySelector("#project_id").value = projectId;
         document.querySelector("#site_id").value = siteId;
 
-        const submitButton = document.querySelector("#submit");
-        const emptyCartAlert = document.querySelector("#emptyCartAlert");
-        if (shoppingCart.length > 0) {
-            submitButton.classList.remove("d-none");
-            emptyCartAlert.classList.add("d-none");
-        }
-
-        submitButton.addEventListener("click", function () {
-            shoppingCart = [];
-            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-        });
+        PopulateCartProducts()
 
         const addToCartButtons = document.querySelectorAll(".addToCart");
+        addToCartButtons.forEach(addToCartButton => {
+            addToCartButton.addEventListener("click", HandleAddToCart2);
+        });
 
-        addToCartButtons.forEach(function (addToCartButton) {
-            addToCartButton.addEventListener("click", function () {
-                const form = this.closest('.modal');
-                const productPos = Number(form.dataset.pos);
-                const quantityInput = document.getElementById("descriptionModalProductQuantity");
-                const textInput = document.getElementById("descriptionModalProductText");
-                const itemQuantity = Number(quantityInput.value);
-                const itemText = textInput.value;
-                let cartItem = document.querySelector(`div.cartItem[data-pos="${productPos}"]`);
-
-                if (!itemQuantity || itemQuantity == 0) {
-                    shoppingCart[productPos] = null;
-                    cartItem.remove();
-                } else {
-                    shoppingCart[productPos]['quantity'] = itemQuantity;
-                    shoppingCart[productPos]['text'] = itemText;
-                    let quantityInput = cartItem.querySelector(".productQuantity");
-                    quantityInput.value = itemQuantity;
-                    let textInput = cartItem.querySelector(".productTextValue");
-                    textInput.textContent = itemText;
-                    if (itemText) {
-                        textInput.closest('.row').classList.remove('d-none');
-                    }
-                    else {
-                        textInput.closest('.row').classList.add('d-none');
-                    }
-                }
-
-                if (shoppingCart.filter(Boolean).length == 0) {
-                    shoppingCart = [];
-                    submitButton.classList.add("d-none");
-                    emptyCartAlert.classList.remove("d-none");
-                }
-                sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-                SetInCartText(shoppingCart);
+        const modals = document.querySelectorAll(".modal");
+        modals.forEach(modal => {
+            modal.addEventListener("shown.bs.modal", event => {
+                let quantityInput = modal.querySelector(".productQuantity");
+                quantityInput.focus();
             });
         });
 
