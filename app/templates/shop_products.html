@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 
 {% block styles%}
+    <style>
+        @keyframes addedToCart {
+            from {background-color: #089feb;}
+            to {background-color: #157347;}
+        }
+        .addedToCart {
+            animation-name: addedToCart;
+            animation-duration: 2s;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -133,21 +143,31 @@
                                     </div>
                                 </div>
                                 <div class="col-sm">
-                                    <div class="row my-1 d-none">
+                                    <div class="row my-1 py-1 d-none border rounded bg-yellow">
                                         <div class="col">
-                                            <div class="input-group">
-                                                <span class="input-group-text">Копии:</span>
-                                                <select class="form-select selectClones">
+                                            <div class="mb-1">
+                                                <label
+                                                    for="descriptionModalProductClones{{product.id}}"
+                                                    class="form-label">
+                                                    Выберите ранее сохраненный вариант для просмотра/изменения или добавьте новый
+                                                </label>
+                                                <select class="form-select selectClones" id="descriptionModalProductClones{{product.id}}">
                                                 </select>
+                                            </div>
+                                            <div class="text-center">
+                                                <button type="button" class="btn btn-primary addToCart">Добавить</button>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="row">
                                         <div class="col">
-                                            <label for="descriptionModalProductText{{product.id}}"
-                                                class="form-label">Для некоторых товаров можно добавить
-                                                пояснение/опции</label>
-                                            <textarea class="form-control" rows="3" placeholder="Комментарий"
+                                            <label
+                                                for="descriptionModalProductText{{product.id}}"
+                                                class="form-label">
+                                                Для некоторых товаров можно добавить
+                                                пояснение/опции
+                                            </label>
+                                            <textarea class="form-control productText" rows="3" placeholder="Комментарий"
                                                 id="descriptionModalProductText{{product.id}}"></textarea>
                                         </div>
                                     </div>
@@ -171,18 +191,16 @@
                                         <div class="col">
                                             <div class="input-group">
                                                 <span class="input-group-text">Количество</span>
-                                                <input type="number" class="form-control" min="0" step="1"
-                                                    aria-label="Количество" value="0">
+                                                <input type="number" class="form-control productQuantity" min="0" step="1"
+                                                    aria-label="Количество" value="">
                                                 <span class="input-group-text">{{product.measurement}}</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="row justify-content-center my-1">
                                         <div class="col-auto">
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-outline-primary addToCart rounded" data-bs-dismiss="modal"><i class="bi bi-plus"></i></button>
-                                                <button type="button" class="btn btn-primary addToCart d-none" data-bs-dismiss="modal">Сохранить</button>
-                                            </div>
+                                            <button type="button" class="btn btn-primary addToCart">Сохранить</button>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                                         </div>
                                     </div>
                                 </div>
@@ -228,7 +246,13 @@
 
         const addToCartButtons = document.querySelectorAll(".addToCart");
         addToCartButtons.forEach(button => {
-            button.addEventListener("click", HandleAddToCart);
+            button.addEventListener("click", (event) => {
+                button.classList.add('addedToCart');
+                HandleAddToCart(event);
+            });
+            button.addEventListener("animationend", (event) => {
+                button.classList.remove('addedToCart');
+            });
         });
 
         const selectClones = document.querySelectorAll(".selectClones");
@@ -245,53 +269,15 @@
                 if (!descriptionModal) {
                     descriptionModal = new bootstrap.Modal(modalElement, {});
                 }
-                const addToCartButtons = modalElement.querySelectorAll(".addToCart");
-                const selectClones = modalElement.querySelector(".selectClones");
-                const content = document.createDocumentFragment();
-                selectClones.innerHTML = "";
-                let count = 0;
-                GetShoppingCart().forEach((item, index) => {
-                    if (item.id === productId) {
-                        const opt = document.createElement('option');
-                        if (count === 0){
-                            addToCartButtons[0].classList.remove('rounded');
-                            addToCartButtons[1].classList.remove('d-none');
-                            addToCartButtons[1].dataset.pos = index;
-                            SyncProductModal(modalElement, index);
-                            opt.setAttribute("selected", "true");
-                        } else {
-                            selectClones.closest('.row').classList.remove('d-none');
-                        }
-                        opt.value = index;
-                        opt.textContent = `Количество: ${item.quantity}`;
-                        if (item.text)
-                            opt.textContent += `, Комментарий: ${item.text}`;
-                        if (item.options) {
-                            const optionsKeys = Object.keys(item.options);
-                            if (optionsKeys.length > 0) {
-                                const optionsValuesArr = optionsKeys.map(key => `${key}: ${item.options[key]}`);
-                                opt.textContent += ", " + optionsValuesArr.join(', ');
-                            }
-                        }
-                        content.appendChild(opt);
-                        count++;
-                    }
-                });
-                if (count === 0){
-                    addToCartButtons[0].classList.add('rounded');
-                    addToCartButtons[1].classList.add('d-none');
-                    selectClones.closest('.row').classList.add('d-none');
-                    addToCartButtons[1].removeAttribute('data-pos');
-                } else {
-                    selectClones.appendChild(content);
-                }
+                SyncProductModal(modalElement, null);
                 descriptionModal.show();
             });
         });
+
         const modals = document.querySelectorAll(".modal");
         modals.forEach(modal => {
             modal.addEventListener('shown.bs.modal', event => {
-                let quantityInput = modal.querySelector("input");
+                let quantityInput = modal.querySelector(".productQuantity");
                 quantityInput.focus();
             });
         });

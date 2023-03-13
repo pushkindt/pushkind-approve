@@ -36,8 +36,8 @@ function PopulateProductQuantities() {
         if (input) {
             const prevValue = Number(input.value);
             input.value = prevValue + item.quantity;
-            input.classList.add('border-success');
-            plusSign.classList.remove('d-none');
+            input.classList.add("border-success");
+            plusSign.classList.remove("d-none");
         }
     }
 }
@@ -45,9 +45,8 @@ function PopulateProductQuantities() {
 function HandleAddToCart(event) {
     const button = event.currentTarget;
     const itemPos = Number(button.dataset.pos);
-    const modal = button.closest('.modal');
+    const modal = button.closest(".modal");
     AddToCart(modal, itemPos);
-    SetInCartText();
 }
 
 function HandleProductModalChangeClone(event) {
@@ -56,11 +55,8 @@ function HandleProductModalChangeClone(event) {
     const currentClone = event.currentTarget;
     const itemPos = Number(currentClone.value);
 
-    const modal = currentClone.closest('.modal');
+    const modal = currentClone.closest(".modal");
     SyncProductModal(modal, itemPos);
-
-    const addToCartButtons = modal.querySelectorAll(".addToCart");
-    addToCartButtons[1].dataset.pos = itemPos;
 }
 
 
@@ -68,33 +64,33 @@ function PopulateProduct(item, index) {
     if (!item) {
         return;
     }
-    const content = document.querySelector('#cartItemTemplate').cloneNode(true);
-    const sku = content.querySelector('#productSkuTemplate');
-    const name = content.querySelector('#productNameTemplate');
-    const text = content.querySelector('#productTextTemplate');
-    const image = content.querySelector('#productImageTemplate');
-    const vendor = content.querySelector('#productVendorTemplate');
-    const price = content.querySelector('#productPriceTemplate');
-    const product = content.querySelector('#productIdTemplate');
-    const quantity = content.querySelector('#productQuantityTemplate');
-    const measurement = content.querySelector('#productMeasurementTemplate');
-    const options = content.querySelector('#productOptionsTemplate');
-    const optionsValues = content.querySelector('#productOptionsValuesTemplate');
-    const textValue = content.querySelector('#productTextValueTemplate');
+    const content = document.querySelector("#cartItemTemplate").cloneNode(true);
+    const sku = content.querySelector("#productSkuTemplate");
+    const name = content.querySelector("#productNameTemplate");
+    const text = content.querySelector("#productTextTemplate");
+    const image = content.querySelector("#productImageTemplate");
+    const vendor = content.querySelector("#productVendorTemplate");
+    const price = content.querySelector("#productPriceTemplate");
+    const product = content.querySelector("#productIdTemplate");
+    const quantity = content.querySelector("#productQuantityTemplate");
+    const measurement = content.querySelector("#productMeasurementTemplate");
+    const options = content.querySelector("#productOptionsTemplate");
+    const optionsValues = content.querySelector("#productOptionsValuesTemplate");
+    const textValue = content.querySelector("#productTextValueTemplate");
 
-    content.removeAttribute('id');
-    sku.removeAttribute('id');
-    name.removeAttribute('id');
-    text.removeAttribute('id');
-    image.removeAttribute('id');
-    vendor.removeAttribute('id');
-    price.removeAttribute('id');
-    product.removeAttribute('id');
-    quantity.removeAttribute('id');
-    measurement.removeAttribute('id');
-    options.removeAttribute('id');
-    optionsValues.removeAttribute('id');
-    textValue.removeAttribute('id');
+    content.removeAttribute("id");
+    sku.removeAttribute("id");
+    name.removeAttribute("id");
+    text.removeAttribute("id");
+    image.removeAttribute("id");
+    vendor.removeAttribute("id");
+    price.removeAttribute("id");
+    product.removeAttribute("id");
+    quantity.removeAttribute("id");
+    measurement.removeAttribute("id");
+    options.removeAttribute("id");
+    optionsValues.removeAttribute("id");
+    textValue.removeAttribute("id");
 
     content.dataset.id = item.id;
     content.dataset.pos = index;
@@ -106,15 +102,15 @@ function PopulateProduct(item, index) {
         text.value = item.text;
         textValue.textContent = item.text;
         let parentRow = textValue.parentNode;
-        while (parentRow && !parentRow.classList.contains('row')) {
+        while (parentRow && !parentRow.classList.contains("row")) {
             parentRow = parentRow.parentNode;
         }
         if (parentRow) {
-            parentRow.classList.remove('d-none');
+            parentRow.classList.remove("d-none");
         }
     }
     if (item.image) {
-        image.setAttribute('src', item.image);
+        image.setAttribute("src", item.image);
     }
     vendor.textContent = item.vendor;
     price.textContent = item.price.toFixed(2);
@@ -125,22 +121,22 @@ function PopulateProduct(item, index) {
         options.value = JSON.stringify(item.options);
         const optionsKeys = Object.keys(item.options);
         const optionsValuesArr = optionsKeys.map(key => `${key}: <strong>${item.options[key]}</strong>`);
-        optionsValues.innerHTML = optionsValuesArr.join(', ');
-        optionsValues.closest('.row').classList.remove('d-none')
+        optionsValues.innerHTML = optionsValuesArr.join(", ");
+        optionsValues.closest(".row").classList.remove("d-none")
     }
-    text.setAttribute('name', text.getAttribute('name').replace('_', index));
-    product.setAttribute('name', product.getAttribute('name').replace('_', index));
-    quantity.setAttribute('name', quantity.getAttribute('name').replace('_', index));
-    options.setAttribute('name', options.getAttribute('name').replace('_', index));
-    document.querySelector('#shoppingCartItems').appendChild(content);
+    text.setAttribute("name", text.getAttribute("name").replace("_", index));
+    product.setAttribute("name", product.getAttribute("name").replace("_", index));
+    quantity.setAttribute("name", quantity.getAttribute("name").replace("_", index));
+    options.setAttribute("name", options.getAttribute("name").replace("_", index));
+    document.querySelector("#shoppingCartItems").appendChild(content);
 }
 
 function productOptionsToJson(form) {
     let formData = {};
-    let selectElements = form.querySelectorAll('select.productOption');
+    let selectElements = form.querySelectorAll("select.productOption");
     const numElements = selectElements.length;
     for (let i = 0; i < numElements; i++) {
-        let selected = selectElements[i].querySelector('option:checked');
+        let selected = selectElements[i].querySelector("option:checked");
         let name = selectElements[i].dataset.name;
         if (!selected.disabled) {
             formData[name] = selected.value;
@@ -153,9 +149,9 @@ function AddToCart(form, itemPos = null) {
 
     const shoppingCart = GetShoppingCart();
     const productId = Number(form.dataset.id);
-    const quantityInput = form.querySelector("input");
+    const quantityInput = form.querySelector(".productQuantity");
     const itemQuantity = Number(quantityInput.value);
-    const itemText = form.querySelector("textarea").value;
+    const itemText = form.querySelector(".productText").value;
     const itemOptions = productOptionsToJson(form);
 
     if (itemQuantity > 0) {
@@ -172,7 +168,7 @@ function AddToCart(form, itemPos = null) {
                 image: form.dataset.image,
                 measurement: form.dataset.measurement
             };
-            shoppingCart.push(item);
+            itemPos = shoppingCart.push(item) - 1;
         }
 
         if (itemText) {
@@ -187,14 +183,15 @@ function AddToCart(form, itemPos = null) {
     } else {
         if (Number.isInteger(itemPos))
             shoppingCart.splice(itemPos, 1);
+        itemPos = null;
     }
 
-    let productQuantityInput = document.querySelector(`#product${productId} input`);
+    const productQuantityInput = document.querySelector(`#product${productId} input`);
     const totalQuantity = shoppingCart.reduce(function (acc, i) {
         if (i.id == productId)
             acc += i.quantity;
         return acc;
-    }, 0);
+    }, 0); SetInCartText
     const plusSign = document.querySelector(`#product${productId} input+span`);
     if (totalQuantity > 0) {
         productQuantityInput.value = totalQuantity;
@@ -205,72 +202,83 @@ function AddToCart(form, itemPos = null) {
         productQuantityInput.classList.remove("border-success");
         plusSign.classList.add("d-none");
     }
-
     sessionStorage.setItem("shoppingCart", JSON.stringify(shoppingCart));
+    SyncProductModal(form, itemPos)
+    SetInCartText();
 }
 
 
 function SyncProductModal(form, itemPos) {
 
-    const shoppingCart = GetShoppingCart();
-    const item = shoppingCart[itemPos];
+    const addToCartButtons = form.querySelectorAll(".addToCart");
+    const quantityInput = form.querySelector(".productQuantity");
+    const textInput = form.querySelector(".productText");
+    itemPos = PopulateSelectClones(form, itemPos);
+    const productOptions = form.querySelectorAll(".productOption");
 
-    let quantityInput = form.querySelector("input");
-    quantityInput.value = item.quantity;
+    if (itemPos === null) {
+        addToCartButtons[1].removeAttribute("data-pos");
+        quantityInput.value = "";
+        textInput.value = "";
+        productOptions.forEach((select) => { select.value = 0 });
+    }
+    else {
+        const shoppingCart = GetShoppingCart();
+        const item = shoppingCart[itemPos];
+        addToCartButtons[1].dataset.pos = itemPos;
+        quantityInput.value = item.quantity;
+        textInput.value = item.text || "";
+        productOptions.forEach((select) => {
+            const name = select.getAttribute("data-name");
+            if (name in item.options)
+                select.value = item.options[name];
+            else
+                select.value = 0;
+            select.dispatchEvent(new Event("change"));
+        });
+    }
     quantityInput.focus();
-
-    let textInput = form.querySelector("textarea");
-    textInput.value = item.text || '';
-
-    form.querySelectorAll('select.productOption').forEach((select) => {
-        const name = select.getAttribute("data-name");
-        if (name in item.options)
-            select.value = item.options[name];
-        else
-            select.value = 0;
-        select.dispatchEvent(new Event('change'));
-    });
 }
 
 function SyncCartModal(form, item) {
 
 
-    const descriptionModalLabel = document.getElementById('descriptionModalLabel');
+    const descriptionModalLabel = document.getElementById("descriptionModalLabel");
     descriptionModalLabel.textContent = item.name;
 
-    const descriptionModalProductMeasurement = document.getElementById('descriptionModalProductMeasurement');
+    const descriptionModalProductMeasurement = document.getElementById("descriptionModalProductMeasurement");
     descriptionModalProductMeasurement.textContent = item.measurement;
 
-    const quantityInput = document.getElementById('descriptionModalProductQuantity');
+    const quantityInput = document.getElementById("descriptionModalProductQuantity");
     quantityInput.value = item.quantity;
     quantityInput.focus();
 
-    const textInput = document.getElementById('descriptionModalProductText');
-    textInput.value = item.text || '';
+    const textInput = document.getElementById("descriptionModalProductText");
+    textInput.value = item.text || "";
 
     const descriptionModalProductOptions = document.getElementById("descriptionModalProductOptions");
     descriptionModalProductOptions.innerHTML = "";
     let content = document.createDocumentFragment();
     const optionsKeys = Object.keys(item.options);
     optionsKeys.forEach((key) => {
-        const row = document.createElement('div');
-        row.classList.add('mb-3');
-        const label = document.createElement('lable');
-        label.classList.add('form-label');
+        const row = document.createElement("div");
+        row.classList.add("mb-3");
+        const label = document.createElement("label");
+        label.classList.add("form-label");
         label.textContent = key;
-        const input = document.createElement('input');
-        input.classList.add('form-control');
+        const input = document.createElement("input");
+        input.classList.add("form-control");
         input.value = item.options[key];
-        input.setAttribute('readonly', 'true');
-        input.setAttribute('disabled', 'true');
-        input.setAttribute('type', 'text');
+        input.setAttribute("readonly", "true");
+        input.setAttribute("disabled", "true");
+        input.setAttribute("type", "text");
         row.appendChild(label);
         row.appendChild(input);
         content.appendChild(row);
     });
     descriptionModalProductOptions.appendChild(content);
 
-    const image = form.querySelector('img');
+    const image = form.querySelector("img");
     if (item.image)
         image.setAttribute("src", item.image);
     else
@@ -297,4 +305,48 @@ function CheckProjectAndSiteSet(selectProjectSiteCallback) {
         selectProjectSiteCallback();
     });
     return [projectId, siteId, siteName, projectName];
+}
+
+function CreateSelectCloneOption(item, index) {
+    const opt = document.createElement("option");
+    opt.value = index;
+    opt.textContent = `${item.quantity} ${item.measurement}`;
+    if (item.options) {
+        const optionsKeys = Object.keys(item.options);
+        if (optionsKeys.length > 0) {
+            const optionsValuesArr = optionsKeys.map(key => `${key}: ${item.options[key]}`);
+            opt.textContent += ", " + optionsValuesArr.join(", ");
+        }
+    }
+    if (item.text)
+        opt.textContent += `, ${item.text}`;
+    return opt;
+}
+
+function PopulateSelectClones(form, itemPos = null) {
+
+    const productId = Number(form.dataset.id);
+    const selectClones = form.querySelector(".selectClones");
+    const content = document.createDocumentFragment();
+    selectClones.innerHTML = "";
+    let count = 0;
+    GetShoppingCart().forEach((item, index) => {
+        if (item.id === productId) {
+            const opt = CreateSelectCloneOption(item, index);
+            if (index === itemPos || (count === 0 && itemPos === null)) {
+                opt.setAttribute("selected", "true");
+                itemPos = index;
+            }
+            content.appendChild(opt);
+            count++;
+        }
+    });
+    if (count === 0) {
+        selectClones.closest(".row").classList.add("d-none");
+        itemPos = null;
+    } else {
+        selectClones.closest(".row").classList.remove("d-none");
+        selectClones.appendChild(content);
+    }
+    return itemPos
 }
