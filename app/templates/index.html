@@ -160,8 +160,13 @@
         }
 
 
-        InstantiatePagination("orderList", "order", "orderPagination", 10);
+        InstantiatePagination("orderList", "order", "orderPagination", 50);
         updateVisibleOrdersTotal();
+
+        const pages = document.querySelectorAll("#orderPagination li");
+        pages.forEach(page => {
+            page.addEventListener("click", updateVisibleOrdersTotal);
+        })
 
 		let alertModal = document.getElementById('alertModal');
 		if (alertModal){
