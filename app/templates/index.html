@@ -48,7 +48,7 @@
 <div class="container">
 	<div class="row my-2 fs-7">
 		<div class="col">
-			Выбрано заявок: <span id="orderCount">{{ orders|length }}</span> на сумму <span id="orderTotal">{{"%.2f"|format(orders| sum(attribute='total') / 1000000 ) }}</span> млн руб.
+			Выбрано заявок: <span id="orderCount"></span> на сумму <span id="orderTotal"></span> млн руб.
 		</div>
 		<div class="col text-end">
 			<a href="#" id="saveOrdersButton">скачать</a><br>
@@ -85,6 +85,10 @@
 			{% include '_order.html' %}
 		{% endfor %}
 	</div>
+    <nav aria-label="Orders pagination">
+        <ul class="pagination justify-content-center" id="orderPagination">
+        </ul>
+    </nav>
 </div>
 
 {% if current_user.role.name in ['admin', 'initiative', 'purchaser'] %}
@@ -133,9 +137,31 @@
 {% endblock %}
 
 {% block scripts %}
-
+<script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script>
-	$(document).ready(function () {
+	$(document).ready(() => {
+
+        const orderList = document.getElementById("orderList");
+
+        const updateVisibleOrdersTotal = () => {
+            const orderRows = orderList.querySelectorAll(".order");
+            let order_list = [];
+            let orderTotal = 0;
+            orderRows.forEach((orderRow) => {
+                if (orderRow.style.display != "none") {
+                    order_list.push(orderRow.dataset.id);
+                    orderTotal += Number(orderRow.dataset.total);
+                }
+            });
+            orderTotal /= 1000000;
+            document.getElementById("orderCount").textContent = order_list.length;
+            document.getElementById("orderTotal").textContent = orderTotal.toFixed(2);
+            document.getElementById("saveOrders").value = JSON.stringify(order_list);
+        }
+
+
+        InstantiatePagination("orderList", "order", "orderPagination", 10);
+        updateVisibleOrdersTotal();
 
 		let alertModal = document.getElementById('alertModal');
 		if (alertModal){
@@ -184,23 +210,21 @@
 
 		{% endif %}
 
-		$("#orderFilter").on("keyup", function () {
-			let value = $(this).val().toLowerCase();
-			let order_list = [];
-			let orderTotal = 0;
-			$("#orderList > .row").filter(function () {
-				let show = $(this).text().toLowerCase().indexOf(value) > -1;
-				$(this).toggle(show);
-				if (show) {
-					order_list.push($(this).data("id"));
-					orderTotal += Number($(this).data("total"));
-				}
-			});
-			orderTotal /= 1000000;
-			$("#orderCount").text(order_list.length);
-			$("#orderTotal").text(orderTotal.toFixed(2));
-			$("#saveOrders").val(JSON.stringify(order_list));
-		});
+        const orderFilter = document.getElementById("orderFilter");
+        orderFilter.addEventListener("keyup", () => {
+            let filterValue = orderFilter.value.toLowerCase();
+            const orderRows = orderList.querySelectorAll(".order");
+            if (filterValue.length > 0){
+                orderRows.forEach((orderRow) => {
+                    const show = orderRow.textContent.toLowerCase().indexOf(filterValue) > -1;
+                    orderRow.style.display = show ? "flex" : "none";
+                });
+            } else {
+                const page = document.querySelector("#orderPagination li.active");
+                page.click();
+            }
+            updateVisibleOrdersTotal();
+        });
 
 		$(".selectable").click(function (event) {
 			let orderId = $(this).attr('data-id');
