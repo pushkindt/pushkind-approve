@@ -95,7 +95,7 @@
 <div class="container">
     <div id="productList">
         {% for product in vendor.products|sort(attribute='name') %}
-        <div class="row my-1 bg-white rounded">
+        <div class="row my-1 bg-white rounded product">
             <div class="col-auto text-center">
                 <form method="POST" enctype="multipart/form-data" id="uploadProductImageForm{{product.id}}"
                     action="{{url_for('main.UploadProductImage', product_id=product.id, vendor_id=vendor.id)}}">
@@ -190,13 +190,21 @@
         </div>
         {% endfor %}
     </div>
+    <nav aria-label="Products pagination">
+        <ul class="pagination justify-content-center" id="productPagination">
+        </ul>
+    </nav>
 </div>
 
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script>
     $(document).ready(function () {
+
+        InstantiatePagination("productList", "product", "productPagination", 10);
+
         $('#uploadProductsButton').on('change', () => {
             $('#uploadProductsForm').submit();
         });
@@ -209,12 +217,6 @@
         $('.uploadProductImageButton').on('change', function () {
             $(this).parent('form').submit();
         });
-        $("#productFilter").on("keyup", function () {
-            let value = $(this).val().toLowerCase();
-            $("#productList .row").filter(function () {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-            });
-        });
         $(".selectable").click(function (event) {
             let productId = $(this).parent(".row").attr("data-id");
             let modalElement = document.getElementById('descriptionModal' + productId);
@@ -223,6 +225,25 @@
                 descriptionModal = new bootstrap.Modal(modalElement, {});
             descriptionModal.show();
         });
+
+        const productFilter = document.querySelector("#productFilter");
+        const productList = document.querySelector("#productList");
+
+        productFilter.addEventListener("keyup", () => {
+            const filterValue = productFilter.value.toLowerCase();
+            const productRows = productList.querySelectorAll(".product");
+            if (filterValue.length > 0){
+                productRows.forEach(row => {
+                    const rowText = row.textContent.toLowerCase();
+                    const showRow = rowText.indexOf(filterValue) > -1;
+                    row.style.display = showRow ? "flex" : "none";
+                });
+            } else {
+                const page = document.querySelector("#productPagination li.active");
+                page.click();
+            }
+        });
+
     });
 </script>
 {% endblock %}
