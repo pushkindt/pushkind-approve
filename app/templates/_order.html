@@ -30,7 +30,7 @@
 	</div>
 {% else %}
 	<div class="row selectable border bg-white my-1 rounded order" data-id="{{ order.id }}" data-total="{{ order.total }}">
-		<div class="col-sm-1 overflow-hidden">
+		<div class="col col-sm-1 overflow-hidden">
 			<span class="d-sm-none fw-bold">Заявка:</span>
 			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.id) }}">{{ order.number }}</a>
 			<br>
@@ -39,9 +39,9 @@
 			</span>
 		</div>
 {% endif %}
-	<div class="col-sm-2 overflow-hidden">
+	<div class="col col-sm-2 overflow-hidden">
 		<span class="d-sm-none fw-bold">Категории:</span>
-		{% for cat in order.categories %}		
+		{% for cat in order.categories %}
 			{{ cat.code or '' }}<br>
 		{% endfor %}
 	</div>
@@ -53,7 +53,7 @@
 		<br>
 		<small>{{ order.initiative.name }}</small>
 	</div>
-	<div class="col-sm overflow-hidden">
+	<div class="col col-sm overflow-hidden">
 		<span class="d-sm-none fw-bold">Согласен:</span>
 		{% for appr in order.approvals %}
 			{% if appr.approved is sameas true %}
@@ -61,7 +61,7 @@
 			{% endif %}
 		{% endfor %}
 	</div>
-	<div class="col-sm overflow-hidden">
+	<div class="col col-sm overflow-hidden">
 		<span class="d-sm-none fw-bold">Не согласен:</span>
 		<span class="text-danger">
 			{% set positions = order.user_approvals|rejectattr('product_id','none')|map(attribute='user')|map(attribute='position')|map(attribute='name')|unique %}
@@ -70,7 +70,7 @@
 			{% endfor %}
 		</span>
 	</div>
-	<div class="col-sm overflow-hidden">
+	<div class="col col-sm overflow-hidden">
 		<span class="d-sm-none fw-bold">Ожидаем:</span>
 		{% if order['status'].name == 'not_approved' %}
 			Инициатор<br>
@@ -84,8 +84,8 @@
 			{% endfor %}
 		{% endif %}
 	</div>
-	<div class="col-sm-1 overflow-hidden fs-7">
-		<span class="d-sm-none">Статус:</span>
+	<div class="col-sm-1 overflow-hidden fs-7 py-1">
+		<span class="d-sm-none fw-bold">Статус:</span>
 		{% include '_order.status.html' %}
 	</div>
 	{% if order.parents | length > 1 %}
