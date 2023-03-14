@@ -298,13 +298,22 @@
             </div>
         {% endfor %}
     </div>
+
+    <nav aria-label="Products pagination">
+        <ul class="pagination justify-content-center" id="productPagination">
+        </ul>
+    </nav>
+
 </div>
 
 {% endblock %}
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/shoppingCart.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
+
+        InstantiatePagination("productList", "selectable", "productPagination", 10);
 
         PopulateProductQuantities();
         SetInCartText();
@@ -317,13 +326,18 @@
 
         productFilter.addEventListener("keyup", () => {
             const filterValue = productFilter.value.toLowerCase();
-            const productRows = productList.querySelectorAll(".row");
+            const productRows = productList.querySelectorAll(".selectable");
+            if (filterValue.length > 0){
+                productRows.forEach(row => {
+                    const rowText = row.textContent.toLowerCase();
+                    const showRow = rowText.indexOf(filterValue) > -1;
+                    row.style.display = showRow ? "flex" : "none";
+                });
+            } else {
+                const page = document.querySelector("#productPagination li.active");
+                page.click();
+            }
 
-            productRows.forEach(row => {
-                const rowText = row.textContent.toLowerCase();
-                const showRow = rowText.indexOf(filterValue) > -1;
-                row.style.display = showRow ? "flex" : "none";
-            });
         });
 
         const addToCartButtons = document.querySelectorAll(".addToCart");

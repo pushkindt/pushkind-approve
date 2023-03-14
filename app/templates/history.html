@@ -65,18 +65,37 @@
 		{% endfor %}
 	</div>
 </div>
+
+<nav aria-label="Events pagination">
+	<ul class="pagination justify-content-center" id="eventPagination">
+	</ul>
+</nav>
+
 {% endblock %}
 
 {% block scripts %}
-
+<script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script>
 	$(document).ready(function () {
-		$("#eventFilter").on("keyup", function () {
-			let value = $(this).val().toLowerCase();
-			$(".event").filter(function () {
-				$(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-			});
-		});
+		InstantiatePagination("eventList", "event", "eventPagination", 10);
+
+		const eventFilter = document.querySelector("#eventFilter");
+        const eventList = document.querySelector("#eventList");
+        eventFilter.addEventListener("keyup", () => {
+            const filterValue = eventFilter.value.toLowerCase();
+            const eventRows = eventList.querySelectorAll(".event");
+            if (filterValue.length > 0){
+                eventRows.forEach(row => {
+                    const rowText = row.textContent.toLowerCase();
+                    const showRow = rowText.indexOf(filterValue) > -1;
+                    row.style.display = showRow ? "flex" : "none";
+                });
+            } else {
+                const page = document.querySelector("#eventPagination li.active");
+                page.click();
+            }
+
+        });
 	});
 </script>
 {% endblock %}
