@@ -248,6 +248,7 @@ function SyncProductModal(form, itemPos) {
 
     if (itemPos === null) {
         addToCartButtons[1].removeAttribute("data-pos");
+        addToCartButtons[1].classList.add('d-none');
         quantityInput.value = "";
         textInput.value = "";
         productOptions.forEach((select) => { select.value = 0 });
@@ -256,6 +257,7 @@ function SyncProductModal(form, itemPos) {
         const shoppingCart = CleanShoppingCart();
         const item = shoppingCart[itemPos];
         addToCartButtons[1].dataset.pos = itemPos;
+        addToCartButtons[1].classList.remove('d-none');
         quantityInput.value = item.quantity;
         textInput.value = item.text || "";
         productOptions.forEach((select) => {
