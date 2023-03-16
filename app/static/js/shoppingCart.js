@@ -323,7 +323,7 @@ function SyncCartModal(form, itemPos) {
 function CreateSelectCloneOption(item, index) {
     const opt = document.createElement("option");
     opt.value = index;
-    opt.textContent = `${index}: ${item.quantity} ${item.measurement}`;
+    opt.textContent = `${index + 1}: ${item.quantity} ${item.measurement}`;
     if (item.options) {
         const optionsKeys = Object.keys(item.options);
         if (optionsKeys.length > 0) {
