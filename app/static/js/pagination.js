@@ -1,11 +1,14 @@
-function InstantiatePagination(itemsWrapperId, itemClass, paginationId, itemsPerPage) {
+function InstantiatePagination(itemsWrapperId, itemClass, paginationId, itemsPerPage, itemsFilterId) {
     const pagination = document.getElementById(paginationId);
     const itemsWrapper = document.getElementById(itemsWrapperId);
     const items = itemsWrapper.querySelectorAll(`.${itemClass}`);
     const pageCount = Math.ceil(items.length / itemsPerPage);
+    const itemsFilter = document.getElementById(itemsFilterId);
     pagination.innerHTML = "";
 
     const setCurrentPage = (pageNum) => {
+        if (itemsFilter)
+            itemsFilter.value = "";
         const prevRange = (pageNum - 1) * itemsPerPage;
         const currRange = pageNum * itemsPerPage;
         const pageLinks = pagination.querySelectorAll("li.page-item");

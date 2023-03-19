@@ -305,16 +305,16 @@
 <script>
     document.addEventListener("DOMContentLoaded", () => {
 
-        InstantiatePagination("productList", "selectable", "productPagination", 10);
+        const productFilter = document.querySelector("#productFilter");
+        const productList = document.querySelector("#productList");
+
+        InstantiatePagination("productList", "selectable", "productPagination", 10, 'productFilter');
 
         PopulateProductQuantities();
         SetInCartText();
         CheckProjectAndSite(() => {
             window.location = "{{ url_for('main.shop_categories') }}";
         });
-
-        const productFilter = document.querySelector("#productFilter");
-        const productList = document.querySelector("#productList");
 
         productFilter.addEventListener("keyup", () => {
             const filterValue = productFilter.value.toLowerCase();

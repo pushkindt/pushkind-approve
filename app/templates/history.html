@@ -77,10 +77,12 @@
 <script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script>
     $(document).ready(function () {
-        InstantiatePagination("eventList", "event", "eventPagination", 10);
 
         const eventFilter = document.querySelector("#eventFilter");
         const eventList = document.querySelector("#eventList");
+
+        InstantiatePagination("eventList", "event", "eventPagination", 10, 'eventFilter');
+
         eventFilter.addEventListener("keyup", () => {
             const filterValue = eventFilter.value.toLowerCase();
             const eventRows = eventList.querySelectorAll(".event");

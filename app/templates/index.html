@@ -160,13 +160,8 @@
             document.getElementById("saveOrders").value = JSON.stringify(order_list);
         }
 
-        InstantiatePagination("orderList", "order", "orderPagination", 50);
+        InstantiatePagination("orderList", "order", "orderPagination", 50, 'orderFilter');
         updateVisibleOrdersTotal();
-
-        const pages = document.querySelectorAll("#orderPagination li");
-        pages.forEach(page => {
-            page.addEventListener("click", () => orderFilter.value = "");
-        })
 
         let alertModal = document.getElementById('alertModal');
         if (alertModal){
