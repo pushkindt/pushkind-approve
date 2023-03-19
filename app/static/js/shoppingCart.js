@@ -32,11 +32,15 @@ function PopulateSelectClones(form, itemPos = null) {
     const content = document.createDocumentFragment();
     const shoppingCart = CleanShoppingCart();
     selectClones.innerHTML = "";
+    const addNewOpt = document.createElement('option');
+    addNewOpt.classList.add('text-primary');
+    addNewOpt.textContent = 'Добавить новый вариант';
+    selectClones.appendChild(addNewOpt);
     let count = 0;
     shoppingCart.forEach((item, index) => {
         if (item.id === productId) {
             const opt = CreateSelectCloneOption(item, index);
-            if (index === itemPos || (count === 0 && itemPos === null)) {
+            if (index === itemPos) {
                 opt.setAttribute("selected", "true");
                 itemPos = index;
             }
@@ -204,11 +208,9 @@ function AddToCart(form, itemPos = null) {
         if (itemText) {
             item.text = itemText;
         }
-
         if (itemOptions) {
             item.options = itemOptions;
         }
-
         item.quantity = itemQuantity;
     } else {
         if (Number.isInteger(itemPos))
@@ -240,15 +242,13 @@ function AddToCart(form, itemPos = null) {
 
 function SyncProductModal(form, itemPos) {
 
-    const addToCartButtons = form.querySelectorAll(".addToCart");
+    const addToCartButton = form.querySelector(".addToCart");
     const quantityInput = form.querySelector(".productQuantity");
     const textInput = form.querySelector(".productText");
     itemPos = PopulateSelectClones(form, itemPos);
     const productOptions = form.querySelectorAll(".productOption");
-
-    if (itemPos === null) {
-        addToCartButtons[1].removeAttribute("data-pos");
-        addToCartButtons[1].classList.add('d-none');
+    if (!Number.isInteger(itemPos)) {
+        addToCartButton.removeAttribute("data-pos");
         quantityInput.value = "";
         textInput.value = "";
         productOptions.forEach((select) => { select.value = 0 });
@@ -256,8 +256,7 @@ function SyncProductModal(form, itemPos) {
     else {
         const shoppingCart = CleanShoppingCart();
         const item = shoppingCart[itemPos];
-        addToCartButtons[1].dataset.pos = itemPos;
-        addToCartButtons[1].classList.remove('d-none');
+        addToCartButton.dataset.pos = itemPos;
         quantityInput.value = item.quantity;
         textInput.value = item.text || "";
         productOptions.forEach((select) => {
