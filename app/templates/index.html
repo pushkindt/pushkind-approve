@@ -160,7 +160,7 @@
             document.getElementById("saveOrders").value = JSON.stringify(order_list);
         }
 
-        InstantiatePagination("orderList", "order", "orderPagination", 10, 'orderFilter');
+        InstantiatePagination("orderList", "order", "orderPagination", 50, 'orderFilter');
         updateVisibleOrdersTotal();
 
         const pages = document.querySelectorAll("#orderPagination li");
