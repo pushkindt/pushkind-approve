@@ -1,5 +1,3 @@
-
-
 function InstantiatePagination(itemsWrapperId, itemClass, paginationId, itemsPerPage) {
     const pagination = document.getElementById(paginationId);
     const itemsWrapper = document.getElementById(itemsWrapperId);
@@ -16,7 +14,10 @@ function InstantiatePagination(itemsWrapperId, itemClass, paginationId, itemsPer
         currentLink.classList.add("active");
         items.forEach((item, index) => {
             const showItem = (index >= prevRange && index < currRange);
-            item.style.display = showItem ? "flex" : "none";
+            if (showItem)
+                item.classList.remove("d-none")
+            else
+                item.classList.add("d-none");
         });
     }
 
