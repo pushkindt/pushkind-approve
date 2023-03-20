@@ -216,6 +216,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/sugar.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/shoppingCart.js') }}"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {

@@ -57,10 +57,10 @@ def ShowIndex():
         filter_disapproved = True
 
     dates["сегодня"] = dates.pop("daily")
-    dates["неделя"] = dates.pop("weekly")
-    dates["месяц"] = dates.pop("monthly")
-    dates["квартал"] = dates.pop("quarterly")
-    dates["год"] = dates.pop("annually")
+    dates.pop("weekly")
+    dates.pop("monthly")
+    dates.pop("quarterly")
+    dates.pop("annually")
     dates["недавно"] = dates.pop("recently")
 
     if current_user.role in [UserRoles.purchaser, UserRoles.validator]:

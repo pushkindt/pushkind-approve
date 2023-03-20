@@ -18,8 +18,9 @@ function SetInCartText() {
     const numItems = shoppingCart.length;
     const inCartItems = document.getElementById("inCartItems");
     if (numItems > 0) {
-        const totalPrice = shoppingCart.reduce((total, item) => total + (item.price || 0) * (item.quantity || 0), 0);
-        inCartItems.textContent = `${numItems} позиции на сумму ${totalPrice.toFixed(2)}`;
+        Sugar.Number.setOption('thousands', ' ');
+        const totalPrice = Sugar.Number(shoppingCart.reduce((total, item) => total + (item.price || 0) * (item.quantity || 0), 0));
+        inCartItems.textContent = `${numItems} позиции на сумму ${totalPrice.format(2)}`;
     } else {
         inCartItems.textContent = "";
     }
