@@ -36,12 +36,14 @@ function PopulateSelectClones(form, itemPos = null) {
     const addNewOpt = document.createElement('option');
     addNewOpt.classList.add('text-primary');
     addNewOpt.textContent = 'Добавить новый вариант';
+    if (itemPos === null)
+        addNewOpt.setAttribute("selected", "true");
     selectClones.appendChild(addNewOpt);
     let count = 0;
     shoppingCart.forEach((item, index) => {
         if (item.id === productId) {
             const opt = CreateSelectCloneOption(item, index);
-            if (index === itemPos) {
+            if (index === itemPos || (count === 0 && itemPos === -1)) {
                 opt.setAttribute("selected", "true");
                 itemPos = index;
             }
@@ -415,7 +417,7 @@ function ShowProductModal(event) {
     if (!descriptionModal) {
         descriptionModal = new bootstrap.Modal(modalElement, {});
     }
-    SyncProductModal(modalElement, null);
+    SyncProductModal(modalElement, -1);
     descriptionModal.show();
 }
 
