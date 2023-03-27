@@ -30,7 +30,7 @@
 	</div>
 {% else %}
 	<div class="row selectable border bg-white my-1 rounded order" data-id="{{ order.id }}" data-total="{{ order.total }}">
-		<div class="col col-sm-1 overflow-hidden">
+		<div class="col-sm-1 overflow-hidden">
 			<span class="d-sm-none fw-bold">Заявка:</span>
 			<a class="text-decoration-none" href="{{ url_for('main.ShowOrder', order_id=order.id) }}">{{ order.number }}</a>
 			<br>
@@ -39,7 +39,7 @@
 			</span>
 		</div>
 {% endif %}
-	<div class="col col-sm-2 overflow-hidden">
+	<div class="col-sm-2 overflow-hidden">
 		<span class="d-sm-none fw-bold">Категории:</span>
 		{% for cat in order.categories %}
 			{{ cat.code or '' }}<br>
