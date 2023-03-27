@@ -707,7 +707,7 @@ def GetExcelReport1C(order_id):
 
     app_data = AppSettings.query.filter_by(hub_id=current_user.hub_id).first()
     if app_data is not None and app_data.email_1C is not None:
-        SendEmail1C([app_data.email_1C], order, data)
+        SendEmail1C([app_data.email_1C], order, data.read())
         message = f"отправлена на {app_data.email_1C}"
         event = OrderEvent(
             user_id=current_user.id,
@@ -868,7 +868,7 @@ def SaveApproval(order_id):
                 ):
                     data = Prepare1CReport(order, date.today() + timedelta(days=14))
                     if data is not None:
-                        SendEmail1C([app_data.email_1C], order, data)
+                        SendEmail1C([app_data.email_1C], order, data.read())
 
             if order.site is not None and order.cashflow_statement is not None:
                 OrderLimit.update_current(
