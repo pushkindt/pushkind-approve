@@ -246,15 +246,20 @@ def DownloadProducts():
     products = Product.query.filter_by(vendor_id=vendor.id).all()
     products = [p.to_dict() for p in products]
     df = pd.json_normalize(products)
-    df.drop(["id", "image", "vendor"], axis="columns", inplace=True)
-    df.columns = [col.replace("options.", "") for col in df.columns]
-    extra_columns = list(df.columns.difference(MANDATORY_COLUMNS))
-    for col in extra_columns:
-        df[col] = df[col].apply(
-            lambda values: ", ".join(re.sub(r"\"|'", "", str(v)) for v in values)
-            if isinstance(values, list)
-            else None
+    if len(df.index) > 0:
+        df.drop(
+            ["id", "image", "vendor"], axis="columns", inplace=True, errors="ignore"
         )
+        df.columns = [col.replace("options.", "") for col in df.columns]
+        extra_columns = list(df.columns.difference(MANDATORY_COLUMNS))
+        for col in extra_columns:
+            df[col] = df[col].apply(
+                lambda values: ", ".join(re.sub(r"\"|'", "", str(v)) for v in values)
+                if isinstance(values, list)
+                else None
+            )
+    else:
+        df[MANDATORY_COLUMNS] = None
     buffer = io.BytesIO()
     df.to_excel(buffer, index=False)
     buffer.seek(0)
