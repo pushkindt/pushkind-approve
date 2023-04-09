@@ -14,7 +14,9 @@ function InstantiatePagination(itemsWrapperId, itemClass, paginationId, itemsPer
         const pageLinks = pagination.querySelectorAll("li.page-item");
         pageLinks.forEach((link) => { link.classList.remove("active") });
         const currentLink = pagination.querySelector(`li.page-item[data-page="${pageNum}"]`);
-        currentLink.classList.add("active");
+        if (currentLink) {
+            currentLink.classList.add("active");
+        }
         items.forEach((item, index) => {
             const showItem = (index >= prevRange && index < currRange);
             if (showItem)
