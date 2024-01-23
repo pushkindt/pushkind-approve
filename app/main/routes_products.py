@@ -48,9 +48,7 @@ def _get_vendor(vendor_id: int) -> Vendor:
 
 def product_columns_to_json(row: pd.Series) -> str:
     def parse_column(value: str) -> "list[str]":
-        return (
-            sorted(list({s.strip() for s in str(value).split(",")})) if value else None
-        )
+        return sorted(list({s.strip() for s in str(value).split(",")})) if value else None
 
     result = {k: parse_column(v) for k, v in row.items() if v}
     return json.dumps(result, ensure_ascii=False) if result else ""
@@ -60,17 +58,13 @@ def clean_column_names(name: str) -> str:
     return re.sub(r"[^\w]+", "_", name.lower())
 
 
-def products_excel_to_df(
-    excel_data: BinaryIO, vendor_id: int, categories: "dict[str:int]"
-) -> pd.DataFrame:
+def products_excel_to_df(excel_data: BinaryIO, vendor_id: int, categories: "dict[str:int]") -> pd.DataFrame:
     df = pd.read_excel(excel_data, engine="openpyxl", dtype=str, keep_default_na=False)
     df.columns = [clean_column_names(name) for name in df.columns]
     mandatory_columns_set = set(MANDATORY_COLUMNS)
     if not mandatory_columns_set.issubset(df.columns):
         missing_columns = mandatory_columns_set - df.columns
-        raise KeyError(
-            f"The following mandatory columns are missing: {missing_columns}"
-        )
+        raise KeyError(f"The following mandatory columns are missing: {missing_columns}")
     extra_columns = list(df.columns.difference(MANDATORY_COLUMNS))
     if "options" in extra_columns:
         extra_columns.remove("options")
@@ -80,18 +74,8 @@ def products_excel_to_df(
         axis=1,
         inplace=True,
     )
-    df = df.astype(
-        dtype={
-            "name": str,
-            "sku": str,
-            "price": float,
-            "measurement": str,
-            "description": str,
-            "category": str,
-            "options": str,
-            "input_required": bool,
-        }
-    )
+    df["price"] = df["price"].apply(pd.to_numeric, errors="coerce")
+    df["input_required"] = df["input_required"].astype(bool)
     df["options"] = df["options"].replace("", None)
 
     df["vendor_id"] = vendor_id
@@ -110,11 +94,7 @@ def products_excel_to_df(
 
     string_columns = ["name", "sku", "measurement", "description"]
     for column in string_columns:
-        df[column] = (
-            df[column].str.slice(0, 128)
-            if column == "name"
-            else df[column].str.slice(0, 512)
-        )
+        df[column] = df[column].str.slice(0, 128) if column == "name" else df[column].str.slice(0, 512)
     return df
 
 
@@ -166,9 +146,7 @@ def UploadProducts():
         categories = {c.name.lower(): c.id for c in categories}
         df = products_excel_to_df(form.products.data, vendor.id, categories)
         skus = df.sku.values.tolist()
-        Product.query.filter_by(vendor_id=vendor.id).filter(
-            Product.sku.in_(skus)
-        ).delete()
+        Product.query.filter_by(vendor_id=vendor.id).filter(Product.sku.in_(skus)).delete()
         db.session.commit()
         df.to_sql(name="product", con=db.engine, if_exists="append", index=False)
         db.session.commit()
@@ -193,10 +171,7 @@ def UploadImages():
         products = [p.sku for p in products]
         with ZipFile(form.images.data, "r") as zip_file:
             for zip_info in zip_file.infolist():
-                if (
-                    zip_info.is_dir()
-                    or zip_info.file_size > current_app.config["MAX_ZIP_FILE_SIZE"]
-                ):
+                if zip_info.is_dir() or zip_info.file_size > current_app.config["MAX_ZIP_FILE_SIZE"]:
                     continue
                 file_name = Path(zip_info.filename)
                 sku = file_name.stem
@@ -207,9 +182,7 @@ def UploadImages():
                 static_path.mkdir(parents=True, exist_ok=True)
                 zip_file.extract(zip_info, static_path)
                 static_path = static_path / zip_info.filename
-                db.session.query(Product).filter_by(
-                    vendor_id=vendor.id, sku=sku
-                ).update(
+                db.session.query(Product).filter_by(vendor_id=vendor.id, sku=sku).update(
                     {"image": url_for("static", filename=Path(*static_path.parts[2:]))}
                 )
                 db.session.commit()
@@ -247,9 +220,7 @@ def DownloadProducts():
     products = [p.to_dict() for p in products]
     df = pd.json_normalize(products)
     if len(df.index) > 0:
-        df.drop(
-            ["id", "image", "vendor"], axis="columns", inplace=True, errors="ignore"
-        )
+        df.drop(["id", "image", "vendor"], axis="columns", inplace=True, errors="ignore")
         df.columns = [col.replace("options.", "") for col in df.columns]
         extra_columns = list(df.columns.difference(MANDATORY_COLUMNS))
         for col in extra_columns:
