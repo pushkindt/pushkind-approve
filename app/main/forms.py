@@ -18,7 +18,7 @@ from wtforms import (
     SubmitField,
     TextAreaField,
 )
-from wtforms.fields import DateField, EmailField
+from wtforms.fields import DateField, EmailField, URLField
 from wtforms.validators import (
     DataRequired,
     Email,
@@ -113,9 +113,7 @@ class LeaveCommentForm(FlaskForm):
         )
         db.session.add(event)
         if len(self.notify_reviewers.data) > 0:
-            SendEmailNotification(
-                "comment", order, self.notify_reviewers.data, data=self.comment.data
-            )
+            SendEmailNotification("comment", order, self.notify_reviewers.data, data=self.comment.data)
             message = "Уведомление выслано: "
             message += ", ".join(reviewers[r] for r in self.notify_reviewers.data)
             event = OrderEvent(
@@ -130,9 +128,7 @@ class LeaveCommentForm(FlaskForm):
 
 class OrderApprovalForm(FlaskForm):
     product_id = IntegerField("Идентификатор товара", render_kw={"hidden": ""})
-    comment = TextAreaField(
-        "Замечание", validators=[Length(max=512, message="Слишком длинное замечание.")]
-    )
+    comment = TextAreaField("Замечание", validators=[Length(max=512, message="Слишком длинное замечание.")])
     submit = SubmitField("Сохранить")
 
 
@@ -183,9 +179,7 @@ class AddStoreForm(FlaskForm):
             Length(max=128, message="Слишком длинный электронный адрес."),
         ],
     )
-    password = PasswordField(
-        "Пароль", validators=[DataRequired(message="Пароль - обязательное поле.")]
-    )
+    password = PasswordField("Пароль", validators=[DataRequired(message="Пароль - обязательное поле.")])
     submit = SubmitField("Создать")
 
 
@@ -202,9 +196,7 @@ class UserSettings(Form):
             Length(max=128, message="Слишком длинное имя."),
         ],
     )
-    phone = StringField(
-        "Телефон", validators=[Length(max=128, message="Слишком длинный телефон.")]
-    )
+    phone = StringField("Телефон", validators=[Length(max=128, message="Слишком длинный телефон.")])
     categories = SelectMultipleField("Мои категории ↓", coerce=int)
     projects = SelectMultipleField("Мои проекты ↓", coerce=int)
     position = StringField(
@@ -214,9 +206,7 @@ class UserSettings(Form):
             Length(max=128, message="Слишком длинная роль."),
         ],
     )
-    location = StringField(
-        "Площадка", validators=[Length(max=512, message="Слишком длинное название.")]
-    )
+    location = StringField("Площадка", validators=[Length(max=512, message="Слишком длинное название.")])
     email_new = BooleanField("Новые заявки")
     email_modified = BooleanField("Заявка изменена")
     email_disapproved = BooleanField("Заявка отклонена")
@@ -235,6 +225,7 @@ class UserRolesForm(FlaskForm):
     about_user = FormField(UserSettings, [DataRequired()])
     note = TextAreaField("Заметка")
     birthday = DateField("День рождения", validators=[Optional()])
+    dashboard_url = URLField("Дашборд", validators=[Length(max=512, message="Слишком длинное URL.")])
     submit = SubmitField("Сохранить")
 
 
@@ -292,16 +283,12 @@ class AddProjectForm(FlaskForm):
             Length(max=128, message="Слишком длинное название."),
         ],
     )
-    uid = StringField(
-        "Код", validators=[Optional(), Length(max=128, message="Слишком длинный код.")]
-    )
+    uid = StringField("Код", validators=[Optional(), Length(max=128, message="Слишком длинный код.")])
     submit = SubmitField("Добавить")
 
 
 class AddSiteForm(FlaskForm):
-    project_id = IntegerField(
-        "ID проекта", [DataRequired(message="ID проекта - обязательное поле.")]
-    )
+    project_id = IntegerField("ID проекта", [DataRequired(message="ID проекта - обязательное поле.")])
     site_name = StringField(
         "Название",
         validators=[
@@ -309,9 +296,7 @@ class AddSiteForm(FlaskForm):
             Length(max=128, message="Слишком длинное название."),
         ],
     )
-    uid = StringField(
-        "Код", validators=[Optional(), Length(max=128, message="Слишком длинный код.")]
-    )
+    uid = StringField("Код", validators=[Optional(), Length(max=128, message="Слишком длинный код.")])
     submit = SubmitField("Добавить")
 
 
@@ -327,9 +312,7 @@ class EditProjectForm(FlaskForm):
             Length(max=128, message="Слишком длинное название."),
         ],
     )
-    uid = StringField(
-        "Код", validators=[Optional(), Length(max=128, message="Слишком длинный код.")]
-    )
+    uid = StringField("Код", validators=[Optional(), Length(max=128, message="Слишком длинный код.")])
     enabled = BooleanField("Включить проект")
     submit = SubmitField("Изменить")
 
@@ -346,9 +329,7 @@ class EditSiteForm(FlaskForm):
             Length(max=128, message="Слишком длинное название."),
         ],
     )
-    uid = StringField(
-        "Код", validators=[Optional(), Length(max=128, message="Слишком длинный код.")]
-    )
+    uid = StringField("Код", validators=[Optional(), Length(max=128, message="Слишком длинный код.")])
     submit = SubmitField("Изменить")
 
 
@@ -401,9 +382,7 @@ class CategoryResponsibilityForm(FlaskForm):
     )
     image = FileField(
         label="Изображение",
-        validators=[
-            FileAllowed(["jpg", "png"], "Разрешены только изображения JPG и PNG!")
-        ],
+        validators=[FileAllowed(["jpg", "png"], "Разрешены только изображения JPG и PNG!")],
     )
     submit = SubmitField("Сохранить")
 
@@ -431,9 +410,7 @@ class AddCashflowForm(FlaskForm):
 
 
 class EditIncomeForm(FlaskForm):
-    income_id = IntegerField(
-        "ID БДР", [DataRequired(message="ID БДР - обязательное поле.")]
-    )
+    income_id = IntegerField("ID БДР", [DataRequired(message="ID БДР - обязательное поле.")])
     income_name = StringField(
         "БДР",
         validators=[
@@ -445,9 +422,7 @@ class EditIncomeForm(FlaskForm):
 
 
 class EditCashflowForm(FlaskForm):
-    cashflow_id = IntegerField(
-        "ID БДДС", validators=[DataRequired(message="ID БДДС - обязательное поле.")]
-    )
+    cashflow_id = IntegerField("ID БДДС", validators=[DataRequired(message="ID БДДС - обязательное поле.")])
     cashflow_name = StringField(
         "БДДС",
         validators=[
@@ -470,9 +445,7 @@ class AddLimitForm(FlaskForm):
         coerce=int,
         choices=[(int(i), str(i)) for i in OrderLimitsIntervals],
     )
-    value = DecimalField(
-        "Лимит", validators=[DataRequired(message="Лимит - обязательное поле.")]
-    )
+    value = DecimalField("Лимит", validators=[DataRequired(message="Лимит - обязательное поле.")])
     project = SelectField(
         "Проект",
         validators=[DataRequired(message="Проект - обязательное поле.")],

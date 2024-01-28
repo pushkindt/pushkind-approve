@@ -57,7 +57,7 @@
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="userModalLabel">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ</h5>
+					<h5 class="modal-title" id="userModalLabel">НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ #<span id="about_user-id"></span>: <span id="about_user-email"></span></h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				{% include '_user.settings.form.html' %}
@@ -152,6 +152,8 @@
 				$("#user_id").val(user_id);
 				users.some(function (user) {
 					if (user["id"] == user_id) {
+						$("#about_user-id").text(user['id']);
+						$("#about_user-email").text(user['email']);
 						$("#about_user-phone").val(user["phone"]);
 						$("#about_user-position").val(user["position"]);
 						$("#about_user-location").val(user["location"]);
@@ -164,6 +166,7 @@
 						$("#role").val(user["role_id"]);
 						$("#note").val(user["note"]);
 						$("#birthday").val(user["birthday"]);
+						$("#dashboard_url").val(user["dashboard_url"]);
 						$("#removeUserButton").attr("href", "{{ url_for('main.RemoveUser', user_id='0') }}".replace("0", user_id));
 						if (user["role"] == "validator" || user["role"] == "purchaser") {
 							$("#userDataWrapper").show();

@@ -133,32 +133,16 @@ def load_user(user_id):
 
 class Vendor(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    hub_id = db.Column(
-        db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=True
-    )
+    hub_id = db.Column(db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=True)
     name = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(128), nullable=False, unique=True, index=True)
-    enabled = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=expression.true()
-    )
-    users = db.relationship(
-        "User", back_populates="hub", cascade="all, delete", passive_deletes=True
-    )
-    positions = db.relationship(
-        "Position", back_populates="hub", cascade="all, delete", passive_deletes=True
-    )
-    categories = db.relationship(
-        "Category", back_populates="hub", cascade="all, delete", passive_deletes=True
-    )
-    settings = db.relationship(
-        "AppSettings", back_populates="hub", cascade="all, delete", passive_deletes=True
-    )
-    projects = db.relationship(
-        "Project", back_populates="hub", cascade="all, delete", passive_deletes=True
-    )
-    orders = db.relationship(
-        "Order", back_populates="hub", cascade="all, delete", passive_deletes=True
-    )
+    enabled = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+    users = db.relationship("User", back_populates="hub", cascade="all, delete", passive_deletes=True)
+    positions = db.relationship("Position", back_populates="hub", cascade="all, delete", passive_deletes=True)
+    categories = db.relationship("Category", back_populates="hub", cascade="all, delete", passive_deletes=True)
+    settings = db.relationship("AppSettings", back_populates="hub", cascade="all, delete", passive_deletes=True)
+    projects = db.relationship("Project", back_populates="hub", cascade="all, delete", passive_deletes=True)
+    orders = db.relationship("Order", back_populates="hub", cascade="all, delete", passive_deletes=True)
     income_statements = db.relationship(
         "IncomeStatement",
         back_populates="hub",
@@ -171,12 +155,8 @@ class Vendor(db.Model):
         cascade="all, delete",
         passive_deletes=True,
     )
-    order_limits = db.relationship(
-        "OrderLimit", back_populates="hub", cascade="all, delete", passive_deletes=True
-    )
-    products = db.relationship(
-        "Product", back_populates="vendor", cascade="all, delete", passive_deletes=True
-    )
+    order_limits = db.relationship("OrderLimit", back_populates="hub", cascade="all, delete", passive_deletes=True)
+    products = db.relationship("Product", back_populates="vendor", cascade="all, delete", passive_deletes=True)
 
 
 class JsonType(TypeDecorator):
@@ -208,37 +188,22 @@ class User(UserMixin, db.Model):
     )
     name = db.Column(db.String(128), nullable=True)
     phone = db.Column(db.String(128), nullable=True)
-    position_id = db.Column(
-        db.Integer, db.ForeignKey("position.id", ondelete="SET NULL"), nullable=True
-    )
+    position_id = db.Column(db.Integer, db.ForeignKey("position.id", ondelete="SET NULL"), nullable=True)
     location = db.Column(db.String(512), nullable=True)
-    hub_id = db.Column(
-        db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=True
-    )
-    email_new = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=expression.true()
-    )
-    email_modified = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=expression.true()
-    )
-    email_disapproved = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=expression.true()
-    )
-    email_approved = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=expression.true()
-    )
-    email_comment = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=expression.true()
-    )
+    hub_id = db.Column(db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=True)
+    email_new = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+    email_modified = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+    email_disapproved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+    email_approved = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
+    email_comment = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
     last_seen = db.Column(db.DateTime, nullable=True)
     note = db.Column(db.Text(), nullable=True)
     registered = db.Column(db.DateTime, nullable=True)
     birthday = db.Column(db.Date, nullable=True)
+    dashboard_url = db.Column(db.String(512), nullable=True)
     categories = db.relationship("Category", secondary="user_category", backref="users")
     projects = db.relationship("Project", secondary="user_project", backref="users")
-    events = db.relationship(
-        "OrderEvent", cascade="all, delete", back_populates="user", passive_deletes=True
-    )
+    events = db.relationship("OrderEvent", cascade="all, delete", back_populates="user", passive_deletes=True)
     approvals = db.relationship(
         "OrderApproval",
         cascade="all, delete",
@@ -303,6 +268,7 @@ class User(UserMixin, db.Model):
             "email_comment": self.email_comment,
             "projects": self.projects_list,
             "categories": self.categories_list,
+            "dashboard_url": self.dashboard_url,
         }
         return data
 
@@ -316,9 +282,7 @@ class User(UserMixin, db.Model):
     @staticmethod
     def verify_jwt_token(token):
         try:
-            user_id = jwt.decode(
-                token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
-            )["user_id"]
+            user_id = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])["user_id"]
         except:
             return None
         return User.query.get(user_id)
@@ -327,9 +291,7 @@ class User(UserMixin, db.Model):
 class Position(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(
-        db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False
-    )
+    hub_id = db.Column(db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False)
     users = db.relationship("User", back_populates="position")
     hub = db.relationship("Vendor", back_populates="positions")
 
@@ -341,13 +303,9 @@ class Position(db.Model):
 
 class OrderApproval(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    order_id = db.Column(
-        db.Integer, db.ForeignKey("order.id", ondelete="CASCADE"), nullable=False
-    )
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id", ondelete="CASCADE"), nullable=False)
     product_id = db.Column(db.Integer, index=True, nullable=True)
-    user_id = db.Column(
-        db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False
-    )
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     remark = db.Column(db.String(512), nullable=True)
     user = db.relationship("User", back_populates="approvals")
     order = db.relationship("Order", back_populates="user_approvals")
@@ -360,9 +318,7 @@ class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
     children = db.Column(db.JSON(), nullable=False)
-    hub_id = db.Column(
-        db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False
-    )
+    hub_id = db.Column(db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False)
     responsible = db.Column(db.String(128), nullable=True)
     functional_budget = db.Column(db.String(128), nullable=True)
     income_id = db.Column(  # БДР
@@ -418,26 +374,18 @@ class AppSettings(db.Model):
         nullable=False,
         unique=True,
     )
-    notify_1C = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=expression.true()
-    )
+    notify_1C = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
     email_1C = db.Column(db.String(128), nullable=True)
     order_id_bias = db.Column(db.Integer, nullable=False, default=0, server_default="0")
-    single_category_orders = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=expression.true()
-    )
+    single_category_orders = db.Column(db.Boolean, nullable=False, default=True, server_default=expression.true())
     alert = db.Column(db.String(512), nullable=True)
     hub = db.relationship("Vendor", back_populates="settings")
 
 
 class OrderEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    order_id = db.Column(
-        db.Integer, db.ForeignKey("order.id", ondelete="CASCADE"), nullable=True
-    )
-    user_id = db.Column(
-        db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False
-    )
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id", ondelete="CASCADE"), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     timestamp = db.Column(
         db.DateTime,
         nullable=False,
@@ -453,9 +401,7 @@ class OrderEvent(db.Model):
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(
-        db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False
-    )
+    hub_id = db.Column(db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False)
     enabled = db.Column(
         db.Boolean,
         nullable=False,
@@ -465,9 +411,7 @@ class Project(db.Model):
     )
     uid = db.Column(db.String(128), nullable=True)
     hub = db.relationship("Vendor", back_populates="projects")
-    sites = db.relationship(
-        "Site", cascade="all, delete", back_populates="project", passive_deletes=True
-    )
+    sites = db.relationship("Site", cascade="all, delete", back_populates="project", passive_deletes=True)
     order_limits = db.relationship(
         "OrderLimit",
         back_populates="project",
@@ -492,9 +436,7 @@ class Project(db.Model):
 class Site(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    project_id = db.Column(
-        db.Integer, db.ForeignKey("project.id", ondelete="CASCADE"), nullable=False
-    )
+    project_id = db.Column(db.Integer, db.ForeignKey("project.id", ondelete="CASCADE"), nullable=False)
     uid = db.Column(db.String(128), nullable=True)
     orders = db.relationship("Order", back_populates="site")
     project = db.relationship("Project", back_populates="sites")
@@ -520,9 +462,7 @@ OrderRelationship = db.Table(
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     number = db.Column(db.String(128), nullable=False)
-    initiative_id = db.Column(
-        db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), nullable=True
-    )
+    initiative_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
     create_timestamp = db.Column(db.Integer, nullable=False)
     products = db.Column(db.JSON(), nullable=False)
     total = db.Column(db.Float, nullable=False)
@@ -532,9 +472,7 @@ class Order(db.Model):
         default=OrderStatus.new,
         server_default="new",
     )
-    site_id = db.Column(
-        db.Integer, db.ForeignKey("site.id", ondelete="SET NULL"), nullable=True
-    )
+    site_id = db.Column(db.Integer, db.ForeignKey("site.id", ondelete="SET NULL"), nullable=True)
     income_id = db.Column(  # БДР
         db.Integer,
         db.ForeignKey("income_statement.id", ondelete="SET NULL"),
@@ -545,21 +483,11 @@ class Order(db.Model):
         db.ForeignKey("cashflow_statement.id", ondelete="SET NULL"),
         nullable=True,
     )
-    hub_id = db.Column(
-        db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False
-    )
-    purchased = db.Column(
-        db.Boolean, nullable=False, default=False, server_default=expression.false()
-    )
-    exported = db.Column(
-        db.Boolean, nullable=False, default=False, server_default=expression.false()
-    )
-    dealdone = db.Column(
-        db.Boolean, nullable=False, default=False, server_default=expression.false()
-    )
-    over_limit = db.Column(
-        db.Boolean, nullable=False, default=False, server_default=expression.false()
-    )
+    hub_id = db.Column(db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False)
+    purchased = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    exported = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    dealdone = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    over_limit = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
     dealdone_responsible_name = db.Column(db.String(128))
     dealdone_responsible_comment = db.Column(db.String(128))
     categories = db.relationship("Category", secondary="order_category")
@@ -572,9 +500,7 @@ class Order(db.Model):
         passive_deletes=True,
     )
     approvals = db.relationship("OrderPosition", backref="order")
-    user_approvals = db.relationship(
-        "OrderApproval", back_populates="order", viewonly=True
-    )
+    user_approvals = db.relationship("OrderApproval", back_populates="order", viewonly=True)
     children = db.relationship(
         "Order",
         secondary=OrderRelationship,
@@ -594,11 +520,7 @@ class Order(db.Model):
     site = db.relationship("Site", back_populates="orders")
 
     def update_status(self):
-        if (
-            self.site is None
-            or self.site.project.enabled is False
-            or self.status == OrderStatus.cancelled
-        ):
+        if self.site is None or self.site.project.enabled is False or self.status == OrderStatus.cancelled:
             return
         approved = [p.approved for p in self.approvals]
         if all(approved):
@@ -746,12 +668,8 @@ class OrderPosition(db.Model):
     __tablename__ = "order_position"
     order_id = db.Column(db.Integer, db.ForeignKey("order.id"), primary_key=True)
     position_id = db.Column(db.Integer, db.ForeignKey("position.id"), primary_key=True)
-    approved = db.Column(
-        db.Boolean, nullable=False, default=False, server_default=expression.false()
-    )
-    user_id = db.Column(
-        db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), nullable=True
-    )
+    approved = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
     timestamp = db.Column(db.DateTime, nullable=True)
     user = db.relationship("User")
     position = db.relationship("Position")
@@ -773,9 +691,7 @@ class IncomeStatement(db.Model):
     __tablename__ = "income_statement"
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(
-        db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False
-    )
+    hub_id = db.Column(db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False)
     hub = db.relationship("Vendor", back_populates="income_statements")
     orders = db.relationship("Order", back_populates="income_statement")
 
@@ -791,9 +707,7 @@ class CashflowStatement(db.Model):
     __tablename__ = "cashflow_statement"
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
-    hub_id = db.Column(
-        db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False
-    )
+    hub_id = db.Column(db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False)
     hub = db.relationship("Vendor", back_populates="cashflow_statements")
     order_limits = db.relationship(
         "OrderLimit",
@@ -827,9 +741,7 @@ class OrderLimitsIntervals(enum.IntEnum):
 class OrderLimit(db.Model):
     __tablename__ = "order_limit"
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    hub_id = db.Column(
-        db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False
-    )
+    hub_id = db.Column(db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False)
     value = db.Column(db.Float, nullable=False, default=0.0, server_default="0.0")
     current = db.Column(db.Float, nullable=False, default=0.0, server_default="0.0")
     cashflow_id = db.Column(
@@ -837,9 +749,7 @@ class OrderLimit(db.Model):
         db.ForeignKey("cashflow_statement.id", ondelete="CASCADE"),
         nullable=False,
     )
-    project_id = db.Column(
-        db.Integer, db.ForeignKey("project.id", ondelete="CASCADE"), nullable=False
-    )
+    project_id = db.Column(db.Integer, db.ForeignKey("project.id", ondelete="CASCADE"), nullable=False)
     interval = db.Column(
         db.Enum(OrderLimitsIntervals),
         index=True,
@@ -847,9 +757,7 @@ class OrderLimit(db.Model):
         default=OrderLimitsIntervals.monthly,
         server_default="monthly",
     )
-    cashflow_statement = db.relationship(
-        "CashflowStatement", back_populates="order_limits"
-    )
+    cashflow_statement = db.relationship("CashflowStatement", back_populates="order_limits")
     project = db.relationship("Project", back_populates="order_limits")
     hub = db.relationship("Vendor", back_populates="order_limits")
 
@@ -880,9 +788,7 @@ class OrderLimit(db.Model):
             orders = orders.filter(Order.cashflow_id == limit.cashflow_id)
             orders = orders.join(Site)
             orders = orders.filter(Site.project_id == limit.project_id).all()
-            limit.current = sum(
-                o.total for o in orders if o.status == OrderStatus.approved
-            )
+            limit.current = sum(o.total for o in orders if o.status == OrderStatus.approved)
             if limit.current > 0.95 * limit.value:
                 for order in orders:
                     order.over_limit = order.status != OrderStatus.approved
@@ -892,21 +798,15 @@ class OrderLimit(db.Model):
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
-    vendor_id = db.Column(
-        db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False
-    )
+    vendor_id = db.Column(db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False)
     name = db.Column(db.String(128), nullable=False, index=True)
     sku = db.Column(db.String(128), nullable=False, index=True)
     price = db.Column(db.Float, nullable=False)
     image = db.Column(db.String(128), nullable=True)
     measurement = db.Column(db.String(128), nullable=True)
-    cat_id = db.Column(
-        db.Integer, db.ForeignKey("category.id", ondelete="CASCADE"), nullable=False
-    )
+    cat_id = db.Column(db.Integer, db.ForeignKey("category.id", ondelete="CASCADE"), nullable=False)
     description = db.Column(db.String(512), nullable=True)
-    input_required = db.Column(
-        db.Boolean, nullable=False, default=False, server_default=expression.false()
-    )
+    input_required = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
     options = db.Column(db.JSON())
     vendor = db.relationship("Vendor", back_populates="products")
     category = db.relationship("Category", back_populates="products")

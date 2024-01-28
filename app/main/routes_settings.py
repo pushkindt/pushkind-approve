@@ -42,9 +42,7 @@ def RemoveExcessivePosition():
     position_ids = [p.id for p in validators_positions]
     OrderPosition.query.filter(OrderPosition.position_id.in_(position_ids)).delete()
     users_positions = (
-        Position.query.join(User, Position.id == User.position_id, isouter=True)
-        .filter(User.position_id == None)
-        .all()
+        Position.query.join(User, Position.id == User.position_id, isouter=True).filter(User.position_id == None).all()
     )
     position_ids = [p.id for p in users_positions]
     Position.query.filter(Position.id.in_(position_ids)).delete()
@@ -55,7 +53,6 @@ def RemoveExcessivePosition():
 @login_required
 @role_forbidden([UserRoles.default, UserRoles.vendor])
 def ShowSettings():
-
     projects = Project.query
     if current_user.role != UserRoles.admin:
         projects = projects.filter_by(enabled=True)
@@ -86,20 +83,16 @@ def ShowSettings():
                 user.role = user_form.role.data
                 user.note = user_form.note.data
                 user.birthday = user_form.birthday.data
+                user.dashboard_url = user_form.dashboard_url.data
             else:
                 user = current_user
 
             old_position = user.position
             old_role = user.role
 
-            if (
-                user_form.about_user.position.data is not None
-                and user_form.about_user.position.data != ""
-            ):
+            if user_form.about_user.position.data is not None and user_form.about_user.position.data != "":
                 position_name = user_form.about_user.position.data.strip().lower()
-                position = Position.query.filter_by(
-                    name=position_name, hub_id=user.hub_id
-                ).first()
+                position = Position.query.filter_by(name=position_name, hub_id=user.hub_id).first()
                 if position is None:
                     position = Position(name=position_name, hub_id=user.hub_id)
                 user.position = position
@@ -107,22 +100,12 @@ def ShowSettings():
                 user.position = None
 
             if user.role in [UserRoles.purchaser, UserRoles.validator]:
-                if (
-                    user_form.about_user.categories.data is not None
-                    and len(user_form.about_user.categories.data) > 0
-                ):
-                    user.categories = Category.query.filter(
-                        Category.id.in_(user_form.about_user.categories.data)
-                    ).all()
+                if user_form.about_user.categories.data is not None and len(user_form.about_user.categories.data) > 0:
+                    user.categories = Category.query.filter(Category.id.in_(user_form.about_user.categories.data)).all()
                 else:
                     user.categories = []
-                if (
-                    user_form.about_user.projects.data is not None
-                    and len(user_form.about_user.projects.data) > 0
-                ):
-                    user.projects = Project.query.filter(
-                        Project.id.in_(user_form.about_user.projects.data)
-                    ).all()
+                if user_form.about_user.projects.data is not None and len(user_form.about_user.projects.data) > 0:
+                    user.projects = Project.query.filter(Project.id.in_(user_form.about_user.projects.data)).all()
                 else:
                     user.projects = []
             else:
@@ -169,15 +152,14 @@ def ShowSettings():
                     + user_form.role.errors
                     + user_form.note.errors
                     + user_form.birthday.errors
+                    + user_form.dashboard_url.errors
                 )
             for error in errors:
                 flash(error)
         return redirect(url_for("main.ShowSettings"))
 
     if current_user.role == UserRoles.admin:
-        users = User.query.filter(
-            or_(User.role == UserRoles.default, User.hub_id == current_user.hub_id)
-        )
+        users = User.query.filter(or_(User.role == UserRoles.default, User.hub_id == current_user.hub_id))
         users = users.order_by(User.name, User.email).all()
         return render_template("settings.html", user_form=user_form, users=users)
     return render_template("settings.html", user_form=user_form)
@@ -219,9 +201,7 @@ def RemoveUser(user_id):
 @role_required([UserRoles.admin])
 def DownloadUsers():
     users = (
-        User.query.filter(
-            or_(User.role == UserRoles.default, User.hub_id == current_user.hub_id)
-        )
+        User.query.filter(or_(User.role == UserRoles.default, User.hub_id == current_user.hub_id))
         .order_by(User.name, User.email)
         .all()
     )
@@ -244,6 +224,7 @@ def DownloadUsers():
             "Должен согласовать заявок",
             "Номер для согласования",
             "День рождения",
+            "Ссылка на дашборд",
         ],
         start=1,
     ):
@@ -260,11 +241,12 @@ def DownloadUsers():
         ws.cell(i, 8).value = user.last_seen
         ws.cell(i, 9).value = user.registered
         ws.cell(i, 15).value = user.birthday
+        ws.cell(
+            i, 16
+        ).value = f'=HYPERLINK("{user.dashboard_url}", "{url_for("main.dashboard_redirect", user_id=user.id)}")'
 
         # Orders which user is initiative for
-        orders = Order.query.filter_by(
-            initiative_id=user.id, status=OrderStatus.approved
-        ).all()
+        orders = Order.query.filter_by(initiative_id=user.id, status=OrderStatus.approved).all()
         ws.cell(i, 10).value = len(orders)
         ws.cell(i, 11).value = sum([o.total for o in orders])
 
@@ -292,9 +274,7 @@ def DownloadUsers():
             orders = orders.join(OrderPosition)
             orders = orders.filter_by(position_id=user.position_id)
             orders = orders.join(OrderCategory)
-            orders = orders.filter(
-                OrderCategory.category_id.in_([cat.id for cat in user.categories])
-            )
+            orders = orders.filter(OrderCategory.category_id.in_([cat.id for cat in user.categories]))
             orders = orders.join(Site)
             orders = orders.filter(Site.project_id.in_([p.id for p in user.projects]))
             orders = orders.all()
@@ -324,3 +304,13 @@ def SwitchHub(hub_id):
         current_user.hub_id = hub_id
         db.session.commit()
     return redirect(url_for("main.ShowIndex"))
+
+
+@bp.route("/dashboard/<int:user_id>", methods=["GET"])
+@login_required
+def dashboard_redirect(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.dashboard_url is None or user.dashboard_url == "":
+        flash("Для пользователя не указана ссылка на дашборд.")
+        return redirect(url_for("main.ShowSettings"))
+    return redirect(user.dashboard_url)

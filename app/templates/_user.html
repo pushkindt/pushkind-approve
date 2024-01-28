@@ -2,7 +2,11 @@
 	<div class="row">
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none fw-bold">ФИО:</span>
+			{% if user.dashboard_url %}
+			<a href="{{user.dashboard_url}}">{{ user.name or '' }}</a>
+			{% else %}
 			{{ user.name or '' }}
+			{% endif %}
 		</div>
 		<div class="col-sm overflow-hidden">
 			<span class="d-sm-none fw-bold">Телефон:</span>
