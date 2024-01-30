@@ -5,8 +5,8 @@ from flask_login import current_user
 
 from app import db
 
+bp = Blueprint("main", __name__)
 
-bp = Blueprint('main', __name__)
 
 @bp.before_app_request
 def before_request():
@@ -14,13 +14,17 @@ def before_request():
         current_user.last_seen = datetime.utcnow()
         db.session.commit()
 
-from app.main import routes_index
-from app.main import routes_approve
-from app.main import routes_settings
-from app.main import routes_stores
-from app.main import routes_help
-from app.main import routes_history
-from app.main import routes_admin
-from app.main import routes_limits
-from app.main import routes_shop
-from app.main import routes_products
+
+from app.main import (
+    routes_admin,
+    routes_approve,
+    routes_dashboard,
+    routes_help,
+    routes_history,
+    routes_index,
+    routes_limits,
+    routes_products,
+    routes_settings,
+    routes_shop,
+    routes_stores,
+)

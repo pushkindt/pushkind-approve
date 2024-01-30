@@ -304,13 +304,3 @@ def SwitchHub(hub_id):
         current_user.hub_id = hub_id
         db.session.commit()
     return redirect(url_for("main.ShowIndex"))
-
-
-@bp.route("/dashboard/<int:user_id>", methods=["GET"])
-@login_required
-def dashboard_redirect(user_id):
-    user = User.query.get_or_404(user_id)
-    if user.dashboard_url is None or user.dashboard_url == "":
-        flash("Для пользователя не указана ссылка на дашборд.")
-        return redirect(url_for("main.ShowSettings"))
-    return redirect(user.dashboard_url)
