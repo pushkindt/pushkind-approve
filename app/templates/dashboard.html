@@ -1,6 +1,20 @@
 {% extends "base.html" %}
+{% block styles %}
+<style>
+    iframe {
+        display: block;
+        /* iframes are inline by default */
+        background: #000;
+        border: none;
+        /* Reset default border */
+        height: 100vh;
+        /* Viewport-relative units */
+        width: 100%;
+    }
+</style>
+{% endblock %}
 {% block content %}
-<div class="container">
+<div class="container iframe-container">
     {% if current_user.role.name == 'admin' %}
     <select class="form-select my-1" aria-label="Select user" id="select-user">
         {% for u in users %}
@@ -9,7 +23,7 @@
     </select>
     {% endif %}
     {% if user.dashboard_url %}
-    <iframe height="500px" width="100%" frameborder="0" src="{{ user.dashboard_url }}"></iframe>
+    <iframe src="{{ user.dashboard_url }}"></iframe>
     {% else %}
     <div class="alert alert-warning alert-dismissible" role="alert">
         Для пользователя не настроены дашборд.
