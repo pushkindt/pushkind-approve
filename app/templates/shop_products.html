@@ -267,7 +267,8 @@
                                         <div class="row justify-content-center my-1">
                                             <div class="col-auto">
                                                 <button type="button"
-                                                    class="btn btn-primary addToCart text-white">
+                                                    class="btn btn-primary addToCart text-white"
+                                                    {% if not product.options %}data-bs-dismiss="modal"{% endif %}>
                                                     Сохранить
                                                 </button>
                                                 <button type="button"
