@@ -6,24 +6,13 @@ from typing import BinaryIO
 from zipfile import ZipFile
 
 import pandas as pd
-from flask import (
-    current_app,
-    flash,
-    redirect,
-    render_template,
-    request,
-    send_file,
-    url_for,
-)
+from flask import current_app, flash, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
 
 from approve.extensions import db
-from approve.main.forms import (
-    UploadImagesForm,
-    UploadProductImageForm,
-    UploadProductsForm,
-)
+from approve.main.forms import UploadImagesForm, UploadProductImageForm, UploadProductsForm
 from approve.main.routes import bp
+from approve.main.upload.excel_processor import process1
 from approve.main.utils import role_forbidden
 from approve.models import Category, Product, UserRoles, Vendor
 from approve.utils import first
@@ -62,8 +51,7 @@ def clean_column_names(name: str) -> str:
     return re.sub(r"[^\w]+", "_", name.lower())
 
 
-def products_excel_to_df(excel_data: BinaryIO, vendor_id: int, categories: "dict[str:int]") -> pd.DataFrame:
-    df = pd.read_excel(excel_data, engine="openpyxl", dtype=str, keep_default_na=False)
+def products_excel_to_df(df: pd.DataFrame, vendor_id: int, categories: "dict[str:int]") -> pd.DataFrame:
     df.columns = [clean_column_names(name) for name in df.columns]
     mandatory_columns_set = set(MANDATORY_COLUMNS)
     if not mandatory_columns_set.issubset(df.columns):
@@ -148,7 +136,8 @@ def UploadProducts():
     if form.validate_on_submit():
         categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
         categories = {c.name.lower(): c.id for c in categories}
-        df = products_excel_to_df(form.products.data, vendor.id, categories)
+        df = process1(form.products.data, current_app.config["IMPORT_PRODUCTS_CONF_SHEET"])
+        df = products_excel_to_df(df, vendor.id, categories)
         skus = df.sku.values.tolist()
         Product.query.filter_by(vendor_id=vendor.id).filter(Product.sku.in_(skus)).delete()
         db.session.commit()
