@@ -167,6 +167,7 @@ migrations/
 #Pushkind-approve
 *.xlsx
 app/static/upload/
+.secrets.yaml
 
 #VSCode
 .vscode/

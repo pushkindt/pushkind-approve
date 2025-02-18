@@ -534,3 +534,13 @@ class UploadProductImageForm(FlaskForm):
         ],
     )
     submit = SubmitField("Загрузить")
+
+
+class SendMessageForm(FlaskForm):
+    recipients = SelectMultipleField(
+        "Получатели",
+        validators=[DataRequired(message="Получатели - обязательное поле.")],
+        coerce=str,
+    )
+    message = TextAreaField("Сообщение", validators=[DataRequired(message="Сообщение - обязательное поле.")])
+    submit = SubmitField("Отправить")

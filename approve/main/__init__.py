@@ -9,4 +9,5 @@ from approve.main import (  # noqa: F401
     routes_settings,
     routes_shop,
     routes_stores,
+    routes_messages,
 )
