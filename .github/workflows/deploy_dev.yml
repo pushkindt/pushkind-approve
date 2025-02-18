@@ -2,7 +2,7 @@ name: Deploy development
 
 on:
   push:
-    branches: [ ]
+    branches: [ development ]
 
 jobs:
   build:
@@ -16,4 +16,4 @@ jobs:
           known_hosts: ${{ secrets.CICD_KNOWN_HOSTS }}
           if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
       - name: Pull
-        run: ssh cicd@reports.pushkind.com "cd /var/www6/html/ && git pull origin development && supervisorctl restart approve_dev"
+        run: ssh cicd@reports.pushkind.com "cd /var/www2/html/ && git pull origin development && supervisorctl restart novolex_dev"
