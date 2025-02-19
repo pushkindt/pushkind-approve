@@ -18,15 +18,7 @@ from approve.main.forms import (
     EditSiteForm,
 )
 from approve.main.utils import role_required
-from approve.models import (
-    AppSettings,
-    CashflowStatement,
-    Category,
-    IncomeStatement,
-    Project,
-    Site,
-    UserRoles,
-)
+from approve.models import AppSettings, CashflowStatement, Category, IncomeStatement, Project, Site, UserRoles
 
 bp = Blueprint("admin", __name__)
 
@@ -75,7 +67,7 @@ def ShowAdminPage():
     forms["edit_category"].process()
 
     return render_template(
-        "admin.html",
+        "admin/admin.html",
         forms=forms,
         projects=projects,
         categories=categories,

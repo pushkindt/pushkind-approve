@@ -19,14 +19,7 @@ from wtforms import (
     TextAreaField,
 )
 from wtforms.fields import DateField, EmailField, URLField
-from wtforms.validators import (
-    DataRequired,
-    Email,
-    InputRequired,
-    Length,
-    Optional,
-    ValidationError,
-)
+from wtforms.validators import DataRequired, Email, InputRequired, Length, Optional, ValidationError
 
 from approve.extensions import db
 from approve.main.utils import SendEmailNotification

@@ -2,7 +2,6 @@ import io
 import json
 import re
 from pathlib import Path
-from typing import BinaryIO
 from zipfile import ZipFile
 
 import pandas as pd
@@ -113,7 +112,7 @@ def ShowProducts():
 
     categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
     return render_template(
-        "products.html",
+        "main/products/products.html",
         vendors=vendors,
         vendor=vendor,
         categories=categories,

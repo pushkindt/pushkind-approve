@@ -1,15 +1,7 @@
 import io
 from datetime import datetime, timezone
 
-from flask import (
-    Response,
-    current_app,
-    flash,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from flask import Response, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from openpyxl import Workbook
 
@@ -17,12 +9,7 @@ from approve.email import SendEmail
 from approve.extensions import db
 from approve.main.forms import MergeOrdersForm, SaveOrdersForm
 from approve.main.routes import bp
-from approve.main.utils import (
-    GetNewOrderNumber,
-    SendEmailNotification,
-    role_forbidden,
-    role_required,
-)
+from approve.main.utils import GetNewOrderNumber, SendEmailNotification, role_forbidden, role_required
 from approve.models import (
     AppSettings,
     Category,
@@ -127,7 +114,7 @@ def ShowIndex():
     alert = app_data.alert if app_data else None
 
     return render_template(
-        "index.html",
+        "main/index/index.html",
         orders=orders,
         dates=dates,
         projects=projects,
@@ -346,23 +333,4 @@ def SaveOrders():
 
     for error in form.orders.errors:
         flash(error)
-    return redirect(url_for("main.ShowIndex"))
-
-
-@bp.route("/support/call/", methods=["POST"])
-@login_required
-@role_forbidden([UserRoles.default])
-def CallSupport():
-    comment = request.form.get("comment", "", type=str)
-    if len(comment) > 0 and len(comment) < 2048:
-        SendEmail(
-            "Обращение в поддержку",
-            current_app.config["MAIL_USERNAME"],
-            [current_app.config["ADMIN_EMAIL"], current_user.email],
-            text_body=render_template("email/support.txt", comment=comment),
-            html_body=render_template("email/support.html", comment=comment),
-        )
-        flash("Сообщение отправлено в поддержку.")
-    else:
-        flash("Сообщение некорректной длины (максимум 2048 символов).")
     return redirect(url_for("main.ShowIndex"))

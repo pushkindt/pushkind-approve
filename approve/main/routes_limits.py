@@ -5,13 +5,7 @@ from approve.extensions import db
 from approve.main.forms import AddLimitForm
 from approve.main.routes import bp
 from approve.main.utils import role_forbidden
-from approve.models import (
-    CashflowStatement,
-    OrderLimit,
-    OrderLimitsIntervals,
-    Project,
-    UserRoles,
-)
+from approve.models import CashflowStatement, OrderLimit, OrderLimitsIntervals, Project, UserRoles
 
 
 @bp.route("/limits/", methods=["GET"])
@@ -45,7 +39,7 @@ def ShowLimits():
     limits = limits.all()
 
     return render_template(
-        "limits.html", limits=limits, intervals=OrderLimitsIntervals, filter_from=filter_from, form=form
+        "main/limits/limits.html", limits=limits, intervals=OrderLimitsIntervals, filter_from=filter_from, form=form
     )
 
 

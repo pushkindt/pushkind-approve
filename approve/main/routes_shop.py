@@ -32,7 +32,7 @@ def shop_categories():
     projects = projects.order_by(Project.name).all()
     limits = OrderLimit.query.filter_by(hub_id=current_user.hub_id).all()
     categories = Category.query.filter_by(hub_id=current_user.hub_id).all()
-    return render_template("shop_categories.html", projects=projects, limits=limits, categories=categories)
+    return render_template("main/shop/shop_categories.html", projects=projects, limits=limits, categories=categories)
 
 
 @bp.route("/shop/<int:cat_id>", defaults={"vendor_id": None})
@@ -51,7 +51,7 @@ def shop_products(cat_id, vendor_id):
     vendor_ids = {p.vendor_id for p in products}
     vendors = Vendor.query.filter(Vendor.id.in_(vendor_ids)).all()
     return render_template(
-        "shop_products.html",
+        "main/shop/shop_products.html",
         category=category,
         vendors=vendors,
         products=products,
@@ -70,11 +70,11 @@ def shop_cart():
             products = Product.query.filter(Product.id.in_(p["product"] for p in form.cart.data)).all()
             if len(products) == 0:
                 flash("Заявка не может быть пуста.")
-                return render_template("shop_cart.html", form=form)
+                return render_template("main/shop/shop_cart.html", form=form)
             site = Site.query.filter_by(id=form.site_id.data, project_id=form.project_id.data).first()
             if site is None:
                 flash("Такой площадки не существует.")
-                return redirect(url_for("main.shop_cart"))
+                return redirect(url_for("main/shop/main.shop_cart"))
             order_products = []
             order_vendors = []
             categories = []
@@ -136,4 +136,4 @@ def shop_cart():
             for _, errorMessages in form.errors.items():
                 for err in errorMessages:
                     flash(err)
-    return render_template("shop_cart.html", form=form)
+    return render_template("main/shop/shop_cart.html", form=form)

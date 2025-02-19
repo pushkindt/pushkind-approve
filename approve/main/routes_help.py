@@ -8,15 +8,7 @@ from sqlalchemy import text
 from approve.extensions import db
 from approve.main.routes import bp
 from approve.main.utils import role_forbidden
-from approve.models import (
-    Category,
-    OrderStatus,
-    Project,
-    User,
-    UserCategory,
-    UserProject,
-    UserRoles,
-)
+from approve.models import Category, OrderStatus, Project, User, UserCategory, UserProject, UserRoles
 
 ################################################################################
 # Responibility page
@@ -102,7 +94,7 @@ def ShowHelp():
             category_responsibility[category.name]["positions"].add(position)
 
     return render_template(
-        "help.html",
+        "main/help/help.html",
         projects=project_responsibility,
         categories=category_responsibility,
         stats=buf,

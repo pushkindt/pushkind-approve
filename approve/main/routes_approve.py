@@ -18,13 +18,7 @@ from approve.main.forms import (
     SplitOrderForm,
 )
 from approve.main.routes import bp
-from approve.main.utils import (
-    GetNewOrderNumber,
-    SendEmail1C,
-    SendEmailNotification,
-    role_forbidden,
-    role_required,
-)
+from approve.main.utils import GetNewOrderNumber, SendEmail1C, SendEmailNotification, role_forbidden, role_required
 from approve.models import (
     AppSettings,
     CashflowStatement,
@@ -141,7 +135,7 @@ def ShowOrder(order_id):
     split_form = SplitOrderForm()
 
     return render_template(
-        "approve.html",
+        "main/approve/approve.html",
         order=order,
         projects=projects,
         comment_form=comment_form,
