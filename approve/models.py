@@ -807,3 +807,18 @@ class Product(db.Model):
             "measurement": self.measurement,
             "input_required": self.input_required,
         }
+
+
+class Email(db.Model):
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+    message = db.Column(db.Text(), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, index=True)
+    user = db.relationship("User")
+
+
+class EmailRecipient(db.Model):
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    email_id = db.Column(db.Integer, db.ForeignKey("email.id", ondelete="CASCADE"), nullable=False)
+    opened = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    email = db.relationship("Email", backref="recipients")
