@@ -1,38 +1,70 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <form method="POST" action="{{ url_for('main.send_message') }}">
-        {{ form.csrf_token(id=False) }}
-        <div class="container my-1">
-            <h3 class="text-center">Отправка email-сообщения пользователям системы</h3>
-            <div class="row mb-3 ps-3">
-                {{ form.recipients.label(class_='form-label recipientsDropDown') }}
-                <a class="recipientsDropDown" href="#">добавить из списка</a>
-                {{ form.recipients(class_='form-control') }}
-                <a id="recipientsNone" href="#" class="text-danger">убрать всех</a>
-            </div>
-            <div class="row">
-                <div class="col">
-                    {{ form.message(class_='form-control', rows=10) }}
+    <div class="container my-1">
+        <form method="POST" action="{{ url_for('main.send_message') }}">
+            {{ form.csrf_token(id=False) }}
+                <h3 class="text-center">Отправка email-сообщения пользователям системы</h3>
+                <div class="row mb-3">
+                    <div class="col">
+                        {{ form.recipients.label(class_='form-label recipientsDropDown') }}
+                        <a class="recipientsDropDown" href="#">добавить из списка</a>
+                        {{ form.recipients(class_='form-control') }}
+                        <a id="recipientsNone" href="#" class="text-danger">убрать всех</a>
+                    </div>
                 </div>
-                <div class="col border rounded" id="message-rendered">
+                <div class="row">
+                    <div class="col">
+                        {{ form.message(class_='form-control', rows=10) }}
+                    </div>
+                    <div class="col border rounded mx-2" id="message-rendered">
+                    </div>
                 </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col">
-                    <small class="text-muted">Сообщение в формате <a href="https://www.markdownguide.org/basic-syntax/">markdown</a></small>
+                <div class="row mb-3">
+                    <div class="col">
+                        <small class="text-muted">Сообщение в формате <a href="https://www.markdownguide.org/basic-syntax/">markdown</a></small>
+                    </div>
+                    <div class="col">
+                        <small class="text-muted">Превью сообщения</small>
+                    </div>
                 </div>
-                <div class="col">
-                    <small class="text-muted">Превью сообщения</small>
+                <div class="row">
+                    <div class="col">
+                        {{ form.submit(class_='btn btn-primary text-white') }}
+                    </div>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col">
-                    {{ form.submit(class_='btn btn-primary text-white') }}
+        </form>
+    </div>
+
+    <div class="container">
+        <div class="accordion" id="email-accordion">
+            {% for email in emails %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#email-collapse{{email.id}}" aria-expanded="false" aria-controls="email-collapse{{email.id}}">
+                            #{{email.id}} от {{email.timestamp}}
+                        </button>
+                    </h2>
+                    <div id="email-collapse{{email.id}}" class="accordion-collapse collapse" data-bs-parent="#email-accordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                <div class="col">
+                                    {{email.message | safe}}
+                                </div>
+                                <div class="col">
+                                    <ul>
+                                        {% for recipient in email.recipients %}
+                                            <li class="{%if recipient.opened%}text-success{%endif%}">{{recipient.address}}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            {% endfor %}
         </div>
-    </form>
+    </div>
 {% endblock %}
 
 {% block scripts %}

@@ -821,4 +821,5 @@ class EmailRecipient(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     email_id = db.Column(db.Integer, db.ForeignKey("email.id", ondelete="CASCADE"), nullable=False)
     opened = db.Column(db.Boolean, nullable=False, default=False, server_default=expression.false())
+    address = db.Column(db.String(128), nullable=False)
     email = db.relationship("Email", backref="recipients")
