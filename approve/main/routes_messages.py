@@ -60,7 +60,7 @@ def send_message():
             SendEmail(
                 subject=current_app.config["title"],
                 sender=(current_user.name, current_app.config["mail_username"]),
-                recipients=recipients,
+                recipients=[recipient],
                 text_body=form.message.data,
                 html_body=email_message + tracking_img,
             )
