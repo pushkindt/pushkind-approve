@@ -227,8 +227,8 @@
             limitElements.forEach((element) => {
                 let show = element.dataset.project == id;
                 element.style.display = show ? "block" : "none";
-                if (show)
-                    show_limit_alert |= element.dataset.overlimit;
+                if (show && element.dataset.overlimit === "true")
+                    show_limit_alert = true;
             });
             if (show_limit_alert)
                 limitAlert.classList.remove("d-none");
