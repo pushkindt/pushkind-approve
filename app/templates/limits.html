@@ -2,7 +2,7 @@
 
 {% block content %}
 
-{% set show_remove_limit = current_user.role.name in ['admin', 'purchaser'] %}
+{% set show_manage_limit = current_user.role.name in ['admin', 'purchaser'] %}
 
 <div class="container">
 	<div class="row justify-content-center">
@@ -86,7 +86,10 @@
                     </div>
                 </div>
             </div>
-            {% if show_remove_limit %}
+            {% if show_manage_limit %}
+                <div class="col-auto overflow-hidden">
+                    Изменить
+                </div>
                 <div class="col-auto overflow-hidden">
                     Удалить
                 </div>

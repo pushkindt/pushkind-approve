@@ -36,9 +36,48 @@
             {% endif %}
         </div>
     </div>
-    {% if show_remove_limit %}
+    {% if show_manage_limit %}
+        <div class="col-auto">
+            <button
+                class="btn btn-primary text-white"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#editLimit{{ limit.id }}"
+                aria-expanded="false"
+                aria-controls="editLimit{{ limit.id }}"
+            >
+                Изменить
+            </button>
+        </div>
         <div class="col-auto">
             <a href="{{ url_for('main.RemoveLimit', limit_id=limit.id) }}" class="btn btn-danger text-white" onclick="return confirm('Удалить лимит?')">Удалить</a>
         </div>
     {% endif %}
 </div>
+{% if show_manage_limit %}
+    <div class="row border-bottom pb-3 collapse" id="editLimit{{ limit.id }}">
+        <div class="col">
+            <form method="POST" action="{{ url_for('main.EditLimit') }}">
+                {{ edit_form.csrf_token(id=False) }}
+                {{ edit_form.limit_id(value=limit.id, id='limit-id-' ~ limit.id) }}
+                <div class="row g-2 align-items-end mt-1">
+                    <div class="col-md-4">
+                        <label class="form-label" for="interval-{{ limit.id }}">{{ edit_form.interval.label.text }}</label>
+                        <select class="form-select" id="interval-{{ limit.id }}" name="interval">
+                            {% for interval in edit_form.interval.choices %}
+                                <option value="{{ interval[0] }}" {% if interval[0] == limit.interval.value %}selected{% endif %}>{{ interval[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="value-{{ limit.id }}">{{ edit_form.value.label.text }}</label>
+                        {{ edit_form.value(class_='form-control', id='value-' ~ limit.id, value=limit.value) }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ edit_form.submit(class_='btn btn-primary text-white') }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endif %}

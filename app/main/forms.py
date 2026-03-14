@@ -10,6 +10,7 @@ from wtforms import (
     FieldList,
     Form,
     FormField,
+    HiddenField,
     IntegerField,
     PasswordField,
     SelectField,
@@ -457,6 +458,21 @@ class AddLimitForm(FlaskForm):
         coerce=int,
     )
     submit = SubmitField("Создать")
+
+
+class EditLimitForm(FlaskForm):
+    limit_id = HiddenField(
+        "Идентификатор лимита",
+        validators=[DataRequired(message="Лимит не найден.")],
+    )
+    interval = SelectField(
+        "Интервал",
+        validators=[InputRequired(message="Некорректный интервал лимита.")],
+        coerce=int,
+        choices=[(int(i), str(i)) for i in OrderLimitsIntervals],
+    )
+    value = DecimalField("Лимит", validators=[DataRequired(message="Лимит - обязательное поле.")])
+    submit = SubmitField("Изменить")
 
 
 ################################################################################

@@ -6,7 +6,7 @@ from app.main import bp
 from app.models import UserRoles, OrderLimit, Project, CashflowStatement
 from app.models import OrderLimitsIntervals
 from app.main.utils import role_forbidden
-from app.main.forms import AddLimitForm
+from app.main.forms import AddLimitForm, EditLimitForm
 
 
 @bp.route('/limits/', methods=['GET'])
@@ -34,6 +34,8 @@ def ShowLimits():
     form.cashflow.choices = [(c.id, c.name) for c in cashflows]
     form.process()
 
+    edit_form = EditLimitForm()
+
     limits = OrderLimit.query.filter_by(hub_id=current_user.hub_id)
     if filter_from is not None:
         limits = limits.filter_by(interval=filter_from)
@@ -44,7 +46,8 @@ def ShowLimits():
         limits=limits,
         intervals=OrderLimitsIntervals,
         filter_from=filter_from,
-        form=form
+        form=form,
+        edit_form=edit_form
     )
 
 
@@ -89,6 +92,40 @@ def AddLimit():
         form.project.data,
         form.cashflow.data
     )
+    return redirect(url_for('main.ShowLimits'))
+
+
+@bp.route('/limits/edit', methods=['POST'])
+@login_required
+@role_forbidden([UserRoles.default, UserRoles.vendor, UserRoles.supervisor])
+def EditLimit():
+    form = EditLimitForm()
+
+    if form.validate_on_submit():
+        limit_id = request.form.get('limit_id', type=int)
+        limit = OrderLimit.query.filter_by(
+            hub_id=current_user.hub_id,
+            id=limit_id
+        ).first()
+        if limit is not None:
+            limit.value = form.value.data
+            limit.interval = OrderLimitsIntervals(form.interval.data)
+            db.session.commit()
+            OrderLimit.update_current(
+                current_user.hub_id,
+                limit.project_id,
+                limit.cashflow_id
+            )
+            flash('Лимит успешно изменён.')
+        else:
+            flash('Лимит не найден.')
+    else:
+        for error in (
+            form.limit_id.errors +
+            form.interval.errors +
+            form.value.errors
+        ):
+            flash(error)
     return redirect(url_for('main.ShowLimits'))
 
 
