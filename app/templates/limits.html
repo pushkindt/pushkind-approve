@@ -41,6 +41,12 @@
                 </div>
             </div>
             <div class="row mb-3">
+                {{ form.external_expenses.label(class_='col-md-2 col-form-label') }}
+                <div class="col-md-10">
+                    {{ form.external_expenses(class_='form-control') }}
+                </div>
+            </div>
+            <div class="row mb-3">
                 {{ form.project.label(class_='col-md-2 col-form-label') }}
                 <div class="col-md-10">
                     {{ form.project(class_='form-select') }}
@@ -80,6 +86,9 @@
                     </div>
                     <div class="col overflow-hidden">
                         Сумма
+                    </div>
+                    <div class="col overflow-hidden">
+                        Внешние расходы
                     </div>
                     <div class="col overflow-hidden">
                         Остаток

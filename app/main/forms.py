@@ -447,6 +447,7 @@ class AddLimitForm(FlaskForm):
         choices=[(int(i), str(i)) for i in OrderLimitsIntervals],
     )
     value = DecimalField("Лимит", validators=[DataRequired(message="Лимит - обязательное поле.")])
+    external_expenses = DecimalField("Внешние расходы", default=0)
     project = SelectField(
         "Проект",
         validators=[DataRequired(message="Проект - обязательное поле.")],
@@ -472,6 +473,7 @@ class EditLimitForm(FlaskForm):
         choices=[(int(i), str(i)) for i in OrderLimitsIntervals],
     )
     value = DecimalField("Лимит", validators=[DataRequired(message="Лимит - обязательное поле.")])
+    external_expenses = DecimalField("Внешние расходы", default=0)
     submit = SubmitField("Изменить")
 
 

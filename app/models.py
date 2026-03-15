@@ -744,6 +744,7 @@ class OrderLimit(db.Model):
     hub_id = db.Column(db.Integer, db.ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False)
     value = db.Column(db.Float, nullable=False, default=0.0, server_default="0.0")
     current = db.Column(db.Float, nullable=False, default=0.0, server_default="0.0")
+    external_expenses = db.Column(db.Float, nullable=False, default=0.0, server_default="0.0")
     cashflow_id = db.Column(
         db.Integer,
         db.ForeignKey("cashflow_statement.id", ondelete="CASCADE"),
@@ -789,7 +790,8 @@ class OrderLimit(db.Model):
             orders = orders.join(Site)
             orders = orders.filter(Site.project_id == limit.project_id).all()
             limit.current = sum(o.total for o in orders if o.status == OrderStatus.approved)
-            if limit.current > 0.95 * limit.value:
+            used_limit = limit.current + limit.external_expenses
+            if used_limit > 0.95 * limit.value:
                 for order in orders:
                     order.over_limit = order.status != OrderStatus.approved
 

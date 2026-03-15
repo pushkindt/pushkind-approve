@@ -72,6 +72,7 @@ def AddLimit():
         limit = OrderLimit(
             hub_id = current_user.hub_id,
             value = form.value.data,
+            external_expenses = form.external_expenses.data or 0,
             interval = form.interval.data,
             cashflow_id = form.cashflow.data,
             project_id = form.project.data
@@ -83,6 +84,7 @@ def AddLimit():
         for error in (
             form.interval.errors +
             form.value.errors +
+            form.external_expenses.errors +
             form.project.errors +
             form.cashflow.errors
         ):
@@ -109,6 +111,7 @@ def EditLimit():
         ).first()
         if limit is not None:
             limit.value = form.value.data
+            limit.external_expenses = form.external_expenses.data or 0
             limit.interval = OrderLimitsIntervals(form.interval.data)
             db.session.commit()
             OrderLimit.update_current(
@@ -123,7 +126,8 @@ def EditLimit():
         for error in (
             form.limit_id.errors +
             form.interval.errors +
-            form.value.errors
+            form.value.errors +
+            form.external_expenses.errors
         ):
             flash(error)
     return redirect(url_for('main.ShowLimits'))

@@ -1,5 +1,6 @@
-{% set leftover = limit.value - limit.current %}
-{% set overlimit = limit.current > 0.95 * limit.value %}
+{% set used_limit = limit.current + limit.external_expenses %}
+{% set leftover = limit.value - used_limit %}
+{% set overlimit = used_limit > 0.95 * limit.value %}
 <div class="row border-bottom py-1 limit" data-id="{{ limit.id }}" data-project="{{ limit.project_id }}" {%if overlimit%} data-overlimit="true" {%endif%}>
     <div class="col">
         <div class="row">
@@ -22,6 +23,10 @@
             <div class="col-sm overflow-hidden">
                 <span class="d-sm-none fw-bold">Сумма:</span>
                 {{ '{:,.2f}'.format(limit.current) }}
+            </div>
+            <div class="col-sm overflow-hidden">
+                <span class="d-sm-none fw-bold">Внешние расходы:</span>
+                {{ '{:,.2f}'.format(limit.external_expenses) }}
             </div>
             {% if overlimit %}
                 <div class="col-sm overflow-hidden text-danger">
@@ -72,6 +77,10 @@
                     <div class="col-md-4">
                         <label class="form-label" for="value-{{ limit.id }}">{{ edit_form.value.label.text }}</label>
                         {{ edit_form.value(class_='form-control', id='value-' ~ limit.id, value=limit.value) }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="external-expenses-{{ limit.id }}">{{ edit_form.external_expenses.label.text }}</label>
+                        {{ edit_form.external_expenses(class_='form-control', id='external-expenses-' ~ limit.id, value=limit.external_expenses) }}
                     </div>
                     <div class="col-md-4">
                         {{ edit_form.submit(class_='btn btn-primary text-white') }}
