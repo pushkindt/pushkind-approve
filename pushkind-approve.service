@@ -1,0 +1,38 @@
+[Unit]
+Description=pushkind-approve (Flask)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=www-data3
+Group=www-data
+
+WorkingDirectory=/var/www3/html
+Environment=FLASK_APP=approve.py
+ExecStart=/var/www3/.cache/pypoetry/virtualenvs/app-jmEaD_fd-py3.8/bin/python -m gunicorn -b localhost:9003 -w 4 approve:application
+
+Restart=on-failure
+RestartSec=2
+
+# Supervisor stopasgroup/killasgroup → control-group
+KillMode=control-group
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+# Logging (journald by default)
+# StandardOutput=append:/var/log/pushkind/approve.log
+# StandardError=inherit
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www3/html
+AmbientCapabilities=
+CapabilityBoundingSet=
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

@@ -11,6 +11,9 @@ app.db
 logs/
 migrations/
 
+#Dynaconf
+.secrets.yaml
+
 #Pushkind-approve
 *.xlsx
 app/static/upload/
